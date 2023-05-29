@@ -1,0 +1,3 @@
+# Build
+
+`cross build --release`

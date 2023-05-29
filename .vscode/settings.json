@@ -1,0 +1,3 @@
+{
+    "cross-rust-analyzer.target": "arm-unknown-linux-gnueabihf",
+}
