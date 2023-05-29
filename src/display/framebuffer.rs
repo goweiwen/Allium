@@ -1,9 +1,15 @@
+use std::time::Duration;
+
+use anyhow::Result;
 use embedded_graphics::{
     pixelcolor::Rgb888,
     prelude::{DrawTarget, OriginDimensions, RgbColor, Size},
     Pixel,
 };
 use framebuffer::Framebuffer;
+use tokio::process::Command;
+
+use crate::display::Display;
 
 pub struct FrameBufferDisplay {
     framebuffer: Vec<u8>,
@@ -13,17 +19,30 @@ pub struct FrameBufferDisplay {
 impl FrameBufferDisplay {
     pub fn new() -> FrameBufferDisplay {
         let framebuffer = Framebuffer::new("/dev/fb0").unwrap();
+
         let h = framebuffer.var_screen_info.yres;
         let line_length = framebuffer.fix_screen_info.line_length;
 
         FrameBufferDisplay {
             framebuffer: vec![0u8; (line_length * h * 3) as usize],
-            iface: Framebuffer::new("/dev/fb0").unwrap(),
+            iface: framebuffer,
         }
     }
+}
 
-    pub fn flush(&mut self) {
+impl Display for FrameBufferDisplay {
+    async fn init(&self) -> Result<()> {
+        // We have to wait for /dev/l to initialize the LCD and FB.
+        let proc_ls = Command::new("cat").arg("/proc/ls").output().await?;
+        println!("cat /proc/ls: {}", String::from_utf8_lossy(&proc_ls.stdout));
+        println!("Waiting for /dev/l to initialize LCD and FB...");
+        tokio::time::sleep(Duration::from_millis(500)).await;
+        Ok(())
+    }
+
+    fn flush(&mut self) -> Result<()> {
         self.iface.write_frame(&self.framebuffer);
+        Ok(())
     }
 }
 
