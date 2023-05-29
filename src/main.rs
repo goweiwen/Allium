@@ -4,8 +4,7 @@ use allium::Allium;
 use anyhow::Result;
 
 mod allium;
-mod display;
-mod keys;
+mod platform;
 
 #[tokio::main]
 async fn main() -> Result<()> {

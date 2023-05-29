@@ -8,32 +8,25 @@ use embedded_graphics::{
     },
     text::{Alignment, Text},
 };
-use evdev::EventType;
 use rusttype::Font;
 
-use crate::display::{framebuffer::FrameBufferDisplay, Display};
-use crate::keys::{Key, Keys};
+use crate::platform::{KeyEvent, Platform};
 
 pub struct Allium {
-    keys: Keys,
-    display: FrameBufferDisplay,
+    platform: Platform,
     dirty: bool,
 }
 
 impl Allium {
     pub fn new() -> Result<Allium> {
-        let keys = Keys::new()?;
-        let display = FrameBufferDisplay::new();
         Ok(Allium {
-            keys,
-            display,
+            platform: Platform::new()?,
             dirty: true,
         })
     }
 
-    pub async fn init(&self) -> Result<()> {
-        self.display.init().await?;
-        Ok(())
+    pub async fn init(&mut self) -> Result<()> {
+        Platform::init().await
     }
 
     pub async fn run_event_loop(&mut self) -> Result<()> {
@@ -43,20 +36,12 @@ impl Allium {
                 // self.dirty = false;
             }
 
-            let event = self.keys.events.next_event().await?;
-            match event.event_type() {
-                EventType::KEY => {
-                    let key = event.code();
-                    let key: Key = evdev::Key(key).into();
-                    if key == Key::Power {
-                        break;
-                    }
-                }
-                _ => {}
+            match self.platform.poll().await? {
+                Some(KeyEvent::Pressed(key)) => println!("down {:?}", key),
+                Some(KeyEvent::Released(key)) => println!("up {:?}", key),
+                None => (),
             }
         }
-
-        Ok(())
     }
 
     fn draw(&mut self) -> Result<()> {
@@ -80,11 +65,13 @@ impl Allium {
 
         let yoffset = 14;
 
+        let display = self.platform.display()?;
+
         // Draw a 3px wide outline around the display.
-        self.display
+        display
             .bounding_box()
             .into_styled(border_stroke)
-            .draw(&mut self.display)?;
+            .draw(display)?;
 
         // Draw a triangle.
         Triangle::new(
@@ -93,29 +80,29 @@ impl Allium {
             Point::new(16 + 8, yoffset),
         )
         .into_styled(thin_stroke)
-        .draw(&mut self.display)?;
+        .draw(display)?;
 
         // Draw a filled square
         Rectangle::new(Point::new(52, yoffset), Size::new(16, 16))
             .into_styled(fill)
-            .draw(&mut self.display)?;
+            .draw(display)?;
 
         // Draw a circle with a 3px wide stroke.
         Circle::new(Point::new(88, yoffset), 17)
             .into_styled(thick_stroke)
-            .draw(&mut self.display)?;
+            .draw(display)?;
 
         // Draw centered text.
         let text = "hello world, from Allium!";
         Text::with_alignment(
             text,
-            self.display.bounding_box().center() + Point::new(0, 15),
+            display.bounding_box().center() + Point::new(0, 15),
             character_style,
             Alignment::Center,
         )
-        .draw(&mut self.display)?;
+        .draw(display)?;
 
-        self.display.flush()?;
+        self.platform.flush()?;
 
         Ok(())
     }

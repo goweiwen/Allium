@@ -1,28 +1,7 @@
 use anyhow::Result;
-use evdev::{Device, EventStream};
+use evdev::{Device, EventStream, EventType};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Key {
-    Up,
-    Down,
-    Left,
-    Right,
-    A,
-    B,
-    X,
-    Y,
-    Start,
-    Select,
-    L,
-    R,
-    Menu,
-    L2,
-    R2,
-    Power,
-    VolDown,
-    VolUp,
-    Unknown,
-}
+use crate::platform::{Key, KeyEvent};
 
 impl From<evdev::Key> for Key {
     fn from(value: evdev::Key) -> Self {
@@ -50,16 +29,29 @@ impl From<evdev::Key> for Key {
     }
 }
 
-pub struct Keys {
+pub struct EvdevKeys {
     pub events: EventStream,
 }
 
-impl Keys {
-    pub fn new() -> Result<Keys> {
-        Ok(Keys {
+impl EvdevKeys {
+    pub fn new() -> Result<Self> {
+        Ok(Self {
             events: Device::open("/dev/input/event0")
                 .unwrap()
                 .into_event_stream()?,
         })
+    }
+
+    pub async fn poll(&mut self) -> Result<Option<KeyEvent>> {
+        let event = self.events.next_event().await?;
+        match event.event_type() {
+            EventType::KEY => {
+                let key = event.code();
+                let key: Key = evdev::Key(key).into();
+                return Ok(Some(KeyEvent::Pressed(key)));
+            }
+            _ => {}
+        }
+        Ok(None)
     }
 }
