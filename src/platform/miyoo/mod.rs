@@ -2,6 +2,8 @@ mod battery;
 mod evdev;
 mod framebuffer;
 
+use std::process::Command;
+
 use anyhow::{bail, Result};
 
 use crate::platform::miyoo::evdev::EvdevKeys;
@@ -24,11 +26,7 @@ enum MiyooDeviceModel {
 
 impl MiyooPlatform {
     pub fn new() -> Result<MiyooPlatform> {
-        let model = match std::fs::read_to_string("/tmp/deviceModel")?.as_str() {
-            "283" => MiyooDeviceModel::Miyoo283,
-            "354" => MiyooDeviceModel::Miyoo354,
-            model => bail!("Unknown device model: {}", model),
-        };
+        let model = detect_model();
 
         let display = FramebufferDisplay::new()?;
 
@@ -62,7 +60,23 @@ impl MiyooPlatform {
         self.display.flush()
     }
 
+    pub fn display_size(&self) -> (i32, i32) {
+        (640, 480)
+    }
+
+    pub fn update_battery(&mut self) -> Result<()> {
+        self.battery.update()
+    }
+
     pub fn battery_percentage(&self) -> i32 {
         self.battery.percentage()
+    }
+}
+
+fn detect_model() -> MiyooDeviceModel {
+    if std::path::Path::new("/customer/app/axp_test").exists() {
+        MiyooDeviceModel::Miyoo354
+    } else {
+        MiyooDeviceModel::Miyoo283
     }
 }

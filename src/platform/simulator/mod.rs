@@ -55,6 +55,14 @@ impl SimulatorPlatform {
         Ok(())
     }
 
+    pub fn display_size(&self) -> (i32, i32) {
+        (640, 480)
+    }
+
+    pub fn update_battery(&mut self) -> Result<()> {
+        Ok(())
+    }
+
     pub fn battery_percentage(&self) -> i32 {
         100
     }
