@@ -1,3 +1,4 @@
 {
-    "cross-rust-analyzer.target": "arm-unknown-linux-gnueabihf",
+    "rust-analyzer.cargoRunner": "cross-rust-analyzer",
+    "cross-rust-analyzer.target": "arm-unknown-linux-gnueabihf"
 }

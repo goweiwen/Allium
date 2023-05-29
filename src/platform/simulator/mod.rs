@@ -54,6 +54,10 @@ impl SimulatorPlatform {
         self.window.update(&self.display);
         Ok(())
     }
+
+    pub fn battery_percentage(&self) -> i32 {
+        100
+    }
 }
 
 impl From<Keycode> for Key {

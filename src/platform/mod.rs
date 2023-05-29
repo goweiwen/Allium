@@ -1,12 +1,12 @@
-use embedded_graphics::{
-    pixelcolor::Rgb888,
-    prelude::{DrawTarget, OriginDimensions},
-};
-
 #[cfg(target_arch = "arm")]
 mod miyoo;
 #[cfg(not(target_arch = "arm"))]
 mod simulator;
+
+use embedded_graphics::{
+    pixelcolor::Rgb888,
+    prelude::{DrawTarget, OriginDimensions},
+};
 
 #[cfg(target_arch = "arm")]
 pub type Platform = miyoo::MiyooPlatform;
