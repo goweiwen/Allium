@@ -1,12 +1,14 @@
 use anyhow::Result;
-use embedded_graphics::pixelcolor::Rgb888;
 use embedded_graphics::prelude::Size;
+use embedded_graphics::{pixelcolor::Rgb888, prelude::DrawTarget};
 use embedded_graphics_simulator::{
     OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
 };
 use sdl2::keyboard::Keycode;
 
 use crate::platform::{Key, KeyEvent};
+
+use super::Display;
 
 pub const SCREEN_WIDTH: u32 = 640;
 pub const SCREEN_HEIGHT: u32 = 480;
@@ -19,8 +21,8 @@ pub struct SimulatorPlatform {
 impl SimulatorPlatform {
     pub fn new() -> Result<SimulatorPlatform> {
         let display = SimulatorDisplay::new(Size::new(SCREEN_WIDTH, SCREEN_HEIGHT));
-        let output_settings = OutputSettingsBuilder::new().build();
-        let mut window = Window::new("Hello World", &output_settings);
+        let output_settings = OutputSettingsBuilder::new().scale(1).build();
+        let mut window = Window::new("Allium Simulator", &output_settings);
 
         window.update(&display);
         Ok(SimulatorPlatform { display, window })
@@ -46,8 +48,9 @@ impl SimulatorPlatform {
         }
     }
 
-    pub fn display(&mut self) -> Result<&mut SimulatorDisplay<Rgb888>> {
-        Ok(&mut self.display)
+    #[inline]
+    pub fn display(&mut self) -> &mut SimulatorDisplay<Rgb888> {
+        &mut self.display
     }
 
     pub fn flush(&mut self) -> Result<()> {
@@ -67,6 +70,8 @@ impl SimulatorPlatform {
         100
     }
 }
+
+impl Display<<SimulatorDisplay<Rgb888> as DrawTarget>::Error> for SimulatorDisplay<Rgb888> {}
 
 impl From<Keycode> for Key {
     fn from(value: Keycode) -> Self {

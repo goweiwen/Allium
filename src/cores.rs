@@ -46,9 +46,7 @@ impl CoreMapper {
             .context("Failed to load cores.toml. Is ALLIUM_CONFIG_DIR set correctly?")?;
         let config: CoreConfig = toml::from_str(&config).context("Failed to parse cores.toml.")?;
         self.cores = config
-            .cores
-            .into_iter()
-            .map(|(_, core)| core)
+            .cores.into_values()
             .collect::<Vec<Core>>();
 
         Ok(())
@@ -63,7 +61,7 @@ impl CoreMapper {
 
 #[cfg(test)]
 mod tests {
-    use std::{env, path::Path};
+    use std::{env};
 
     use super::*;
 

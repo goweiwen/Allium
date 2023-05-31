@@ -2,9 +2,7 @@ mod battery;
 mod evdev;
 mod framebuffer;
 
-use std::process::Command;
-
-use anyhow::{bail, Result};
+use anyhow::Result;
 
 use crate::platform::miyoo::evdev::EvdevKeys;
 use crate::platform::miyoo::framebuffer::FramebufferDisplay;
@@ -43,17 +41,12 @@ impl MiyooPlatform {
         })
     }
 
-    pub async fn init() -> Result<()> {
-        FramebufferDisplay::init().await?;
-        Ok(())
-    }
-
     pub async fn poll(&mut self) -> Result<Option<KeyEvent>> {
         self.keys.poll().await
     }
 
-    pub fn display(&mut self) -> Result<&mut FramebufferDisplay> {
-        Ok(&mut self.display)
+    pub fn display(&mut self) -> &mut FramebufferDisplay {
+        &mut self.display
     }
 
     pub fn flush(&mut self) -> Result<()> {

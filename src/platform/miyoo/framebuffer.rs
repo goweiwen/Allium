@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use anyhow::Result;
 use embedded_graphics::{
     pixelcolor::Rgb888,

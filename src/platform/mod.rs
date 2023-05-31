@@ -3,6 +3,8 @@ mod miyoo;
 #[cfg(not(target_arch = "arm"))]
 mod simulator;
 
+use std::error::Error;
+
 use embedded_graphics::{
     pixelcolor::Rgb888,
     prelude::{DrawTarget, OriginDimensions},
@@ -13,7 +15,7 @@ pub type Platform = miyoo::MiyooPlatform;
 #[cfg(not(target_arch = "arm"))]
 pub type Platform = simulator::SimulatorPlatform;
 
-pub trait Display: OriginDimensions + DrawTarget<Color = Rgb888, Error = anyhow::Error> {}
+pub trait Display<E: Error>: OriginDimensions + DrawTarget<Color = Rgb888, Error = E> {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KeyEvent {
