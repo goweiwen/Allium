@@ -1,0 +1,7 @@
+[cores.mgba]
+extensions = ["gba"]
+path = "/mnt/SDCARD/Emu/GBA/launch.sh"
+
+[cores.gambatte]
+extensions = ["gb", "gbc", "sgb"]
+path = "/mnt/SDCARD/Emu/GBC/launch.sh"

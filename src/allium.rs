@@ -1,9 +1,12 @@
+use std::ffi::OsStr;
+use std::path::PathBuf;
+use std::str::FromStr;
 use std::time::Duration;
 
 use anyhow::Result;
-use embedded_font::{FontTextStyle, FontTextStyleBuilder};
+use embedded_font::FontTextStyleBuilder;
+use embedded_graphics::pixelcolor::Rgb888;
 use embedded_graphics::{
-    pixelcolor::Rgb888,
     prelude::*,
     primitives::{
         Circle, PrimitiveStyle, PrimitiveStyleBuilder, Rectangle, StrokeAlignment, Triangle,
@@ -11,14 +14,20 @@ use embedded_graphics::{
     text::{Alignment, Text},
 };
 use rusttype::Font;
+use tokio::process;
 use tracing::debug;
 
+use crate::cores::CoreMapper;
+use crate::launcher::Launcher;
 use crate::platform::{Key, KeyEvent, Platform};
 
 pub struct Allium {
     platform: Platform,
-    dirty: bool,
+    launcher: Launcher,
+    core_mapper: CoreMapper,
     styles: Stylesheet,
+    core_handle: Option<process::Child>,
+    dirty: bool,
 }
 
 pub struct Stylesheet {
@@ -52,22 +61,29 @@ impl Allium {
     pub fn new() -> Result<Allium> {
         Ok(Allium {
             platform: Platform::new()?,
-            dirty: true,
+            launcher: Launcher::new(),
+            core_mapper: CoreMapper::new()?,
             styles: Default::default(),
+            core_handle: None,
+            dirty: true,
         })
     }
 
     pub async fn init(&mut self) -> Result<()> {
-        Platform::init().await
+        Platform::init().await?;
+        self.core_mapper.load_config()?;
+        Ok(())
     }
 
     pub async fn run_event_loop(&mut self) -> Result<()> {
         self.platform.update_battery()?;
+
         let mut last_updated_battery = std::time::Instant::now();
 
         loop {
             let now = std::time::Instant::now();
 
+            // Update battery every 5 seconds
             debug!(
                 "last updated: {}s",
                 now.duration_since(last_updated_battery).as_secs()
@@ -78,17 +94,42 @@ impl Allium {
                 self.dirty = true;
             }
 
-            if self.dirty {
-                self.draw()?;
-                // self.dirty = false;
+            if self.core_handle.is_none() {
+                if self.dirty {
+                    self.draw()?;
+                    self.dirty = false;
+                }
             }
 
             match self.platform.poll().await? {
                 Some(KeyEvent::Pressed(key)) => {
-                    if key == Key::Power {
-                        panic!("exiting");
-                    }
                     println!("down {:?}", key);
+                    match key {
+                        Key::A => {
+                            if self.core_handle.is_none() {
+                                // Testing RetroArch launching
+                                let rom = PathBuf::from_str(
+                                    "/mnt/SDCARD/Roms/GBC/001 Dragon Warrior I and II.gbc",
+                                )
+                                .unwrap();
+                                let core = self
+                                    .core_mapper
+                                    .get_core(rom.extension().unwrap().to_str().unwrap())
+                                    .unwrap();
+                                self.platform.display()?.clear(self.styles.bg_color)?;
+                                self.platform.flush()?;
+                                self.core_handle = Some(core.launch(&rom).await?);
+                            }
+                        }
+                        Key::Power => {
+                            if let Some(mut handle) = self.core_handle.take() {
+                                handle.kill().await?;
+                            } else {
+                                panic!("exiting");
+                            }
+                        }
+                        _ => (),
+                    }
                 }
                 Some(KeyEvent::Released(key)) => println!("up {:?}", key),
                 None => (),
@@ -101,7 +142,7 @@ impl Allium {
 
         let battery_percentage = self.platform.battery_percentage();
 
-        let (width, height) = self.platform.display_size();
+        let (width, _height) = self.platform.display_size();
         let display = self.platform.display()?;
 
         // Draw a 3px wide outline around the display.
@@ -155,17 +196,42 @@ impl Allium {
         let text = "hello world, from Allium!";
 
         let character_style = FontTextStyleBuilder::new(self.styles.ui_font.clone())
-            .font_size(32)
+            .font_size(24)
             .text_color(self.styles.fg_color)
             .build();
 
         Text::with_alignment(
             text,
-            display.bounding_box().center(),
-            character_style,
+            Point {
+                x: width / 2,
+                y: 16,
+            },
+            character_style.clone(),
             Alignment::Center,
         )
         .draw(display)?;
+
+        // Draw roms
+        let roms = self
+            .launcher
+            .roms()?
+            .flat_map(|r| r.ok())
+            .collect::<Vec<_>>();
+
+        let (x, y) = (16, 64);
+        let mut i = 0;
+        for rom in roms {
+            if let Some(text) = rom.file_name().and_then(OsStr::to_str) {
+                Text::with_alignment(
+                    text,
+                    Point { x, y: i * 24 + y },
+                    character_style.clone(),
+                    Alignment::Left,
+                )
+                .draw(display)?;
+                i += 1;
+            }
+        }
 
         self.platform.flush()?;
 
