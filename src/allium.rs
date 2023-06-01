@@ -106,7 +106,6 @@ impl Allium {
 
             match self.platform.poll().await? {
                 Some(KeyEvent::Pressed(key)) => {
-                    println!("down {:?}", key);
                     match key {
                         Key::Up => {
                             self.selected = (self.selected - 1).clamp(0, 10);
@@ -142,7 +141,7 @@ impl Allium {
                         _ => (),
                     }
                 }
-                Some(KeyEvent::Released(key)) => println!("up {:?}", key),
+                Some(KeyEvent::Released(_)) => (),
                 None => (),
             }
         }

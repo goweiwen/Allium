@@ -48,7 +48,10 @@ impl EvdevKeys {
             EventType::KEY => {
                 let key = event.code();
                 let key: Key = evdev::Key(key).into();
-                return Ok(Some(KeyEvent::Pressed(key)));
+                return Ok(Some(match event.value() {
+                    0 => KeyEvent::Pressed(key),
+                    _ => KeyEvent::Released(key),
+                }));
             }
             _ => {}
         }
