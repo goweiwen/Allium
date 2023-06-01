@@ -27,7 +27,7 @@ mod tests {
 
     #[test]
     fn test_roms() -> Result<()> {
-        env::set_var("ALLIUM_ROMS_DIR", "./assets/roms");
+        env::set_var("ALLIUM_ROMS_DIR", "./assets/Roms");
         let launcher = Launcher::new();
         for rom in launcher.roms()? {
             println!("{:?}", rom?);

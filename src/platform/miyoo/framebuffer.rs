@@ -5,7 +5,6 @@ use embedded_graphics::{
     Pixel,
 };
 use framebuffer::Framebuffer;
-use tokio::process::Command;
 
 pub struct FramebufferDisplay {
     framebuffer: Vec<u8>,
@@ -23,14 +22,6 @@ impl FramebufferDisplay {
             framebuffer: vec![0u8; (line_length * h * 3) as usize],
             iface: framebuffer,
         })
-    }
-
-    pub async fn init() -> Result<()> {
-        // We have to wait for /dev/l to initialize the LCD and FB.
-        Command::new("cat").arg("/proc/ls").spawn()?;
-        tokio::time::sleep(Duration::from_millis(500)).await;
-
-        Ok(())
     }
 
     pub fn flush(&mut self) -> Result<()> {

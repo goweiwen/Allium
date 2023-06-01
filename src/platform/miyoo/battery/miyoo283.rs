@@ -1,7 +1,4 @@
-use std::process::Command;
-
 use anyhow::Result;
-use serde::Deserialize;
 
 use crate::platform::miyoo::battery::Battery;
 

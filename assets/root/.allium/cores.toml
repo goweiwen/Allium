@@ -1,7 +1,19 @@
+[cores.sh]
+extensions = ["pak"]
+path = "/mnt/SDCARD/.allium/cores/pak/launch.sh"
+
 [cores.mgba]
 extensions = ["gba"]
-path = "/mnt/SDCARD/Emu/GBA/launch.sh"
+path = "/mnt/SDCARD/.allium/cores/gpsp/launch.sh"
 
 [cores.gambatte]
 extensions = ["gb", "gbc", "sgb"]
-path = "/mnt/SDCARD/Emu/GBC/launch.sh"
+path = "/mnt/SDCARD/.allium/cores/gambatte/launch.sh"
+
+[cores.fceumm]
+extensions = ["nes"]
+path = "/mnt/SDCARD/.allium/cores/fceumm/launch.sh"
+
+[cores.supafaust]
+extensions = ["nes"]
+path = "/mnt/SDCARD/.allium/cores/supafaust/launch.sh"

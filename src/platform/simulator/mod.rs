@@ -28,10 +28,6 @@ impl SimulatorPlatform {
         Ok(SimulatorPlatform { display, window })
     }
 
-    pub async fn init() -> Result<()> {
-        Ok(())
-    }
-
     pub async fn poll(&mut self) -> Result<Option<KeyEvent>> {
         match self.window.events().next() {
             Some(SimulatorEvent::KeyDown { keycode, .. }) => {

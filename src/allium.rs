@@ -76,7 +76,6 @@ impl Allium {
     }
 
     pub async fn init(&mut self) -> Result<()> {
-        Platform::init().await?;
         self.core_mapper.load_config()?;
         Ok(())
     }
