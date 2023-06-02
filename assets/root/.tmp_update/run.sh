@@ -3,10 +3,7 @@
 DIR="$(dirname "$0")"
 cd "$DIR"
 
-# run allium
-RUST_BACKTRACE=1 RUST_LOG=debug /mnt/SDCARD/.allium/allium >> /mnt/SDCARD/.allium/allium.log 2>&1
-
-# power off
+# run Allium
 while true; do
-	sync && poweroff && sleep 10
+	RUST_BACKTRACE=1 RUST_LOG=trace /mnt/SDCARD/.allium/allium >> /mnt/SDCARD/.allium/allium.log 2>&1
 done

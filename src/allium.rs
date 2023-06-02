@@ -1,14 +1,17 @@
-use crate::battery::Battery;
-use crate::constants::BATTERY_UPDATE_INTERVAL;
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
+#[cfg(unix)]
+use std::process::Command;
 
-use crate::display::Display;
-use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
-use crate::state::State;
 use anyhow::Result;
 use embedded_graphics::pixelcolor::Rgb888;
 use rusttype::Font;
-use tokio::process::Command;
-use tracing::trace;
+
+use crate::battery::Battery;
+use crate::constants::BATTERY_UPDATE_INTERVAL;
+use crate::display::Display;
+use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use crate::state::State;
 
 pub struct Allium<P: Platform> {
     platform: P,
@@ -81,7 +84,6 @@ impl Allium<DefaultPlatform> {
             }
 
             if self.dirty {
-                trace!("state: {:?}", self.state);
                 self.state
                     .draw(&mut self.display, &self.styles, &self.battery)?;
                 self.display.flush()?;
@@ -106,7 +108,8 @@ impl Allium<DefaultPlatform> {
                     true
                 }
                 Some(KeyEvent::Pressed(Key::Power)) => {
-                    Command::new("poweroff").spawn()?;
+                    #[cfg(unix)]
+                    Command::new("poweroff").exec();
                     false
                 }
                 Some(key_event) => self.state.handle_key_event(key_event)?,

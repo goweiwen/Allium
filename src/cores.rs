@@ -1,10 +1,13 @@
 use std::collections::HashMap;
 use std::env;
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
 use std::path::PathBuf;
+use std::process::{Child, Command};
 
 use anyhow::{Context, Result};
 use serde::Deserialize;
-use tokio::process::{Child, Command};
+use tracing::trace;
 
 use crate::constants::ALLIUM_CONFIG_DIR;
 
@@ -15,11 +18,15 @@ pub struct Core {
 }
 
 impl Core {
-    pub fn launch(&self, rom: &PathBuf) -> Result<Child> {
+    pub fn launch(&self, rom: &PathBuf) -> Result<()> {
+        #[cfg(windows)]
         Command::new(&self.path)
             .arg(rom)
             .spawn()
-            .context("Failed to launch core")
+            .context("Failed to launch core")?;
+        #[cfg(unix)]
+        Command::new(&self.path).arg(rom).exec();
+        Ok(())
     }
 }
 
