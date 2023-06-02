@@ -15,5 +15,5 @@ extensions = ["nes"]
 path = "/mnt/SDCARD/.allium/cores/fceumm/launch.sh"
 
 [cores.supafaust]
-extensions = ["nes"]
+extensions = ["sfc", "smc"]
 path = "/mnt/SDCARD/.allium/cores/supafaust/launch.sh"
