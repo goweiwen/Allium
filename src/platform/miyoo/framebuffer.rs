@@ -6,7 +6,7 @@ use embedded_graphics::{
 };
 use framebuffer::Framebuffer;
 
-use crate::platform::Display;
+use crate::display::Display;
 pub struct FramebufferDisplay {
     framebuffer: Vec<u8>,
     iface: Framebuffer,
@@ -24,8 +24,10 @@ impl FramebufferDisplay {
             iface: framebuffer,
         })
     }
+}
 
-    pub fn flush(&mut self) -> Result<()> {
+impl Display<core::convert::Infallible> for FramebufferDisplay {
+    fn flush(&mut self) -> Result<()> {
         self.iface.write_frame(&self.framebuffer);
         Ok(())
     }
@@ -67,5 +69,3 @@ impl OriginDimensions for FramebufferDisplay {
         )
     }
 }
-
-impl Display<core::convert::Infallible> for FramebufferDisplay {}

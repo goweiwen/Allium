@@ -8,14 +8,14 @@ use tokio::process::{Child, Command};
 
 use crate::constants::ALLIUM_CONFIG_DIR;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Core {
     extensions: Vec<String>,
     path: PathBuf,
 }
 
 impl Core {
-    pub async fn launch(&self, rom: &PathBuf) -> Result<Child> {
+    pub fn launch(&self, rom: &PathBuf) -> Result<Child> {
         Command::new(&self.path)
             .arg(rom)
             .spawn()
@@ -28,14 +28,20 @@ struct CoreConfig {
     cores: HashMap<String, Core>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CoreMapper {
     cores: Vec<Core>,
 }
 
+impl Default for CoreMapper {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CoreMapper {
-    pub fn new() -> Result<CoreMapper> {
-        Ok(CoreMapper { cores: Vec::new() })
+    pub fn new() -> CoreMapper {
+        CoreMapper { cores: Vec::new() }
     }
 
     pub fn load_config(&mut self) -> Result<()> {
@@ -67,7 +73,7 @@ mod tests {
     fn test_core_mapper() {
         env::set_var("ALLIUM_CONFIG_DIR", "./assets/root/.allium");
 
-        let mut mapper = CoreMapper::new().unwrap();
+        let mut mapper = CoreMapper::new();
         mapper.load_config().unwrap();
 
         let core = mapper.get_core("gba");

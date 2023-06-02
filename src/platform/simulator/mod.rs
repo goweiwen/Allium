@@ -1,35 +1,40 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use anyhow::Result;
-use embedded_graphics::prelude::Size;
-use embedded_graphics::{pixelcolor::Rgb888, prelude::DrawTarget};
+use embedded_graphics::pixelcolor::Rgb888;
+use embedded_graphics::prelude::{DrawTarget, OriginDimensions, Size};
 use embedded_graphics_simulator::{
     OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
 };
 use sdl2::keyboard::Keycode;
 
-use crate::platform::{Key, KeyEvent};
+use crate::battery::Battery;
+use crate::platform::{Key, KeyEvent, Platform};
 
-use crate::platform::Display;
+use crate::display::Display;
 
 pub const SCREEN_WIDTH: u32 = 640;
 pub const SCREEN_HEIGHT: u32 = 480;
 
 pub struct SimulatorPlatform {
-    display: SimulatorDisplay<Rgb888>,
-    window: Window,
+    window: Rc<RefCell<Window>>,
 }
 
-impl SimulatorPlatform {
-    pub fn new() -> Result<SimulatorPlatform> {
-        let display = SimulatorDisplay::new(Size::new(SCREEN_WIDTH, SCREEN_HEIGHT));
-        let output_settings = OutputSettingsBuilder::new().scale(1).build();
-        let mut window = Window::new("Allium Simulator", &output_settings);
+impl Platform for SimulatorPlatform {
+    type Display = SimulatorWindow;
+    type Battery = SimulatorBattery;
 
-        window.update(&display);
-        Ok(SimulatorPlatform { display, window })
+    fn new() -> Result<SimulatorPlatform> {
+        let output_settings = OutputSettingsBuilder::new().scale(1).build();
+        let window = Window::new("Allium Simulator", &output_settings);
+        Ok(SimulatorPlatform {
+            window: Rc::new(RefCell::new(window)),
+        })
     }
 
-    pub async fn poll(&mut self) -> Result<Option<KeyEvent>> {
-        match self.window.events().next() {
+    async fn poll(&mut self) -> Result<Option<KeyEvent>> {
+        match self.window.borrow_mut().events().next() {
             Some(SimulatorEvent::KeyDown { keycode, .. }) => {
                 Ok(Some(KeyEvent::Pressed(Key::from(keycode))))
             }
@@ -44,34 +49,49 @@ impl SimulatorPlatform {
         }
     }
 
-    #[inline]
-    pub fn display(&mut self) -> &mut SimulatorDisplay<Rgb888> {
-        &mut self.display
+    fn display(&mut self) -> Result<SimulatorWindow> {
+        let display = SimulatorDisplay::new(Size::new(SCREEN_WIDTH, SCREEN_HEIGHT));
+        self.window.borrow_mut().update(&display);
+        Ok(SimulatorWindow {
+            window: Rc::clone(&self.window),
+            display,
+        })
     }
 
-    pub fn flush(&mut self) -> Result<()> {
-        self.window.update(&self.display);
-        Ok(())
-    }
-
-    pub fn display_size(&self) -> (i32, i32) {
-        (640, 480)
-    }
-
-    pub fn update_battery(&mut self) -> Result<()> {
-        Ok(())
-    }
-
-    pub fn battery_percentage(&self) -> i32 {
-        100
-    }
-
-    pub fn battery_is_charging(&self) -> bool {
-        false
+    fn battery(&self) -> Result<SimulatorBattery> {
+        Ok(SimulatorBattery::new())
     }
 }
 
-impl Display<<SimulatorDisplay<Rgb888> as DrawTarget>::Error> for SimulatorDisplay<Rgb888> {}
+pub struct SimulatorWindow {
+    window: Rc<RefCell<Window>>,
+    display: SimulatorDisplay<Rgb888>,
+}
+
+impl Display<<SimulatorWindow as DrawTarget>::Error> for SimulatorWindow {
+    fn flush(&mut self) -> Result<()> {
+        self.window.borrow_mut().update(&self.display);
+        Ok(())
+    }
+}
+
+impl DrawTarget for SimulatorWindow {
+    type Color = Rgb888;
+    type Error = <SimulatorDisplay<Rgb888> as DrawTarget>::Error;
+
+    fn draw_iter<I>(&mut self, pixels: I) -> std::result::Result<(), Self::Error>
+    where
+        I: IntoIterator<Item = embedded_graphics::Pixel<Self::Color>>,
+    {
+        self.display.draw_iter(pixels)
+    }
+}
+
+impl OriginDimensions for SimulatorWindow {
+    fn size(&self) -> Size {
+        self.display.size()
+    }
+}
 
 impl From<Keycode> for Key {
     fn from(value: Keycode) -> Self {
@@ -96,5 +116,33 @@ impl From<Keycode> for Key {
             Keycode::RGui => Key::VolUp,
             _ => Key::Unknown,
         }
+    }
+}
+
+pub struct SimulatorBattery {
+    percentage: i32,
+    charging: bool,
+}
+
+impl SimulatorBattery {
+    pub fn new() -> SimulatorBattery {
+        SimulatorBattery {
+            percentage: 100,
+            charging: false,
+        }
+    }
+}
+
+impl Battery for SimulatorBattery {
+    fn update(&mut self) -> Result<()> {
+        Ok(())
+    }
+
+    fn percentage(&self) -> i32 {
+        self.percentage
+    }
+
+    fn charging(&self) -> bool {
+        self.charging
     }
 }

@@ -1,11 +1,13 @@
 #![feature(async_fn_in_trait)]
 
 mod allium;
+mod battery;
 pub mod constants;
 mod cores;
+mod display;
 mod image;
-mod launcher;
 mod platform;
+mod state;
 
 use anyhow::Result;
 
@@ -19,7 +21,6 @@ async fn main() -> Result<()> {
     tracing::subscriber::set_global_default(subscriber)?;
 
     let mut app = Allium::new()?;
-    app.init().await?;
     app.run_event_loop().await?;
     Ok(())
 }
