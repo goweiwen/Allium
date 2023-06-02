@@ -8,7 +8,7 @@ use sdl2::keyboard::Keycode;
 
 use crate::platform::{Key, KeyEvent};
 
-use super::Display;
+use crate::platform::Display;
 
 pub const SCREEN_WIDTH: u32 = 640;
 pub const SCREEN_HEIGHT: u32 = 480;
@@ -64,6 +64,10 @@ impl SimulatorPlatform {
 
     pub fn battery_percentage(&self) -> i32 {
         100
+    }
+
+    pub fn battery_is_charging(&self) -> bool {
+        false
     }
 }
 

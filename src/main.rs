@@ -3,6 +3,7 @@
 mod allium;
 pub mod constants;
 mod cores;
+mod image;
 mod launcher;
 mod platform;
 

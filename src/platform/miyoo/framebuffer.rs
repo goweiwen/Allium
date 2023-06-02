@@ -6,6 +6,7 @@ use embedded_graphics::{
 };
 use framebuffer::Framebuffer;
 
+use crate::platform::Display;
 pub struct FramebufferDisplay {
     framebuffer: Vec<u8>,
     iface: Framebuffer,
@@ -66,3 +67,5 @@ impl OriginDimensions for FramebufferDisplay {
         )
     }
 }
+
+impl Display<core::convert::Infallible> for FramebufferDisplay {}

@@ -64,6 +64,10 @@ impl MiyooPlatform {
     pub fn battery_percentage(&self) -> i32 {
         self.battery.percentage()
     }
+
+    pub fn battery_is_charging(&self) -> bool {
+        self.battery.is_charging()
+    }
 }
 
 fn detect_model() -> MiyooDeviceModel {
