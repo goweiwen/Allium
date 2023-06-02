@@ -2,7 +2,11 @@ mod battery;
 mod evdev;
 mod framebuffer;
 
+use std::fs;
+use std::path::PathBuf;
+
 use anyhow::Result;
+use tracing::warn;
 
 use crate::battery::Battery;
 use crate::platform::miyoo::evdev::EvdevKeys;
@@ -17,6 +21,23 @@ pub struct MiyooPlatform {
     keys: EvdevKeys,
 }
 
+impl MiyooPlatform {
+    fn link_retroarch(model: MiyooDeviceModel) {
+        let mut binary = PathBuf::from("/mnt/SDCARD/RetroArch");
+        binary.push(match model {
+            MiyooDeviceModel::Miyoo283 => "retroarch_miyoo283",
+            MiyooDeviceModel::Miyoo354 => "retroarch_miyoo354",
+        });
+
+        if binary.exists() {
+            if let Err(e) = fs::copy(binary, "/mnt/SDCARD/RetroArch/retroarch") {
+                warn!("Failed to link RetroArch: {}", e);
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum MiyooDeviceModel {
     Miyoo283,
     Miyoo354,
@@ -28,6 +49,8 @@ impl Platform for MiyooPlatform {
 
     fn new() -> Result<MiyooPlatform> {
         let model = detect_model();
+
+        Self::link_retroarch(model);
 
         Ok(MiyooPlatform {
             model,
