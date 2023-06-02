@@ -16,7 +16,21 @@ Goals:
 - Support running on both Miyoo Mini and Miyoo Mini Plus without changes
 
 ## Features
-- None yet :)
+- Games list (from `/mnt/SDCARD/Roms`)
+- Launch RetroArch for supported cores
+- Battery indicator
+
+## Todo
+- File-system database to cache folder structure
+- Save launcher state to file-system (for suspend, resuming after RetroArch quits)
+- In-game menu
+- Add config for all supported RetroArch cores
+- Recents list (sort by frecency)
+- Settings page:
+    - Button colors
+    - Theme color
+    - Toggle box art
+    - WiFi
 
 ## Building
 
