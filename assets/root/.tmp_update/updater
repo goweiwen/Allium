@@ -1,0 +1,43 @@
+#!/bin/sh
+
+# init backlight
+echo 0 > /sys/class/pwm/pwmchip0/export
+echo 800 > /sys/class/pwm/pwmchip0/pwm0/period
+echo 6 > /sys/class/pwm/pwmchip0/pwm0/duty_cycle
+echo 1 > /sys/class/pwm/pwmchip0/pwm0/enable
+
+# init lcd
+cat /proc/ls
+sleep 0.5
+
+# init charger detection
+if [ ! -f /sys/devices/gpiochip0/gpio/gpio59/direction ]; then
+	echo 59 > /sys/class/gpio/export
+	echo in > /sys/devices/gpiochip0/gpio/gpio59/direction
+fi
+
+export SDCARD_PATH=/mnt/SDCARD
+export CPU_PATH=/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+export LD_LIBRARY_PATH="/mnt/SDCARD/.tmp_update/lib:$LD_LIBRARY_PATH"
+export PATH="/mnt/SDCARD/.tmp_update/bin:$PATH"
+
+echo ondemand > "$CPU_PATH"
+rm -f "$SDCARD_PATH/update.log"
+
+if [ -f "/mnt/SDCARD/.tmp_update/wifi.sh" ] ; then
+	"/mnt/SDCARD/.tmp_update/wifi.sh"
+fi
+
+if [ -f /customer/lib/libpadsp.so ]; then
+	LD_PRELOAD=as_preload.so audioserver.mod &
+	export LD_PRELOAD=libpadsp.so
+fi
+
+if [ -f "/mnt/SDCARD/.tmp_update/run.sh" ] ; then
+	"/mnt/SDCARD/.tmp_update/run.sh"
+fi
+
+while true; do
+	reboot # under no circumstances should stock be allowed to touch this card
+	sleep 10
+done
