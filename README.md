@@ -17,8 +17,10 @@ Goals:
 
 ## Features
 - Games list (from `/mnt/SDCARD/Roms`)
+- Box art (PNG, JPG, GIF, TGA, BMP)
 - Launch RetroArch for supported cores
 - Battery indicator
+- Volume control
 
 ## Todo
 - File-system database to cache folder structure

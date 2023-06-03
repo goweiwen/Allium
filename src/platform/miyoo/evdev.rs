@@ -22,8 +22,8 @@ impl From<evdev::Key> for Key {
             evdev::Key::KEY_TAB => Key::L2,
             evdev::Key::KEY_BACKSPACE => Key::R2,
             evdev::Key::KEY_POWER => Key::Power,
-            evdev::Key::KEY_LEFTMETA => Key::VolDown,
-            evdev::Key::KEY_RIGHTMETA => Key::VolUp,
+            evdev::Key::KEY_VOLUMEDOWN => Key::VolDown,
+            evdev::Key::KEY_VOLUMEUP => Key::VolUp,
             _ => Key::Unknown,
         }
     }

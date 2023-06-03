@@ -28,11 +28,6 @@ if [ -f "/mnt/SDCARD/.tmp_update/wifi.sh" ] ; then
 	"/mnt/SDCARD/.tmp_update/wifi.sh"
 fi
 
-if [ -f /customer/lib/libpadsp.so ]; then
-	LD_PRELOAD=as_preload.so audioserver.mod &
-	export LD_PRELOAD=libpadsp.so
-fi
-
 if [ -f "/mnt/SDCARD/.tmp_update/run.sh" ] ; then
 	"/mnt/SDCARD/.tmp_update/run.sh"
 fi

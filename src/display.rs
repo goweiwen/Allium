@@ -8,9 +8,9 @@ use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Circle, PrimitiveStyle, Rectangle};
 use embedded_graphics::text::{Alignment, Baseline, Text, TextStyleBuilder};
 
-use crate::allium::Stylesheet;
 use crate::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
 use crate::platform::Key;
+use crate::stylesheet::Stylesheet;
 
 pub trait Display<E: Error + Send + Sync + 'static>:
     OriginDimensions + DrawTarget<Color = Rgb888, Error = E> + Sized

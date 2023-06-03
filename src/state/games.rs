@@ -14,7 +14,6 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tracing::trace;
 
-use crate::allium::Stylesheet;
 use crate::constants::{
     ALLIUM_ROMS_DIR, BUTTON_DIAMETER, IMAGE_SIZE, LISTING_JUMP_SIZE, LISTING_SIZE,
     SELECTION_HEIGHT, SELECTION_MARGIN,
@@ -22,6 +21,7 @@ use crate::constants::{
 use crate::cores::CoreMapper;
 use crate::display::Display;
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use crate::stylesheet::Stylesheet;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GamesState {

@@ -1,6 +1,7 @@
 mod battery;
 mod evdev;
 mod framebuffer;
+mod volume;
 
 use std::fs;
 use std::path::PathBuf;
@@ -71,6 +72,13 @@ impl Platform for MiyooPlatform {
             MiyooDeviceModel::Miyoo283 => Box::new(Miyoo283Battery::new()),
             MiyooDeviceModel::Miyoo354 => Box::new(Miyoo354Battery::new()),
         })
+    }
+
+    fn set_volume(&mut self, volume: i32) -> Result<()> {
+        match self.model {
+            MiyooDeviceModel::Miyoo283 => Ok(()),
+            MiyooDeviceModel::Miyoo354 => volume::set_volume(volume),
+        }
     }
 }
 

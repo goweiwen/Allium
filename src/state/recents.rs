@@ -5,10 +5,8 @@ use embedded_graphics::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    allium::Stylesheet,
-    platform::{DefaultPlatform, KeyEvent, Platform},
-};
+use crate::platform::{DefaultPlatform, KeyEvent, Platform};
+use crate::stylesheet::Stylesheet;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RecentsState {}

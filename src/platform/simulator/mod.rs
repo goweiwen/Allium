@@ -60,6 +60,10 @@ impl Platform for SimulatorPlatform {
     fn battery(&self) -> Result<SimulatorBattery> {
         Ok(SimulatorBattery::new())
     }
+
+    fn set_volume(&mut self, _volume: u8) -> Result<()> {
+        Ok(())
+    }
 }
 
 pub struct SimulatorWindow {

@@ -9,9 +9,9 @@ use embedded_graphics::text::{Alignment, Text};
 use embedded_graphics::Drawable;
 use serde::{Deserialize, Serialize};
 
-use crate::allium::Stylesheet;
 use crate::battery::Battery;
 use crate::platform::{DefaultPlatform, KeyEvent, Platform};
+use crate::stylesheet::Stylesheet;
 
 pub use self::games::GamesState;
 pub use self::recents::RecentsState;

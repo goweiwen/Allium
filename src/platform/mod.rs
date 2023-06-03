@@ -20,6 +20,7 @@ pub trait Platform {
     fn display(&mut self) -> Result<Self::Display>;
     fn battery(&self) -> Result<Self::Battery>;
     async fn poll(&mut self) -> Result<Option<KeyEvent>>;
+    fn set_volume(&mut self, volume: i32) -> Result<()>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
