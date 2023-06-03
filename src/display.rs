@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::error::Error;
 
 use anyhow::Result;
@@ -8,7 +9,7 @@ use embedded_graphics::primitives::{Circle, PrimitiveStyle, Rectangle};
 use embedded_graphics::text::{Alignment, Baseline, Text, TextStyleBuilder};
 
 use crate::allium::Stylesheet;
-use crate::constants::BUTTON_DIAMETER;
+use crate::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
 use crate::platform::Key;
 
 pub trait Display<E: Error + Send + Sync + 'static>:
@@ -30,15 +31,15 @@ pub trait Display<E: Error + Send + Sync + 'static>:
         Ok(text.bounding_box())
     }
 
-    /// Renders string truncated to fit within width, adding ellipsis if necessary
-    fn draw_text_ellipsis(
-        &mut self,
+    /// Truncated text to fit within width, adding ellipsis if truncated
+    fn truncate_text_ellipsis<'a>(
+        &self,
         point: Point,
-        text: &str,
+        text: &'a str,
         style: FontTextStyle<Rgb888>,
         alignment: Alignment,
         width: u32,
-    ) -> Result<Rectangle> {
+    ) -> Result<Cow<'a, str>> {
         let mut text = Text::with_alignment(text, point, style.clone(), alignment);
         let ellipsis_width = Text::with_alignment("...", point, style, alignment)
             .bounding_box()
@@ -56,11 +57,65 @@ pub trait Display<E: Error + Send + Sync + 'static>:
             text_width = text.bounding_box().size.width;
         }
         let ellipsis_text = format!("{}...", text.text);
-        if ellipsis {
-            text.text = &ellipsis_text;
+        Ok(if ellipsis {
+            Cow::Owned(ellipsis_text)
+        } else {
+            Cow::Borrowed(text.text)
+        })
+    }
+
+    fn draw_entry(
+        &mut self,
+        point: Point,
+        text: &str,
+        style: FontTextStyle<Rgb888>,
+        alignment: Alignment,
+        width: u32,
+        selected: bool,
+    ) -> Result<Rectangle> {
+        let Point { x, y } = point;
+
+        let bg_color = style.background_color.clone();
+        let truncated_text = self.truncate_text_ellipsis(
+            Point::new(x, y),
+            text,
+            style.clone(),
+            Alignment::Left,
+            width,
+        )?;
+
+        let text = Text::with_alignment(&truncated_text, point, style, alignment);
+        let text_width = text.bounding_box().size.width;
+
+        // Draw selection highlight
+        if selected {
+            if let Some(bg_color) = bg_color {
+                let fill_style = PrimitiveStyle::with_fill(bg_color);
+                Circle::new(Point::new(x - 12, y - 4), SELECTION_HEIGHT)
+                    .into_styled(fill_style)
+                    .draw(self)?;
+                Circle::new(
+                    Point::new(x + text_width as i32 - SELECTION_HEIGHT as i32 + 12, y - 4),
+                    SELECTION_HEIGHT,
+                )
+                .into_styled(fill_style)
+                .draw(self)?;
+                Rectangle::new(
+                    Point::new(x - 12 + SELECTION_HEIGHT as i32 / 2, y - 4),
+                    Size::new(text_width - 24 + SELECTION_HEIGHT / 2, SELECTION_HEIGHT),
+                )
+                .into_styled(fill_style)
+                .draw(self)?;
+            }
         }
+
+        // Draw text
         text.draw(self)?;
-        Ok(text.bounding_box())
+
+        Ok(Rectangle::new(
+            Point::new(x - 12, y - 4),
+            Size::new(text_width + 24, SELECTION_HEIGHT),
+        ))
     }
 
     fn draw_button_hint(

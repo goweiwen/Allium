@@ -6,7 +6,7 @@ use embedded_graphics::{
     image::{Image, ImageRaw},
     pixelcolor::Rgb888,
     prelude::*,
-    primitives::{Circle, PrimitiveStyle, Rectangle},
+    primitives::{PrimitiveStyle, Rectangle},
     text::Alignment,
 };
 use lazy_static::lazy_static;
@@ -14,16 +14,14 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tracing::trace;
 
-use crate::{
-    allium::Stylesheet,
-    constants::{
-        ALLIUM_ROMS_DIR, BUTTON_DIAMETER, IMAGE_SIZE, LISTING_JUMP_SIZE, LISTING_SIZE,
-        SELECTION_HEIGHT, SELECTION_MARGIN,
-    },
-    cores::CoreMapper,
-    display::Display,
-    platform::{DefaultPlatform, Key, KeyEvent, Platform},
+use crate::allium::Stylesheet;
+use crate::constants::{
+    ALLIUM_ROMS_DIR, BUTTON_DIAMETER, IMAGE_SIZE, LISTING_JUMP_SIZE, LISTING_SIZE,
+    SELECTION_HEIGHT, SELECTION_MARGIN,
 };
+use crate::cores::CoreMapper;
+use crate::display::Display;
+use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GamesState {
@@ -41,7 +39,7 @@ impl GamesState {
         Ok(GamesState {
             top: 0,
             selected: 0,
-            entries: entries(&directory)?.collect(),
+            entries: entries(&directory)?,
             stack: vec![directory],
             core_mapper: CoreMapper::new(),
         })
@@ -62,7 +60,7 @@ impl GamesState {
 
     fn push_directory(&mut self, directory: Directory) -> Result<()> {
         self.stack.push(directory);
-        self.entries = entries(self.directory())?.collect();
+        self.entries = entries(self.directory())?;
         self.top = 0;
         self.selected = 0;
         Ok(())
@@ -71,7 +69,7 @@ impl GamesState {
     fn pop_directory(&mut self) -> Result<()> {
         if self.stack.len() > 1 {
             self.stack.pop();
-            self.entries = entries(self.directory())?.collect();
+            self.entries = entries(self.directory())?;
             self.top = 0;
             self.selected = 0;
         }
@@ -165,46 +163,22 @@ impl GamesState {
                     .draw(display)?;
                 }
 
-                let text_width = display
-                    .draw_text_ellipsis(
-                        Point { x, y },
-                        entry.name(),
-                        selection_style.clone(),
-                        Alignment::Left,
-                        300,
-                    )?
-                    .size
-                    .width;
-                let fill_style = PrimitiveStyle::with_fill(styles.primary);
-                Circle::new(Point::new(x - 12, y - 4), SELECTION_HEIGHT)
-                    .into_styled(fill_style)
-                    .draw(display)?;
-                Circle::new(
-                    Point::new(x + text_width as i32 - SELECTION_HEIGHT as i32 + 12, y - 4),
-                    SELECTION_HEIGHT,
-                )
-                .into_styled(fill_style)
-                .draw(display)?;
-                Rectangle::new(
-                    Point::new(x - 12 + SELECTION_HEIGHT as i32 / 2, y - 4),
-                    Size::new(text_width - 24 + SELECTION_HEIGHT / 2, SELECTION_HEIGHT),
-                )
-                .into_styled(fill_style)
-                .draw(display)?;
-                display.draw_text_ellipsis(
+                display.draw_entry(
                     Point { x, y },
                     entry.name(),
                     selection_style.clone(),
                     Alignment::Left,
                     300,
+                    true,
                 )?;
             } else {
-                display.draw_text_ellipsis(
+                display.draw_entry(
                     Point { x, y },
                     entry.name(),
                     text_style.clone(),
                     Alignment::Left,
                     300,
+                    true,
                 )?;
             }
             y += (SELECTION_HEIGHT + SELECTION_MARGIN) as i32;
@@ -287,19 +261,22 @@ impl GamesState {
     }
 }
 
-pub fn entries(directory: &Directory) -> Result<impl Iterator<Item = Entry>> {
-    Ok(std::fs::read_dir(&directory.path)?
+pub fn entries(directory: &Directory) -> Result<Vec<Entry>> {
+    let mut entries: Vec<_> = std::fs::read_dir(&directory.path)?
         .flat_map(|entry| entry.ok())
         .flat_map(|entry| match Entry::new(entry.path()) {
-            Ok(Some(game)) => Some(game),
+            Ok(Some(entry)) => Some(entry),
             _ => None,
-        }))
+        })
+        .collect();
+    entries.sort_unstable();
+    Ok(entries)
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Entry {
-    Game(Game),
     Directory(Directory),
+    Game(Game),
 }
 
 impl Entry {
@@ -310,32 +287,59 @@ impl Entry {
         }
     }
 
-    pub fn path(&self) -> &PathBuf {
+    pub fn full_name(&self) -> &str {
         match self {
-            Entry::Game(game) => &game.path,
-            Entry::Directory(directory) => &directory.path,
+            Entry::Game(game) => &game.full_name,
+            Entry::Directory(directory) => &directory.full_name,
         }
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Game {
     pub name: String,
+    pub full_name: String,
     pub path: PathBuf,
     pub image: Option<PathBuf>,
     pub extension: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+impl Ord for Game {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.full_name.cmp(&other.full_name)
+    }
+}
+
+impl PartialOrd for Game {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Directory {
     pub name: String,
+    pub full_name: String,
     pub path: PathBuf,
+}
+
+impl Ord for Directory {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.full_name.cmp(&other.full_name)
+    }
+}
+
+impl PartialOrd for Directory {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl Default for Directory {
     fn default() -> Self {
         Directory {
             name: "Games".to_string(),
+            full_name: "Games".to_string(),
             path: PathBuf::from_str(
                 &env::var("ALLIUM_ROMS_DIR").unwrap_or_else(|_| ALLIUM_ROMS_DIR.to_owned()),
             )
@@ -368,10 +372,11 @@ impl Entry {
             return Ok(None);
         }
 
-        let mut name = match path.file_stem().and_then(OsStr::to_str) {
+        let full_name = match path.file_stem().and_then(OsStr::to_str) {
             Some(name) => name.to_owned(),
             None => return Ok(None),
         };
+        let mut name = full_name.clone();
 
         // Remove numbers
         lazy_static! {
@@ -390,7 +395,11 @@ impl Entry {
 
         // Directories without extensions can be navigated into
         if extension.is_empty() && path.is_dir() {
-            return Ok(Some(Entry::Directory(Directory { name, path })));
+            return Ok(Some(Entry::Directory(Directory {
+                name,
+                full_name,
+                path,
+            })));
         }
 
         let image = {
@@ -404,6 +413,7 @@ impl Entry {
 
         Ok(Some(Entry::Game(Game {
             name,
+            full_name,
             path,
             image,
             extension,

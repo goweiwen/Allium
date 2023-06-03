@@ -10,9 +10,8 @@ use embedded_graphics_simulator::{
 use sdl2::keyboard::Keycode;
 
 use crate::battery::Battery;
-use crate::platform::{Key, KeyEvent, Platform};
-
 use crate::display::Display;
+use crate::platform::{Key, KeyEvent, Platform};
 
 pub const SCREEN_WIDTH: u32 = 640;
 pub const SCREEN_HEIGHT: u32 = 480;

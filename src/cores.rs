@@ -3,11 +3,10 @@ use std::env;
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
 use std::path::PathBuf;
-use std::process::{Child, Command};
+use std::process::Command;
 
 use anyhow::{Context, Result};
 use serde::Deserialize;
-use tracing::trace;
 
 use crate::constants::ALLIUM_CONFIG_DIR;
 
