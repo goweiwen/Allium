@@ -1,7 +1,7 @@
 // Adapted from OnionOS: https://github.com/OnionUI/Onion/blob/main/src/common/system/volume.h
 
 use std::ffi::c_ulong;
-use std::mem::size_of;
+use std::mem::{self, size_of};
 use std::os::fd::AsRawFd;
 use std::{ffi::c_int, fs::File};
 
@@ -64,28 +64,14 @@ pub struct MiaoMute {
 /// Set volume output between 0 and 60, use `add` for boosting
 fn set_volume_raw(mut volume: i32, add: i32) -> Result<()> {
     let miao = File::open("/dev/mi_ao")?;
-    trace!("miao: {:?}", miao);
-    let miao_fd = miao.as_raw_fd();
-
-    trace!("miao_fd: {}", miao_fd);
 
     let mut miao_vol = MiaoVol { dev: 0, volume: 0 };
     let mut miao_prm_vol = MiPrm {
         size: size_of::<MiaoVol>() as c_ulong,
         offset: &miao_vol as *const _ as c_ulong,
     };
-    trace!("miao_vol (size: {}): {:?}", size_of::<MiaoVol>(), &miao_vol);
-    trace!(
-        "miao_prm_vol (size: {}): {:?}",
-        size_of::<MiPrm>(),
-        &miao_prm_vol
-    );
-    trace!(
-        "address: {:#x}",
-        nix::request_code_readwrite!(MI_IOC_MAGIC, MI_AO_GETVOLUME, size_of::<MiPrm>())
-    );
     unsafe {
-        mi_ao_getvolume(miao_fd, &mut miao_prm_vol)?;
+        mi_ao_getvolume(miao.as_raw_fd(), &mut miao_prm_vol)?;
     }
     let prev_volume = miao_vol.volume;
     trace!("prev volume: {:?}", miao_vol);
@@ -103,11 +89,14 @@ fn set_volume_raw(mut volume: i32, add: i32) -> Result<()> {
     }
 
     miao_vol.volume = volume;
-    debug!("setting raw volume: {:?}", miao_vol);
     unsafe {
-        mi_ao_setvolume(miao_fd, &miao_prm_vol as *const _)?;
+        mi_ao_setvolume(miao.as_raw_fd(), &miao_prm_vol as *const _)?;
     }
     debug!("set raw volume: {}", miao_vol.volume);
+
+    // Ensure these are not dropped earlier
+    mem::drop(miao_vol);
+    mem::drop(miao_prm_vol);
 
     if prev_volume <= MIN_RAW_VALUE && volume > MIN_RAW_VALUE {
         let miao_mute = MiaoMute { dev: 0, enable: 0 };
@@ -115,20 +104,24 @@ fn set_volume_raw(mut volume: i32, add: i32) -> Result<()> {
             size: size_of::<MiaoMute>() as c_ulong,
             offset: &miao_mute as *const _ as c_ulong,
         };
-        unsafe {
-            mi_ao_setmute(miao_fd, &miao_prm_mute)?;
-        }
         debug!("mute: OFF");
+        unsafe {
+            mi_ao_setmute(miao.as_raw_fd(), &miao_prm_mute)?;
+        }
+        mem::drop(miao_mute);
+        mem::drop(miao_prm_mute);
     } else if prev_volume > MIN_RAW_VALUE && volume <= MIN_RAW_VALUE {
         let miao_mute = MiaoMute { dev: 0, enable: 1 };
         let miao_prm_mute = MiPrm {
             size: size_of::<MiaoMute>() as c_ulong,
             offset: &miao_mute as *const _ as c_ulong,
         };
-        unsafe {
-            mi_ao_setmute(miao_fd, &miao_prm_mute)?;
-        }
         debug!("mute: ON");
+        unsafe {
+            mi_ao_setmute(miao.as_raw_fd(), &miao_prm_mute)?;
+        }
+        mem::drop(miao_mute);
+        mem::drop(miao_prm_mute);
     }
 
     Ok(())
