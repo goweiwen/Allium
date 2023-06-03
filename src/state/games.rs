@@ -1,4 +1,4 @@
-use std::{env, ffi::OsStr, path::PathBuf, str::FromStr};
+use std::{cmp::min, env, ffi::OsStr, path::PathBuf, str::FromStr};
 
 use anyhow::Result;
 use embedded_font::FontTextStyleBuilder;
@@ -139,13 +139,27 @@ impl GamesState {
                 }) = entry
                 {
                     let mut image = image::open(image)?;
-                    if image.width() != IMAGE_SIZE.width {
+                    if image.width() != IMAGE_SIZE.width || image.height() > IMAGE_SIZE.height {
+                        let new_height = min(
+                            IMAGE_SIZE.height,
+                            IMAGE_SIZE.width * image.height() / image.width(),
+                        );
                         image = image.resize_to_fill(
                             IMAGE_SIZE.width,
-                            IMAGE_SIZE.height,
+                            new_height,
                             image::imageops::FilterType::Triangle,
                         );
                     }
+                    Rectangle::new(
+                        Point::new(
+                            width as i32 - IMAGE_SIZE.width as i32 - 24,
+                            54 + image.height() as i32,
+                        ),
+                        Size::new(IMAGE_SIZE.width, IMAGE_SIZE.height - image.height()),
+                    )
+                    .into_styled(fill_style)
+                    .draw(display)?;
+
                     let mut image = image.to_rgb8();
                     crate::image::round(&mut image, image::Rgb([0u8; 3]), 12);
                     let image: ImageRaw<Rgb888> = ImageRaw::new(&image, IMAGE_SIZE.width);
@@ -348,7 +362,7 @@ impl Default for Directory {
     }
 }
 
-const IMAGE_EXTENSIONS: [&str; 4] = ["png", "jpg", "jpeg", "bmp"];
+const IMAGE_EXTENSIONS: [&str; 7] = ["png", "jpg", "jpeg", "webp", "gif", "tga", "bmp"];
 
 impl Entry {
     fn new(path: PathBuf) -> Result<Option<Entry>> {
@@ -407,12 +421,13 @@ impl Entry {
 
         let image = path.parent().and_then(|path| {
             let mut path = path.to_path_buf();
-            path.extend(["Imgs", &format!("{}.png", full_name)]);
-            if path.exists() {
-                Some(path)
-            } else {
-                None
+            path.extend(["Imgs", file_name]);
+            for extension in IMAGE_EXTENSIONS {
+                if path.set_extension(extension) && path.exists() {
+                    return Some(path);
+                }
             }
+            None
         });
 
         Ok(Some(Entry::Game(Game {
