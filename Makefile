@@ -5,18 +5,18 @@ RETROARCH := third-party/RetroArch
 TOOLCHAIN := mholdg16/miyoomini-toolchain:latest
 
 all: $(BUILD_DIR)/allium static $(RETROARCH)/retroarch_miyoo284 $(RETROARCH)/retroarch_miyoo354
-	cp $(BUILD_DIR)/allium $(DIST_DIR)/.allium
-	cp $(RETROARCH)/retroarch_miyoo354 $(DIST_DIR)/RetroArch/
-	cp $(RETROARCH)/retroarch_miyoo284 $(DIST_DIR)/RetroArch/
+	rsync -a $(BUILD_DIR)/allium $(DIST_DIR)/.allium
+	rsync -a $(RETROARCH)/retroarch_miyoo354 $(DIST_DIR)/RetroArch/
+	rsync -a $(RETROARCH)/retroarch_miyoo284 $(DIST_DIR)/RetroArch/
 
 clean:
-	rm -r $(DIST)
+	rm -r $(DIST_DIR)
 
 $(BUILD_DIR)/allium:
 	cross build --release
 
 static:
-	cp -r assets/root/. $(DIST_DIR)
+	rsync -a --exclude='.gitkeep' assets/root/. $(DIST_DIR)
 
 $(RETROARCH)/retroarch_miyoo354:
 	docker run --rm -v /$(ROOT_DIR)/third-party:/root/workspace $(TOOLCHAIN) bash -c "source /root/.bashrc; cd RetroArch; make clean all ADD_NETWORKING=1 PACKAGE_NAME=retroarch_miyoo354"

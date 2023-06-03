@@ -1,19 +1,59 @@
+# Ports
 [cores.sh]
 extensions = ["pak"]
 path = "/mnt/SDCARD/.allium/cores/pak/launch.sh"
 
+# Game Boy Advance, Super Game Boy
 [cores.mgba]
-extensions = ["gba"]
-path = "/mnt/SDCARD/.allium/cores/gpsp/launch.sh"
+extensions = ["gba", "sgb"]
+path = "/mnt/SDCARD/.allium/cores/mgba/launch.sh"
 
+# Game Boy Color, Game Boy
 [cores.gambatte]
-extensions = ["gb", "gbc", "sgb"]
+extensions = ["gb", "gbc"]
 path = "/mnt/SDCARD/.allium/cores/gambatte/launch.sh"
 
+# NES
 [cores.fceumm]
 extensions = ["nes"]
 path = "/mnt/SDCARD/.allium/cores/fceumm/launch.sh"
 
+# SNES
 [cores.supafaust]
 extensions = ["sfc", "smc"]
 path = "/mnt/SDCARD/.allium/cores/supafaust/launch.sh"
+
+# Sega Genesis, Sega Master System, Sega Game Gear
+[cores.picodrive]
+extensions = ["68k", "mdx", "md", "sgd", "smd", "gen", "sms", "gg"]
+path = "/mnt/SDCARD/.allium/cores/picodrive/launch.sh"
+
+# Neo Geo Pocket
+[cores.mednafen-ngp]
+extensions = ["ngp", "ngc"]
+path = "/mnt/SDCARD/.allium/cores/picodrive/launch.sh"
+
+# PSX
+[cores.pcsx-rearmed]
+extensions = ["chd", "pbp"]
+path = "/mnt/SDCARD/.allium/cores/pcsx-rearmed/launch.sh"
+
+# Pokemon Mini
+[cores.pokemini]
+extensions = ["min"]
+path = "/mnt/SDCARD/.allium/cores/pokemini/launch.sh"
+
+# Watara Supervision
+[cores.potator]
+extensions = ["sv"]
+path = "/mnt/SDCARD/.allium/cores/potator/launch.sh"
+
+# EasyRPG
+[cores.easyrpg]
+extensions = ["easyrpg"]
+path = "/mnt/SDCARD/.allium/cores/easyrpg/launch.sh"
+
+# Pico-8
+[cores.fake08]
+extensions = ["p8", "png"]
+path = "/mnt/SDCARD/.allium/cores/fake08/launch.sh"
