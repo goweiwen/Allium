@@ -139,7 +139,7 @@ impl GamesState {
                 }) = entry
                 {
                     let mut image = image::open(image)?;
-                    if image.width() != IMAGE_SIZE.width || image.height() != IMAGE_SIZE.height {
+                    if image.width() != IMAGE_SIZE.width {
                         image = image.resize_to_fill(
                             IMAGE_SIZE.width,
                             IMAGE_SIZE.height,
@@ -368,6 +368,9 @@ impl Entry {
             .to_owned();
 
         // Don't add images
+        if file_name == "Imgs" {
+            return Ok(None);
+        }
         if IMAGE_EXTENSIONS.contains(&extension.as_str()) {
             return Ok(None);
         }
@@ -402,14 +405,15 @@ impl Entry {
             })));
         }
 
-        let image = {
-            let path = path.with_extension("jpg");
+        let image = path.parent().and_then(|path| {
+            let mut path = path.to_path_buf();
+            path.extend(["Imgs", &format!("{}.png", full_name)]);
             if path.exists() {
                 Some(path)
             } else {
                 None
             }
-        };
+        });
 
         Ok(Some(Entry::Game(Game {
             name,
