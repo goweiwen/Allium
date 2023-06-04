@@ -61,7 +61,7 @@ impl Platform for SimulatorPlatform {
         Ok(SimulatorBattery::new())
     }
 
-    fn set_volume(&mut self, _volume: u8) -> Result<()> {
+    fn set_volume(&mut self, _volume: i32) -> Result<()> {
         Ok(())
     }
 }
