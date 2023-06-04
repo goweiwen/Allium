@@ -19,7 +19,7 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: nightly
           components: rustfmt
           profile: minimal
           override: true
@@ -38,13 +38,7 @@ jobs:
 
     strategy:
       matrix:
-        build: [stable, beta, nightly]
-        include:
-          - build: beta
-            rust: beta
-          - build: nightly
-            rust: nightly
-            benches: true
+        build: [nightly]
 
     steps:
       - name: Checkout
@@ -90,7 +84,7 @@ jobs:
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: nightly
           profile: minimal
           override: true
           target: ${{ matrix.target }}
