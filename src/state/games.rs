@@ -224,7 +224,7 @@ impl GamesState {
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<bool> {
         Ok(match key_event {
-            KeyEvent::Pressed(key) => match key {
+            KeyEvent::Released(key) => match key {
                 Key::Up => {
                     self.selected = (self.selected - 1).clamp(0, self.entries.len() as i32 - 1);
                     if self.selected < self.top {
@@ -270,7 +270,7 @@ impl GamesState {
                 }
                 _ => false,
             },
-            KeyEvent::Released(_) => false,
+            _ => false,
         })
     }
 }
