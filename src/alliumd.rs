@@ -1,17 +1,25 @@
-use std::fs;
+use std::fs::{self, File};
+use std::io::Write;
+use std::os::unix::process::CommandExt;
 use std::path::Path;
+use std::process::Command;
 
 use anyhow::Result;
 use nix::sys::signal::kill;
 use nix::sys::signal::Signal::{SIGCONT, SIGSTOP};
 use nix::unistd::Pid;
+use serde::{Deserialize, Serialize};
+use tokio::signal;
 use tracing::debug;
 
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Alliumd<P: Platform> {
+    #[serde(skip)]
     platform: P,
     volume: i32,
+    #[serde(skip)]
     is_core_stopped: bool,
 }
 
@@ -26,36 +34,77 @@ impl Alliumd<DefaultPlatform> {
         })
     }
 
-    pub async fn run_event_loop(&mut self) -> Result<()> {
-        tracing::trace!("running Alliumd");
-        loop {
-            let key = self.platform.poll().await?;
-            match key {
-                Some(KeyEvent::Released(Key::VolDown)) => self.add_volume(-1)?,
-                Some(KeyEvent::Released(Key::VolUp)) => self.add_volume(1)?,
-                Some(KeyEvent::Pressed(Key::Menu)) => {
-                    let path = Path::new("/tmp/allium_core.pid");
-                    if path.exists() {
-                        let pid = fs::read_to_string(path)?;
-                        let pid = Pid::from_raw(pid.parse::<i32>()?);
-                        if self.is_core_stopped {
-                            kill(pid, SIGCONT)?;
-                            self.is_core_stopped = false;
-                        } else {
-                            kill(pid, SIGSTOP)?;
-                            self.is_core_stopped = true;
-                        }
-                    }
-                }
-                _ => {}
-            };
+    pub fn load() -> Result<Alliumd<DefaultPlatform>> {
+        let path = Path::new("/mnt/SDCARD/.allium/alliumd.json");
+        if !path.exists() {
+            debug!("can't find state, creating new");
+            Self::new()
+        } else {
+            debug!("found state, loading from file");
+            let json = fs::read_to_string(path)?;
+            let mut alliumd: Alliumd<DefaultPlatform> = serde_json::from_str(&json)?;
+            Ok(alliumd)
         }
     }
 
-    fn add_volume(&mut self, add: i32) -> Result<()> {
-        self.volume = (self.volume + add).clamp(0, 20);
+    fn save(&mut self) -> Result<()> {
+        let json = serde_json::to_string(self).unwrap();
+        File::create("/mnt/SDCARD/.allium/alliumd.json")?.write_all(json.as_bytes())?;
+        Ok(())
+    }
+
+    pub async fn run_event_loop(&mut self) -> Result<()> {
+        tracing::trace!("running Alliumd");
+
+        self.platform.set_volume(self.volume)?;
+
+        loop {
+            tokio::select! {
+                key = self.platform.poll() => {
+                    match key? {
+                        Some(KeyEvent::Released(Key::VolDown)) => self.add_volume(-1)?,
+                        Some(KeyEvent::Released(Key::VolUp)) => self.add_volume(1)?,
+                        Some(KeyEvent::Pressed(Key::Menu)) => {
+                            let path = Path::new("/tmp/allium_core.pid");
+                            if path.exists() {
+                                let pid = fs::read_to_string(path)?;
+                                let pid = Pid::from_raw(pid.parse::<i32>()?);
+                                if self.is_core_stopped {
+                                    kill(pid, SIGCONT)?;
+                                    self.is_core_stopped = false;
+                                } else {
+                                    kill(pid, SIGSTOP)?;
+                                    self.is_core_stopped = true;
+                                }
+                            }
+                        }
+                        Some(KeyEvent::Pressed(Key::Power)) => {
+                            self.save();
+                            #[cfg(unix)]
+                            Command::new("poweroff").exec();
+                        }
+                        _ => {}
+                    }
+                }
+                _ = signal::ctrl_c() => {
+                    debug!("caught SIGKILL, saving state");
+                    self.save()?;
+                    break;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn set_volume(&mut self, volume: i32) -> Result<()> {
+        self.volume = volume.clamp(0, 20);
         debug!("set volume: {}", self.volume);
         self.platform.set_volume(self.volume)?;
         Ok(())
+    }
+
+    fn add_volume(&mut self, add: i32) -> Result<()> {
+        self.set_volume(self.volume + add)
     }
 }

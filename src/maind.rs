@@ -18,7 +18,7 @@ async fn main() -> Result<()> {
         .finish();
     tracing::subscriber::set_global_default(subscriber)?;
 
-    let mut app = Alliumd::new()?;
+    let mut app = Alliumd::load()?;
     app.run_event_loop().await?;
     Ok(())
 }

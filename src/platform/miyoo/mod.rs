@@ -82,6 +82,12 @@ impl Platform for MiyooPlatform {
     }
 }
 
+impl Default for MiyooPlatform {
+    fn default() -> Self {
+        Self::new().unwrap()
+    }
+}
+
 fn detect_model() -> MiyooDeviceModel {
     if std::path::Path::new("/customer/app/axp_test").exists() {
         MiyooDeviceModel::Miyoo354

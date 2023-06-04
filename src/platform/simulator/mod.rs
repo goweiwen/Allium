@@ -66,6 +66,12 @@ impl Platform for SimulatorPlatform {
     }
 }
 
+impl Default for SimulatorPlatform {
+    fn default() -> Self {
+        Self::new().unwrap()
+    }
+}
+
 pub struct SimulatorWindow {
     window: Rc<RefCell<Window>>,
     display: SimulatorDisplay<Rgb888>,

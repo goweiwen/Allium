@@ -1,9 +1,5 @@
 use std::fs;
-#[cfg(unix)]
-use std::os::unix::process::CommandExt;
 use std::path::Path;
-#[cfg(unix)]
-use std::process::Command;
 
 use anyhow::Result;
 
@@ -84,11 +80,6 @@ impl Allium<DefaultPlatform> {
                         self.state.enter()?;
                     }
                     true
-                }
-                Some(KeyEvent::Pressed(Key::Power)) => {
-                    #[cfg(unix)]
-                    Command::new("poweroff").exec();
-                    false
                 }
                 Some(key_event) => self.state.handle_key_event(key_event)?,
                 None => false,
