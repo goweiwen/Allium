@@ -1,4 +1,10 @@
+use std::fs;
+use std::path::Path;
+
 use anyhow::Result;
+use nix::sys::signal::kill;
+use nix::sys::signal::Signal::{SIGCONT, SIGSTOP};
+use nix::unistd::Pid;
 use tracing::debug;
 
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
@@ -6,6 +12,7 @@ use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 pub struct Alliumd<P: Platform> {
     platform: P,
     volume: i32,
+    is_core_stopped: bool,
 }
 
 impl Alliumd<DefaultPlatform> {
@@ -15,6 +22,7 @@ impl Alliumd<DefaultPlatform> {
         Ok(Alliumd {
             platform,
             volume: 0,
+            is_core_stopped: false,
         })
     }
 
@@ -25,7 +33,20 @@ impl Alliumd<DefaultPlatform> {
             match key {
                 Some(KeyEvent::Released(Key::VolDown)) => self.add_volume(-1)?,
                 Some(KeyEvent::Released(Key::VolUp)) => self.add_volume(1)?,
-                Some(KeyEvent::Pressed(Key::Menu)) => {}
+                Some(KeyEvent::Pressed(Key::Menu)) => {
+                    let path = Path::new("/tmp/allium_core.pid");
+                    if path.exists() {
+                        let pid = fs::read_to_string(path)?;
+                        let pid = Pid::from_raw(pid.parse::<i32>()?);
+                        if self.is_core_stopped {
+                            kill(pid, SIGCONT)?;
+                            self.is_core_stopped = false;
+                        } else {
+                            kill(pid, SIGSTOP)?;
+                            self.is_core_stopped = true;
+                        }
+                    }
+                }
                 _ => {}
             };
         }

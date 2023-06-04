@@ -1,5 +1,7 @@
+use std::fs;
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
+use std::path::Path;
 #[cfg(unix)]
 use std::process::Command;
 
@@ -38,6 +40,12 @@ impl Allium<DefaultPlatform> {
     }
 
     pub async fn run_event_loop(&mut self) -> Result<()> {
+        // Remove core pid now that Allium is running again
+        let path = Path::new("/tmp/allium_core.pid");
+        if path.exists() {
+            fs::remove_file(path)?;
+        }
+
         self.state.enter()?;
 
         let mut last_updated_battery = std::time::Instant::now();
