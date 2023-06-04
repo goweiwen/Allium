@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install rust
         uses: actions-rs/toolchain@v1
@@ -41,7 +41,10 @@ jobs:
         target: [ arm-unknown-linux-gnueabihf ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
       - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
