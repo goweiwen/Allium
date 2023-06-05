@@ -1,25 +1,21 @@
 #![feature(async_fn_in_trait)]
 
-mod alliumd;
-mod battery;
-mod constants;
-mod display;
-mod platform;
-mod retroarch;
-mod stylesheet;
+mod allium;
+mod cores;
+mod state;
 
 use anyhow::Result;
 
-use crate::alliumd::Alliumd;
+use allium::Allium;
 
-#[tokio::main(flavor = "current_thread")]
+#[tokio::main]
 async fn main() -> Result<()> {
     let subscriber = tracing_subscriber::fmt::Subscriber::builder()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .finish();
     tracing::subscriber::set_global_default(subscriber)?;
 
-    let mut app = Alliumd::load()?;
+    let mut app = Allium::new()?;
     app.run_event_loop().await?;
     Ok(())
 }

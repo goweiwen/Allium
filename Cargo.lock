@@ -49,18 +49,31 @@ name = "allium"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "common",
  "embedded-graphics",
- "embedded-graphics-simulator",
  "embedded_font",
- "evdev",
- "framebuffer",
  "image 0.24.6",
- "jpeg-decoder 0.3.0",
  "lazy_static",
  "nix 0.26.2",
  "regex",
  "rusttype",
- "sdl2",
+ "serde",
+ "serde_json",
+ "tokio",
+ "toml",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "alliumd"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "common",
+ "nix 0.26.2",
+ "regex",
+ "rusttype",
  "serde",
  "serde_json",
  "tokio",
@@ -74,6 +87,17 @@ name = "anyhow"
 version = "1.0.71"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c7d0618f0e0b7e8ff11427422b64564d5fb0be1940354bfe2e0529b18a9d9b8"
+
+[[package]]
+name = "async-trait"
+version = "0.1.68"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9ccdd8f2a161be9bd5c023df56f1b2a0bd1d83872ae53b71a84a12c9bf6e842"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.18",
+]
 
 [[package]]
 name = "autocfg"
@@ -158,6 +182,30 @@ name = "color_quant"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b"
+
+[[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "embedded-graphics",
+ "embedded-graphics-simulator",
+ "embedded_font",
+ "evdev",
+ "framebuffer",
+ "image 0.24.6",
+ "jpeg-decoder 0.3.0",
+ "lazy_static",
+ "nix 0.26.2",
+ "regex",
+ "rusttype",
+ "sdl2",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
 
 [[package]]
 name = "crc32fast"

@@ -3,12 +3,13 @@ use std::path::Path;
 
 use anyhow::Result;
 
-use crate::battery::Battery;
-use crate::constants::BATTERY_UPDATE_INTERVAL;
-use crate::display::Display;
-use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::battery::Battery;
+use common::constants::BATTERY_UPDATE_INTERVAL;
+use common::display::Display;
+use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::stylesheet::Stylesheet;
+
 use crate::state::State;
-use crate::stylesheet::Stylesheet;
 
 pub struct Allium<P: Platform> {
     platform: P,

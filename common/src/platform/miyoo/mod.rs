@@ -7,6 +7,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::Result;
+use async_trait::async_trait;
 use tracing::warn;
 
 use crate::battery::Battery;
@@ -44,6 +45,7 @@ enum MiyooDeviceModel {
     Miyoo354,
 }
 
+#[async_trait(?Send)]
 impl Platform for MiyooPlatform {
     type Display = FramebufferDisplay;
     type Battery = Box<dyn Battery>;
@@ -64,7 +66,7 @@ impl Platform for MiyooPlatform {
     }
 
     fn display(&mut self) -> Result<FramebufferDisplay> {
-        Ok(FramebufferDisplay::new()?)
+        FramebufferDisplay::new()
     }
 
     fn battery(&self) -> Result<Box<dyn Battery>> {

@@ -22,41 +22,41 @@ const MI_IOC_MAGIC: u8 = b'i';
 #[allow(unused)]
 #[derive(Debug)]
 enum MiAoFunction {
-    MiAoSetPubAttr = 0,
-    MiAoGetPubAttr = 1,
-    MiAoEnable = 2,
-    MiAoDisable = 3,
-    MiAoEnableChn = 4,
-    MiAoDisableChn = 5,
-    MiAoPauseChn = 7,
-    MiAoResumeChn = 8,
-    MiAoClearChnBuf = 9,
-    MiAoQueryChnStat = 10,
-    MiAoSetVolume = 11,
-    MiAoGetVolume = 12,
-    MiAoSetMute = 13,
-    MiAoGetMute = 14,
-    MiAoClearPubAttr = 15,
-    MiAoInit = 20,
-    MiAoDeinit = 21,
+    SetPubAttr = 0,
+    GetPubAttr = 1,
+    Enable = 2,
+    Disable = 3,
+    EnableChn = 4,
+    DisableChn = 5,
+    PauseChn = 7,
+    ResumeChn = 8,
+    ClearChnBuf = 9,
+    QueryChnStat = 10,
+    SetVolume = 11,
+    GetVolume = 12,
+    SetMute = 13,
+    GetMute = 14,
+    ClearPubAttr = 15,
+    Init = 20,
+    Deinit = 21,
 }
 
 ioctl_readwrite!(
     mi_ao_getvolume,
     MI_IOC_MAGIC,
-    MiAoFunction::MiAoGetVolume as c_ulong,
+    MiAoFunction::GetVolume as c_ulong,
     MiPrm
 );
 ioctl_write_ptr!(
     mi_ao_setvolume,
     MI_IOC_MAGIC,
-    MiAoFunction::MiAoSetVolume as c_ulong,
+    MiAoFunction::SetVolume as c_ulong,
     MiPrm
 );
 ioctl_write_ptr!(
     mi_ao_setmute,
     MI_IOC_MAGIC,
-    MiAoFunction::MiAoSetMute as c_ulong,
+    MiAoFunction::SetMute as c_ulong,
     MiPrm
 );
 

@@ -1,5 +1,6 @@
 use anyhow::Result;
 use tokio::net::UdpSocket;
+use tracing::{debug, trace};
 
 use crate::constants::RETROARCH_UDP_SOCKET;
 
@@ -40,8 +41,20 @@ pub enum RetroArchCommand {
 
 impl RetroArchCommand {
     pub async fn send(&self) -> Result<()> {
+        debug!(
+            "Sending RetroArch command: {}",
+            self.as_bytes()
+                .iter()
+                .map(|b| *b as char)
+                .collect::<String>(),
+        );
         let socket = UdpSocket::bind("0.0.0.0:0").await?;
+        trace!("Bound UDP socket: {}", socket.local_addr()?);
         socket.connect(RETROARCH_UDP_SOCKET).await?;
+        trace!(
+            "Connecting to RetroArch UDP socket: {}",
+            RETROARCH_UDP_SOCKET
+        );
         socket.send(self.as_bytes()).await?;
         Ok(())
     }

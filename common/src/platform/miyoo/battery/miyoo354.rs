@@ -9,6 +9,7 @@ use crate::battery::Battery;
 #[derive(Deserialize)]
 struct BatteryCommandOutput {
     battery: i32,
+    #[allow(dead_code)]
     voltage: i32,
     charging: i32,
 }

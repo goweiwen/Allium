@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use anyhow::Result;
+use async_trait::async_trait;
 use embedded_graphics::pixelcolor::Rgb888;
 use embedded_graphics::prelude::{DrawTarget, OriginDimensions, Size};
 use embedded_graphics_simulator::{
@@ -20,6 +21,7 @@ pub struct SimulatorPlatform {
     window: Rc<RefCell<Window>>,
 }
 
+#[async_trait(?Send)]
 impl Platform for SimulatorPlatform {
     type Display = SimulatorWindow;
     type Battery = SimulatorBattery;
@@ -139,6 +141,12 @@ impl SimulatorBattery {
             percentage: 100,
             charging: false,
         }
+    }
+}
+
+impl Default for SimulatorBattery {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

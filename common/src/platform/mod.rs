@@ -4,12 +4,15 @@ mod miyoo;
 mod simulator;
 
 use anyhow::Result;
+use async_trait::async_trait;
 
 #[cfg(target_arch = "arm")]
 pub type DefaultPlatform = miyoo::MiyooPlatform;
 #[cfg(not(target_arch = "arm"))]
 pub type DefaultPlatform = simulator::SimulatorPlatform;
 
+// Platform is not threadsafe because it is ?Send
+#[async_trait(?Send)]
 pub trait Platform {
     type Display;
     type Battery;

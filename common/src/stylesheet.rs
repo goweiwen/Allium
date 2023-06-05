@@ -23,7 +23,7 @@ impl Default for Stylesheet {
             button_b_color: Rgb888::new(254, 206, 21),
             button_x_color: Rgb888::new(7, 73, 180),
             button_y_color: Rgb888::new(0, 141, 69),
-            ui_font: Font::try_from_bytes(include_bytes!("../assets/font/Lato/Lato-Bold.ttf"))
+            ui_font: Font::try_from_bytes(include_bytes!("../../assets/font/Lato/Lato-Bold.ttf"))
                 .unwrap(),
             ui_font_size: 24,
         }

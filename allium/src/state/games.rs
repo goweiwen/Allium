@@ -14,14 +14,15 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tracing::trace;
 
-use crate::constants::{
+use common::constants::{
     ALLIUM_ROMS_DIR, BUTTON_DIAMETER, IMAGE_SIZE, LISTING_JUMP_SIZE, LISTING_SIZE,
     SELECTION_HEIGHT, SELECTION_MARGIN,
 };
+use common::display::Display;
+use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::stylesheet::Stylesheet;
+
 use crate::cores::CoreMapper;
-use crate::display::Display;
-use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
-use crate::stylesheet::Stylesheet;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GamesState {
@@ -161,7 +162,7 @@ impl GamesState {
                     .draw(display)?;
 
                     let mut image = image.to_rgb8();
-                    crate::image::round(&mut image, image::Rgb([0u8; 3]), 12);
+                    common::image::round(&mut image, image::Rgb([0u8; 3]), 12);
                     let image: ImageRaw<Rgb888> = ImageRaw::new(&image, IMAGE_SIZE.width);
                     let image = Image::new(
                         &image,
@@ -298,13 +299,6 @@ impl Entry {
         match self {
             Entry::Game(game) => &game.name,
             Entry::Directory(directory) => &directory.name,
-        }
-    }
-
-    pub fn full_name(&self) -> &str {
-        match self {
-            Entry::Game(game) => &game.full_name,
-            Entry::Directory(directory) => &directory.full_name,
         }
     }
 }

@@ -5,8 +5,8 @@ use embedded_graphics::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::platform::{DefaultPlatform, KeyEvent, Platform};
-use crate::stylesheet::Stylesheet;
+use common::platform::{DefaultPlatform, KeyEvent, Platform};
+use common::stylesheet::Stylesheet;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SettingsState {}

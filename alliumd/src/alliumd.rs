@@ -7,11 +7,11 @@ use serde::{Deserialize, Serialize};
 use tokio::signal;
 use tracing::debug;
 
-use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 
 #[cfg(unix)]
 use {
-    crate::retroarch::RetroArchCommand,
+    common::retroarch::RetroArchCommand,
     nix::sys::signal::kill,
     nix::sys::signal::Signal::{SIGCONT, SIGSTOP},
     nix::unistd::Pid,
