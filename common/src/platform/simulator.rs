@@ -1,13 +1,16 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use anyhow::Result;
+use anyhow::{bail, Context, Result};
 use async_trait::async_trait;
-use embedded_graphics::pixelcolor::Rgb888;
-use embedded_graphics::prelude::{DrawTarget, OriginDimensions, Size};
+use embedded_graphics::image::{Image, ImageRaw};
+use embedded_graphics::pixelcolor::{raw::BigEndian, Rgb888};
+use embedded_graphics::prelude::*;
+use embedded_graphics::primitives::Rectangle;
 use embedded_graphics_simulator::{
     OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
 };
+use itertools::iproduct;
 use sdl2::keyboard::Keycode;
 
 use crate::battery::Battery;
@@ -51,11 +54,13 @@ impl Platform for SimulatorPlatform {
     }
 
     fn display(&mut self) -> Result<SimulatorWindow> {
-        let display = SimulatorDisplay::new(Size::new(SCREEN_WIDTH, SCREEN_HEIGHT));
+        let display = SimulatorDisplay::load_png("assets/screenshots/ingame.png")
+            .context("Cannot find assets/screenshots/ingame.png")?;
         self.window.borrow_mut().update(&display);
         Ok(SimulatorWindow {
             window: Rc::clone(&self.window),
             display,
+            saved: None,
         })
     }
 
@@ -77,11 +82,51 @@ impl Default for SimulatorPlatform {
 pub struct SimulatorWindow {
     window: Rc<RefCell<Window>>,
     display: SimulatorDisplay<Rgb888>,
+    saved: Option<(Vec<u8>, u32)>,
 }
 
 impl Display<<SimulatorWindow as DrawTarget>::Error> for SimulatorWindow {
+    fn map_pixels<F>(&mut self, mut f: F) -> Result<()>
+    where
+        F: FnMut(Rgb888) -> Rgb888,
+    {
+        let Size { width, height } = self.display.size();
+        let pixels = iproduct!(0..width as i32, 0..height as i32)
+            .map(|(x, y)| {
+                let point = Point::new(x, y);
+                let color = self.display.get_pixel(point);
+                Pixel(point, f(color))
+            })
+            .collect::<Vec<_>>();
+        self.display.draw_iter(pixels.into_iter())?;
+        Ok(())
+    }
+
     fn flush(&mut self) -> Result<()> {
         self.window.borrow_mut().update(&self.display);
+        Ok(())
+    }
+
+    fn save(&mut self) -> Result<()> {
+        let image = self
+            .display
+            .to_rgb_output_image(&OutputSettingsBuilder::new().build());
+        let size = image.size();
+        let buffer = image.as_image_buffer();
+        self.saved = Some((buffer.as_raw().to_vec(), size.width));
+        Ok(())
+    }
+
+    fn load(&mut self, area: Rectangle) -> Result<()> {
+        let Some(saved) = &self.saved else {
+            bail!("No saved image");
+        };
+
+        let image: ImageRaw<_, BigEndian> = ImageRaw::new(&saved.0, saved.1);
+        let image = image.sub_image(&area);
+        let image = Image::new(&image, area.top_left);
+        image.draw(&mut self.display)?;
+
         Ok(())
     }
 }
@@ -95,6 +140,29 @@ impl DrawTarget for SimulatorWindow {
         I: IntoIterator<Item = embedded_graphics::Pixel<Self::Color>>,
     {
         self.display.draw_iter(pixels)
+    }
+
+    fn fill_contiguous<I>(
+        &mut self,
+        area: &Rectangle,
+        colors: I,
+    ) -> std::result::Result<(), Self::Error>
+    where
+        I: IntoIterator<Item = Self::Color>,
+    {
+        self.display.fill_contiguous(area, colors)
+    }
+
+    fn fill_solid(
+        &mut self,
+        area: &Rectangle,
+        color: Self::Color,
+    ) -> std::result::Result<(), Self::Error> {
+        self.display.fill_solid(area, color)
+    }
+
+    fn clear(&mut self, color: Self::Color) -> std::result::Result<(), Self::Error> {
+        self.display.clear(color)
     }
 }
 

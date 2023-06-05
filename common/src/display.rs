@@ -3,27 +3,38 @@ use std::error::Error;
 
 use anyhow::Result;
 use embedded_font::{FontTextStyle, FontTextStyleBuilder};
-use embedded_graphics::pixelcolor::Rgb888;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Circle, PrimitiveStyle, Rectangle};
 use embedded_graphics::text::{Alignment, Baseline, Text, TextStyleBuilder};
 
 use crate::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
-use crate::platform::Key;
+use crate::platform::{Color, Key};
 use crate::stylesheet::Stylesheet;
 
 pub trait Display<E: Error + Send + Sync + 'static>:
-    OriginDimensions + DrawTarget<Color = Rgb888, Error = E> + Sized
+    OriginDimensions + DrawTarget<Color = Color, Error = E> + Sized
 {
+    fn map_pixels<F>(&mut self, f: F) -> Result<()>
+    where
+        F: FnMut(Color) -> Color;
+
     fn flush(&mut self) -> Result<()> {
         Ok(())
+    }
+
+    fn save(&mut self) -> Result<()>;
+    fn load(&mut self, area: Rectangle) -> Result<()>;
+
+    fn darken(&mut self) -> Result<()> {
+        self.map_pixels(|p| Color::new(p.r() / 4, p.g() / 4, p.b() / 4))?;
+        self.flush()
     }
 
     fn draw_text(
         &mut self,
         point: Point,
         text: &str,
-        style: FontTextStyle<Rgb888>,
+        style: FontTextStyle<Color>,
         alignment: Alignment,
     ) -> Result<Rectangle> {
         let text = Text::with_alignment(text, point, style, alignment);
@@ -36,7 +47,7 @@ pub trait Display<E: Error + Send + Sync + 'static>:
         &self,
         point: Point,
         text: &'a str,
-        style: FontTextStyle<Rgb888>,
+        style: FontTextStyle<Color>,
         alignment: Alignment,
         width: u32,
     ) -> Result<Cow<'a, str>> {
@@ -68,7 +79,7 @@ pub trait Display<E: Error + Send + Sync + 'static>:
         &mut self,
         point: Point,
         text: &str,
-        style: FontTextStyle<Rgb888>,
+        style: FontTextStyle<Color>,
         alignment: Alignment,
         width: u32,
         selected: bool,
@@ -122,7 +133,7 @@ pub trait Display<E: Error + Send + Sync + 'static>:
         &mut self,
         point: Point,
         button: Key,
-        style: FontTextStyle<Rgb888>,
+        style: FontTextStyle<Color>,
         text: &str,
         styles: &Stylesheet,
     ) -> Result<Rectangle> {

@@ -18,6 +18,7 @@ build:
 package-build:
 	rsync -a $(BUILD_DIR)/allium $(DIST_DIR)/.allium
 	rsync -a $(BUILD_DIR)/alliumd $(DIST_DIR)/.allium
+	rsync -a $(BUILD_DIR)/alliumm $(DIST_DIR)/.allium
 
 retroarch: $(RETROARCH)/retroarch_miyoo284 $(RETROARCH)/retroarch_miyoo354
 

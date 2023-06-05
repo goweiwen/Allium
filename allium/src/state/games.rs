@@ -4,7 +4,6 @@ use anyhow::Result;
 use embedded_font::FontTextStyleBuilder;
 use embedded_graphics::{
     image::{Image, ImageRaw},
-    pixelcolor::Rgb888,
     prelude::*,
     primitives::{PrimitiveStyle, Rectangle},
     text::Alignment,
@@ -14,13 +13,16 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tracing::trace;
 
-use common::constants::{
-    ALLIUM_ROMS_DIR, BUTTON_DIAMETER, IMAGE_SIZE, LISTING_JUMP_SIZE, LISTING_SIZE,
-    SELECTION_HEIGHT, SELECTION_MARGIN,
-};
 use common::display::Display;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
+use common::{
+    constants::{
+        ALLIUM_ROMS_DIR, BUTTON_DIAMETER, IMAGE_SIZE, LISTING_JUMP_SIZE, LISTING_SIZE,
+        SELECTION_HEIGHT, SELECTION_MARGIN,
+    },
+    platform::Color,
+};
 
 use crate::cores::CoreMapper;
 
@@ -163,7 +165,7 @@ impl GamesState {
 
                     let mut image = image.to_rgb8();
                     common::image::round(&mut image, image::Rgb([0u8; 3]), 12);
-                    let image: ImageRaw<Rgb888> = ImageRaw::new(&image, IMAGE_SIZE.width);
+                    let image: ImageRaw<Color> = ImageRaw::new(&image, IMAGE_SIZE.width);
                     let image = Image::new(
                         &image,
                         Point::new(width as i32 - IMAGE_SIZE.width as i32 - 24, 54),

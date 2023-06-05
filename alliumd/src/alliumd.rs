@@ -20,26 +20,23 @@ use {
 };
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Alliumd<P: Platform> {
+pub struct AlliumD<P: Platform> {
     #[serde(skip)]
     platform: P,
     volume: i32,
-    #[serde(skip)]
-    is_core_stopped: bool,
 }
 
-impl Alliumd<DefaultPlatform> {
-    pub fn new() -> Result<Alliumd<DefaultPlatform>> {
+impl AlliumD<DefaultPlatform> {
+    pub fn new() -> Result<AlliumD<DefaultPlatform>> {
         let platform = DefaultPlatform::new()?;
 
-        Ok(Alliumd {
+        Ok(AlliumD {
             platform,
             volume: 0,
-            is_core_stopped: false,
         })
     }
 
-    pub fn load() -> Result<Alliumd<DefaultPlatform>> {
+    pub fn load() -> Result<AlliumD<DefaultPlatform>> {
         let path = Path::new("/mnt/SDCARD/.allium/alliumd.json");
         if !path.exists() {
             debug!("can't find state, creating new");
@@ -47,7 +44,7 @@ impl Alliumd<DefaultPlatform> {
         } else {
             debug!("found state, loading from file");
             let json = fs::read_to_string(path)?;
-            let alliumd: Alliumd<DefaultPlatform> = serde_json::from_str(&json)?;
+            let alliumd: AlliumD<DefaultPlatform> = serde_json::from_str(&json)?;
             Ok(alliumd)
         }
     }
@@ -76,15 +73,12 @@ impl Alliumd<DefaultPlatform> {
                                 if path.exists() {
                                     let pid = fs::read_to_string(path)?;
                                     let pid = Pid::from_raw(pid.parse::<i32>()?);
-                                    if self.is_core_stopped {
-                                        RetroArchCommand::MenuToggle.send().await?;
-                                        // kill(pid, SIGCONT)?;
-                                        self.is_core_stopped = false;
-                                    } else {
-                                        RetroArchCommand::MenuToggle.send().await?;
-                                        // kill(pid, SIGSTOP)?;
-                                        self.is_core_stopped = true;
-                                    }
+                                    debug!("sending SIGSTOP to {}", pid);
+                                    kill(pid, SIGSTOP)?;
+                                    debug!("starting alliumm");
+                                    let process = tokio::process::Command::new("/mnt/SDCARD/.allium/alliumm").spawn()?.wait().await?;
+                                    debug!("sending SIGCONT to {}", pid);
+                                    kill(pid, SIGCONT)?;
                                 }
                             }
                         }

@@ -5,11 +5,17 @@ mod simulator;
 
 use anyhow::Result;
 use async_trait::async_trait;
+use embedded_graphics::pixelcolor;
 
 #[cfg(target_arch = "arm")]
 pub type DefaultPlatform = miyoo::MiyooPlatform;
+#[cfg(target_arch = "arm")]
+pub type Color = pixelcolor::Bgr888;
+
 #[cfg(not(target_arch = "arm"))]
 pub type DefaultPlatform = simulator::SimulatorPlatform;
+#[cfg(not(target_arch = "arm"))]
+pub type Color = pixelcolor::Rgb888;
 
 // Platform is not threadsafe because it is ?Send
 #[async_trait(?Send)]

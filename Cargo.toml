@@ -3,5 +3,6 @@ members = [
     "common",
     "allium",
     "alliumd",
+    "alliumm",
 ]
 resolver = "2"
