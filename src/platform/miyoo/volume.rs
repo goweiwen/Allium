@@ -6,8 +6,8 @@ use std::os::fd::AsRawFd;
 use std::{ffi::c_int, fs::File};
 
 use anyhow::Result;
-use nix::{ioctl_read, ioctl_readwrite, ioctl_write_ptr};
-use tracing::{debug, trace};
+use nix::{ioctl_readwrite, ioctl_write_ptr};
+use tracing::debug;
 
 const MAX_VOLUME: i32 = 20;
 const MIN_RAW_VALUE: i32 = -60;
@@ -18,27 +18,47 @@ const MAX_RAW_VALUE: i32 = 30;
 // const MI_AO_SETMUTE: u32 = 0x4008690d;
 
 const MI_IOC_MAGIC: u8 = b'i';
-const MI_AO_SETPUBATTR: c_ulong = 0;
-const MI_AO_GETPUBATTR: c_ulong = 1;
-const MI_AO_ENABLE: c_ulong = 2;
-const MI_AO_DISABLE: c_ulong = 3;
-const MI_AO_ENABLECHN: c_ulong = 4;
-const MI_AO_DISABLECHN: c_ulong = 5;
-const MI_AO_PAUSECHN: c_ulong = 7;
-const MI_AO_RESUMECHN: c_ulong = 8;
-const MI_AO_CLEARCHNBUF: c_ulong = 9;
-const MI_AO_QUERYCHNSTAT: c_ulong = 10;
-const MI_AO_SETVOLUME: c_ulong = 11;
-const MI_AO_GETVOLUME: c_ulong = 12;
-const MI_AO_SETMUTE: c_ulong = 13;
-const MI_AO_GETMUTE: c_ulong = 14;
-const MI_AO_CLEARPUBATTR: c_ulong = 15;
-const MI_AO_INIT: c_ulong = 20;
-const MI_AO_DEINIT: c_ulong = 21;
 
-ioctl_readwrite!(mi_ao_getvolume, MI_IOC_MAGIC, MI_AO_GETVOLUME, MiPrm);
-ioctl_write_ptr!(mi_ao_setvolume, MI_IOC_MAGIC, MI_AO_SETVOLUME, MiPrm);
-ioctl_write_ptr!(mi_ao_setmute, MI_IOC_MAGIC, MI_AO_SETMUTE, MiPrm);
+#[allow(unused)]
+#[derive(Debug)]
+enum MiAoFunction {
+    MiAoSetPubAttr = 0,
+    MiAoGetPubAttr = 1,
+    MiAoEnable = 2,
+    MiAoDisable = 3,
+    MiAoEnableChn = 4,
+    MiAoDisableChn = 5,
+    MiAoPauseChn = 7,
+    MiAoResumeChn = 8,
+    MiAoClearChnBuf = 9,
+    MiAoQueryChnStat = 10,
+    MiAoSetVolume = 11,
+    MiAoGetVolume = 12,
+    MiAoSetMute = 13,
+    MiAoGetMute = 14,
+    MiAoClearPubAttr = 15,
+    MiAoInit = 20,
+    MiAoDeinit = 21,
+}
+
+ioctl_readwrite!(
+    mi_ao_getvolume,
+    MI_IOC_MAGIC,
+    MiAoFunction::MiAoGetVolume as c_ulong,
+    MiPrm
+);
+ioctl_write_ptr!(
+    mi_ao_setvolume,
+    MI_IOC_MAGIC,
+    MiAoFunction::MiAoSetVolume as c_ulong,
+    MiPrm
+);
+ioctl_write_ptr!(
+    mi_ao_setmute,
+    MI_IOC_MAGIC,
+    MiAoFunction::MiAoSetMute as c_ulong,
+    MiPrm
+);
 
 #[repr(C)]
 #[derive(Debug)]
@@ -49,40 +69,44 @@ pub struct MiPrm {
 
 #[repr(C)]
 #[derive(Debug)]
-pub struct MiaoVol {
+pub struct MiAoVol {
     dev: c_int,
     volume: c_int,
 }
 
 #[repr(C)]
 #[derive(Debug)]
-pub struct MiaoMute {
+pub struct MiAoMute {
     dev: c_int,
     enable: c_int,
 }
 
 /// Set volume output between 0 and 60, use `add` for boosting
 fn set_volume_raw(mut volume: i32, add: i32) -> Result<()> {
-    let miao = File::open("/dev/mi_ao")?;
-    let miao_fd = miao.as_raw_fd();
+    let mi_ao = File::open("/dev/mi_ao")?;
+    let mi_ao_fd = mi_ao.as_raw_fd();
 
-    let mut miao_vol = MiaoVol { dev: 0, volume: 0 };
-    let mut miao_prm_vol = MiPrm {
-        size: size_of::<MiaoVol>() as c_ulong,
-        offset: &miao_vol as *const _ as c_ulong,
+    let mut mi_ao_vol = MiAoVol { dev: 0, volume: 0 };
+    let mut mi_prm_vol = MiPrm {
+        size: size_of::<MiAoVol>() as c_ulong,
+        offset: &mi_ao_vol as *const _ as c_ulong,
     };
     // TODO: figure out why these traces are needed... something to do IO on stdout or some delay?
-    tracing::debug!("miao_vol (size: {}): {:?}", size_of::<MiaoVol>(), &miao_vol);
+    tracing::debug!(
+        "miao_vol (size: {}): {:?}",
+        size_of::<MiAoVol>(),
+        &mi_ao_vol
+    );
     tracing::debug!(
         "miao_prm_vol (size: {}): {:?}",
         size_of::<MiPrm>(),
-        &miao_prm_vol
+        &mi_prm_vol
     );
     unsafe {
-        mi_ao_getvolume(miao_fd, &mut miao_prm_vol)?;
+        mi_ao_getvolume(mi_ao_fd, &mut mi_prm_vol)?;
     }
-    let prev_volume = miao_vol.volume;
-    tracing::debug!("prev volume: {:?}", miao_vol);
+    let prev_volume = mi_ao_vol.volume;
+    tracing::debug!("prev volume: {:?}", mi_ao_vol);
 
     volume = if add != 0 {
         prev_volume + add
@@ -96,30 +120,30 @@ fn set_volume_raw(mut volume: i32, add: i32) -> Result<()> {
         return Ok(());
     }
 
-    miao_vol.volume = volume;
+    mi_ao_vol.volume = volume;
     unsafe {
-        mi_ao_setvolume(miao_fd, &miao_prm_vol as *const _)?;
+        mi_ao_setvolume(mi_ao_fd, &mi_prm_vol as *const _)?;
     }
-    tracing::debug!("set raw volume: {}", miao_vol.volume);
+    tracing::debug!("set raw volume: {}", mi_ao_vol.volume);
 
     if prev_volume <= MIN_RAW_VALUE && volume > MIN_RAW_VALUE {
-        let miao_mute = MiaoMute { dev: 0, enable: 0 };
-        let miao_prm_mute = MiPrm {
-            size: size_of::<MiaoMute>() as c_ulong,
-            offset: &miao_mute as *const _ as c_ulong,
+        let mi_ao_mute = MiAoMute { dev: 0, enable: 0 };
+        let mi_prm_mute = MiPrm {
+            size: size_of::<MiAoMute>() as c_ulong,
+            offset: &mi_ao_mute as *const _ as c_ulong,
         };
         unsafe {
-            mi_ao_setmute(miao_fd, &miao_prm_mute)?;
+            mi_ao_setmute(mi_ao_fd, &mi_prm_mute)?;
         }
         debug!("mute: OFF");
     } else if prev_volume > MIN_RAW_VALUE && volume <= MIN_RAW_VALUE {
-        let miao_mute = MiaoMute { dev: 0, enable: 1 };
-        let miao_prm_mute = MiPrm {
-            size: size_of::<MiaoMute>() as c_ulong,
-            offset: &miao_mute as *const _ as c_ulong,
+        let mi_ao_mute = MiAoMute { dev: 0, enable: 1 };
+        let mi_prm_mute = MiPrm {
+            size: size_of::<MiAoMute>() as c_ulong,
+            offset: &mi_ao_mute as *const _ as c_ulong,
         };
         unsafe {
-            mi_ao_setmute(miao_fd, &miao_prm_mute)?;
+            mi_ao_setmute(mi_ao_fd, &mi_prm_mute)?;
         }
         debug!("mute: ON");
     }

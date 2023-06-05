@@ -1,18 +1,23 @@
 use std::fs::{self, File};
 use std::io::Write;
-use std::os::unix::process::CommandExt;
 use std::path::Path;
-use std::process::Command;
 
 use anyhow::Result;
-use nix::sys::signal::kill;
-use nix::sys::signal::Signal::{SIGCONT, SIGSTOP};
-use nix::unistd::Pid;
 use serde::{Deserialize, Serialize};
 use tokio::signal;
 use tracing::debug;
 
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+
+#[cfg(unix)]
+use {
+    crate::retroarch::RetroArchCommand,
+    nix::sys::signal::kill,
+    nix::sys::signal::Signal::{SIGCONT, SIGSTOP},
+    nix::unistd::Pid,
+    std::os::unix::process::CommandExt,
+    std::process::Command,
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Alliumd<P: Platform> {
@@ -42,7 +47,7 @@ impl Alliumd<DefaultPlatform> {
         } else {
             debug!("found state, loading from file");
             let json = fs::read_to_string(path)?;
-            let mut alliumd: Alliumd<DefaultPlatform> = serde_json::from_str(&json)?;
+            let alliumd: Alliumd<DefaultPlatform> = serde_json::from_str(&json)?;
             Ok(alliumd)
         }
     }
@@ -65,21 +70,26 @@ impl Alliumd<DefaultPlatform> {
                         Some(KeyEvent::Released(Key::VolDown)) => self.add_volume(-1)?,
                         Some(KeyEvent::Released(Key::VolUp)) => self.add_volume(1)?,
                         Some(KeyEvent::Pressed(Key::Menu)) => {
-                            let path = Path::new("/tmp/allium_core.pid");
-                            if path.exists() {
-                                let pid = fs::read_to_string(path)?;
-                                let pid = Pid::from_raw(pid.parse::<i32>()?);
-                                if self.is_core_stopped {
-                                    kill(pid, SIGCONT)?;
-                                    self.is_core_stopped = false;
-                                } else {
-                                    kill(pid, SIGSTOP)?;
-                                    self.is_core_stopped = true;
+                            #[cfg(unix)]
+                            {
+                                let path = Path::new("/tmp/allium_core.pid");
+                                if path.exists() {
+                                    let pid = fs::read_to_string(path)?;
+                                    let pid = Pid::from_raw(pid.parse::<i32>()?);
+                                    if self.is_core_stopped {
+                                        RetroArchCommand::MenuToggle.send().await?;
+                                        // kill(pid, SIGCONT)?;
+                                        self.is_core_stopped = false;
+                                    } else {
+                                        RetroArchCommand::MenuToggle.send().await?;
+                                        // kill(pid, SIGSTOP)?;
+                                        self.is_core_stopped = true;
+                                    }
                                 }
                             }
                         }
                         Some(KeyEvent::Pressed(Key::Power)) => {
-                            self.save();
+                            self.save()?;
                             #[cfg(unix)]
                             Command::new("poweroff").exec();
                         }

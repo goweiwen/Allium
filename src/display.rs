@@ -75,7 +75,7 @@ pub trait Display<E: Error + Send + Sync + 'static>:
     ) -> Result<Rectangle> {
         let Point { x, y } = point;
 
-        let bg_color = style.background_color.clone();
+        let bg_color = style.background_color;
         let truncated_text = self.truncate_text_ellipsis(
             Point::new(x, y),
             text,

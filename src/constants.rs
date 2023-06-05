@@ -1,9 +1,11 @@
+#![allow(unused)]
 use std::time::Duration;
 
 use embedded_graphics::prelude::Size;
 
 pub const ALLIUM_CONFIG_DIR: &str = "/mnt/SDCARD/.allium";
 pub const ALLIUM_ROMS_DIR: &str = "/mnt/SDCARD/Roms";
+pub const RETROARCH_UDP_SOCKET: &str = "127.0.0.1:55355";
 
 pub const BUTTON_DIAMETER: u32 = 34;
 pub const SELECTION_HEIGHT: u32 = 34;

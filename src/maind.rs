@@ -5,6 +5,7 @@ mod battery;
 mod constants;
 mod display;
 mod platform;
+mod retroarch;
 mod stylesheet;
 
 use anyhow::Result;
