@@ -1,6 +1,8 @@
+use std::fs;
 use std::process::{self};
 
 use anyhow::Result;
+use common::constants::ALLIUM_GAME_INFO;
 use embedded_font::FontTextStyleBuilder;
 use embedded_graphics::{prelude::*, primitives::Rectangle, text::Alignment};
 use strum::{Display, EnumCount, EnumIter, IntoEnumIterator};
@@ -138,24 +140,19 @@ impl MenuState {
         match self.selected {
             MenuEntry::Continue => {}
             MenuEntry::Save => {
-                RetroArchCommand::PauseToggle.send().await?;
                 RetroArchCommand::SaveState.send().await?;
-                RetroArchCommand::PauseToggle.send().await?;
             }
             MenuEntry::Load => {
-                RetroArchCommand::PauseToggle.send().await?;
                 RetroArchCommand::LoadState.send().await?;
-                RetroArchCommand::PauseToggle.send().await?;
             }
             MenuEntry::Reset => {
-                RetroArchCommand::PauseToggle.send().await?;
                 RetroArchCommand::Reset.send().await?;
-                RetroArchCommand::PauseToggle.send().await?;
             }
             MenuEntry::Advanced => {
                 RetroArchCommand::MenuToggle.send().await?;
             }
             MenuEntry::Quit => {
+                fs::remove_file(ALLIUM_GAME_INFO)?;
                 RetroArchCommand::Quit.send().await?;
             }
         }

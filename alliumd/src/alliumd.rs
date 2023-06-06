@@ -108,7 +108,6 @@ impl AlliumD<DefaultPlatform> {
                         self.menu = None;
                         #[cfg(unix)]
                         signal(&self.main, Signal::SIGCONT)?;
-                        RetroArchCommand::PauseToggle.send().await?;
                     }
                     _ = sighup.recv() => self.handle_quit()?,
                     _ = sigint.recv() => self.handle_quit()?,
@@ -146,7 +145,6 @@ impl AlliumD<DefaultPlatform> {
                     if self.menu.is_some() {
                         #[cfg(unix)]
                         signal(&self.main, Signal::SIGCONT)?;
-                        RetroArchCommand::PauseToggle.send().await?;
                     }
                     #[cfg(unix)]
                     signal(&self.main, Signal::SIGTERM)?;
@@ -160,7 +158,6 @@ impl AlliumD<DefaultPlatform> {
                     if let Some(menu) = &mut self.menu {
                         terminate(menu).await?;
                     } else {
-                        RetroArchCommand::PauseToggle.send().await?;
                         #[cfg(unix)]
                         signal(&self.main, Signal::SIGSTOP)?;
                         self.menu = Some(Command::new(ALLIUM_MENU).spawn()?);
