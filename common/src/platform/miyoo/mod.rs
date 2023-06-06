@@ -3,12 +3,8 @@ mod evdev;
 mod framebuffer;
 mod volume;
 
-use std::fs;
-use std::path::PathBuf;
-
 use anyhow::Result;
 use async_trait::async_trait;
-use tracing::warn;
 
 use crate::battery::Battery;
 use crate::platform::miyoo::evdev::EvdevKeys;

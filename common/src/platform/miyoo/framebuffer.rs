@@ -4,6 +4,7 @@ use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::Pixel;
 use framebuffer::Framebuffer;
+use tracing::trace;
 
 use crate::display::Display;
 
@@ -22,13 +23,32 @@ pub struct FramebufferDisplay {
 impl FramebufferDisplay {
     pub fn new() -> Result<FramebufferDisplay> {
         let iface = Framebuffer::new("/dev/fb0")?;
-        let background = iface.read_frame().to_vec();
+        trace!(
+            "init fb: var_screen_info: {:?}, fix_screen_info: {:?}",
+            iface.var_screen_info,
+            iface.fix_screen_info,
+        );
+
+        let background = iface.read_frame();
+        let size = Size::new(iface.var_screen_info.xres, iface.var_screen_info.yres);
+
+        let (xoffset, yoffset) = (
+            iface.var_screen_info.xoffset as usize,
+            iface.var_screen_info.yoffset as usize,
+        );
+        let width = size.width as usize;
+        let height = size.height as usize;
+        let bytes_per_pixel = iface.var_screen_info.bits_per_pixel / 8;
+        let mut buffer = vec![0; width * height * bytes_per_pixel as usize];
+        let buffer_size = buffer.len();
+        let location = (yoffset * width + xoffset) * bytes_per_pixel as usize;
+        buffer[..].copy_from_slice(&background[location..location + buffer_size]);
 
         Ok(FramebufferDisplay {
             framebuffer: Buffer {
-                buffer: background.clone(),
-                size: Size::new(iface.var_screen_info.xres, iface.var_screen_info.yres),
-                bytes_per_pixel: iface.var_screen_info.bits_per_pixel / 8,
+                buffer,
+                size,
+                bytes_per_pixel,
             },
             iface,
             saved: None,
@@ -55,7 +75,14 @@ impl Display<core::convert::Infallible> for FramebufferDisplay {
     }
 
     fn flush(&mut self) -> Result<()> {
-        self.iface.write_frame(&self.framebuffer.buffer);
+        let (xoffset, yoffset) = (
+            self.iface.var_screen_info.xoffset as usize,
+            self.iface.var_screen_info.yoffset as usize,
+        );
+        let width = self.framebuffer.size.width as usize;
+        let location = (yoffset * width + xoffset) * self.framebuffer.bytes_per_pixel as usize;
+        self.iface.frame[location..location + self.framebuffer.buffer.len()]
+            .copy_from_slice(&self.framebuffer.buffer);
         Ok(())
     }
 
