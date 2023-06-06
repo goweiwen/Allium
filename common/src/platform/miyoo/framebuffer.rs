@@ -70,8 +70,8 @@ impl Display<core::convert::Infallible> for FramebufferDisplay {
         };
 
         let Point { x, y } = area.top_left;
-        let x = self.framebuffer.size.width - x + 1 as u32;
-        let y = self.framebuffer.size.height - y + 1 as u32;
+        let x = self.framebuffer.size.width - x as u32 + 1;
+        let y = self.framebuffer.size.height - y as u32 + 1;
         let Size { width, height } = area.size;
 
         for y in (y - height)..y {

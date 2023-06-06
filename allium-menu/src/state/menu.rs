@@ -1,4 +1,5 @@
-use std::process;
+use std::process::{self, exit};
+use std::time::Duration;
 
 use anyhow::Result;
 use embedded_font::FontTextStyleBuilder;
@@ -105,34 +106,31 @@ impl MenuState {
 
     pub async fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<bool> {
         Ok(match key_event {
-            KeyEvent::Released(key) => match key {
-                Key::Up => {
-                    self.selected = self.selected.prev();
-                    true
-                }
-                Key::Down => {
-                    self.selected = self.selected.next();
-                    true
-                }
-                Key::Left => {
-                    self.selected = MenuEntry::Continue;
-                    true
-                }
-                Key::Right => {
-                    self.selected = MenuEntry::Quit;
-                    true
-                }
-                Key::A => {
-                    self.select_entry().await?;
-                    true
-                }
-                Key::B => {
-                    self.selected = MenuEntry::Continue;
-                    self.select_entry().await?;
-                    true
-                }
-                _ => false,
-            },
+            KeyEvent::Released(Key::Up) => {
+                self.selected = self.selected.prev();
+                true
+            }
+            KeyEvent::Released(Key::Down) => {
+                self.selected = self.selected.next();
+                true
+            }
+            KeyEvent::Released(Key::Left) => {
+                self.selected = MenuEntry::Continue;
+                true
+            }
+            KeyEvent::Released(Key::Right) => {
+                self.selected = MenuEntry::Quit;
+                true
+            }
+            KeyEvent::Pressed(Key::A) => {
+                self.select_entry().await?;
+                true
+            }
+            KeyEvent::Pressed(Key::B) => {
+                self.selected = MenuEntry::Continue;
+                self.select_entry().await?;
+                true
+            }
             _ => false,
         })
     }

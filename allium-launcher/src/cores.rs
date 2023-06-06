@@ -10,7 +10,7 @@ use std::{collections::HashMap, process};
 use anyhow::{Context, Result};
 use serde::Deserialize;
 
-use common::constants::ALLIUM_CONFIG_DIR;
+use common::constants::{ALLIUM_CONFIG_DIR, ALLIUM_CORE_ID};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Core {
@@ -26,7 +26,7 @@ impl Core {
             .spawn()
             .context("Failed to launch core")?;
 
-        let mut file = File::create("/tmp/allium_core.pid")?;
+        let mut file = File::create(ALLIUM_CORE_ID)?;
         file.write_all(process::id().to_string().as_bytes())?;
 
         #[cfg(unix)]

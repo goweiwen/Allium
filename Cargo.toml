@@ -1,8 +1,8 @@
 [workspace]
 members = [
     "common",
-    "allium",
     "alliumd",
-    "alliumm",
+    "allium-launcher",
+    "allium-menu",
 ]
 resolver = "2"

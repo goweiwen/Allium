@@ -1,5 +1,3 @@
-use std::fs;
-use std::path::Path;
 use std::time::Duration;
 
 use anyhow::Result;
@@ -12,7 +10,7 @@ use common::stylesheet::Stylesheet;
 
 use crate::state::State;
 
-pub struct AlliumM<P: Platform> {
+pub struct AlliumMenu<P: Platform> {
     platform: P,
     display: P::Display,
     battery: P::Battery,
@@ -21,13 +19,13 @@ pub struct AlliumM<P: Platform> {
     dirty: bool,
 }
 
-impl AlliumM<DefaultPlatform> {
-    pub fn new() -> Result<AlliumM<DefaultPlatform>> {
+impl AlliumMenu<DefaultPlatform> {
+    pub fn new() -> Result<AlliumMenu<DefaultPlatform>> {
         let mut platform = DefaultPlatform::new()?;
         let display = platform.display()?;
         let battery = platform.battery()?;
 
-        Ok(AlliumM {
+        Ok(AlliumMenu {
             platform,
             display,
             battery,
@@ -38,8 +36,6 @@ impl AlliumM<DefaultPlatform> {
     }
 
     pub async fn run_event_loop(&mut self) -> Result<()> {
-        tokio::time::sleep(Duration::from_millis(300)).await;
-
         self.display.darken()?;
         self.display.save()?;
 
@@ -57,6 +53,8 @@ impl AlliumM<DefaultPlatform> {
                 last_updated_battery = now;
                 self.dirty = true;
             }
+
+            self.state.update()?;
 
             if self.dirty {
                 self.state
@@ -85,8 +83,6 @@ impl AlliumM<DefaultPlatform> {
                 Some(key_event) => self.state.handle_key_event(key_event).await?,
                 None => false,
             };
-
-            self.state.update()?;
         }
     }
 }

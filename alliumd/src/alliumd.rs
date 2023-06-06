@@ -1,29 +1,37 @@
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
+use std::time::Duration;
 
 use anyhow::Result;
+use common::constants::{ALLIUMD_STATE, ALLIUM_CORE_ID, ALLIUM_LAUNCHER, ALLIUM_MENU};
+use common::retroarch::RetroArchCommand;
+use futures::future::{Fuse, FusedFuture, FutureExt};
 use serde::{Deserialize, Serialize};
-use tokio::signal;
-use tracing::debug;
+use tokio::process::{Child, Command};
+use tracing::{debug, info, trace};
 
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 
 #[cfg(unix)]
 use {
-    common::retroarch::RetroArchCommand,
-    nix::sys::signal::kill,
-    nix::sys::signal::Signal::{SIGCONT, SIGSTOP},
-    nix::unistd::Pid,
-    std::os::unix::process::CommandExt,
-    std::process::Command,
+    nix::sys::signal::kill, nix::sys::signal::Signal, nix::unistd::Pid,
+    std::os::unix::process::CommandExt, tokio::signal::unix::SignalKind,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AlliumD<P: Platform> {
     #[serde(skip)]
     platform: P,
+    #[serde(skip, default = "spawn_launcher")]
+    main: Child,
+    #[serde(skip)]
+    menu: Option<Child>,
     volume: i32,
+}
+
+fn spawn_launcher() -> Child {
+    Command::new(ALLIUM_LAUNCHER).spawn().unwrap()
 }
 
 impl AlliumD<DefaultPlatform> {
@@ -32,12 +40,109 @@ impl AlliumD<DefaultPlatform> {
 
         Ok(AlliumD {
             platform,
+            main: spawn_launcher(),
+            menu: None,
             volume: 0,
         })
     }
 
+    pub async fn run_event_loop(&mut self) -> Result<()> {
+        info!("running Alliumd");
+
+        self.platform.set_volume(self.volume)?;
+
+        #[cfg(unix)]
+        {
+            let mut sighup = tokio::signal::unix::signal(SignalKind::hangup())?;
+            let mut sigint = tokio::signal::unix::signal(SignalKind::interrupt())?;
+            let mut sigquit = tokio::signal::unix::signal(SignalKind::quit())?;
+            let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())?;
+
+            loop {
+                let menu_terminated = match self.menu.as_mut() {
+                    Some(menu) => menu.wait().fuse(),
+                    None => Fuse::terminated(),
+                };
+
+                tokio::select! {
+                    key_event = self.platform.poll() => {
+                        if let Some(key_event) = key_event? {
+                            self.handle_key_event(key_event).await?;
+                        }
+                    }
+                    _ = self.main.wait() => {
+                        info!("main process terminated, restarting");
+                        self.main = spawn_launcher();
+                    }
+                    _ = menu_terminated => {
+                        info!("menu process terminated, resuming game");
+                        self.menu = None;
+                        #[cfg(unix)]
+                        signal(&self.main, Signal::SIGCONT)?;
+                        tokio::time::sleep(Duration::from_millis(100)).await;
+                        RetroArchCommand::PauseToggle.send().await?;
+                    }
+                    _ = sighup.recv() => self.handle_quit()?,
+                    _ = sigint.recv() => self.handle_quit()?,
+                    _ = sigquit.recv() => self.handle_quit()?,
+                    _ = sigterm.recv() => self.handle_quit()?,
+                }
+            }
+        }
+
+        #[cfg(not(unix))]
+        loop {
+            tokio::select! {
+                key_event = self.platform.poll() => {
+                    if let Some(key_event) = key_event? {
+                        self.handle_key_event(key_event).await?;
+                    }
+                }
+            }
+        }
+    }
+
+    async fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<()> {
+        trace!(
+            "menu: {:?}, main: {:?}, ingame: {}",
+            self.menu.as_ref().map(|c| c.id()),
+            self.main.id(),
+            self.is_ingame()
+        );
+        match key_event {
+            KeyEvent::Released(Key::VolDown) => self.add_volume(-1)?,
+            KeyEvent::Released(Key::VolUp) => self.add_volume(1)?,
+            KeyEvent::Released(Key::Power) => {
+                self.save()?;
+                #[cfg(unix)]
+                std::process::Command::new("poweroff").exec();
+            }
+            KeyEvent::Released(Key::Menu) => {
+                if self.is_ingame() {
+                    if let Some(menu) = &mut self.menu {
+                        terminate(menu).await?;
+                    } else {
+                        RetroArchCommand::PauseToggle.send().await?;
+                        #[cfg(unix)]
+                        signal(&self.main, Signal::SIGSTOP)?;
+                        self.menu = Some(Command::new(ALLIUM_MENU).spawn()?);
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        Ok(())
+    }
+
+    fn handle_quit(&mut self) -> Result<()> {
+        debug!("terminating, saving state");
+        self.save()?;
+        Ok(())
+    }
+
     pub fn load() -> Result<AlliumD<DefaultPlatform>> {
-        let path = Path::new("/mnt/SDCARD/.allium/alliumd.json");
+        let path = Path::new(ALLIUMD_STATE);
         if !path.exists() {
             debug!("can't find state, creating new");
             Self::new()
@@ -51,54 +156,12 @@ impl AlliumD<DefaultPlatform> {
 
     fn save(&mut self) -> Result<()> {
         let json = serde_json::to_string(self).unwrap();
-        File::create("/mnt/SDCARD/.allium/alliumd.json")?.write_all(json.as_bytes())?;
+        File::create(ALLIUMD_STATE)?.write_all(json.as_bytes())?;
         Ok(())
     }
 
-    pub async fn run_event_loop(&mut self) -> Result<()> {
-        tracing::trace!("running Alliumd");
-
-        self.platform.set_volume(self.volume)?;
-
-        loop {
-            tokio::select! {
-                key = self.platform.poll() => {
-                    match key? {
-                        Some(KeyEvent::Released(Key::VolDown)) => self.add_volume(-1)?,
-                        Some(KeyEvent::Released(Key::VolUp)) => self.add_volume(1)?,
-                        Some(KeyEvent::Pressed(Key::Menu)) => {
-                            #[cfg(unix)]
-                            {
-                                let path = Path::new("/tmp/allium_core.pid");
-                                if path.exists() {
-                                    let pid = fs::read_to_string(path)?;
-                                    let pid = Pid::from_raw(pid.parse::<i32>()?);
-                                    debug!("sending SIGSTOP to {}", pid);
-                                    kill(pid, SIGSTOP)?;
-                                    debug!("starting alliumm");
-                                    let process = tokio::process::Command::new("/mnt/SDCARD/.allium/alliumm").spawn()?.wait().await?;
-                                    debug!("sending SIGCONT to {}", pid);
-                                    kill(pid, SIGCONT)?;
-                                }
-                            }
-                        }
-                        Some(KeyEvent::Pressed(Key::Power)) => {
-                            self.save()?;
-                            #[cfg(unix)]
-                            Command::new("poweroff").exec();
-                        }
-                        _ => {}
-                    }
-                }
-                _ = signal::ctrl_c() => {
-                    debug!("caught SIGKILL, saving state");
-                    self.save()?;
-                    break;
-                }
-            }
-        }
-
-        Ok(())
+    fn is_ingame(&self) -> bool {
+        Path::new(ALLIUM_CORE_ID).exists()
     }
 
     fn set_volume(&mut self, volume: i32) -> Result<()> {
@@ -111,4 +174,22 @@ impl AlliumD<DefaultPlatform> {
     fn add_volume(&mut self, add: i32) -> Result<()> {
         self.set_volume(self.volume + add)
     }
+}
+
+async fn terminate(child: &mut Child) -> Result<()> {
+    #[cfg(unix)]
+    signal(child, Signal::SIGTERM)?;
+    #[cfg(not(unix))]
+    child.kill().await?;
+    child.wait().await?;
+    Ok(())
+}
+
+#[cfg(unix)]
+fn signal(child: &Child, signal: Signal) -> Result<()> {
+    if let Some(pid) = child.id() {
+        let pid = Pid::from_raw(pid as i32);
+        kill(pid, signal)?;
+    }
+    Ok(())
 }

@@ -3,12 +3,11 @@ use embedded_graphics::{
     prelude::*,
     primitives::{PrimitiveStyle, Rectangle},
 };
-use serde::{Deserialize, Serialize};
 
 use common::platform::{DefaultPlatform, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct NetplayState {}
 
 impl NetplayState {

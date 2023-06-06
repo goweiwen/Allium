@@ -16,9 +16,9 @@ build:
 	cross build --release
 
 package-build:
-	rsync -a $(BUILD_DIR)/allium $(DIST_DIR)/.allium
 	rsync -a $(BUILD_DIR)/alliumd $(DIST_DIR)/.allium
-	rsync -a $(BUILD_DIR)/alliumm $(DIST_DIR)/.allium
+	rsync -a $(BUILD_DIR)/allium-launcher $(DIST_DIR)/.allium
+	rsync -a $(BUILD_DIR)/allium-menu $(DIST_DIR)/.allium
 
 retroarch: $(RETROARCH)/retroarch_miyoo283 $(RETROARCH)/retroarch_miyoo354
 

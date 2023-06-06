@@ -1,11 +1,12 @@
 #![feature(async_fn_in_trait)]
 
-mod alliumm;
+mod allium_launcher;
+mod cores;
 mod state;
 
 use anyhow::Result;
 
-use alliumm::AlliumM;
+use allium_launcher::AlliumLauncher;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -14,7 +15,7 @@ async fn main() -> Result<()> {
         .finish();
     tracing::subscriber::set_global_default(subscriber)?;
 
-    let mut app = AlliumM::new()?;
+    let mut app = AlliumLauncher::new()?;
     app.run_event_loop().await?;
     Ok(())
 }

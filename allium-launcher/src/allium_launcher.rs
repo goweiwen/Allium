@@ -4,14 +4,14 @@ use std::path::Path;
 use anyhow::Result;
 
 use common::battery::Battery;
-use common::constants::BATTERY_UPDATE_INTERVAL;
+use common::constants::{ALLIUM_CORE_ID, BATTERY_UPDATE_INTERVAL};
 use common::display::Display;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 
 use crate::state::State;
 
-pub struct Allium<P: Platform> {
+pub struct AlliumLauncher<P: Platform> {
     platform: P,
     display: P::Display,
     battery: P::Battery,
@@ -20,13 +20,13 @@ pub struct Allium<P: Platform> {
     dirty: bool,
 }
 
-impl Allium<DefaultPlatform> {
-    pub fn new() -> Result<Allium<DefaultPlatform>> {
+impl AlliumLauncher<DefaultPlatform> {
+    pub fn new() -> Result<AlliumLauncher<DefaultPlatform>> {
         let mut platform = DefaultPlatform::new()?;
         let display = platform.display()?;
         let battery = platform.battery()?;
 
-        Ok(Allium {
+        Ok(AlliumLauncher {
             platform,
             display,
             battery,
@@ -38,7 +38,7 @@ impl Allium<DefaultPlatform> {
 
     pub async fn run_event_loop(&mut self) -> Result<()> {
         // Remove core pid now that Allium is running again
-        let path = Path::new("/tmp/allium_core.pid");
+        let path = Path::new(ALLIUM_CORE_ID);
         if path.exists() {
             fs::remove_file(path)?;
         }
@@ -57,6 +57,8 @@ impl Allium<DefaultPlatform> {
                 last_updated_battery = now;
                 self.dirty = true;
             }
+
+            self.state.update()?;
 
             if self.dirty {
                 self.state
@@ -85,8 +87,6 @@ impl Allium<DefaultPlatform> {
                 Some(key_event) => self.state.handle_key_event(key_event)?,
                 None => false,
             };
-
-            self.state.update()?;
         }
     }
 }
