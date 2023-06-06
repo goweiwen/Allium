@@ -68,7 +68,7 @@ jobs:
         run: |
           make all
           cd dist
-          tar czvf ../allium-${{ matrix.target }}.tar.gz .allium .tmp_update RetroArch
+          zip -r ../allium-${{ matrix.target }}.zip .allium .tmp_update RetroArch
           cd -
           
       - name: Publish
@@ -76,7 +76,7 @@ jobs:
         # TODO: if any of the build step fails, the release should be deleted.
         with:
             # UPDATEME: Replace "rust-ci" with your binary name but keep the star (*).
-            files: 'allium-${{ matrix.target }}.tar.gz'
+            files: 'allium-${{ matrix.target }}.zip'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
