@@ -10,7 +10,7 @@ use embedded_graphics::pixelcolor;
 #[cfg(target_arch = "arm")]
 pub type DefaultPlatform = miyoo::MiyooPlatform;
 #[cfg(target_arch = "arm")]
-pub type Color = pixelcolor::Bgr888;
+pub type Color = pixelcolor::Rgb888;
 
 #[cfg(not(target_arch = "arm"))]
 pub type DefaultPlatform = simulator::SimulatorPlatform;

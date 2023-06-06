@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use embedded_graphics::pixelcolor::Bgr888;
+use embedded_graphics::pixelcolor::Rgb888;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::Pixel;
@@ -59,16 +59,16 @@ impl FramebufferDisplay {
 impl Display<core::convert::Infallible> for FramebufferDisplay {
     fn map_pixels<F>(&mut self, mut f: F) -> Result<()>
     where
-        F: FnMut(Bgr888) -> Bgr888,
+        F: FnMut(Rgb888) -> Rgb888,
     {
         self.framebuffer.buffer = self
             .framebuffer
             .buffer
             .chunks(self.framebuffer.bytes_per_pixel as usize)
-            .flat_map(|bgrx| {
+            .flat_map(|raw| {
                 // framebuffer should be divisible by bytespp, we don't have to worry about out of bounds
-                let pixel = f(Bgr888::new(bgrx[2], bgrx[1], bgrx[0]));
-                [pixel.b(), pixel.g(), pixel.r(), bgrx[3]]
+                let pixel = f(Rgb888::new(raw[2], raw[1], raw[0]));
+                [pixel.r(), pixel.g(), pixel.b(), raw[3]]
             })
             .collect();
         Ok(())
@@ -116,7 +116,7 @@ impl Display<core::convert::Infallible> for FramebufferDisplay {
 }
 
 impl DrawTarget for FramebufferDisplay {
-    type Color = Bgr888;
+    type Color = Rgb888;
     type Error = core::convert::Infallible;
 
     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
@@ -157,7 +157,7 @@ impl OriginDimensions for FramebufferDisplay {
 }
 
 impl DrawTarget for Buffer {
-    type Color = Bgr888;
+    type Color = Rgb888;
     type Error = core::convert::Infallible;
 
     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
