@@ -6,6 +6,12 @@ TOOLCHAIN := mholdg16/miyoomini-toolchain:latest
 
 all: static build package-build package-retroarch
 
+simulator-launcher:
+	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_GAME_INFO=assets/simulator/current_game ALLIUM_ROMS_DIR=assets/simulator/Roms ALLIUM_CONFIG_DIR=dist/.allium cargo run --bin allium-launcher
+
+simulator-menu:
+	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_GAME_INFO=assets/simulator/current_game ALLIUM_ROMS_DIR=assets/simulator/Roms ALLIUM_CONFIG_DIR=dist/.allium cargo run --bin allium-menu
+
 clean:
 	rm -r $(DIST_DIR)
 

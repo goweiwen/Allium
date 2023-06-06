@@ -19,16 +19,14 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tracing::trace;
 
+use common::constants::{
+    self, ALLIUM_ROMS_DIR, BUTTON_DIAMETER, IMAGE_SIZE, LISTING_JUMP_SIZE, LISTING_SIZE,
+    SELECTION_HEIGHT, SELECTION_MARGIN,
+};
+use common::display::Display;
+use common::platform::Color;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
-use common::{constants::ALLIUM_GAME_INFO, display::Display};
-use common::{
-    constants::{
-        ALLIUM_ROMS_DIR, BUTTON_DIAMETER, IMAGE_SIZE, LISTING_JUMP_SIZE, LISTING_SIZE,
-        SELECTION_HEIGHT, SELECTION_MARGIN,
-    },
-    platform::Color,
-};
 
 use crate::cores::CoreMapper;
 
@@ -88,8 +86,12 @@ impl GamesState {
     fn launch_game(&mut self, game: &Game) -> Result<()> {
         let core = self.core_mapper.get_core(&game.extension);
         if let Some(core) = core {
+            lazy_static! {
+                static ref ALLIUM_GAME_INFO: String = env::var("ALLIUM_GAME_INFO")
+                    .unwrap_or_else(|_| constants::ALLIUM_GAME_INFO.to_string());
+            }
             write!(
-                File::create(ALLIUM_GAME_INFO)?,
+                File::create(&*ALLIUM_GAME_INFO)?,
                 "{}\n{}\n{}\n{}",
                 core.path.as_path().as_os_str().to_str().unwrap_or(""),
                 game.path.as_path().as_os_str().to_str().unwrap_or(""),
@@ -134,16 +136,13 @@ impl GamesState {
         let (x, mut y) = (24, 58);
 
         // Clear previous selection
-        let fill_style = PrimitiveStyle::with_fill(styles.bg_color);
-        Rectangle::new(
+        display.load(Rectangle::new(
             Point::new(x - 12, y - 4),
             Size::new(
                 336,
                 LISTING_SIZE as u32 * (SELECTION_HEIGHT + SELECTION_MARGIN),
             ),
-        )
-        .into_styled(fill_style)
-        .draw(display)?;
+        ))?;
 
         for i in (self.top as usize)
             ..std::cmp::min(
@@ -170,15 +169,13 @@ impl GamesState {
                             image::imageops::FilterType::Triangle,
                         );
                     }
-                    Rectangle::new(
+                    display.load(Rectangle::new(
                         Point::new(
                             width as i32 - IMAGE_SIZE.width as i32 - 24,
                             54 + image.height() as i32,
                         ),
                         Size::new(IMAGE_SIZE.width, IMAGE_SIZE.height - image.height()),
-                    )
-                    .into_styled(fill_style)
-                    .draw(display)?;
+                    ))?;
 
                     let mut image = image.to_rgb8();
                     common::image::round(&mut image, image::Rgb([0u8; 3]), 12);
@@ -189,12 +186,10 @@ impl GamesState {
                     );
                     image.draw(display)?;
                 } else {
-                    Rectangle::new(
+                    display.load(Rectangle::new(
                         Point::new(width as i32 - IMAGE_SIZE.width as i32 - 24, 54),
                         IMAGE_SIZE,
-                    )
-                    .into_styled(fill_style)
-                    .draw(display)?;
+                    ))?;
                 }
 
                 display.draw_entry(

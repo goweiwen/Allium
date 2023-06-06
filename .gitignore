@@ -1,5 +1,5 @@
 /target
 /dist
-/assets/Roms/*
+/assets/simulator/Roms/*
 !.gitkeep
 SDL2.dll

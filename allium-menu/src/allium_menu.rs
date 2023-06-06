@@ -1,15 +1,16 @@
+use std::env;
 use std::fs;
 
 use anyhow::Result;
-
 use common::battery::Battery;
-use common::constants::{ALLIUM_GAME_INFO, BATTERY_UPDATE_INTERVAL};
+use common::constants::{self, BATTERY_UPDATE_INTERVAL};
 use common::display::Display;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 use embedded_font::FontTextStyleBuilder;
 use embedded_graphics::prelude::*;
 use embedded_graphics::text::{Alignment, Text};
+use lazy_static::lazy_static;
 
 use crate::state::State;
 
@@ -29,7 +30,11 @@ impl AlliumMenu<DefaultPlatform> {
         let display = platform.display()?;
         let battery = platform.battery()?;
 
-        let game_info = fs::read_to_string(ALLIUM_GAME_INFO)?;
+        lazy_static! {
+            static ref ALLIUM_GAME_INFO: String = env::var("ALLIUM_GAME_INFO")
+                .unwrap_or_else(|_| constants::ALLIUM_GAME_INFO.to_string());
+        }
+        let game_info = fs::read_to_string(&*ALLIUM_GAME_INFO)?;
         let mut split = game_info.split('\n');
         let _ = split.next();
         let _ = split.next();

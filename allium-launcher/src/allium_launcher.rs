@@ -1,3 +1,4 @@
+use std::env;
 use std::fs;
 use std::path::Path;
 
@@ -6,12 +7,14 @@ use embedded_font::FontTextStyleBuilder;
 use embedded_graphics::prelude::*;
 use embedded_graphics::text::{Alignment, Text};
 use embedded_graphics::Drawable;
+use lazy_static::lazy_static;
 
 use common::battery::Battery;
-use common::constants::{ALLIUM_GAME_INFO, BATTERY_UPDATE_INTERVAL};
+use common::constants::{self, BATTERY_UPDATE_INTERVAL};
 use common::display::Display;
-use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::platform::{Color, DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
+use tracing::warn;
 
 use crate::state::State;
 
@@ -42,10 +45,19 @@ impl AlliumLauncher<DefaultPlatform> {
 
     pub async fn run_event_loop(&mut self) -> Result<()> {
         // Remove game info now that Allium is running again
-        let path = Path::new(ALLIUM_GAME_INFO);
-        if path.exists() {
-            fs::remove_file(path)?;
+        lazy_static! {
+            static ref ALLIUM_GAME_INFO: String = env::var("ALLIUM_GAME_INFO")
+                .unwrap_or_else(|_| constants::ALLIUM_GAME_INFO.to_string());
         }
+        let path = Path::new(&*ALLIUM_GAME_INFO);
+        if path.exists() {
+            fs::remove_file(path)
+                .map_err(|e| warn!("failed to remove game info: {}", e))
+                .ok();
+        }
+
+        self.display.clear(Color::BLACK)?;
+        self.display.save()?;
 
         self.state.enter()?;
 

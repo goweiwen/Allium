@@ -46,7 +46,7 @@ checksum = "250f629c0161ad8107cf89319e990051fae62832fd343083bea452d93e2205fd"
 
 [[package]]
 name = "allium-launcher"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "common",
@@ -67,7 +67,7 @@ dependencies = [
 
 [[package]]
 name = "allium-menu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "common",
@@ -89,11 +89,12 @@ dependencies = [
 
 [[package]]
 name = "alliumd"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "common",
  "futures",
+ "lazy_static",
  "nix 0.26.2",
  "regex",
  "rusttype",
@@ -208,7 +209,7 @@ checksum = "3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b"
 
 [[package]]
 name = "common"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",

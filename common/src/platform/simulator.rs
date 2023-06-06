@@ -54,8 +54,8 @@ impl Platform for SimulatorPlatform {
     }
 
     fn display(&mut self) -> Result<SimulatorWindow> {
-        let display = SimulatorDisplay::load_png("assets/screenshots/ingame.png")
-            .context("Cannot find assets/screenshots/ingame.png")?;
+        let display = SimulatorDisplay::load_png("assets/simulator/ingame.png")
+            .context("Cannot find assets/simulator/ingame.png")?;
         self.window.borrow_mut().update(&display);
         Ok(SimulatorWindow {
             window: Rc::clone(&self.window),

@@ -1,12 +1,14 @@
+use std::env;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::Result;
-use common::constants::{ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU};
+use common::constants::{self, ALLIUMD_STATE, ALLIUM_LAUNCHER, ALLIUM_MENU};
 use common::retroarch::RetroArchCommand;
 use futures::future::{Fuse, FutureExt};
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
 use tracing::{debug, info, trace};
@@ -30,9 +32,14 @@ pub struct AlliumD<P: Platform> {
     volume: i32,
 }
 
+lazy_static! {
+    static ref ALLIUM_GAME_INFO: String =
+        env::var("ALLIUM_GAME_INFO").unwrap_or_else(|_| constants::ALLIUM_GAME_INFO.to_string());
+}
+
 fn spawn_main() -> Child {
     try_load_game().unwrap_or_else(|| {
-        let path = Path::new(ALLIUM_GAME_INFO);
+        let path = Path::new(&*ALLIUM_GAME_INFO);
         if path.exists() {
             info!("no game info found, launching menu");
             fs::remove_file(path).unwrap();
@@ -44,7 +51,7 @@ fn spawn_main() -> Child {
 }
 
 fn try_load_game() -> Option<Child> {
-    let path = Path::new(ALLIUM_GAME_INFO);
+    let path = Path::new(&*ALLIUM_GAME_INFO);
     if path.exists() {
         let game_info = fs::read_to_string(path).ok()?;
         let mut split = game_info.split('\n');
@@ -192,7 +199,7 @@ impl AlliumD<DefaultPlatform> {
     }
 
     fn is_ingame(&self) -> bool {
-        Path::new(ALLIUM_GAME_INFO).exists()
+        Path::new(&*ALLIUM_GAME_INFO).exists()
     }
 
     fn set_volume(&mut self, volume: i32) -> Result<()> {
