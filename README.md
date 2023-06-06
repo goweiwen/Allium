@@ -22,11 +22,12 @@ Goals:
 - Launch RetroArch for supported cores
 - Battery indicator
 - Volume control
+- In-game menu (view game name, battery %, save, load, reset, access RetroArch menu, quit)
+- Automatic game save/load state when powering off/on
 
 ## Todo
 - File-system database to cache folder structure
 - Save launcher state to file-system (for suspend, resuming after RetroArch quits)
-- In-game menu
 - Add config for all supported RetroArch cores
 - Recents list (sort by frecency)
 - Settings page:
@@ -34,6 +35,22 @@ Goals:
     - Theme color
     - Toggle box art
     - WiFi
+    - Clock
+- OTA update
+- Persistent launcher state (maintain selected game after launching game/restarting)
+- Brightness control
+- UI improvements:
+    - Folder icon
+    - Battery icon
+    - Volume indicator
+    - Brightness indicator
+    - Error toast (e.g. no core found for game)
+    - Anti-aliased circles
+
+## Known bugs
+- Volume resets when RetroArch launches
+- Battery indicator draws over previous value
+- 
 
 ## Building
 
