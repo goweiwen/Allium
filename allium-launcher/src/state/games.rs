@@ -11,7 +11,7 @@ use embedded_font::FontTextStyleBuilder;
 use embedded_graphics::{
     image::{Image, ImageRaw},
     prelude::*,
-    primitives::{PrimitiveStyle, Rectangle},
+    primitives::Rectangle,
     text::Alignment,
 };
 use lazy_static::lazy_static;

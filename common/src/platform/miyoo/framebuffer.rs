@@ -67,7 +67,7 @@ impl Display<core::convert::Infallible> for FramebufferDisplay {
             .chunks(self.framebuffer.bytes_per_pixel as usize)
             .flat_map(|raw| {
                 // framebuffer should be divisible by bytespp, we don't have to worry about out of bounds
-                let pixel = f(Rgb888::new(raw[2], raw[1], raw[0]));
+                let pixel = f(Rgb888::new(raw[0], raw[1], raw[2]));
                 [pixel.r(), pixel.g(), pixel.b(), raw[3]]
             })
             .collect();
@@ -95,22 +95,24 @@ impl Display<core::convert::Infallible> for FramebufferDisplay {
         let Some(ref saved) = self.saved else {
              bail!("No saved image");
         };
+        let to = &mut self.framebuffer.buffer;
 
-        let Point { x, y } = area.top_left;
-        let x = self.framebuffer.size.width - x as u32 + 1;
-        let y = self.framebuffer.size.height - y as u32 + 1;
-        let Size { width, height } = area.size;
+        let buffer_width = self.framebuffer.size.width as usize;
+        let buffer_height = self.framebuffer.size.height as usize;
+        let bytes_per_pixel = self.framebuffer.bytes_per_pixel as usize;
 
-        for y in (y - height)..y {
-            for x in (x - width)..x {
-                let i = (y * self.framebuffer.size.width + x) as usize
-                    * self.framebuffer.bytes_per_pixel as usize;
-                self.framebuffer.buffer[i] = saved[i];
-                self.framebuffer.buffer[i + 1] = saved[i + 1];
-                self.framebuffer.buffer[i + 2] = saved[i + 2];
-                self.framebuffer.buffer[i + 3] = saved[i + 3];
-            }
+        let x = area.top_left.x as usize;
+        let width = area.size.width as usize;
+        let y0 = area.top_left.y as usize;
+        let y1 = y0 + area.size.height as usize;
+
+        for y in y0..y1 {
+            let from = ((buffer_height - y + 1) * buffer_width + (buffer_width - x - width + 1))
+                * bytes_per_pixel;
+            let to = from + width * bytes_per_pixel;
+            self.framebuffer.buffer[from..to].copy_from_slice(&saved[from..to]);
         }
+
         Ok(())
     }
 }
