@@ -31,18 +31,23 @@ pub struct AlliumD<P: Platform> {
 }
 
 fn spawn_main() -> Child {
+    try_load_game().unwrap_or_else(|| {
+        info!("no game info found, launching menu");
+        Command::new(ALLIUM_LAUNCHER).spawn().unwrap()
+    })
+}
+
+fn try_load_game() -> Option<Child> {
     let path = Path::new(ALLIUM_GAME_INFO);
     if path.exists() {
-        let game_info = fs::read_to_string(path).unwrap();
+        let game_info = fs::read_to_string(path).ok()?;
+        fs::remove_file(path).ok()?;
         let mut split = game_info.split('\n');
-        let core = split
-            .next()
-            .and_then(|path| PathBuf::from_str(path).ok())
-            .unwrap();
-        let rom = split.next().map(Path::new).unwrap();
-        Command::new(core).args(rom).spawn().unwrap()
+        let core = split.next().and_then(|path| PathBuf::from_str(path).ok())?;
+        let rom = split.next()?;
+        Command::new(core).arg(rom).spawn().ok()
     } else {
-        Command::new(ALLIUM_LAUNCHER).spawn().unwrap()
+        None
     }
 }
 
