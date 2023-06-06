@@ -1,12 +1,12 @@
 use std::fs::{self, File};
 use std::io::Write;
-use std::path::Path;
-use std::time::Duration;
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 use anyhow::Result;
-use common::constants::{ALLIUMD_STATE, ALLIUM_CORE_ID, ALLIUM_LAUNCHER, ALLIUM_MENU};
+use common::constants::{ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU};
 use common::retroarch::RetroArchCommand;
-use futures::future::{Fuse, FusedFuture, FutureExt};
+use futures::future::{Fuse, FutureExt};
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
 use tracing::{debug, info, trace};
@@ -23,15 +23,27 @@ use {
 pub struct AlliumD<P: Platform> {
     #[serde(skip)]
     platform: P,
-    #[serde(skip, default = "spawn_launcher")]
+    #[serde(skip, default = "spawn_main")]
     main: Child,
     #[serde(skip)]
     menu: Option<Child>,
     volume: i32,
 }
 
-fn spawn_launcher() -> Child {
-    Command::new(ALLIUM_LAUNCHER).spawn().unwrap()
+fn spawn_main() -> Child {
+    let path = Path::new(ALLIUM_GAME_INFO);
+    if path.exists() {
+        let game_info = fs::read_to_string(path).unwrap();
+        let mut split = game_info.split('\n');
+        let core = split
+            .next()
+            .and_then(|path| PathBuf::from_str(path).ok())
+            .unwrap();
+        let rom = split.next().map(Path::new).unwrap();
+        Command::new(core).args(rom).spawn().unwrap()
+    } else {
+        Command::new(ALLIUM_LAUNCHER).spawn().unwrap()
+    }
 }
 
 impl AlliumD<DefaultPlatform> {
@@ -40,7 +52,7 @@ impl AlliumD<DefaultPlatform> {
 
         Ok(AlliumD {
             platform,
-            main: spawn_launcher(),
+            main: spawn_main(),
             menu: None,
             volume: 0,
         })
@@ -72,14 +84,13 @@ impl AlliumD<DefaultPlatform> {
                     }
                     _ = self.main.wait() => {
                         info!("main process terminated, restarting");
-                        self.main = spawn_launcher();
+                        self.main = spawn_main();
                     }
                     _ = menu_terminated => {
                         info!("menu process terminated, resuming game");
                         self.menu = None;
                         #[cfg(unix)]
                         signal(&self.main, Signal::SIGCONT)?;
-                        tokio::time::sleep(Duration::from_millis(100)).await;
                         RetroArchCommand::PauseToggle.send().await?;
                     }
                     _ = sighup.recv() => self.handle_quit()?,
@@ -114,6 +125,16 @@ impl AlliumD<DefaultPlatform> {
             KeyEvent::Released(Key::VolUp) => self.add_volume(1)?,
             KeyEvent::Released(Key::Power) => {
                 self.save()?;
+                if self.is_ingame() {
+                    if self.menu.is_some() {
+                        #[cfg(unix)]
+                        signal(&self.main, Signal::SIGCONT)?;
+                        RetroArchCommand::PauseToggle.send().await?;
+                    }
+                    #[cfg(unix)]
+                    signal(&self.main, Signal::SIGTERM)?;
+                    self.main.wait().await?;
+                }
                 #[cfg(unix)]
                 std::process::Command::new("poweroff").exec();
             }
@@ -161,7 +182,7 @@ impl AlliumD<DefaultPlatform> {
     }
 
     fn is_ingame(&self) -> bool {
-        Path::new(ALLIUM_CORE_ID).exists()
+        Path::new(ALLIUM_GAME_INFO).exists()
     }
 
     fn set_volume(&mut self, volume: i32) -> Result<()> {

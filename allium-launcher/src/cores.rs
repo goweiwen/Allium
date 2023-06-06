@@ -1,21 +1,19 @@
+use std::collections::HashMap;
 use std::env;
-use std::fs::File;
-use std::io::Write;
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
 use std::path::PathBuf;
 use std::process::Command;
-use std::{collections::HashMap, process};
 
 use anyhow::{Context, Result};
 use serde::Deserialize;
 
-use common::constants::{ALLIUM_CONFIG_DIR, ALLIUM_CORE_ID};
+use common::constants::ALLIUM_CONFIG_DIR;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Core {
-    extensions: Vec<String>,
-    path: PathBuf,
+    pub extensions: Vec<String>,
+    pub path: PathBuf,
 }
 
 impl Core {
@@ -25,9 +23,6 @@ impl Core {
             .arg(rom)
             .spawn()
             .context("Failed to launch core")?;
-
-        let mut file = File::create(ALLIUM_CORE_ID)?;
-        file.write_all(process::id().to_string().as_bytes())?;
 
         #[cfg(unix)]
         Command::new(&self.path).arg(rom).exec();

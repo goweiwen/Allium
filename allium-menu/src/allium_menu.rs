@@ -1,12 +1,15 @@
-use std::time::Duration;
+use std::fs;
 
 use anyhow::Result;
 
 use common::battery::Battery;
-use common::constants::BATTERY_UPDATE_INTERVAL;
+use common::constants::{ALLIUM_GAME_INFO, BATTERY_UPDATE_INTERVAL};
 use common::display::Display;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
+use embedded_font::FontTextStyleBuilder;
+use embedded_graphics::prelude::*;
+use embedded_graphics::text::{Alignment, Text};
 
 use crate::state::State;
 
@@ -17,6 +20,7 @@ pub struct AlliumMenu<P: Platform> {
     styles: Stylesheet,
     state: State,
     dirty: bool,
+    name: String,
 }
 
 impl AlliumMenu<DefaultPlatform> {
@@ -25,6 +29,12 @@ impl AlliumMenu<DefaultPlatform> {
         let display = platform.display()?;
         let battery = platform.battery()?;
 
+        let game_info = fs::read_to_string(ALLIUM_GAME_INFO)?;
+        let mut split = game_info.split('\n');
+        let _ = split.next();
+        let _ = split.next();
+        let name = split.next().unwrap_or("").to_owned();
+
         Ok(AlliumMenu {
             platform,
             display,
@@ -32,6 +42,7 @@ impl AlliumMenu<DefaultPlatform> {
             styles: Default::default(),
             state: State::new()?,
             dirty: true,
+            name,
         })
     }
 
@@ -57,8 +68,8 @@ impl AlliumMenu<DefaultPlatform> {
             self.state.update()?;
 
             if self.dirty {
-                self.state
-                    .draw(&mut self.display, &self.styles, &self.battery)?;
+                self.draw()?;
+                self.state.draw(&mut self.display, &self.styles)?;
                 self.display.flush()?;
                 self.dirty = false;
             }
@@ -84,5 +95,55 @@ impl AlliumMenu<DefaultPlatform> {
                 None => false,
             };
         }
+    }
+
+    fn draw(&mut self) -> Result<()> {
+        let Size { width, height: _ } = self.display.size();
+
+        let text_style = FontTextStyleBuilder::new(self.styles.ui_font.clone())
+            .font_size(self.styles.ui_font_size)
+            .text_color(self.styles.fg_color)
+            .build();
+
+        let primary_style = FontTextStyleBuilder::new(self.styles.ui_font.clone())
+            .font_size(self.styles.ui_font_size)
+            .text_color(self.styles.primary)
+            .build();
+
+        // Draw battery percentage
+        if self.battery.charging() {
+            Text::with_alignment(
+                &format!("Charging: {}%", self.battery.percentage()),
+                Point {
+                    x: width as i32 - 8,
+                    y: 8,
+                },
+                text_style,
+                Alignment::Right,
+            )
+            .draw(&mut self.display)?;
+        } else {
+            Text::with_alignment(
+                &format!("{}%", self.battery.percentage()),
+                Point {
+                    x: width as i32 - 8,
+                    y: 8,
+                },
+                text_style,
+                Alignment::Right,
+            )
+            .draw(&mut self.display)?;
+        }
+
+        // Draw game name
+        let text = Text::with_alignment(
+            &self.name,
+            Point { x: 12, y: 8 },
+            primary_style,
+            Alignment::Left,
+        );
+        text.draw(&mut self.display)?;
+
+        Ok(())
     }
 }

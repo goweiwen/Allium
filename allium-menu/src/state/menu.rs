@@ -1,5 +1,4 @@
-use std::process::{self, exit};
-use std::time::Duration;
+use std::process::{self};
 
 use anyhow::Result;
 use embedded_font::FontTextStyleBuilder;
@@ -139,13 +138,19 @@ impl MenuState {
         match self.selected {
             MenuEntry::Continue => {}
             MenuEntry::Save => {
+                RetroArchCommand::PauseToggle.send().await?;
                 RetroArchCommand::SaveState.send().await?;
+                RetroArchCommand::PauseToggle.send().await?;
             }
             MenuEntry::Load => {
+                RetroArchCommand::PauseToggle.send().await?;
                 RetroArchCommand::LoadState.send().await?;
+                RetroArchCommand::PauseToggle.send().await?;
             }
             MenuEntry::Reset => {
+                RetroArchCommand::PauseToggle.send().await?;
                 RetroArchCommand::Reset.send().await?;
+                RetroArchCommand::PauseToggle.send().await?;
             }
             MenuEntry::Advanced => {
                 RetroArchCommand::MenuToggle.send().await?;

@@ -1,4 +1,10 @@
-use std::{cmp::min, env, ffi::OsStr, path::PathBuf, str::FromStr};
+use std::cmp::min;
+use std::env;
+use std::ffi::OsStr;
+use std::fs::File;
+use std::io::Write;
+use std::path::PathBuf;
+use std::str::FromStr;
 
 use anyhow::Result;
 use embedded_font::FontTextStyleBuilder;
@@ -13,9 +19,9 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tracing::trace;
 
-use common::display::Display;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
+use common::{constants::ALLIUM_GAME_INFO, display::Display};
 use common::{
     constants::{
         ALLIUM_ROMS_DIR, BUTTON_DIAMETER, IMAGE_SIZE, LISTING_JUMP_SIZE, LISTING_SIZE,
@@ -82,6 +88,17 @@ impl GamesState {
     fn launch_game(&mut self, game: &Game) -> Result<()> {
         let core = self.core_mapper.get_core(&game.extension);
         if let Some(core) = core {
+            write!(
+                File::create(ALLIUM_GAME_INFO)?,
+                "{}\n{}\n{}\n{}",
+                core.path.as_path().as_os_str().to_str().unwrap_or(""),
+                game.path.as_path().as_os_str().to_str().unwrap_or(""),
+                game.name,
+                game.image
+                    .as_ref()
+                    .and_then(|path| path.as_path().as_os_str().to_str())
+                    .unwrap_or(""),
+            )?;
             core.launch(&game.path)?;
         }
         Ok(())

@@ -10,7 +10,7 @@ pub const RETROARCH_UDP_SOCKET: &str = "127.0.0.1:55355";
 pub const ALLIUMD_STATE: &str = "/mnt/SDCARD/.allium/alliumd.json";
 pub const ALLIUM_LAUNCHER: &str = "/mnt/SDCARD/.allium/allium-launcher";
 pub const ALLIUM_MENU: &str = "/mnt/SDCARD/.allium/allium-menu";
-pub const ALLIUM_CORE_ID: &str = "/tmp/allium_core.pid";
+pub const ALLIUM_GAME_INFO: &str = "/tmp/allium.info";
 
 pub const BUTTON_DIAMETER: u32 = 34;
 pub const SELECTION_HEIGHT: u32 = 34;
