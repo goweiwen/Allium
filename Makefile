@@ -20,14 +20,14 @@ package-build:
 	rsync -a $(BUILD_DIR)/alliumd $(DIST_DIR)/.allium
 	rsync -a $(BUILD_DIR)/alliumm $(DIST_DIR)/.allium
 
-retroarch: $(RETROARCH)/retroarch_miyoo284 $(RETROARCH)/retroarch_miyoo354
+retroarch: $(RETROARCH)/retroarch_miyoo283 $(RETROARCH)/retroarch_miyoo354
 
 package-retroarch: retroarch
 	rsync -a $(RETROARCH)/retroarch_miyoo354 $(DIST_DIR)/RetroArch/
-	rsync -a $(RETROARCH)/retroarch_miyoo284 $(DIST_DIR)/RetroArch/
+	rsync -a $(RETROARCH)/retroarch_miyoo283 $(DIST_DIR)/RetroArch/
 
 $(RETROARCH)/retroarch_miyoo354:
 	docker run --rm -v /$(ROOT_DIR)/third-party:/root/workspace $(TOOLCHAIN) bash -c "source /root/.bashrc; cd RetroArch; make clean all ADD_NETWORKING=1 PACKAGE_NAME=retroarch_miyoo354"
 
-$(RETROARCH)/retroarch_miyoo284:
-	docker run --rm -v /$(ROOT_DIR)/third-party:/root/workspace $(TOOLCHAIN) bash -c "source /root/.bashrc; cd RetroArch; make clean all PACKAGE_NAME=retroarch_miyoo284"
+$(RETROARCH)/retroarch_miyoo283:
+	docker run --rm -v /$(ROOT_DIR)/third-party:/root/workspace $(TOOLCHAIN) bash -c "source /root/.bashrc; cd RetroArch; make clean all PACKAGE_NAME=retroarch_miyoo283"
