@@ -12,6 +12,7 @@ use embedded_graphics_simulator::{
 };
 use itertools::iproduct;
 use sdl2::keyboard::Keycode;
+use tracing::trace;
 
 use crate::battery::Battery;
 use crate::display::Display;
@@ -38,18 +39,26 @@ impl Platform for SimulatorPlatform {
     }
 
     async fn poll(&mut self) -> Result<Option<KeyEvent>> {
-        match self.window.borrow_mut().events().next() {
-            Some(SimulatorEvent::KeyDown { keycode, .. }) => {
-                Ok(Some(KeyEvent::Pressed(Key::from(keycode))))
+        let event = self.window.borrow_mut().events().next();
+        if let Some(event) = event {
+            match event {
+                SimulatorEvent::KeyDown {
+                    keycode, repeat, ..
+                } => Ok(Some(if repeat {
+                    KeyEvent::Autorepeat(Key::from(keycode))
+                } else {
+                    KeyEvent::Pressed(Key::from(keycode))
+                })),
+                SimulatorEvent::KeyUp { keycode, .. } => {
+                    Ok(Some(KeyEvent::Released(Key::from(keycode))))
+                }
+                _ => {
+                    // Ignore other events
+                    Ok(None)
+                }
             }
-            Some(SimulatorEvent::KeyUp { keycode, .. }) => {
-                Ok(Some(KeyEvent::Released(Key::from(keycode))))
-            }
-            Some(_) => {
-                // Ignore other events
-                Ok(None)
-            }
-            None => Ok(None),
+        } else {
+            Ok(None)
         }
     }
 
