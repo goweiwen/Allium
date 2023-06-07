@@ -11,6 +11,7 @@ pub const ALLIUMD_STATE: &str = "/mnt/SDCARD/.allium/alliumd.json";
 pub const ALLIUM_LAUNCHER: &str = "/mnt/SDCARD/.allium/allium-launcher";
 pub const ALLIUM_MENU: &str = "/mnt/SDCARD/.allium/allium-menu";
 pub const ALLIUM_GAME_INFO: &str = "/mnt/SDCARD/.allium/current_game";
+pub const ALLIUM_RETROARCH: &str = "/mnt/SDCARD/.allium/cores/retroarch/launch.sh";
 
 pub const BUTTON_DIAMETER: u32 = 34;
 pub const SELECTION_HEIGHT: u32 = 34;

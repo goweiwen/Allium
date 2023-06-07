@@ -36,8 +36,6 @@ impl AlliumMenu<DefaultPlatform> {
         }
         let game_info = fs::read_to_string(&*ALLIUM_GAME_INFO)?;
         let mut split = game_info.split('\n');
-        let _ = split.next();
-        let _ = split.next();
         let name = split.next().unwrap_or("").to_owned();
 
         Ok(AlliumMenu {

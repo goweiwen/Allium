@@ -56,9 +56,9 @@ fn try_load_game() -> Option<Child> {
     if path.exists() {
         let game_info = fs::read_to_string(path).ok()?;
         let mut split = game_info.split('\n');
+        let _name = split.next();
         let core = split.next().and_then(|path| PathBuf::from_str(path).ok())?;
-        let rom = split.next()?;
-        Command::new(core).arg(rom).spawn().ok()
+        Command::new(core).args(split).spawn().ok()
     } else {
         None
     }

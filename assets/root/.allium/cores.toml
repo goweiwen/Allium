@@ -1,59 +1,362 @@
-# Ports
+# shell
 [cores.sh]
-extensions = ["pak"]
+patterns = ["SH", "PORTS"]
+extensions = ["pak", "port", "miyoocmd"]
 path = "/mnt/SDCARD/.allium/cores/pak/launch.sh"
 
-# Game Boy Advance, Super Game Boy
-[cores.mgba]
-extensions = ["gba", "sgb"]
-path = "/mnt/SDCARD/.allium/cores/mgba/launch.sh"
+# Amstrad - CPC (CrocoDS)
+[cores.crocods]
+patterns = ["CPC"]
+extensions = ["sna", "dsk", "kcr"]
+retroarch_core = "crocods_libretro.so"
 
-# Game Boy Color, Game Boy
-[cores.gambatte]
-extensions = ["gb", "gbc"]
-path = "/mnt/SDCARD/.allium/cores/gambatte/launch.sh"
+# Arcade (MAME 2003-Plus)
+[cores.mame2003_plus]
+patterns = ["ARCADE"]
+extensions = []
+retroarch_core = "mame2003_plus_libretro.so"
 
-# NES
+# Atari - 2600 (Stella 2014)
+[cores.stella2014]
+patterns = ["ATARI"]
+extensions = ["a26"]
+retroarch_core = "stella2014_libretro.so"
+
+# Atari - 5200 (a5200)
+[cores.a5200]
+patterns = ["FIFTYTWOHUNDRED"]
+extensions = ["a52"]
+retroarch_core = "a5200_libretro.so"
+
+# Atari - 7800 (ProSystem)
+[cores.prosystem]
+patterns = ["SEVENTYEIGHTHUNDRED"]
+extensions = ["a78"]
+retroarch_core = "prosystem_libretro.so"
+
+# Atari - Lynx (Handy)
+[cores.handy]
+patterns = ["LYNX"]
+extensions = ["lnx"]
+retroarch_core = "handy_libretro.so"
+
+# Bandai - Sufami Turbo (snes9x)
+# Nintendo - Satellaview (Snes9x)
+[cores.snes9x]
+patterns = ["SUFAMI", "SATELLAVIEW"]
+extensions = ["smc", "bs", "sfc", "smc", "swc", "fig", "st"]
+retroarch_core = "snes9x_libretro.so"
+
+# Bandai - WonderSwanColor (B. Cygne)
+[cores.mednafen_wswan]
+patterns = ["WS"]
+extensions = ["ws", "pc2"]
+retroarch_core = "mednafen_wswan_libretro.so"
+
+# Capcom - CPS1 (FB Alpha 2012 CPS-1)
+[cores.fbalpha2012_cps1]
+patterns = ["CPS1"]
+extensions = []
+retroarch_core = "fbalpha2012_cps1_libretro.so"
+
+# Capcom - CPS2 (FB Alpha 2012 CPS-2)
+[cores.fbalpha2012_cps2]
+patterns = ["CPS2"]
+extensions = []
+retroarch_core = "fbalpha2012_cps2_libretro.so"
+
+# Capcom - CPS3 (FB Alpha 2012 CPS-3)
+[cores.fbalpha2012_cps3]
+patterns = ["CPS3"]
+extensions = []
+retroarch_core = "fbalpha2012_cps3_libretro.so"
+
+# Coleco - ColecoVision (blueMSX)
+# Microsoft - MSX (blueMSX)
+[cores.bluemsx]
+patterns = ["COLECO", "MSX"]
+extensions = [
+    "ri",
+    "mx1",
+    "mx2",
+    "col",
+    "dsk",
+    "cas",
+    "sg",
+    "sc",
+    "mx1",
+    "mx2",
+    "dsk",
+    "cas",
+]
+retroarch_core = "bluemsx_libretro.so"
+
+# Commodore - Amiga (PUAE 2021)
+[cores.puae2021]
+patterns = ["AMIGA"]
+extensions = [
+    "adf",
+    "adz",
+    "dms",
+    "fdi",
+    "ipf",
+    "hdf",
+    "hdz",
+    "lha",
+    "slave",
+    "info",
+    "nrg",
+    "mds",
+    "uae",
+    "rp9",
+]
+retroarch_core = "puae2021_libretro.so"
+
+# Commodore - C64 (VICE x64)
+[cores.vice_x64]
+patterns = ["COMMODORE"]
+extensions = []
+retroarch_core = "vice_x64_libretro.so"
+
+# Commodore - VIC-20 (VICE xvic)
+[cores.vice_xvic]
+patterns = ["VIC20"]
+extensions = [
+    "d64",
+    "d6z",
+    "d71",
+    "d7z",
+    "d80",
+    "d81",
+    "d82",
+    "d8z",
+    "g64",
+    "g6z",
+    "g41",
+    "g4z",
+    "x64",
+    "x6z",
+    "nib",
+    "nbz",
+    "d2m",
+    "d4m",
+    "t64",
+    "tap",
+    "tcrt",
+    "prg",
+    "p00",
+    "crt",
+    "cmd",
+    "vfl",
+    "vsf",
+    "gz",
+    "20",
+    "40",
+    "60",
+    "a0",
+    "b0",
+]
+retroarch_core = "vice_xvic_libretro.so"
+
+# Fairchild - ChannelF (FreeChaF)
+[cores.freechaf]
+patterns = ["FAIRCHILD"]
+extensions = ["chf"]
+retroarch_core = "freechaf_libretro.so"
+
+# GCE - Vectrex (vecx)
+[cores.vecx]
+patterns = ["VECTREX"]
+extensions = ["vec"]
+retroarch_core = "vecx_libretro.so"
+
+# Magnavox - Odyssey2 (O2EM)
+# Phillips - Videopac+ (O2EM)
+[cores.o2em]
+patterns = ["ODYSSEY", "VIDEOPAC"]
+extensions = []
+retroarch_core = "o2em_libretro.so"
+
+# Mattel - Intellivision (FreeIntv)
+[cores.freeintv]
+patterns = ["INTELLIVISION"]
+extensions = ["int"]
+retroarch_core = "freeintv_libretro.so"
+
+# Mega Duck (SameDuck)
+[cores.sameduck]
+patterns = ["MEGADUCK"]
+extensions = []
+retroarch_core = "sameduck_libretro.so"
+
+# Microsoft - DOS (DOSBox-Pure)
+[cores.dosbox_pure]
+patterns = ["DOS"]
+extensions = [
+    "dosz",
+    "exe",
+    "com",
+    "bat",
+    "ins",
+    "ima",
+    "vhd",
+    "jrc",
+    "tc",
+    "m3u8",
+    "conf",
+]
+retroarch_core = "dosbox_pure_libretro.so"
+
+# NEC - SuperGrafx (Beetle SuperGrafx)
+[cores.mednafen_supergrafx]
+patterns = ["SGFX"]
+extensions = ["pce", "sgx"]
+retroarch_core = "mednafen_supergrafx_libretro.so"
+
+# NEC - TurboGrafx CD (Beetle PCE FAST)
+# NEC - TurboGrafx-16 (Beetle PCE FAST)
+[cores.mednafen_pce_fast]
+patterns = ["PCECD", "PCE"]
+extensions = ["pce", "pce"]
+retroarch_core = "mednafen_pce_fast_libretro.so"
+
+# Nintendo - Famicom Disk Syst. (FCEUmm)
+# Nintendo - NES (FCEUmm)
 [cores.fceumm]
-extensions = ["nes"]
-path = "/mnt/SDCARD/.allium/cores/fceumm/launch.sh"
+patterns = ["FDS", "FC", "NES"]
+extensions = ["fds", "nes", "unif", "unf", "fds", "nes", "unif", "unf"]
+retroarch_core = "fceumm_libretro.so"
 
-# SNES
-[cores.supafaust]
-extensions = ["sfc", "smc"]
-path = "/mnt/SDCARD/.allium/cores/supafaust/launch.sh"
+# Nintendo - Game & Watch (gw)
+[cores.gw]
+patterns = ["GW"]
+extensions = ["mgw"]
+retroarch_core = "gw_libretro.so"
 
-# Sega Genesis, Sega Master System, Sega Game Gear
-[cores.picodrive]
-extensions = ["68k", "mdx", "md", "sgd", "smd", "gen", "sms", "gg"]
-path = "/mnt/SDCARD/.allium/cores/picodrive/launch.sh"
+# Nintendo - Game Boy (Gambatte)
+# Nintendo - Game Boy Color (Gambatte)
+[cores.gambatte]
+patterns = ["GB", "GBC"]
+extensions = ["dmg", "gb", "gbc", "dmg", "gb", "gbc"]
+retroarch_core = "gambatte_libretro.so"
 
-# Neo Geo Pocket
-[cores.mednafen-ngp]
-extensions = ["ngp", "ngc"]
-path = "/mnt/SDCARD/.allium/cores/picodrive/launch.sh"
+# Nintendo - GBA (mGBA)
+# Nintendo - Super Game Boy (mGBA)
+[cores.mgba]
+patterns = ["GBA", "SGB"]
+extensions = ["gba", "gb", "gbc", "gba"]
+retroarch_core = "mgba_libretro.so"
 
-# PSX
-[cores.pcsx-rearmed]
-extensions = ["chd", "pbp"]
-path = "/mnt/SDCARD/.allium/cores/pcsx-rearmed/launch.sh"
-
-# Pokemon Mini
+# Nintendo - Pokemon Mini (PokeMini)
 [cores.pokemini]
+patterns = ["POKE", "PKM"]
 extensions = ["min"]
-path = "/mnt/SDCARD/.allium/cores/pokemini/launch.sh"
+retroarch_core = "pokemini_libretro.so"
 
-# Watara Supervision
-[cores.potator]
-extensions = ["sv"]
-path = "/mnt/SDCARD/.allium/cores/potator/launch.sh"
+# Nintendo - SNES (Beetle Supafaust)
+[cores.mednafen_supafaust]
+patterns = ["SFC", "SNES"]
+extensions = ["sfc", "smc", "fig", "bs", "st"]
+retroarch_core = "mednafen_supafaust_libretro.so"
 
-# EasyRPG
-[cores.easyrpg]
-extensions = ["easyrpg"]
-path = "/mnt/SDCARD/.allium/cores/easyrpg/launch.sh"
+# Nintendo - Virtual Boy (Beetle VB)
+[cores.mednafen_vb]
+patterns = ["VB"]
+extensions = ["vb", "vboy"]
+retroarch_core = "mednafen_vb_libretro.so"
 
-# Pico-8
+# PICO-8 (Fake8)
 [cores.fake08]
+patterns = ["PICO", "P8"]
 extensions = ["p8", "png"]
-path = "/mnt/SDCARD/.allium/cores/fake08/launch.sh"
+retroarch_core = "fake08_libretro.so"
+
+# SCUMM (ScummVM)
+[cores.scummvm]
+patterns = ["SCUMMVM"]
+extensions = ["scummvm", "target", "miyoocmd"]
+retroarch_core = "scummvm_libretro.so"
+
+# Sega - 32X (PicoDrive)
+# Sega - CD (PicoDrive)
+# Sega - Game Gear (PicoDrive)
+# Sega - Genesis (PicoDrive)
+# Sega - Master System (PicoDrive)
+[cores.picodrive]
+patterns = ["THIRTYTWOX", "SEGACD", "GG", "MD", "MS", "SMS"]
+extensions = [
+    "gen",
+    "smd",
+    "md",
+    "32x",
+    "sms",
+    "68k",
+    "gen",
+    "smd",
+    "md",
+    "32x",
+    "sms",
+    "68k",
+    "gg",
+    "gen",
+    "smd",
+    "md",
+    "32x",
+    "sms",
+    "68k",
+    "gen",
+    "smd",
+    "md",
+    "32x",
+    "sms",
+    "68k",
+]
+retroarch_core = "picodrive_libretro.so"
+
+# Sega - SG-1000 (Gearsystem)
+[cores.gearsystem]
+patterns = ["SEGASGONE"]
+extensions = ["sms", "gg", "sg", "mv"]
+retroarch_core = "gearsystem_libretro.so"
+
+# Sinclair - ZX Spectrum (Fuse)
+[cores.fuse]
+patterns = ["ZXS"]
+extensions = ["tzx", "tap", "z80", "rzx", "scl", "trd"]
+retroarch_core = "fuse_libretro.so"
+
+# SNK - Neo Geo (fbalpha2012 neogeo)
+[cores.fbalpha2012_neogeo]
+patterns = ["NEOGEO"]
+extensions = []
+retroarch_core = "fbalpha2012_neogeo_libretro.so"
+
+# SNK - Neo Geo CD (NeoCD)
+[cores.neocd]
+patterns = ["NEOCD"]
+extensions = []
+retroarch_core = "neocd_libretro.so"
+
+# SNK - Neo Geo Pocket Color (B. NeoPop)
+[cores.mednafen_ngp]
+patterns = ["NGP"]
+extensions = ["ngp", "ngc"]
+retroarch_core = "mednafen_ngp_libretro.so"
+
+# Sony - PlayStation (PCSX ReARMed)
+[cores.pcsx_rearmed]
+patterns = ["PSX"]
+extensions = ["mdf", "pbp", "toc", "cbn"]
+retroarch_core = "pcsx_rearmed_libretro.so"
+
+# TIC-80 (TIC-80)
+[cores.tic80]
+patterns = ["TIC"]
+extensions = ["tic", "fd", "sap", "k7", "m7"]
+retroarch_core = "tic80_libretro.so"
+
+# Watara - Supervision (Potator)
+[cores.potator]
+patterns = ["SUPERVISION"]
+extensions = ["sv"]
+retroarch_core = "potator_libretro.so"

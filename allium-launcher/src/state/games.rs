@@ -1,10 +1,10 @@
-use std::cmp::min;
 use std::env;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::{cmp::min, path::Path};
 
 use anyhow::Result;
 use embedded_font::FontTextStyleBuilder;
@@ -20,8 +20,8 @@ use serde::{Deserialize, Serialize};
 use tracing::trace;
 
 use common::constants::{
-    self, ALLIUM_ROMS_DIR, BUTTON_DIAMETER, IMAGE_SIZE, LISTING_JUMP_SIZE, LISTING_SIZE,
-    SELECTION_HEIGHT, SELECTION_MARGIN,
+    self, ALLIUM_RETROARCH, ALLIUM_ROMS_DIR, BUTTON_DIAMETER, IMAGE_SIZE, LISTING_JUMP_SIZE,
+    LISTING_SIZE, SELECTION_HEIGHT, SELECTION_MARGIN,
 };
 use common::display::Display;
 use common::platform::Color;
@@ -84,23 +84,30 @@ impl GamesState {
     }
 
     fn launch_game(&mut self, game: &Game) -> Result<()> {
-        let core = self.core_mapper.get_core(&game.extension);
+        let core = self.core_mapper.get_core(game.path.as_path());
         if let Some(core) = core {
             lazy_static! {
                 static ref ALLIUM_GAME_INFO: String = env::var("ALLIUM_GAME_INFO")
                     .unwrap_or_else(|_| constants::ALLIUM_GAME_INFO.to_string());
             }
-            write!(
-                File::create(&*ALLIUM_GAME_INFO)?,
-                "{}\n{}\n{}\n{}",
-                core.path.as_path().as_os_str().to_str().unwrap_or(""),
-                game.path.as_path().as_os_str().to_str().unwrap_or(""),
-                game.name,
-                game.image
-                    .as_ref()
-                    .and_then(|path| path.as_path().as_os_str().to_str())
-                    .unwrap_or(""),
-            )?;
+            if let Some(path) = core.path.as_ref() {
+                write!(
+                    File::create(&*ALLIUM_GAME_INFO)?,
+                    "{}\n{}\n{}",
+                    game.name,
+                    path.as_path().as_os_str().to_str().unwrap_or(""),
+                    game.path.as_path().as_os_str().to_str().unwrap_or(""),
+                )?;
+            } else if let Some(retroarch_core) = core.retroarch_core.as_ref() {
+                write!(
+                    File::create(&*ALLIUM_GAME_INFO)?,
+                    "{}\n{}\n{}\n{}",
+                    game.name,
+                    ALLIUM_RETROARCH,
+                    retroarch_core,
+                    game.path.as_path().as_os_str().to_str().unwrap_or(""),
+                )?;
+            }
             core.launch(&game.path)?;
         }
         Ok(())
