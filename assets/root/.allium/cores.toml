@@ -360,3 +360,15 @@ retroarch_core = "tic80_libretro.so"
 patterns = ["SUPERVISION"]
 extensions = ["sv"]
 retroarch_core = "potator_libretro.so"
+
+# NEC - PC-98 (Neko Project II Kai)
+[cores.np2kai]
+patterns = ["PCNINETYEIGHT", "PC98"]
+extensions = ["hdi"]
+retroarch_core = "np2kai_libretro.so"
+
+# NEC - PC-FX (Mednafen PC-FX)
+[cores.mednafen_pcfx]
+patterns = ["PCFX"]
+extensions = []
+retroarch_core = "mednafen_pcfx_libretro.so"

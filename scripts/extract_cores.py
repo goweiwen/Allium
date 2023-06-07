@@ -38,22 +38,23 @@ def extract_file(path):
 
     return (core, data, name)
 
-def extract_directory(directory):
+def extract_directory(directory, whitelist = None):
     cores = {}
     for root, dirs, files in os.walk(directory):
         for file in files:
             if file == "config.json":
                 path = os.path.join(root, file)
                 core, data, name = extract_file(path)
-                if core in cores:
-                    (other, names) = cores[core]
-                    other["patterns"] += data["patterns"]
-                    other["extensions"] += data["extensions"]
-                    names.append(name)
-                    if other["retroarch_core"] != data["retroarch_core"]:
-                        raise Exception("Duplicate core with different retroarch_core: " + core)
-                else:
-                    cores[core] = (data, [name])
+                if whitelist is None or name in whitelist:
+                    if core in cores:
+                        (other, names) = cores[core]
+                        other["patterns"] += data["patterns"]
+                        other["extensions"] += data["extensions"]
+                        names.append(name)
+                        if other["retroarch_core"] != data["retroarch_core"]:
+                            raise Exception("Duplicate core with different retroarch_core: " + core)
+                    else:
+                        cores[core] = (data, [name])
 
     for (core, (data, names)) in cores.items():
         for name in names:
@@ -62,3 +63,7 @@ def extract_directory(directory):
         print(toml.dumps(data))
 
 extract_directory("../../Onion/static/packages/Emu")
+extract_directory("../../Onion/static/packages/Rapp", [
+    "NEC - PC-98 (Neko Project II Kai)",
+    "NEC - PC-FX (Mednafen PC-FX)",
+])
