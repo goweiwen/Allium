@@ -259,15 +259,21 @@ impl GamesState {
             }
             KeyEvent::Pressed(key) | KeyEvent::Autorepeat(key) => match key {
                 Key::Up => {
-                    self.selected = (self.selected - 1).rem_euclid(self.entries.len() as i32 - 1);
+                    self.selected = (self.selected - 1).rem_euclid(self.entries.len() as i32);
                     if self.selected < self.top {
-                        self.top = self.selected
+                        self.top = self.selected;
+                    }
+                    if self.selected - LISTING_SIZE >= self.top {
+                        self.top = self.entries.len() as i32 - LISTING_SIZE;
                     }
                     trace!("selected: {}, top: {}", self.selected, self.top);
                     true
                 }
                 Key::Down => {
-                    self.selected = (self.selected + 1).rem_euclid(self.entries.len() as i32 - 1);
+                    self.selected = (self.selected + 1).rem_euclid(self.entries.len() as i32);
+                    if self.selected < self.top {
+                        self.top = 0;
+                    }
                     if self.selected - LISTING_SIZE >= self.top {
                         self.top = self.selected - LISTING_SIZE + 1;
                     }
@@ -278,7 +284,7 @@ impl GamesState {
                     self.selected =
                         (self.selected - LISTING_JUMP_SIZE).clamp(0, self.entries.len() as i32 - 1);
                     if self.selected < self.top {
-                        self.top = self.selected
+                        self.top = self.selected;
                     }
                     true
                 }
