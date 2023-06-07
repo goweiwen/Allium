@@ -1,10 +1,10 @@
+use std::cmp::min;
 use std::env;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::{cmp::min, path::Path};
 
 use anyhow::Result;
 use embedded_font::FontTextStyleBuilder;
@@ -32,22 +32,35 @@ use crate::cores::CoreMapper;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GamesState {
-    top: i32,
-    selected: i32,
     entries: Vec<Entry>,
-    stack: Vec<Directory>,
+    stack: Vec<View>,
     #[serde(skip)]
     core_mapper: CoreMapper,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct View {
+    top: i32,
+    selected: i32,
+    directory: Directory,
+}
+
+impl View {
+    pub fn new(directory: Directory, top: i32, selected: i32) -> View {
+        View {
+            top,
+            selected,
+            directory,
+        }
+    }
 }
 
 impl GamesState {
     pub fn new() -> Result<GamesState> {
         let directory = Directory::default();
         Ok(GamesState {
-            top: 0,
-            selected: 0,
             entries: entries(&directory)?,
-            stack: vec![directory],
+            stack: vec![View::new(directory, 0, 0)],
             core_mapper: CoreMapper::new(),
         })
     }
@@ -61,24 +74,24 @@ impl GamesState {
         Ok(())
     }
 
-    fn directory(&self) -> &Directory {
+    fn view(&self) -> &View {
         self.stack.last().unwrap()
     }
 
+    fn view_mut(&mut self) -> &mut View {
+        self.stack.last_mut().unwrap()
+    }
+
     fn push_directory(&mut self, directory: Directory) -> Result<()> {
-        self.stack.push(directory);
-        self.entries = entries(self.directory())?;
-        self.top = 0;
-        self.selected = 0;
+        self.entries = entries(&directory)?;
+        self.stack.push(View::new(directory, 0, 0));
         Ok(())
     }
 
     fn pop_directory(&mut self) -> Result<()> {
         if self.stack.len() > 1 {
             self.stack.pop();
-            self.entries = entries(self.directory())?;
-            self.top = 0;
-            self.selected = 0;
+            self.entries = entries(&self.view().directory)?;
         }
         Ok(())
     }
@@ -151,15 +164,16 @@ impl GamesState {
             ),
         ))?;
 
-        for i in (self.top as usize)
+        let view = self.view();
+        for i in (view.top as usize)
             ..std::cmp::min(
                 self.entries.len(),
-                self.top as usize + LISTING_SIZE as usize,
+                view.top as usize + LISTING_SIZE as usize,
             )
         {
             let entry = &self.entries[i];
 
-            if self.selected == i as i32 {
+            if view.selected == i as i32 {
                 if let Entry::Game(Game {
                     image: Some(image), ..
                 }) = entry
@@ -247,7 +261,8 @@ impl GamesState {
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<bool> {
         Ok(match key_event {
             KeyEvent::Pressed(Key::A) => {
-                let entry = self.entries.get(self.selected as usize);
+                let view = self.view();
+                let entry = self.entries.get(view.selected as usize);
                 if let Some(entry) = entry {
                     self.select_entry(entry.to_owned())?;
                 }
@@ -259,40 +274,46 @@ impl GamesState {
             }
             KeyEvent::Pressed(key) | KeyEvent::Autorepeat(key) => match key {
                 Key::Up => {
-                    self.selected = (self.selected - 1).rem_euclid(self.entries.len() as i32);
-                    if self.selected < self.top {
-                        self.top = self.selected;
+                    let len = self.entries.len() as i32;
+                    let view = self.view_mut();
+                    view.selected = (view.selected - 1).rem_euclid(len);
+                    if view.selected < view.top {
+                        view.top = view.selected;
                     }
-                    if self.selected - LISTING_SIZE >= self.top {
-                        self.top = self.entries.len() as i32 - LISTING_SIZE;
+                    if view.selected - LISTING_SIZE >= view.top {
+                        view.top = len - LISTING_SIZE;
                     }
-                    trace!("selected: {}, top: {}", self.selected, self.top);
+                    trace!("selected: {}, top: {}", view.selected, view.top);
                     true
                 }
                 Key::Down => {
-                    self.selected = (self.selected + 1).rem_euclid(self.entries.len() as i32);
-                    if self.selected < self.top {
-                        self.top = 0;
+                    let len = self.entries.len() as i32;
+                    let view = self.view_mut();
+                    view.selected = (view.selected + 1).rem_euclid(len);
+                    if view.selected < view.top {
+                        view.top = 0;
                     }
-                    if self.selected - LISTING_SIZE >= self.top {
-                        self.top = self.selected - LISTING_SIZE + 1;
+                    if view.selected - LISTING_SIZE >= view.top {
+                        view.top = view.selected - LISTING_SIZE + 1;
                     }
-                    trace!("selected: {}, top: {}", self.selected, self.top);
+                    trace!("selected: {}, top: {}", view.selected, view.top);
                     true
                 }
                 Key::Left => {
-                    self.selected =
-                        (self.selected - LISTING_JUMP_SIZE).clamp(0, self.entries.len() as i32 - 1);
-                    if self.selected < self.top {
-                        self.top = self.selected;
+                    let len = self.entries.len() as i32;
+                    let view = self.view_mut();
+                    view.selected = (view.selected - LISTING_JUMP_SIZE).clamp(0, len - 1);
+                    if view.selected < view.top {
+                        view.top = view.selected;
                     }
                     true
                 }
                 Key::Right => {
-                    self.selected =
-                        (self.selected + LISTING_JUMP_SIZE).clamp(0, self.entries.len() as i32 - 1);
-                    if self.selected - LISTING_SIZE >= self.top {
-                        self.top = self.selected - LISTING_SIZE + 1;
+                    let len = self.entries.len() as i32;
+                    let view = self.view_mut();
+                    view.selected = (view.selected + LISTING_JUMP_SIZE).clamp(0, len - 1);
+                    if view.selected - LISTING_SIZE >= view.top {
+                        view.top = view.selected - LISTING_SIZE + 1;
                     }
                     true
                 }
