@@ -107,19 +107,20 @@ impl MenuState {
 
     pub async fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<bool> {
         Ok(match key_event {
-            KeyEvent::Released(Key::Up) => {
+            // we intentionally ignore autorepeat in menu to avoid accidental actions
+            KeyEvent::Pressed(Key::Up) => {
                 self.selected = self.selected.prev();
                 true
             }
-            KeyEvent::Released(Key::Down) => {
+            KeyEvent::Pressed(Key::Down) => {
                 self.selected = self.selected.next();
                 true
             }
-            KeyEvent::Released(Key::Left) => {
+            KeyEvent::Pressed(Key::Left) => {
                 self.selected = MenuEntry::Continue;
                 true
             }
-            KeyEvent::Released(Key::Right) => {
+            KeyEvent::Pressed(Key::Right) => {
                 self.selected = MenuEntry::Quit;
                 true
             }

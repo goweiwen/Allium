@@ -36,6 +36,7 @@ pub trait Platform {
 pub enum KeyEvent {
     Pressed(Key),
     Released(Key),
+    Autorepeat(Key),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

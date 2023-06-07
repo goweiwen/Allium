@@ -239,9 +239,20 @@ impl GamesState {
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<bool> {
         Ok(match key_event {
-            KeyEvent::Released(key) => match key {
+            KeyEvent::Pressed(Key::A) => {
+                let entry = self.entries.get(self.selected as usize);
+                if let Some(entry) = entry {
+                    self.select_entry(entry.to_owned())?;
+                }
+                true
+            }
+            KeyEvent::Pressed(Key::B) => {
+                self.pop_directory()?;
+                true
+            }
+            KeyEvent::Pressed(key) | KeyEvent::Autorepeat(key) => match key {
                 Key::Up => {
-                    self.selected = (self.selected - 1).clamp(0, self.entries.len() as i32 - 1);
+                    self.selected = (self.selected - 1).rem_euclid(self.entries.len() as i32 - 1);
                     if self.selected < self.top {
                         self.top = self.selected
                     }
@@ -249,7 +260,7 @@ impl GamesState {
                     true
                 }
                 Key::Down => {
-                    self.selected = (self.selected + 1).clamp(0, self.entries.len() as i32 - 1);
+                    self.selected = (self.selected + 1).rem_euclid(self.entries.len() as i32 - 1);
                     if self.selected - LISTING_SIZE >= self.top {
                         self.top = self.selected - LISTING_SIZE + 1;
                     }
@@ -270,17 +281,6 @@ impl GamesState {
                     if self.selected - LISTING_SIZE >= self.top {
                         self.top = self.selected - LISTING_SIZE + 1;
                     }
-                    true
-                }
-                Key::A => {
-                    let entry = self.entries.get(self.selected as usize);
-                    if let Some(entry) = entry {
-                        self.select_entry(entry.to_owned())?;
-                    }
-                    true
-                }
-                Key::B => {
-                    self.pop_directory()?;
                     true
                 }
                 _ => false,

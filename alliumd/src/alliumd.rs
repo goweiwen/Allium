@@ -6,7 +6,6 @@ use std::str::FromStr;
 
 use anyhow::Result;
 use common::constants::{self, ALLIUMD_STATE, ALLIUM_LAUNCHER, ALLIUM_MENU};
-use common::retroarch::RetroArchCommand;
 use futures::future::{Fuse, FutureExt};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -29,6 +28,8 @@ pub struct AlliumD<P: Platform> {
     main: Child,
     #[serde(skip)]
     menu: Option<Child>,
+    #[serde(skip)]
+    is_menu_pressed_alone: bool,
     volume: i32,
 }
 
@@ -71,6 +72,7 @@ impl AlliumD<DefaultPlatform> {
             platform,
             main: spawn_main(),
             menu: None,
+            is_menu_pressed_alone: false,
             volume: 0,
         })
     }
@@ -136,10 +138,19 @@ impl AlliumD<DefaultPlatform> {
             self.main.id(),
             self.is_ingame()
         );
+        if matches!(key_event, KeyEvent::Pressed(Key::Menu)) {
+            self.is_menu_pressed_alone = true;
+        } else if !matches!(key_event, KeyEvent::Released(Key::Menu)) {
+            self.is_menu_pressed_alone = false;
+        }
         match key_event {
-            KeyEvent::Released(Key::VolDown) => self.add_volume(-1)?,
-            KeyEvent::Released(Key::VolUp) => self.add_volume(1)?,
-            KeyEvent::Released(Key::Power) => {
+            KeyEvent::Pressed(Key::VolDown) | KeyEvent::Autorepeat(Key::VolDown) => {
+                self.add_volume(-1)?
+            }
+            KeyEvent::Pressed(Key::VolUp) | KeyEvent::Autorepeat(Key::VolUp) => {
+                self.add_volume(1)?
+            }
+            KeyEvent::Autorepeat(Key::Power) => {
                 self.save()?;
                 if self.is_ingame() {
                     if self.menu.is_some() {
@@ -154,7 +165,8 @@ impl AlliumD<DefaultPlatform> {
                 std::process::Command::new("poweroff").exec();
             }
             KeyEvent::Released(Key::Menu) => {
-                if self.is_ingame() {
+                if self.is_ingame() && self.is_menu_pressed_alone {
+                    self.is_menu_pressed_alone = false;
                     if let Some(menu) = &mut self.menu {
                         terminate(menu).await?;
                     } else {
