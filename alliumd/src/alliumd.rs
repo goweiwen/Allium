@@ -6,7 +6,6 @@ use std::str::FromStr;
 
 use anyhow::Result;
 use common::constants::{self, ALLIUMD_STATE, ALLIUM_LAUNCHER, ALLIUM_MENU};
-use futures::future::{Fuse, FutureExt};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
@@ -16,8 +15,12 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 
 #[cfg(unix)]
 use {
-    nix::sys::signal::kill, nix::sys::signal::Signal, nix::unistd::Pid,
-    std::os::unix::process::CommandExt, tokio::signal::unix::SignalKind,
+    futures::future::{Fuse, FutureExt},
+    nix::sys::signal::kill,
+    nix::sys::signal::Signal,
+    nix::unistd::Pid,
+    std::os::unix::process::CommandExt,
+    tokio::signal::unix::SignalKind,
 };
 
 #[derive(Debug, Serialize, Deserialize)]

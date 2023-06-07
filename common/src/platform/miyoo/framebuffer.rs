@@ -56,7 +56,7 @@ impl FramebufferDisplay {
     }
 }
 
-impl Display<core::convert::Infallible> for FramebufferDisplay {
+impl Display for FramebufferDisplay {
     fn map_pixels<F>(&mut self, mut f: F) -> Result<()>
     where
         F: FnMut(Rgb888) -> Rgb888,
@@ -95,21 +95,16 @@ impl Display<core::convert::Infallible> for FramebufferDisplay {
         let Some(ref saved) = self.saved else {
              bail!("No saved image");
         };
-        let to = &mut self.framebuffer.buffer;
 
-        let buffer_width = self.framebuffer.size.width as usize;
-        let buffer_height = self.framebuffer.size.height as usize;
-        let bytes_per_pixel = self.framebuffer.bytes_per_pixel as usize;
+        let Point { x, y } = area.top_left;
+        let Size { width, height } = area.size;
+        let x = self.framebuffer.size.width - x as u32;
+        let y = self.framebuffer.size.height - y as u32;
 
-        let x = area.top_left.x as usize;
-        let width = area.size.width as usize;
-        let y0 = area.top_left.y as usize;
-        let y1 = y0 + area.size.height as usize;
-
-        for y in y0..y1 {
-            let from = ((buffer_height - y + 1) * buffer_width + (buffer_width - x - width + 1))
-                * bytes_per_pixel;
-            let to = from + width * bytes_per_pixel;
+        for y in (y - height)..y {
+            let to = (y * self.framebuffer.size.width + x) as usize
+                * self.framebuffer.bytes_per_pixel as usize;
+            let from = to - width as usize * self.framebuffer.bytes_per_pixel as usize;
             self.framebuffer.buffer[from..to].copy_from_slice(&saved[from..to]);
         }
 
@@ -172,8 +167,8 @@ impl DrawTarget for Buffer {
 
         for Pixel(coord, color) in pixels.into_iter() {
             // rotate 180 degrees
-            let x: i32 = width - coord.x;
-            let y: i32 = height - coord.y;
+            let x: i32 = width - coord.x - 1;
+            let y: i32 = height - coord.y - 1;
             if 0 <= x && x < width && 0 <= y && y < height {
                 let index: u32 = (x as u32 + y as u32 * width as u32) * bytespp;
                 self.buffer[index as usize] = color.b();

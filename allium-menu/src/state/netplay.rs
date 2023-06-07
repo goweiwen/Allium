@@ -1,11 +1,11 @@
 use anyhow::Result;
-use embedded_graphics::{
-    prelude::*,
-    primitives::{PrimitiveStyle, Rectangle},
-};
+use embedded_graphics::{prelude::*, primitives::Rectangle};
 
-use common::platform::{DefaultPlatform, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
+use common::{
+    display::Display,
+    platform::{DefaultPlatform, KeyEvent, Platform},
+};
 
 #[derive(Debug, Clone)]
 pub struct NetplayState {}
@@ -26,12 +26,13 @@ impl NetplayState {
     pub fn draw(
         &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,
-        styles: &Stylesheet,
+        _styles: &Stylesheet,
     ) -> Result<()> {
         let Size { width, height } = display.size();
-        Rectangle::new(Point::new(0, 46), Size::new(width, height - 46))
-            .into_styled(PrimitiveStyle::with_fill(styles.bg_color))
-            .draw(display)?;
+        display.load(Rectangle::new(
+            Point::new(0, 46),
+            Size::new(width, height - 46),
+        ))?;
         Ok(())
     }
 

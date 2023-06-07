@@ -85,7 +85,7 @@ pub struct SimulatorWindow {
     saved: Option<(Vec<u8>, u32)>,
 }
 
-impl Display<<SimulatorWindow as DrawTarget>::Error> for SimulatorWindow {
+impl Display for SimulatorWindow {
     fn map_pixels<F>(&mut self, mut f: F) -> Result<()>
     where
         F: FnMut(Rgb888) -> Rgb888,

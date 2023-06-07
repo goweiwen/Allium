@@ -3,6 +3,7 @@ mod netplay;
 
 use anyhow::Result;
 
+use common::display;
 use common::platform::{DefaultPlatform, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 
@@ -66,9 +67,13 @@ impl State {
         }
     }
 
-    pub async fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<bool> {
+    pub async fn handle_key_event(
+        &mut self,
+        key_event: KeyEvent,
+        display: &mut <DefaultPlatform as Platform>::Display,
+    ) -> Result<bool> {
         match self {
-            State::Menu(state) => state.handle_key_event(key_event).await,
+            State::Menu(state) => state.handle_key_event(key_event, display).await,
             State::Netplay(state) => state.handle_key_event(key_event),
         }
     }

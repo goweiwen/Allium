@@ -8,12 +8,13 @@ use embedded_graphics::{prelude::*, primitives::Rectangle, text::Alignment};
 use strum::{Display, EnumCount, EnumIter, IntoEnumIterator};
 
 use common::display::Display;
-use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::platform::{Color, DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 use common::{
     constants::{BUTTON_DIAMETER, LISTING_SIZE, SELECTION_HEIGHT, SELECTION_MARGIN},
     retroarch::RetroArchCommand,
 };
+use tracing::trace;
 
 #[derive(Debug, Clone)]
 pub struct MenuState {
@@ -105,7 +106,11 @@ impl MenuState {
         Ok(())
     }
 
-    pub async fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<bool> {
+    pub async fn handle_key_event(
+        &mut self,
+        key_event: KeyEvent,
+        display: &mut <DefaultPlatform as Platform>::Display,
+    ) -> Result<bool> {
         Ok(match key_event {
             // we intentionally ignore autorepeat in menu to avoid accidental actions
             KeyEvent::Pressed(Key::Up) => {
@@ -125,19 +130,22 @@ impl MenuState {
                 true
             }
             KeyEvent::Pressed(Key::A) => {
-                self.select_entry().await?;
+                self.select_entry(display).await?;
                 true
             }
             KeyEvent::Pressed(Key::B) => {
                 self.selected = MenuEntry::Continue;
-                self.select_entry().await?;
+                self.select_entry(display).await?;
                 true
             }
             _ => false,
         })
     }
 
-    async fn select_entry(&mut self) -> Result<()> {
+    async fn select_entry(
+        &mut self,
+        display: &mut <DefaultPlatform as Platform>::Display,
+    ) -> Result<()> {
         match self.selected {
             MenuEntry::Continue => {}
             MenuEntry::Save => {
@@ -157,6 +165,8 @@ impl MenuState {
                 RetroArchCommand::Quit.send().await?;
             }
         }
+        display.load(display.bounding_box())?;
+        display.flush()?;
         process::exit(0);
     }
 }

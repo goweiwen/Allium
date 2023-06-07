@@ -7,6 +7,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 use embedded_graphics::pixelcolor;
 
+use crate::display::Display;
+
 #[cfg(target_arch = "arm")]
 pub type DefaultPlatform = miyoo::MiyooPlatform;
 #[cfg(target_arch = "arm")]
@@ -20,7 +22,7 @@ pub type Color = pixelcolor::Rgb888;
 // Platform is not threadsafe because it is ?Send
 #[async_trait(?Send)]
 pub trait Platform {
-    type Display;
+    type Display: Display;
     type Battery;
 
     fn new() -> Result<Self>

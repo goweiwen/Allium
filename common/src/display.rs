@@ -1,7 +1,6 @@
 use std::borrow::Cow;
-use std::error::Error;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use embedded_font::{FontTextStyle, FontTextStyleBuilder};
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Circle, PrimitiveStyle, Rectangle};
@@ -11,9 +10,7 @@ use crate::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
 use crate::platform::{Color, Key};
 use crate::stylesheet::Stylesheet;
 
-pub trait Display<E: Error + Send + Sync + 'static>:
-    OriginDimensions + DrawTarget<Color = Color, Error = E> + Sized
-{
+pub trait Display: OriginDimensions + DrawTarget<Color = Color> + Sized {
     fn map_pixels<F>(&mut self, f: F) -> Result<()>
     where
         F: FnMut(Color) -> Color;
@@ -38,7 +35,8 @@ pub trait Display<E: Error + Send + Sync + 'static>:
         alignment: Alignment,
     ) -> Result<Rectangle> {
         let text = Text::with_alignment(text, point, style, alignment);
-        text.draw(self)?;
+        text.draw(self)
+            .map_err(|_| anyhow!("failed to draw text"))?;
         Ok(text.bounding_box())
     }
 
@@ -104,24 +102,28 @@ pub trait Display<E: Error + Send + Sync + 'static>:
                 let fill_style = PrimitiveStyle::with_fill(bg_color);
                 Circle::new(Point::new(x - 12, y - 4), SELECTION_HEIGHT)
                     .into_styled(fill_style)
-                    .draw(self)?;
+                    .draw(self)
+                    .map_err(|_| anyhow!("failed to draw selection highlight"))?;
                 Circle::new(
                     Point::new(x + text_width as i32 - SELECTION_HEIGHT as i32 + 12, y - 4),
                     SELECTION_HEIGHT,
                 )
                 .into_styled(fill_style)
-                .draw(self)?;
+                .draw(self)
+                .map_err(|_| anyhow!("failed to draw selection highlight"))?;
                 Rectangle::new(
                     Point::new(x - 12 + SELECTION_HEIGHT as i32 / 2, y - 4),
                     Size::new(text_width - 24 + SELECTION_HEIGHT / 2, SELECTION_HEIGHT),
                 )
                 .into_styled(fill_style)
-                .draw(self)?;
+                .draw(self)
+                .map_err(|_| anyhow!("failed to draw selection highlight"))?;
             }
         }
 
         // Draw text
-        text.draw(self)?;
+        text.draw(self)
+            .map_err(|_| anyhow!("failed to draw text"))?;
 
         Ok(Rectangle::new(
             Point::new(x - 12, y - 4),
@@ -173,7 +175,8 @@ pub trait Display<E: Error + Send + Sync + 'static>:
 
         Circle::new(point, BUTTON_DIAMETER)
             .into_styled(PrimitiveStyle::with_fill(color))
-            .draw(self)?;
+            .draw(self)
+            .map_err(|_| anyhow!("failed to draw button bg"))?;
 
         let button_style = FontTextStyleBuilder::new(styles.ui_font.clone())
             .font_size(styles.ui_font_size)
@@ -189,7 +192,8 @@ pub trait Display<E: Error + Send + Sync + 'static>:
                 .baseline(Baseline::Middle)
                 .build(),
         )
-        .draw(self)?;
+        .draw(self)
+        .map_err(|_| anyhow!("failed to draw button text"))?;
 
         Ok(())
     }

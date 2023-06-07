@@ -14,6 +14,9 @@ use lazy_static::lazy_static;
 
 use crate::state::State;
 
+#[cfg(unix)]
+use {std::process, tokio::signal::unix::SignalKind};
+
 pub struct AlliumMenu<P: Platform> {
     platform: P,
     display: P::Display,
@@ -58,6 +61,9 @@ impl AlliumMenu<DefaultPlatform> {
         let mut last_updated_battery = std::time::Instant::now();
         self.battery.update()?;
 
+        #[cfg(unix)]
+        let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())?;
+
         loop {
             let now = std::time::Instant::now();
 
@@ -77,27 +83,52 @@ impl AlliumMenu<DefaultPlatform> {
                 self.dirty = false;
             }
 
-            self.dirty = match self.platform.poll().await? {
-                Some(KeyEvent::Pressed(Key::L)) => {
-                    if let Some(next_state) = self.state.prev()? {
-                        self.state.leave()?;
-                        self.state = next_state;
-                        self.state.enter()?;
-                    }
-                    true
+            #[cfg(unix)]
+            tokio::select! {
+                _ = sigterm.recv() => {
+                    self.display.load(self.display.bounding_box())?;
+                    self.display.flush()?;
+                    process::exit(0);
                 }
-                Some(KeyEvent::Pressed(Key::R)) => {
-                    if let Some(next_state) = self.state.next()? {
-                        self.state.leave()?;
-                        self.state = next_state;
-                        self.state.enter()?;
-                    }
-                    true
+                key_event = self.platform.poll() => {
+                    let key_event = key_event?;
+                    self.dirty = self.handle_key_event(key_event).await?;
                 }
-                Some(key_event) => self.state.handle_key_event(key_event).await?,
-                None => false,
-            };
+            }
+
+            #[cfg(not(unix))]
+            {
+                let key_event = self.platform.poll().await?;
+                self.dirty = self.handle_key_event(key_event).await?;
+            }
         }
+    }
+
+    async fn handle_key_event(&mut self, key_event: Option<KeyEvent>) -> Result<bool> {
+        Ok(match key_event {
+            Some(KeyEvent::Pressed(Key::L)) => {
+                if let Some(next_state) = self.state.prev()? {
+                    self.state.leave()?;
+                    self.state = next_state;
+                    self.state.enter()?;
+                }
+                true
+            }
+            Some(KeyEvent::Pressed(Key::R)) => {
+                if let Some(next_state) = self.state.next()? {
+                    self.state.leave()?;
+                    self.state = next_state;
+                    self.state.enter()?;
+                }
+                true
+            }
+            Some(key_event) => {
+                self.state
+                    .handle_key_event(key_event, &mut self.display)
+                    .await?
+            }
+            None => false,
+        })
     }
 
     fn draw(&mut self) -> Result<()> {
