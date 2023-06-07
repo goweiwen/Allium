@@ -9,7 +9,7 @@ Allium is a custom launcher for the Miyoo Mini and Miyoo Mini Plus handheld devi
 
 The goal of Allium is to replace MainUI (stock UI) with a faster and more user-friendly UI.
 
-Goals:
+### Goals
 - It just works
 - Fast
 - Clean UI
@@ -30,6 +30,8 @@ The SD card layout should look like this:
 - Saves
 
 ## Features
+
+### Done
 - Supports stock SD card layout without configuration
 - Box art (PNG, JPG, GIF, TGA, BMP)
 - Launch RetroArch for all supported cores
@@ -38,7 +40,7 @@ The SD card layout should look like this:
 - In-game menu (view game name, battery %, save, load, reset, access RetroArch menu, quit)
 - Automatic game save/resume when powering off/on
 
-## Todo
+### Todo
 (roughly in order of priority)
 - Settings page:
     - Button colors
@@ -64,26 +66,32 @@ The SD card layout should look like this:
     - Cloud save sync
     - Seamless netplay from ingame menu
 
-## Known bugs
+### Known bugs
 - Volume resets when RetroArch launches
 - Battery indicator draws over previous value
-
-## Building
-
-### Miyoo Mini (Plus)
-
-[cross](https://github.com/cross-rs/cross) is used for cross-compilation.
-
-```
-cross build --release --target=arm-unknown-linux-gnueabihf
-cp ./target/arm-unknown-linux-gnueabihf/release/allium <sdcard>
-```
 
 ## Development
 
 Allium comes with a simulator that can be used for development. The simulator requires SDL2 to be installed.
 
+### Requirements
+1. `make`, `cargo`
+2. [SDL2](https://github.com/Rust-SDL2/rust-sdl2#sdl20-development-libraries) (optional, if simulator is not used)
+3. [cross](https://github.com/cross-rs/cross): `cargo install cross --git https://github.com/cross-rs/cross` (optional, for cross-compilation)
+
+### Simulator
 ```
-cargo run --target=x86_64-pc-windows-msvc
-cargo run --target=x86_64-unknown-linux-gnu
+# Run main menu (allium-launcher)
+make simulator-launcher
+
+# Run ingame menu (allium-menu)
+make simulator-menu
+```
+
+### Building
+
+Running `make` will build Allium and RetroArch, then copy the built and static files into `dist/`.
+```
+make all
+cp -r dist/. <sdcard>
 ```
