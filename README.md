@@ -10,35 +10,46 @@ Allium is a custom launcher for the Miyoo Mini and Miyoo Mini Plus handheld devi
 The goal of Allium is to replace MainUI (stock UI) with a faster and more user-friendly UI.
 
 Goals:
+- It just works
 - Fast
 - Clean UI
 - RetroArch (with Netplay)
 - Box art
 - Support running on both Miyoo Mini and Miyoo Mini Plus without changes
 
+## Installation
+
+Download the latest release and extract into your SD card. e.g. `E:/`.
+
+The SD card layout should look like this:
+- .allium
+- .tmp_update
+- BIOS
+- RetroArch
+- Roms
+- Saves
+
 ## Features
-- Games list (from `/mnt/SDCARD/Roms`)
+- Supports stock SD card layout without configuration
 - Box art (PNG, JPG, GIF, TGA, BMP)
-- Launch RetroArch for supported cores
+- Launch RetroArch for all supported cores
 - Battery indicator
 - Volume control
 - In-game menu (view game name, battery %, save, load, reset, access RetroArch menu, quit)
-- Automatic game save/load state when powering off/on
+- Automatic game save/resume when powering off/on
 
 ## Todo
-- File-system database to cache folder structure
-- Save launcher state to file-system (for suspend, resuming after RetroArch quits)
-- Add config for all supported RetroArch cores
-- Recents list (sort by frecency)
+(roughly in order of priority)
 - Settings page:
     - Button colors
     - Theme color
     - Toggle box art
     - WiFi
     - Clock
-- OTA update
 - Persistent launcher state (maintain selected game after launching game/restarting)
+- Recents list (sort by frecency)
 - Brightness control
+- File-system database to cache folder structure
 - UI improvements:
     - Folder icon
     - Battery icon
@@ -46,11 +57,16 @@ Goals:
     - Brightness indicator
     - Error toast (e.g. no core found for game)
     - Anti-aliased circles
+- WiFi stuff:
+    - NTP
+    - OTA update
+    - Metadata/box art scraper
+    - Cloud save sync
+    - Seamless netplay from ingame menu
 
 ## Known bugs
 - Volume resets when RetroArch launches
 - Battery indicator draws over previous value
-- 
 
 ## Building
 
