@@ -6,6 +6,7 @@ use embedded_graphics::Pixel;
 use framebuffer::Framebuffer;
 use tracing::trace;
 
+use crate::display::color::Color;
 use crate::display::Display;
 
 pub struct Buffer {
@@ -59,7 +60,7 @@ impl FramebufferDisplay {
 impl Display for FramebufferDisplay {
     fn map_pixels<F>(&mut self, mut f: F) -> Result<()>
     where
-        F: FnMut(Rgb888) -> Rgb888,
+        F: FnMut(Color) -> Color,
     {
         self.framebuffer.buffer = self
             .framebuffer
@@ -67,7 +68,7 @@ impl Display for FramebufferDisplay {
             .chunks(self.framebuffer.bytes_per_pixel as usize)
             .flat_map(|raw| {
                 // framebuffer should be divisible by bytespp, we don't have to worry about out of bounds
-                let pixel = f(Rgb888::new(raw[0], raw[1], raw[2]));
+                let pixel = f(Color::new(raw[0], raw[1], raw[2]));
                 [pixel.r(), pixel.g(), pixel.b(), raw[3]]
             })
             .collect();
@@ -113,7 +114,7 @@ impl Display for FramebufferDisplay {
 }
 
 impl DrawTarget for FramebufferDisplay {
-    type Color = Rgb888;
+    type Color = Color;
     type Error = core::convert::Infallible;
 
     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
@@ -154,7 +155,7 @@ impl OriginDimensions for FramebufferDisplay {
 }
 
 impl DrawTarget for Buffer {
-    type Color = Rgb888;
+    type Color = Color;
     type Error = core::convert::Infallible;
 
     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>

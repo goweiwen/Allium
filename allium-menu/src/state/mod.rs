@@ -3,7 +3,6 @@ mod netplay;
 
 use anyhow::Result;
 
-use common::display;
 use common::platform::{DefaultPlatform, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 

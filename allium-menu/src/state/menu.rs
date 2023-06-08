@@ -8,7 +8,7 @@ use embedded_graphics::{prelude::*, primitives::Rectangle, text::Alignment};
 use strum::{Display, EnumCount, EnumIter, IntoEnumIterator};
 
 use common::display::Display;
-use common::platform::{Color, DefaultPlatform, Key, KeyEvent, Platform};
+use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 use common::{
     constants::{BUTTON_DIAMETER, LISTING_SIZE, SELECTION_HEIGHT, SELECTION_MARGIN},

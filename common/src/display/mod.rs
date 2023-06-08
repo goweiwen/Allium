@@ -1,3 +1,6 @@
+pub mod color;
+pub mod image;
+
 use std::borrow::Cow;
 
 use anyhow::{anyhow, Result};
@@ -7,7 +10,8 @@ use embedded_graphics::primitives::{Circle, PrimitiveStyle, Rectangle};
 use embedded_graphics::text::{Alignment, Baseline, Text, TextStyleBuilder};
 
 use crate::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
-use crate::platform::{Color, Key};
+use crate::display::color::Color;
+use crate::platform::Key;
 use crate::stylesheet::Stylesheet;
 
 pub trait Display: OriginDimensions + DrawTarget<Color = Color> + Sized {

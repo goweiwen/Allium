@@ -4,7 +4,7 @@ use std::rc::Rc;
 use anyhow::{bail, Context, Result};
 use async_trait::async_trait;
 use embedded_graphics::image::{Image, ImageRaw};
-use embedded_graphics::pixelcolor::{raw::BigEndian, Rgb888};
+use embedded_graphics::pixelcolor::raw::BigEndian;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::Rectangle;
 use embedded_graphics_simulator::{
@@ -12,9 +12,9 @@ use embedded_graphics_simulator::{
 };
 use itertools::iproduct;
 use sdl2::keyboard::Keycode;
-use tracing::trace;
 
 use crate::battery::Battery;
+use crate::display::color::Color;
 use crate::display::Display;
 use crate::platform::{Key, KeyEvent, Platform};
 
@@ -90,14 +90,14 @@ impl Default for SimulatorPlatform {
 
 pub struct SimulatorWindow {
     window: Rc<RefCell<Window>>,
-    display: SimulatorDisplay<Rgb888>,
+    display: SimulatorDisplay<Color>,
     saved: Option<(Vec<u8>, u32)>,
 }
 
 impl Display for SimulatorWindow {
     fn map_pixels<F>(&mut self, mut f: F) -> Result<()>
     where
-        F: FnMut(Rgb888) -> Rgb888,
+        F: FnMut(Color) -> Color,
     {
         let Size { width, height } = self.display.size();
         let pixels = iproduct!(0..width as i32, 0..height as i32)
@@ -141,8 +141,8 @@ impl Display for SimulatorWindow {
 }
 
 impl DrawTarget for SimulatorWindow {
-    type Color = Rgb888;
-    type Error = <SimulatorDisplay<Rgb888> as DrawTarget>::Error;
+    type Color = Color;
+    type Error = <SimulatorDisplay<Color> as DrawTarget>::Error;
 
     fn draw_iter<I>(&mut self, pixels: I) -> std::result::Result<(), Self::Error>
     where

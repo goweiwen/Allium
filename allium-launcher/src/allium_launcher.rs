@@ -3,6 +3,7 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::Result;
+use common::display::color::Color;
 use embedded_font::FontTextStyleBuilder;
 use embedded_graphics::prelude::*;
 use embedded_graphics::text::{Alignment, Text};
@@ -12,9 +13,8 @@ use lazy_static::lazy_static;
 use common::battery::Battery;
 use common::constants::{self, BATTERY_UPDATE_INTERVAL};
 use common::display::Display;
-use common::platform::{Color, DefaultPlatform, Key, KeyEvent, Platform};
+use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
-use tracing::warn;
 
 use crate::state::State;
 
@@ -56,7 +56,7 @@ impl AlliumLauncher<DefaultPlatform> {
                 .ok();
         }
 
-        self.display.clear(Color::BLACK)?;
+        self.display.clear(Color::new(0, 0, 0))?;
         self.display.save()?;
 
         self.state.enter()?;

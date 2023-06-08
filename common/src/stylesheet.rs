@@ -1,7 +1,8 @@
 use rusttype::Font;
 
-use crate::platform::Color;
+use crate::display::color::Color;
 
+#[derive(Debug)]
 pub struct Stylesheet {
     pub fg_color: Color,
     pub bg_color: Color,

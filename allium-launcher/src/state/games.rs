@@ -23,8 +23,7 @@ use common::constants::{
     self, ALLIUM_RETROARCH, ALLIUM_ROMS_DIR, BUTTON_DIAMETER, IMAGE_SIZE, LISTING_JUMP_SIZE,
     LISTING_SIZE, SELECTION_HEIGHT, SELECTION_MARGIN,
 };
-use common::display::Display;
-use common::platform::Color;
+use common::display::{color::Color, Display};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 
@@ -199,7 +198,7 @@ impl GamesState {
                     ))?;
 
                     let mut image = image.to_rgb8();
-                    common::image::round(&mut image, image::Rgb([0u8; 3]), 12);
+                    common::display::image::round(&mut image, image::Rgb([0u8; 3]), 12);
                     let image: ImageRaw<Color> = ImageRaw::new(&image, IMAGE_SIZE.width);
                     let image = Image::new(
                         &image,
