@@ -48,7 +48,6 @@ The SD card layout should look like this:
     - Toggle box art
     - WiFi
     - Clock
-- Persistent launcher state (maintain selected game after launching game/restarting)
 - Recents list (sort by frecency)
 - Brightness control
 - File-system database to cache folder structure
