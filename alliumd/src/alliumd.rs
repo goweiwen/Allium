@@ -1,4 +1,3 @@
-use std::env;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -6,7 +5,6 @@ use std::str::FromStr;
 
 use anyhow::Result;
 use common::constants::{self, ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU};
-use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
 use tracing::{debug, info, trace};
@@ -197,7 +195,7 @@ impl AlliumD<DefaultPlatform> {
         }
     }
 
-    fn save(&mut self) -> Result<()> {
+    fn save(&self) -> Result<()> {
         let json = serde_json::to_string(self).unwrap();
         File::create(ALLIUMD_STATE.as_path())?.write_all(json.as_bytes())?;
         Ok(())
