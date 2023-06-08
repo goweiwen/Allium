@@ -16,23 +16,15 @@ use common::{
 };
 
 #[derive(Debug, Clone)]
-pub struct MenuState {
+pub struct Menu {
     selected: MenuEntry,
 }
 
-impl MenuState {
-    pub fn new() -> Result<MenuState> {
-        Ok(MenuState {
+impl Menu {
+    pub fn new() -> Result<Menu> {
+        Ok(Menu {
             selected: MenuEntry::Continue,
         })
-    }
-
-    pub fn enter(&mut self) -> Result<()> {
-        Ok(())
-    }
-
-    pub fn leave(&mut self) -> Result<()> {
-        Ok(())
     }
 
     pub fn draw(

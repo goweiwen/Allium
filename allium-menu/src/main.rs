@@ -1,7 +1,7 @@
 #![feature(async_fn_in_trait)]
 
 mod allium_menu;
-mod state;
+mod menu;
 
 use anyhow::Result;
 

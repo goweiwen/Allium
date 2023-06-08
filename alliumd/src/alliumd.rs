@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::Result;
-use common::constants::{self, ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU};
+use common::constants::{ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU};
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
 use tracing::{debug, info, trace};
@@ -177,6 +177,7 @@ impl AlliumD<DefaultPlatform> {
         Ok(())
     }
 
+    #[cfg(unix)]
     fn handle_quit(&mut self) -> Result<()> {
         debug!("terminating, saving state");
         self.save()?;

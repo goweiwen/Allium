@@ -5,13 +5,13 @@ use common::battery::Battery;
 use common::constants::ALLIUM_GAME_INFO;
 use common::constants::BATTERY_UPDATE_INTERVAL;
 use common::display::Display;
-use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::platform::{DefaultPlatform, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 use embedded_font::FontTextStyleBuilder;
 use embedded_graphics::prelude::*;
 use embedded_graphics::text::{Alignment, Text};
 
-use crate::state::State;
+use crate::menu::Menu;
 
 #[cfg(unix)]
 use {std::process, tokio::signal::unix::SignalKind};
@@ -21,7 +21,7 @@ pub struct AlliumMenu<P: Platform> {
     display: P::Display,
     battery: P::Battery,
     styles: Stylesheet,
-    state: State,
+    menu: Menu,
     dirty: bool,
     name: String,
 }
@@ -41,7 +41,7 @@ impl AlliumMenu<DefaultPlatform> {
             display,
             battery,
             styles: Default::default(),
-            state: State::new()?,
+            menu: Menu::new()?,
             dirty: true,
             name,
         })
@@ -50,8 +50,6 @@ impl AlliumMenu<DefaultPlatform> {
     pub async fn run_event_loop(&mut self) -> Result<()> {
         self.display.darken()?;
         self.display.save()?;
-
-        self.state.enter()?;
 
         let mut last_updated_battery = std::time::Instant::now();
         self.battery.update()?;
@@ -69,11 +67,11 @@ impl AlliumMenu<DefaultPlatform> {
                 self.dirty = true;
             }
 
-            self.state.update()?;
+            self.menu.update()?;
 
             if self.dirty {
                 self.draw()?;
-                self.state.draw(&mut self.display, &self.styles)?;
+                self.menu.draw(&mut self.display, &self.styles)?;
                 self.display.flush()?;
                 self.dirty = false;
             }
@@ -87,43 +85,29 @@ impl AlliumMenu<DefaultPlatform> {
                 }
                 key_event = self.platform.poll() => {
                     let key_event = key_event?;
-                    self.dirty = self.handle_key_event(key_event).await?;
+                    self.handle_key_event(key_event).await?;
                 }
             }
 
             #[cfg(not(unix))]
             {
                 let key_event = self.platform.poll().await?;
-                self.dirty = self.handle_key_event(key_event).await?;
+                self.handle_key_event(key_event).await?;
             }
         }
     }
 
-    async fn handle_key_event(&mut self, key_event: Option<KeyEvent>) -> Result<bool> {
-        Ok(match key_event {
-            Some(KeyEvent::Pressed(Key::L)) => {
-                if let Some(next_state) = self.state.prev()? {
-                    self.state.leave()?;
-                    self.state = next_state;
-                    self.state.enter()?;
-                }
-                true
+    async fn handle_key_event(&mut self, key_event: Option<KeyEvent>) -> Result<()> {
+        if let Some(key_event) = key_event {
+            let dirty = self
+                .menu
+                .handle_key_event(key_event, &mut self.display)
+                .await?;
+            if dirty {
+                self.dirty = true;
             }
-            Some(KeyEvent::Pressed(Key::R)) => {
-                if let Some(next_state) = self.state.next()? {
-                    self.state.leave()?;
-                    self.state = next_state;
-                    self.state.enter()?;
-                }
-                true
-            }
-            Some(key_event) => {
-                self.state
-                    .handle_key_event(key_event, &mut self.display)
-                    .await?
-            }
-            None => false,
-        })
+        }
+        Ok(())
     }
 
     fn draw(&mut self) -> Result<()> {
