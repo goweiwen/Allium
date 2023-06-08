@@ -100,7 +100,7 @@ impl CoreMapper {
         Ok(())
     }
 
-    pub fn get_core(&self, path: &Path) -> Option<&Core> {
+    pub fn get_core(&self, mut path: &Path) -> Option<&Core> {
         let path_lowercase = path.as_os_str().to_ascii_lowercase();
         let Some(extensions) = path_lowercase.to_str() else {
             return None;
@@ -115,19 +115,18 @@ impl CoreMapper {
             }
         }
 
-        if let Some(parent_filename) = path
-            .parent()
-            .and_then(|parent| parent.file_name())
-            .and_then(|parent| parent.to_str())
-        {
-            let core = self.cores.iter().find(|core| {
-                core.patterns
-                    .iter()
-                    .any(|pattern| parent_filename.contains(&format!("({})", pattern)))
-            });
-            if core.is_some() {
-                return core;
+        while let Some(parent) = path.parent() {
+            if let Some(parent_filename) = parent.file_name().and_then(|parent| parent.to_str()) {
+                let core = self.cores.iter().find(|core| {
+                    core.patterns
+                        .iter()
+                        .any(|pattern| parent_filename.contains(&format!("({})", pattern)))
+                });
+                if core.is_some() {
+                    return core;
+                }
             }
+            path = parent;
         }
 
         None
