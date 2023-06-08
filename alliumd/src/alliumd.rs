@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::Result;
-use common::constants::{self, ALLIUMD_STATE, ALLIUM_LAUNCHER, ALLIUM_MENU};
+use common::constants::{self, ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
@@ -36,11 +36,6 @@ pub struct AlliumD<P: Platform> {
     volume: i32,
 }
 
-lazy_static! {
-    static ref ALLIUM_GAME_INFO: String =
-        env::var("ALLIUM_GAME_INFO").unwrap_or_else(|_| constants::ALLIUM_GAME_INFO.to_string());
-}
-
 fn spawn_main() -> Child {
     try_load_game().unwrap_or_else(|| {
         let path = Path::new(&*ALLIUM_GAME_INFO);
@@ -50,14 +45,13 @@ fn spawn_main() -> Child {
         } else {
             info!("failed to load game, launching menu");
         }
-        Command::new(ALLIUM_LAUNCHER).spawn().unwrap()
+        Command::new(ALLIUM_LAUNCHER.as_path()).spawn().unwrap()
     })
 }
 
 fn try_load_game() -> Option<Child> {
-    let path = Path::new(&*ALLIUM_GAME_INFO);
-    if path.exists() {
-        let game_info = fs::read_to_string(path).ok()?;
+    if ALLIUM_GAME_INFO.exists() {
+        let game_info = fs::read_to_string(ALLIUM_GAME_INFO.as_path()).ok()?;
         let mut split = game_info.split('\n');
         let _name = split.next();
         let core = split.next().and_then(|path| PathBuf::from_str(path).ok())?;
@@ -175,7 +169,7 @@ impl AlliumD<DefaultPlatform> {
                     } else {
                         #[cfg(unix)]
                         signal(&self.main, Signal::SIGSTOP)?;
-                        self.menu = Some(Command::new(ALLIUM_MENU).spawn()?);
+                        self.menu = Some(Command::new(ALLIUM_MENU.as_path()).spawn()?);
                     }
                 }
             }
@@ -192,13 +186,12 @@ impl AlliumD<DefaultPlatform> {
     }
 
     pub fn load() -> Result<AlliumD<DefaultPlatform>> {
-        let path = Path::new(ALLIUMD_STATE);
-        if !path.exists() {
+        if !ALLIUMD_STATE.exists() {
             debug!("can't find state, creating new");
             Self::new()
         } else {
             debug!("found state, loading from file");
-            let json = fs::read_to_string(path)?;
+            let json = fs::read_to_string(ALLIUMD_STATE.as_path())?;
             let alliumd: AlliumD<DefaultPlatform> = serde_json::from_str(&json)?;
             Ok(alliumd)
         }
@@ -206,7 +199,7 @@ impl AlliumD<DefaultPlatform> {
 
     fn save(&mut self) -> Result<()> {
         let json = serde_json::to_string(self).unwrap();
-        File::create(ALLIUMD_STATE)?.write_all(json.as_bytes())?;
+        File::create(ALLIUMD_STATE.as_path())?.write_all(json.as_bytes())?;
         Ok(())
     }
 

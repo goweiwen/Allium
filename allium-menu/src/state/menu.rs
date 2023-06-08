@@ -14,7 +14,6 @@ use common::{
     constants::{BUTTON_DIAMETER, LISTING_SIZE, SELECTION_HEIGHT, SELECTION_MARGIN},
     retroarch::RetroArchCommand,
 };
-use tracing::trace;
 
 #[derive(Debug, Clone)]
 pub struct MenuState {
@@ -161,7 +160,7 @@ impl MenuState {
                 RetroArchCommand::MenuToggle.send().await?;
             }
             MenuEntry::Quit => {
-                fs::remove_file(ALLIUM_GAME_INFO)?;
+                fs::remove_file(ALLIUM_GAME_INFO.as_path())?;
                 RetroArchCommand::Quit.send().await?;
             }
         }

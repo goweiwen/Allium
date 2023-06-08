@@ -46,7 +46,7 @@ impl Core {
             Command::new(&path).arg(rom).exec();
         } else if let Some(retroarch_core) = self.retroarch_core.as_ref() {
             #[cfg(windows)]
-            Command::new(ALLIUM_RETROARCH)
+            Command::new(ALLIUM_RETROARCH.as_path())
                 .arg(retroarch_core)
                 .arg(rom)
                 .spawn()
@@ -86,11 +86,7 @@ impl CoreMapper {
     }
 
     pub fn load_config(&mut self) -> Result<()> {
-        let roms_dir: PathBuf = env::var("ALLIUM_CONFIG_DIR")
-            .unwrap_or(ALLIUM_CONFIG_DIR.to_owned())
-            .into();
-        let config = std::fs::read_to_string(roms_dir.join("cores.toml"))
-            .context("Failed to load cores.toml. Is ALLIUM_CONFIG_DIR set correctly?")?;
+        let config = std::fs::read_to_string(ALLIUM_CONFIG_DIR.join("cores.toml"))?;
         let config: CoreConfig = toml::from_str(&config).context("Failed to parse cores.toml.")?;
         self.cores = config
             .cores

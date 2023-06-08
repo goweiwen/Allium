@@ -1,10 +1,8 @@
 use std::cmp::min;
-use std::env;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use std::str::FromStr;
 
 use anyhow::Result;
 use embedded_font::FontTextStyleBuilder;
@@ -20,8 +18,8 @@ use serde::{Deserialize, Serialize};
 use tracing::trace;
 
 use common::constants::{
-    self, ALLIUM_RETROARCH, ALLIUM_ROMS_DIR, BUTTON_DIAMETER, IMAGE_SIZE, LISTING_JUMP_SIZE,
-    LISTING_SIZE, SELECTION_HEIGHT, SELECTION_MARGIN,
+    ALLIUM_GAMES_DIR, ALLIUM_GAME_INFO, ALLIUM_RETROARCH, BUTTON_DIAMETER, IMAGE_SIZE,
+    LISTING_JUMP_SIZE, LISTING_SIZE, SELECTION_HEIGHT, SELECTION_MARGIN,
 };
 use common::display::{color::Color, Display};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
@@ -98,13 +96,9 @@ impl GamesState {
     fn launch_game(&mut self, game: &Game) -> Result<()> {
         let core = self.core_mapper.get_core(game.path.as_path());
         if let Some(core) = core {
-            lazy_static! {
-                static ref ALLIUM_GAME_INFO: String = env::var("ALLIUM_GAME_INFO")
-                    .unwrap_or_else(|_| constants::ALLIUM_GAME_INFO.to_string());
-            }
             if let Some(path) = core.path.as_ref() {
                 write!(
-                    File::create(&*ALLIUM_GAME_INFO)?,
+                    File::create(ALLIUM_GAME_INFO.as_path())?,
                     "{}\n{}\n{}",
                     game.name,
                     path.as_path().as_os_str().to_str().unwrap_or(""),
@@ -115,7 +109,7 @@ impl GamesState {
                     File::create(&*ALLIUM_GAME_INFO)?,
                     "{}\n{}\n{}\n{}",
                     game.name,
-                    ALLIUM_RETROARCH,
+                    ALLIUM_RETROARCH.as_os_str().to_str().unwrap_or(""),
                     retroarch_core,
                     game.path.as_path().as_os_str().to_str().unwrap_or(""),
                 )?;
@@ -395,10 +389,7 @@ impl Default for Directory {
         Directory {
             name: "Games".to_string(),
             full_name: "Games".to_string(),
-            path: PathBuf::from_str(
-                &env::var("ALLIUM_ROMS_DIR").unwrap_or_else(|_| ALLIUM_ROMS_DIR.to_owned()),
-            )
-            .unwrap(),
+            path: ALLIUM_GAMES_DIR.to_owned(),
         }
     }
 }
