@@ -29,7 +29,7 @@ impl State for RecentsState {
     }
 
     fn draw(
-        &mut self,
+        &self,
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<()> {

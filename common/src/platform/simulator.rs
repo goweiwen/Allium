@@ -80,6 +80,10 @@ impl Platform for SimulatorPlatform {
     fn set_volume(&mut self, _volume: i32) -> Result<()> {
         Ok(())
     }
+
+    fn device_model() -> String {
+        "Simulator".to_string()
+    }
 }
 
 impl Default for SimulatorPlatform {

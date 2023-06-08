@@ -3,6 +3,8 @@ mod evdev;
 mod framebuffer;
 mod volume;
 
+use std::fmt;
+
 use anyhow::Result;
 use async_trait::async_trait;
 
@@ -23,6 +25,15 @@ pub struct MiyooPlatform {
 enum MiyooDeviceModel {
     Miyoo283,
     Miyoo354,
+}
+
+impl fmt::Display for MiyooDeviceModel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            MiyooDeviceModel::Miyoo283 => write!(f, "Miyoo Mini (MY283)"),
+            MiyooDeviceModel::Miyoo354 => write!(f, "Miyoo Mini+ (MY354)"),
+        }
+    }
 }
 
 #[async_trait(?Send)]
@@ -59,6 +70,10 @@ impl Platform for MiyooPlatform {
             MiyooDeviceModel::Miyoo283 => Ok(()),
             MiyooDeviceModel::Miyoo354 => volume::set_volume(volume),
         }
+    }
+
+    fn device_model() -> String {
+        detect_model().to_string()
     }
 }
 

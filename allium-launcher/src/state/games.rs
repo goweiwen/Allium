@@ -133,7 +133,7 @@ impl State for GamesState {
     }
 
     fn draw(
-        &mut self,
+        &self,
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<()> {

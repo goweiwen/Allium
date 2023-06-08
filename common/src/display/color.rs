@@ -1,3 +1,5 @@
+use std::fmt;
+
 use embedded_graphics::pixelcolor::{raw::RawU24, Rgb888};
 use embedded_graphics::prelude::{PixelColor, RgbColor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -43,6 +45,13 @@ impl<'de> Deserialize<'de> for Color {
         let g = u8::from_str_radix(&hex[2..4], 16).map_err(serde::de::Error::custom)?;
         let b = u8::from_str_radix(&hex[4..6], 16).map_err(serde::de::Error::custom)?;
         Ok(Color(Rgb888::new(r, g, b)))
+    }
+}
+
+impl fmt::Display for Color {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let (r, g, b) = (self.r(), self.g(), self.b());
+        write!(f, "#{:02x}{:02x}{:02x}", r, g, b)
     }
 }
 

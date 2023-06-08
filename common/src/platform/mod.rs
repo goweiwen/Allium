@@ -27,6 +27,7 @@ pub trait Platform {
     fn battery(&self) -> Result<Self::Battery>;
     async fn poll(&mut self) -> Result<Option<KeyEvent>>;
     fn set_volume(&mut self, volume: i32) -> Result<()>;
+    fn device_model() -> String;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

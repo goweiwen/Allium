@@ -34,9 +34,28 @@ impl State for SettingsState {
         styles: &Stylesheet,
     ) -> Result<()> {
         let Size { width, height } = display.size();
-        Rectangle::new(Point::new(0, 46), Size::new(width, height - 46))
-            .into_styled(PrimitiveStyle::with_fill(styles.bg_color))
-            .draw(display)?;
+        display.load(Rectangle::new(
+            Point::new(0, 46),
+            Size::new(width, height - 92),
+        ))?;
+
+        // Draw button hints
+        let y = height as i32 - BUTTON_DIAMETER as i32 - 8;
+        let mut x = width as i32 - 12;
+
+        x = display
+            .draw_button_hint(
+                Point::new(x, y),
+                Key::A,
+                text_style.clone(),
+                "Select",
+                styles,
+            )?
+            .top_left
+            .x
+            - 18;
+        display.draw_button_hint(Point::new(x, y), Key::B, text_style, "Back", styles)?;
+
         Ok(())
     }
 
