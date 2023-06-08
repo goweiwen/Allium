@@ -1,14 +1,14 @@
-use std::env;
-#[cfg(unix)]
-use std::os::unix::process::CommandExt;
 use std::path::PathBuf;
 use std::process::Command;
 use std::{collections::HashMap, path::Path};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
 use serde::Deserialize;
 
 use common::constants::{ALLIUM_CONFIG_DIR, ALLIUM_RETROARCH};
+use tracing::{trace, warn};
+
+use crate::command::AlliumCommand;
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct Core {
@@ -34,33 +34,21 @@ pub struct Core {
 }
 
 impl Core {
-    pub fn launch(&self, rom: &PathBuf) -> Result<()> {
+    pub fn launch(&self, rom: &PathBuf) -> Option<AlliumCommand> {
+        trace!("launching: {:?}", rom);
         if let Some(path) = self.path.as_ref() {
-            #[cfg(windows)]
-            Command::new(&path)
-                .arg(rom)
-                .spawn()
-                .context("Failed to launch core")?;
-
-            #[cfg(unix)]
-            Command::new(&path).arg(rom).exec();
+            let mut cmd = Command::new(&path);
+            cmd.arg(rom);
+            Some(AlliumCommand::Exec(cmd))
         } else if let Some(retroarch_core) = self.retroarch_core.as_ref() {
-            #[cfg(windows)]
-            Command::new(ALLIUM_RETROARCH.as_path())
-                .arg(retroarch_core)
-                .arg(rom)
-                .spawn()
-                .context("Failed to launch core")?;
-
-            #[cfg(unix)]
-            Command::new(ALLIUM_RETROARCH)
-                .arg(retroarch_core)
-                .arg(rom)
-                .exec();
+            trace!("ra: {:?}, core: {:?}", &*ALLIUM_RETROARCH, retroarch_core);
+            let mut cmd = Command::new(ALLIUM_RETROARCH.as_path());
+            cmd.arg(retroarch_core).arg(rom);
+            Some(AlliumCommand::Exec(cmd))
         } else {
-            bail!("No path or retroarch_core specified for core {}", self.name);
+            warn!("No path or retroarch_core specified for core {}", self.name);
+            None
         }
-        Ok(())
     }
 }
 

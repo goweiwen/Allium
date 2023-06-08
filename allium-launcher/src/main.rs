@@ -1,6 +1,7 @@
 #![feature(async_fn_in_trait)]
 
 mod allium_launcher;
+mod command;
 mod cores;
 mod state;
 

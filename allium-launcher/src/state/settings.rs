@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 use common::platform::{DefaultPlatform, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 
+use crate::{command::AlliumCommand, state::State};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SettingsState {}
 
@@ -15,16 +17,18 @@ impl SettingsState {
     pub fn new() -> Self {
         Self {}
     }
+}
 
-    pub fn enter(&mut self) -> Result<()> {
+impl State for SettingsState {
+    fn enter(&mut self) -> Result<()> {
         Ok(())
     }
 
-    pub fn leave(&mut self) -> Result<()> {
+    fn leave(&mut self) -> Result<()> {
         Ok(())
     }
 
-    pub fn draw(
+    fn draw(
         &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
@@ -36,11 +40,7 @@ impl SettingsState {
         Ok(())
     }
 
-    pub fn update(&mut self) -> Result<()> {
-        Ok(())
-    }
-
-    pub fn handle_key_event(&mut self, _key_event: KeyEvent) -> Result<bool> {
-        Ok(false)
+    fn handle_key_event(&mut self, _key_event: KeyEvent) -> Result<(Option<AlliumCommand>, bool)> {
+        Ok((None, false))
     }
 }

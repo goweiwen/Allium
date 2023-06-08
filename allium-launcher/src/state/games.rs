@@ -25,7 +25,7 @@ use common::display::{color::Color, Display};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 
-use crate::cores::CoreMapper;
+use crate::{command::AlliumCommand, cores::CoreMapper, state::State};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GamesState {
@@ -62,15 +62,6 @@ impl GamesState {
         })
     }
 
-    pub fn enter(&mut self) -> Result<()> {
-        self.core_mapper.load_config()?;
-        Ok(())
-    }
-
-    pub fn leave(&mut self) -> Result<()> {
-        Ok(())
-    }
-
     fn view(&self) -> &View {
         self.stack.last().unwrap()
     }
@@ -93,9 +84,9 @@ impl GamesState {
         Ok(())
     }
 
-    fn launch_game(&mut self, game: &Game) -> Result<()> {
+    fn launch_game(&mut self, game: &Game) -> Result<Option<AlliumCommand>> {
         let core = self.core_mapper.get_core(game.path.as_path());
-        if let Some(core) = core {
+        Ok(if let Some(core) = core {
             if let Some(path) = core.path.as_ref() {
                 write!(
                     File::create(ALLIUM_GAME_INFO.as_path())?,
@@ -114,20 +105,34 @@ impl GamesState {
                     game.path.as_path().as_os_str().to_str().unwrap_or(""),
                 )?;
             }
-            core.launch(&game.path)?;
-        }
-        Ok(())
+            core.launch(&game.path)
+        } else {
+            None
+        })
     }
 
-    fn select_entry(&mut self, entry: Entry) -> Result<()> {
-        match entry {
-            Entry::Directory(directory) => self.push_directory(directory)?,
+    fn select_entry(&mut self, entry: Entry) -> Result<Option<AlliumCommand>> {
+        Ok(match entry {
+            Entry::Directory(directory) => {
+                self.push_directory(directory)?;
+                None
+            }
             Entry::Game(game) => self.launch_game(&game)?,
-        }
+        })
+    }
+}
+
+impl State for GamesState {
+    fn enter(&mut self) -> Result<()> {
+        self.core_mapper.load_config()?;
         Ok(())
     }
 
-    pub fn draw(
+    fn leave(&mut self) -> Result<()> {
+        Ok(())
+    }
+
+    fn draw(
         &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
@@ -247,23 +252,20 @@ impl GamesState {
         Ok(())
     }
 
-    pub fn update(&mut self) -> Result<()> {
-        Ok(())
-    }
-
-    pub fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<bool> {
+    fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<(Option<AlliumCommand>, bool)> {
         Ok(match key_event {
             KeyEvent::Pressed(Key::A) => {
                 let view = self.view();
                 let entry = self.entries.get(view.selected as usize);
                 if let Some(entry) = entry {
-                    self.select_entry(entry.to_owned())?;
+                    (self.select_entry(entry.to_owned())?, true)
+                } else {
+                    (None, false)
                 }
-                true
             }
             KeyEvent::Pressed(Key::B) => {
                 self.pop_directory()?;
-                true
+                (None, true)
             }
             KeyEvent::Pressed(key) | KeyEvent::Autorepeat(key) => match key {
                 Key::Up => {
@@ -277,7 +279,7 @@ impl GamesState {
                         view.top = len - LISTING_SIZE;
                     }
                     trace!("selected: {}, top: {}", view.selected, view.top);
-                    true
+                    (None, true)
                 }
                 Key::Down => {
                     let len = self.entries.len() as i32;
@@ -290,7 +292,7 @@ impl GamesState {
                         view.top = view.selected - LISTING_SIZE + 1;
                     }
                     trace!("selected: {}, top: {}", view.selected, view.top);
-                    true
+                    (None, true)
                 }
                 Key::Left => {
                     let len = self.entries.len() as i32;
@@ -299,7 +301,7 @@ impl GamesState {
                     if view.selected < view.top {
                         view.top = view.selected;
                     }
-                    true
+                    (None, true)
                 }
                 Key::Right => {
                     let len = self.entries.len() as i32;
@@ -308,11 +310,11 @@ impl GamesState {
                     if view.selected - LISTING_SIZE >= view.top {
                         view.top = view.selected - LISTING_SIZE + 1;
                     }
-                    true
+                    (None, true)
                 }
-                _ => false,
+                _ => (None, false),
             },
-            _ => false,
+            _ => (None, false),
         })
     }
 }
