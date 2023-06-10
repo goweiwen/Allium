@@ -3,7 +3,6 @@ use std::process::{self};
 
 use anyhow::Result;
 use common::constants::ALLIUM_GAME_INFO;
-use embedded_font::FontTextStyleBuilder;
 use embedded_graphics::{prelude::*, primitives::Rectangle, text::Alignment};
 use strum::{Display, EnumCount, EnumIter, IntoEnumIterator};
 
@@ -34,17 +33,6 @@ impl Menu {
     ) -> Result<()> {
         let Size { width, height } = display.size();
 
-        let text_style = FontTextStyleBuilder::new(styles.ui_font.clone())
-            .font_size(styles.ui_font_size)
-            .text_color(styles.fg_color)
-            .build();
-
-        let selection_style = FontTextStyleBuilder::new(styles.ui_font.clone())
-            .font_size(styles.ui_font_size)
-            .text_color(styles.fg_color)
-            .background_color(styles.primary)
-            .build();
-
         // Draw menu
         let (x, mut y) = (24, 58);
 
@@ -61,14 +49,12 @@ impl Menu {
             display.draw_entry(
                 Point { x, y },
                 &entry.to_string(),
-                if self.selected == entry {
-                    selection_style.clone()
-                } else {
-                    text_style.clone()
-                },
+                styles,
                 Alignment::Left,
                 300,
                 true,
+                true,
+                0,
             )?;
             y += (SELECTION_HEIGHT + SELECTION_MARGIN) as i32;
         }
@@ -78,17 +64,11 @@ impl Menu {
         let mut x = width as i32 - 12;
 
         x = display
-            .draw_button_hint(
-                Point::new(x, y),
-                Key::A,
-                text_style.clone(),
-                "Select",
-                styles,
-            )?
+            .draw_button_hint(Point::new(x, y), Key::A, "Select", styles)?
             .top_left
             .x
             - 18;
-        display.draw_button_hint(Point::new(x, y), Key::B, text_style, "Back", styles)?;
+        display.draw_button_hint(Point::new(x, y), Key::B, "Back", styles)?;
 
         Ok(())
     }

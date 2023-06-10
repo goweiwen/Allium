@@ -1,5 +1,6 @@
 pub mod color;
 pub mod image;
+pub mod settings;
 
 use std::borrow::Cow;
 
@@ -35,10 +36,10 @@ pub trait Display: OriginDimensions + DrawTarget<Color = Color> + Sized {
         &mut self,
         point: Point,
         text: &str,
-        style: FontTextStyle<Color>,
+        text_style: FontTextStyle<Color>,
         alignment: Alignment,
     ) -> Result<Rectangle> {
-        let text = Text::with_alignment(text, point, style, alignment);
+        let text = Text::with_alignment(text, point, text_style, alignment);
         text.draw(self)
             .map_err(|_| anyhow!("failed to draw text"))?;
         Ok(text.bounding_box())
@@ -49,10 +50,14 @@ pub trait Display: OriginDimensions + DrawTarget<Color = Color> + Sized {
         &self,
         point: Point,
         text: &'a str,
-        style: FontTextStyle<Color>,
+        styles: &Stylesheet,
         alignment: Alignment,
         width: u32,
     ) -> Result<Cow<'a, str>> {
+        let style: FontTextStyle<Color> = FontTextStyleBuilder::new(styles.ui_font.clone())
+            .font_size(styles.ui_font_size)
+            .build();
+
         let mut text = Text::with_alignment(text, point, style.clone(), alignment);
         let ellipsis_width = Text::with_alignment("...", point, style, alignment)
             .bounding_box()
@@ -77,52 +82,90 @@ pub trait Display: OriginDimensions + DrawTarget<Color = Color> + Sized {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn draw_entry(
         &mut self,
         point: Point,
         text: &str,
-        style: FontTextStyle<Color>,
+        styles: &Stylesheet,
         alignment: Alignment,
         width: u32,
         selected: bool,
+        active: bool,
+        margin_x: i32,
     ) -> Result<Rectangle> {
         let Point { x, y } = point;
 
-        let bg_color = style.background_color;
+        let style = FontTextStyleBuilder::new(styles.ui_font.clone())
+            .font_size(styles.ui_font_size)
+            .text_color(if !active && selected {
+                styles.highlight_color
+            } else {
+                styles.foreground_color
+            })
+            .background_color(if active && selected {
+                styles.highlight_color
+            } else {
+                styles.background_color
+            })
+            .build();
+
         let truncated_text = self.truncate_text_ellipsis(
             Point::new(x, y),
             text,
-            style.clone(),
-            Alignment::Left,
-            width,
+            styles,
+            alignment,
+            width - margin_x as u32,
         )?;
 
-        let text = Text::with_alignment(&truncated_text, point, style, alignment);
+        let sign = if alignment == Alignment::Right { -1 } else { 1 };
+
+        let text = Text::with_alignment(
+            &truncated_text,
+            Point::new(x - margin_x * (1 - sign) / 2, y),
+            style,
+            alignment,
+        );
         let text_width = text.bounding_box().size.width;
 
         // Draw selection highlight
-        if selected {
-            if let Some(bg_color) = bg_color {
-                let fill_style = PrimitiveStyle::with_fill(bg_color);
-                Circle::new(Point::new(x - 12, y - 4), SELECTION_HEIGHT)
-                    .into_styled(fill_style)
-                    .draw(self)
-                    .map_err(|_| anyhow!("failed to draw selection highlight"))?;
-                Circle::new(
-                    Point::new(x + text_width as i32 - SELECTION_HEIGHT as i32 + 12, y - 4),
+        if selected && active {
+            let fill_style = PrimitiveStyle::with_fill(styles.highlight_color);
+            Circle::new(
+                Point::new(
+                    x - 12 * sign - SELECTION_HEIGHT as i32 * (1 - sign) / 2,
+                    y - 4,
+                ),
+                SELECTION_HEIGHT,
+            )
+            .into_styled(fill_style)
+            .draw(self)
+            .map_err(|_| anyhow!("failed to draw selection highlight"))?;
+            Circle::new(
+                Point::new(
+                    x + (text_width as i32 - SELECTION_HEIGHT as i32 + 12 + margin_x) * sign
+                        - SELECTION_HEIGHT as i32 * (1 - sign) / 2,
+                    y - 4,
+                ),
+                SELECTION_HEIGHT,
+            )
+            .into_styled(fill_style)
+            .draw(self)
+            .map_err(|_| anyhow!("failed to draw selection highlight"))?;
+            Rectangle::new(
+                Point::new(
+                    x - (12 - SELECTION_HEIGHT as i32 / 2 - margin_x) * sign
+                        - (text_width as i32 - 24 + SELECTION_HEIGHT as i32 / 2) * (1 - sign) / 2,
+                    y - 4,
+                ),
+                Size::new(
+                    text_width - 24 + SELECTION_HEIGHT / 2 + margin_x as u32,
                     SELECTION_HEIGHT,
-                )
-                .into_styled(fill_style)
-                .draw(self)
-                .map_err(|_| anyhow!("failed to draw selection highlight"))?;
-                Rectangle::new(
-                    Point::new(x - 12 + SELECTION_HEIGHT as i32 / 2, y - 4),
-                    Size::new(text_width - 24 + SELECTION_HEIGHT / 2, SELECTION_HEIGHT),
-                )
-                .into_styled(fill_style)
-                .draw(self)
-                .map_err(|_| anyhow!("failed to draw selection highlight"))?;
-            }
+                ),
+            )
+            .into_styled(fill_style)
+            .draw(self)
+            .map_err(|_| anyhow!("failed to draw selection highlight"))?;
         }
 
         // Draw text
@@ -130,7 +173,7 @@ pub trait Display: OriginDimensions + DrawTarget<Color = Color> + Sized {
             .map_err(|_| anyhow!("failed to draw text"))?;
 
         Ok(Rectangle::new(
-            Point::new(x - 12, y - 4),
+            Point::new(x - 12 * sign, y - 4),
             Size::new(text_width + 24, SELECTION_HEIGHT),
         ))
     }
@@ -139,16 +182,21 @@ pub trait Display: OriginDimensions + DrawTarget<Color = Color> + Sized {
         &mut self,
         point: Point,
         button: Key,
-        style: FontTextStyle<Color>,
         text: &str,
         styles: &Stylesheet,
     ) -> Result<Rectangle> {
+        let text_style = FontTextStyleBuilder::new(styles.ui_font.clone())
+            .font_size(styles.ui_font_size)
+            .text_color(styles.foreground_color)
+            .background_color(styles.background_color)
+            .build();
+
         let x = point.x
             - self
                 .draw_text(
                     Point::new(point.x, point.y + 4),
                     text,
-                    style,
+                    text_style,
                     Alignment::Right,
                 )?
                 .size
@@ -174,7 +222,7 @@ pub trait Display: OriginDimensions + DrawTarget<Color = Color> + Sized {
             Key::B => (styles.button_b_color, "B"),
             Key::X => (styles.button_x_color, "X"),
             Key::Y => (styles.button_y_color, "Y"),
-            _ => (styles.primary, "?"),
+            _ => (styles.highlight_color, "?"),
         };
 
         Circle::new(point, BUTTON_DIAMETER)
@@ -184,7 +232,7 @@ pub trait Display: OriginDimensions + DrawTarget<Color = Color> + Sized {
 
         let button_style = FontTextStyleBuilder::new(styles.ui_font.clone())
             .font_size(styles.ui_font_size)
-            .text_color(styles.fg_color)
+            .text_color(styles.foreground_color)
             .background_color(color)
             .build();
         Text::with_text_style(

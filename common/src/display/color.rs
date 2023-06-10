@@ -27,6 +27,36 @@ impl Color {
     pub fn b(&self) -> u8 {
         self.0.b()
     }
+
+    #[inline]
+    pub fn with_r(&self, r: u8) -> Self {
+        Self(Rgb888::new(r, self.g(), self.b()))
+    }
+
+    #[inline]
+    pub fn with_g(&self, g: u8) -> Self {
+        Self(Rgb888::new(self.r(), g, self.b()))
+    }
+
+    #[inline]
+    pub fn with_b(&self, b: u8) -> Self {
+        Self(Rgb888::new(self.r(), self.g(), b))
+    }
+
+    pub fn char(&self, i: usize) -> String {
+        format!(
+            "{:x}",
+            match i {
+                0 => self.r() / 16,
+                1 => self.r() % 16,
+                2 => self.g() / 16,
+                3 => self.g() % 16,
+                4 => self.b() / 16,
+                5 => self.b() % 16,
+                _ => panic!("invalid color index"),
+            }
+        )
+    }
 }
 
 impl Serialize for Color {

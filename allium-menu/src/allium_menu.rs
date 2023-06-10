@@ -115,12 +115,12 @@ impl AlliumMenu<DefaultPlatform> {
 
         let text_style = FontTextStyleBuilder::new(self.styles.ui_font.clone())
             .font_size(self.styles.ui_font_size)
-            .text_color(self.styles.fg_color)
+            .text_color(self.styles.foreground_color)
             .build();
 
         let primary_style = FontTextStyleBuilder::new(self.styles.ui_font.clone())
             .font_size(self.styles.ui_font_size)
-            .text_color(self.styles.primary)
+            .text_color(self.styles.highlight_color)
             .build();
 
         // Draw battery percentage

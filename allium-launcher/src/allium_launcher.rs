@@ -41,7 +41,7 @@ pub struct AlliumLauncher<P: Platform> {
 
 #[derive(Debug, Deserialize, Serialize)]
 struct AlliumLauncherState {
-    state: isize,
+    state: usize,
     states: (GamesState, RecentsState, SettingsState),
 }
 
@@ -52,7 +52,7 @@ impl AlliumLauncherState {
             states: (
                 GamesState::new()?,
                 RecentsState::new(),
-                SettingsState::new(),
+                SettingsState::new()?,
             ),
         })
     }
@@ -75,7 +75,7 @@ impl AlliumLauncherState {
 
     fn prev(&mut self) -> Result<()> {
         self.state_mut().leave()?;
-        self.state = (self.state - 1).clamp(0, 2);
+        self.state = (self.state as isize - 1).clamp(0, 2) as usize;
         self.state_mut().enter()?;
         Ok(())
     }
@@ -91,7 +91,7 @@ impl AlliumLauncher<DefaultPlatform> {
             platform,
             display,
             battery,
-            styles: Default::default(),
+            styles: Stylesheet::load()?,
             state: Self::load()?,
             dirty: true,
         })
@@ -190,8 +190,17 @@ impl AlliumLauncher<DefaultPlatform> {
             self.dirty = true;
         }
 
+        if let Some(command) = command {
+            self.handle_command(command).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn handle_command(&mut self, command: AlliumCommand) -> Result<()> {
+        trace!("received command: {:?}", &command);
         match command {
-            Some(AlliumCommand::Exec(mut cmd)) => {
+            AlliumCommand::Exec(mut cmd) => {
                 self.save()?;
                 trace!("executing command: {:?}", cmd);
                 #[cfg(unix)]
@@ -199,9 +208,17 @@ impl AlliumLauncher<DefaultPlatform> {
                 #[cfg(not(unix))]
                 cmd.spawn()?;
             }
-            None => (),
+            AlliumCommand::SaveStylesheet(styles) => {
+                styles.save()?;
+                self.styles = *styles;
+                self.dirty = true;
+            }
+            AlliumCommand::SaveDisplaySettings(settings) => {
+                settings.save()?;
+                self.platform.set_brightness(settings.brightness)?;
+                self.dirty = true;
+            }
         }
-
         Ok(())
     }
 
@@ -210,12 +227,12 @@ impl AlliumLauncher<DefaultPlatform> {
 
         let text_style = FontTextStyleBuilder::new(self.styles.ui_font.clone())
             .font_size(self.styles.ui_font_size)
-            .text_color(self.styles.fg_color)
+            .text_color(self.styles.foreground_color)
             .build();
 
         let primary_style = FontTextStyleBuilder::new(self.styles.ui_font.clone())
             .font_size(self.styles.ui_font_size)
-            .text_color(self.styles.primary)
+            .text_color(self.styles.highlight_color)
             .build();
 
         // Draw battery percentage

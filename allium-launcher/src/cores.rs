@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::{collections::HashMap, path::Path};
 
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use serde::Deserialize;
 
 use common::constants::{ALLIUM_CONFIG_DIR, ALLIUM_RETROARCH};
@@ -37,7 +37,7 @@ impl Core {
     pub fn launch(&self, rom: &PathBuf) -> Option<AlliumCommand> {
         trace!("launching: {:?}", rom);
         if let Some(path) = self.path.as_ref() {
-            let mut cmd = Command::new(&path);
+            let mut cmd = Command::new(path);
             cmd.arg(rom);
             Some(AlliumCommand::Exec(cmd))
         } else if let Some(retroarch_core) = self.retroarch_core.as_ref() {
@@ -74,7 +74,14 @@ impl CoreMapper {
     }
 
     pub fn load_config(&mut self) -> Result<()> {
-        let config = std::fs::read_to_string(ALLIUM_CONFIG_DIR.join("cores.toml"))?;
+        let config =
+            std::fs::read_to_string(ALLIUM_CONFIG_DIR.join("cores.toml")).map_err(|e| {
+                anyhow!(
+                    "Failed to load cores config: {:?}, {}",
+                    &*ALLIUM_CONFIG_DIR.join("cores.toml"),
+                    e
+                )
+            })?;
         let config: CoreConfig = toml::from_str(&config).context("Failed to parse cores.toml.")?;
         self.cores = config
             .cores

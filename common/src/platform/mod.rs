@@ -23,10 +23,17 @@ pub trait Platform {
     fn new() -> Result<Self>
     where
         Self: Sized;
+
     fn display(&mut self) -> Result<Self::Display>;
+
     fn battery(&self) -> Result<Self::Battery>;
+
     async fn poll(&mut self) -> Result<Option<KeyEvent>>;
+
     fn set_volume(&mut self, volume: i32) -> Result<()>;
+
+    fn set_brightness(&mut self, brightness: u8) -> Result<()>;
+
     fn device_model() -> String;
 }
 

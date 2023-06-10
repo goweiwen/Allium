@@ -4,8 +4,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 
-use anyhow::Result;
-use embedded_font::FontTextStyleBuilder;
+use anyhow::{anyhow, Result};
 use embedded_graphics::{
     image::{Image, ImageRaw},
     prelude::*,
@@ -139,17 +138,6 @@ impl State for GamesState {
     ) -> Result<()> {
         let Size { width, height } = display.size();
 
-        let text_style = FontTextStyleBuilder::new(styles.ui_font.clone())
-            .font_size(styles.ui_font_size)
-            .text_color(styles.fg_color)
-            .build();
-
-        let selection_style = FontTextStyleBuilder::new(styles.ui_font.clone())
-            .font_size(styles.ui_font_size)
-            .text_color(styles.fg_color)
-            .background_color(styles.primary)
-            .build();
-
         // Draw game list
         let (x, mut y) = (24, 58);
 
@@ -214,19 +202,23 @@ impl State for GamesState {
                 display.draw_entry(
                     Point { x, y },
                     entry.name(),
-                    selection_style.clone(),
+                    styles,
                     Alignment::Left,
                     300,
                     true,
+                    true,
+                    0,
                 )?;
             } else {
                 display.draw_entry(
                     Point { x, y },
                     entry.name(),
-                    text_style.clone(),
+                    styles,
                     Alignment::Left,
                     300,
+                    false,
                     true,
+                    0,
                 )?;
             }
             y += (SELECTION_HEIGHT + SELECTION_MARGIN) as i32;
@@ -237,17 +229,11 @@ impl State for GamesState {
         let mut x = width as i32 - 12;
 
         x = display
-            .draw_button_hint(
-                Point::new(x, y),
-                Key::A,
-                text_style.clone(),
-                "Start",
-                styles,
-            )?
+            .draw_button_hint(Point::new(x, y), Key::A, "Start", styles)?
             .top_left
             .x
             - 18;
-        display.draw_button_hint(Point::new(x, y), Key::B, text_style, "Back", styles)?;
+        display.draw_button_hint(Point::new(x, y), Key::B, "Back", styles)?;
 
         Ok(())
     }
@@ -320,7 +306,8 @@ impl State for GamesState {
 }
 
 pub fn entries(directory: &Directory) -> Result<Vec<Entry>> {
-    let mut entries: Vec<_> = std::fs::read_dir(&directory.path)?
+    let mut entries: Vec<_> = std::fs::read_dir(&directory.path)
+        .map_err(|e| anyhow!("Failed to open directory: {:?}, {}", &directory.path, e))?
         .flat_map(|entry| entry.ok())
         .flat_map(|entry| match Entry::new(entry.path()) {
             Ok(Some(entry)) => Some(entry),

@@ -6,11 +6,15 @@ TOOLCHAIN := mholdg16/miyoomini-toolchain:latest
 
 all: static build package-build package-retroarch
 
-simulator-launcher:
-	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_GAME_INFO=assets/simulator/current_game ALLIUM_ROMS_DIR=assets/simulator/Roms ALLIUM_CONFIG_DIR=dist/.allium cargo run --bin allium-launcher
+simulator-env:
+	rsync -a assets/root/.allium/cores.toml assets/simulator/cores.toml
+	rsync -aR assets/root/.allium/cores assets/simulator/cores
 
-simulator-menu:
-	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_GAME_INFO=assets/simulator/current_game ALLIUM_ROMS_DIR=assets/simulator/Roms ALLIUM_CONFIG_DIR=dist/.allium cargo run --bin allium-menu
+simulator-launcher: simulator-env
+	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_CONFIG_DIR=assets/simulator ALLIUM_ROMS_DIR=assets/simulator/Roms cargo run --bin allium-launcher
+
+simulator-menu: simulator-env
+	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_CONFIG_DIR=assets/simulator ALLIUM_ROMS_DIR=assets/simulator/Roms cargo run --bin allium-menu
 
 clean:
 	rm -r $(DIST_DIR)
@@ -37,3 +41,6 @@ $(RETROARCH)/retroarch_miyoo354:
 
 $(RETROARCH)/retroarch_miyoo283:
 	docker run --rm -v /$(ROOT_DIR)/third-party:/root/workspace $(TOOLCHAIN) bash -c "source /root/.bashrc; cd RetroArch; make clean all PACKAGE_NAME=retroarch_miyoo283"
+
+lint:
+	cargo clippy --fix --allow-dirty --allow-staged --all-targets

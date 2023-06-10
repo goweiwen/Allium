@@ -59,6 +59,7 @@ dependencies = [
  "rusttype",
  "serde",
  "serde_json",
+ "strum",
  "tokio",
  "toml",
  "tracing",
@@ -228,6 +229,7 @@ dependencies = [
  "sdl2",
  "serde",
  "serde_json",
+ "strum",
  "tokio",
  "tracing",
 ]

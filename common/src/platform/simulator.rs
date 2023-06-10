@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use async_trait::async_trait;
 use embedded_graphics::image::{Image, ImageRaw};
 use embedded_graphics::pixelcolor::raw::BigEndian;
@@ -63,8 +63,13 @@ impl Platform for SimulatorPlatform {
     }
 
     fn display(&mut self) -> Result<SimulatorWindow> {
-        let display = SimulatorDisplay::load_png("assets/simulator/ingame.png")
-            .context("Cannot find assets/simulator/ingame.png")?;
+        let display =
+            SimulatorDisplay::load_png("assets/simulator/ingame.png").unwrap_or_else(|_| {
+                SimulatorDisplay::with_default_color(
+                    Size::new(SCREEN_WIDTH, SCREEN_HEIGHT),
+                    Color::new(0, 0, 0),
+                )
+            });
         self.window.borrow_mut().update(&display);
         Ok(SimulatorWindow {
             window: Rc::clone(&self.window),
@@ -78,6 +83,10 @@ impl Platform for SimulatorPlatform {
     }
 
     fn set_volume(&mut self, _volume: i32) -> Result<()> {
+        Ok(())
+    }
+
+    fn set_brightness(&mut self, _brightness: u8) -> Result<()> {
         Ok(())
     }
 

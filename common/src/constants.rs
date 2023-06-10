@@ -18,17 +18,19 @@ lazy_static! {
         ALLIUM_CONFIG_DIR.join(Path::new("state/allium-launcher.json"));
     pub static ref ALLIUM_GAME_INFO: PathBuf =
         ALLIUM_CONFIG_DIR.join(Path::new("state/current_game"));
-    pub static ref ALLIUM_LAUNCHER: PathBuf = PathBuf::from(
-        &env::var("ALLIUM_LAUNCHER")
-            .unwrap_or_else(|_| "/mnt/SDCARD/.allium/allium-launcher".to_string())
-    );
-    pub static ref ALLIUM_MENU: PathBuf = PathBuf::from(
-        &env::var("ALLIUM_MENU").unwrap_or_else(|_| "/mnt/SDCARD/.allium/allium-menu".to_string())
-    );
-    pub static ref ALLIUM_RETROARCH: PathBuf = PathBuf::from(
-        &env::var("ALLIUM_RETROARCH")
-            .unwrap_or_else(|_| "/mnt/SDCARD/.allium/cores/retroarch/launch.sh".to_string())
-    );
+    pub static ref ALLIUM_STYLESHEET: PathBuf =
+        ALLIUM_CONFIG_DIR.join(Path::new("state/stylesheet.json"));
+    pub static ref ALLIUM_DISPLAY_SETTINGS: PathBuf =
+        ALLIUM_CONFIG_DIR.join(Path::new("state/display.json"));
+    pub static ref ALLIUM_LAUNCHER: PathBuf = env::var("ALLIUM_LAUNCHER")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| ALLIUM_CONFIG_DIR.join("allium-launcher"));
+    pub static ref ALLIUM_MENU: PathBuf = env::var("ALLIUM_MENU")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| ALLIUM_CONFIG_DIR.join("allium-menu"));
+    pub static ref ALLIUM_RETROARCH: PathBuf = env::var("ALLIUM_RETROARCH")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| ALLIUM_CONFIG_DIR.join("retroarch/launch.sh"));
 }
 pub const RETROARCH_UDP_SOCKET: &str = "127.0.0.1:55355";
 

@@ -1,8 +1,8 @@
+mod display;
 mod system;
+mod theme;
 
-use std::fmt;
-
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use embedded_font::FontTextStyleBuilder;
 use embedded_graphics::{
     prelude::*,
@@ -10,39 +10,40 @@ use embedded_graphics::{
     text::Alignment,
 };
 use serde::{Deserialize, Serialize};
+use strum::{EnumCount, FromRepr, VariantNames};
 
-use common::{display::color::Color, stylesheet::Stylesheet};
+use common::{
+    constants::{SELECTION_HEIGHT, SELECTION_MARGIN},
+    display::color::Color,
+    platform::Key,
+    stylesheet::Stylesheet,
+};
 use common::{
     display::Display,
     platform::{DefaultPlatform, KeyEvent, Platform},
 };
 
+use crate::state::State;
 use crate::{
     command::AlliumCommand,
-    state::{settings::system::SettingsSystemState, State},
+    state::settings::{
+        display::SettingsDisplayState, system::SettingsSystemState, theme::SettingsThemeState,
+    },
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SettingsState {
-    section: usize,
-    #[serde(skip, default = "SettingsState::sections")]
-    sections: Vec<SettingsSection>,
+    selected: usize,
+    #[serde(skip)]
+    section: Option<SettingsSection>,
 }
 
 impl SettingsState {
-    pub fn new() -> Self {
-        Self {
-            section: 0,
-            sections: Self::sections(),
-        }
-    }
-
-    fn sections() -> Vec<SettingsSection> {
-        vec![SettingsSection::System(SettingsSystemState::new())]
-    }
-
-    fn section(&self) -> &SettingsSection {
-        &self.sections[self.section]
+    pub fn new() -> Result<Self> {
+        Ok(Self {
+            selected: 0,
+            section: None,
+        })
     }
 }
 
@@ -60,66 +61,131 @@ impl State for SettingsState {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<()> {
-        let Size { width, height } = display.size();
+        let (x, mut y) = (24, 58);
         display.load(Rectangle::new(
-            Point::new(0, 46),
-            Size::new(width, height - 46),
+            Point::new(x - 12, y - 4),
+            Size::new(
+                120,
+                (SELECTION_HEIGHT + SELECTION_MARGIN) * SettingsSection::COUNT as u32,
+            ),
         ))?;
 
-        self.section().draw(display, styles)?;
+        if self.section.is_none() {
+            for (i, label) in SettingsSection::VARIANTS.iter().enumerate() {
+                display.draw_entry(
+                    Point { x, y },
+                    label,
+                    styles,
+                    Alignment::Left,
+                    300,
+                    i == self.selected,
+                    true,
+                    0,
+                )?;
+                y += 42;
+            }
+            display.load(Rectangle::new(
+                Point::new(156 - 12, 58 - 4),
+                Size::new(484, 422),
+            ))?;
+        } else {
+            let selected_style = FontTextStyleBuilder::new(styles.ui_font.clone())
+                .font_size(styles.ui_font_size)
+                .text_color(styles.highlight_color)
+                .background_color(styles.background_color)
+                .build();
+
+            let inactive_style = FontTextStyleBuilder::new(styles.ui_font.clone())
+                .font_size(styles.ui_font_size)
+                .text_color(styles.foreground_color)
+                .background_color(styles.background_color)
+                .build();
+            for (i, label) in SettingsSection::VARIANTS.iter().enumerate() {
+                display.draw_text(
+                    Point { x, y },
+                    label,
+                    if i == self.selected {
+                        selected_style.clone()
+                    } else {
+                        inactive_style.clone()
+                    },
+                    Alignment::Left,
+                )?;
+                y += 42;
+            }
+        }
+
+        if let Some(ref section) = self.section {
+            section.draw(display, styles)?;
+        }
         Ok(())
     }
 
-    fn handle_key_event(&mut self, _key_event: KeyEvent) -> Result<(Option<AlliumCommand>, bool)> {
-        Ok((None, false))
+    fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<(Option<AlliumCommand>, bool)> {
+        if let Some(ref mut section) = self.section {
+            if key_event == KeyEvent::Pressed(Key::B) {
+                let mut ret = section.handle_key_event(key_event)?;
+                if !ret.1 {
+                    self.section = None;
+                    ret.1 = true;
+                }
+                Ok(ret)
+            } else {
+                section.handle_key_event(key_event)
+            }
+        } else {
+            match key_event {
+                KeyEvent::Pressed(Key::Up) | KeyEvent::Autorepeat(Key::Up) => {
+                    self.selected = (self.selected as isize - 1)
+                        .rem_euclid(SettingsSection::COUNT as isize)
+                        as usize;
+                    Ok((None, true))
+                }
+                KeyEvent::Pressed(Key::Down) | KeyEvent::Autorepeat(Key::Down) => {
+                    self.selected = (self.selected as isize + 1)
+                        .rem_euclid(SettingsSection::COUNT as isize)
+                        as usize;
+                    Ok((None, true))
+                }
+                KeyEvent::Pressed(Key::A) => {
+                    self.section = SettingsSection::from_repr(self.selected);
+                    Ok((None, true))
+                }
+                _ => Ok((None, false)),
+            }
+        }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, EnumCount, FromRepr)]
 enum SettingsSection {
-    // Display(SettingsDisplayState),
-    // Theme(SettingsThemeState),
+    Display(SettingsDisplayState),
+    Theme(SettingsThemeState),
     System(SettingsSystemState),
 }
 
-impl fmt::Display for SettingsSection {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            // Self::Display(_) => write!(f, "Display"),
-            // Self::Theme(_) => write!(f, "Theme"),
-            Self::System(_) => write!(f, "System"),
-        }
-    }
+impl VariantNames for SettingsSection {
+    const VARIANTS: &'static [&'static str] = &["Display", "Theme", "System"];
 }
 
 impl SettingsSection {
-    fn next(&self) -> Self {
-        match self {
-            // Self::Display(_) => Self::Theme(SettingsThemeState::new()),
-            // Self::Theme(_) => Self::System(SettingsSystemState::new()),
-            // Self::System(_) => Self::Display(SettingsDisplayState::new()),
-            Self::System(s) => Self::System(s.clone()),
-        }
-    }
-
-    fn prev(&self) -> Self {
-        match self {
-            // Self::Display(_) => Self::System(SettingsSystemState::new()),
-            // Self::Theme(_) => Self::Display(SettingsDisplayState::new()),
-            // Self::System(_) => Self::Theme(SettingsThemeState::new()),
-            Self::System(s) => Self::System(s.clone()),
-        }
-    }
-
     fn draw(
         &self,
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<()> {
         match self {
-            // Self::Display(s) => s.draw(display, styles),
-            // Self::Theme(s) => s.draw(display, styles),
+            Self::Display(s) => s.draw(display, styles),
+            Self::Theme(s) => s.draw(display, styles),
             Self::System(s) => s.draw(display, styles),
+        }
+    }
+
+    fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<(Option<AlliumCommand>, bool)> {
+        match self {
+            Self::Display(s) => s.handle_key_event(key_event),
+            Self::Theme(s) => s.handle_key_event(key_event),
+            Self::System(s) => s.handle_key_event(key_event),
         }
     }
 }
@@ -135,97 +201,56 @@ struct Setting {
 }
 
 impl Setting {
-    fn bool(label: &'static str, value: bool) -> Self {
+    fn new(label: &'static str, value: SettingValue) -> Self {
         Self {
             label,
-            value: SettingValue::Bool(value),
+            value,
             disabled: false,
         }
+    }
+
+    fn bool(label: &'static str, value: bool) -> Self {
+        Self::new(label, SettingValue::Bool(value))
+    }
+
+    fn percentage(label: &'static str, value: u8) -> Self {
+        Self::new(label, SettingValue::Percentage(value))
     }
 
     fn string(label: &'static str, value: impl Into<String>) -> Self {
-        Self {
-            label,
-            value: SettingValue::String(value.into()),
-            disabled: false,
-        }
+        Self::new(label, SettingValue::String(value.into()))
     }
 
     fn color(label: &'static str, value: Color) -> Self {
-        Self {
-            label,
-            value: SettingValue::Color(value),
-            disabled: false,
-        }
+        Self::new(label, SettingValue::Color(value))
     }
 }
 
 impl Settings {
     fn draw(
         &self,
-        display: &mut <DefaultPlatform as Platform>::Display,
+        display: &mut impl Display,
         styles: &Stylesheet,
+        selected: usize,
+        editing: bool,
     ) -> Result<()> {
-        let text_style = FontTextStyleBuilder::new(styles.ui_font.clone())
-            .font_size(styles.ui_font_size)
-            .text_color(styles.fg_color)
-            .build();
-
         let x0 = 156;
         let x1 = display.size().width as i32 - 24;
-        let mut y = 46;
-        for setting in self.0.iter() {
-            display.draw_text(
+        let mut y = 58;
+        for (i, setting) in self.0.iter().enumerate() {
+            display.draw_entry(
                 Point::new(x0, y),
                 setting.label,
-                text_style.clone(),
+                styles,
                 Alignment::Left,
+                224,
+                i == selected,
+                !editing,
+                0,
             )?;
-            match &setting.value {
-                SettingValue::Bool(value) => {
-                    display.draw_text(
-                        Point::new(x1, y),
-                        if *value { "Yes" } else { "No" },
-                        text_style.clone(),
-                        Alignment::Right,
-                    )?;
-                }
-                SettingValue::Percentage(value) => {
-                    display.draw_text(
-                        Point::new(x1, y),
-                        &format!("{}%", value),
-                        text_style.clone(),
-                        Alignment::Right,
-                    )?;
-                }
-                SettingValue::String(value) => {
-                    display.draw_text(
-                        Point::new(x1, y),
-                        value.as_str(),
-                        text_style.clone(),
-                        Alignment::Right,
-                    )?;
-                }
-                SettingValue::Color(value) => {
-                    let fill_style = PrimitiveStyleBuilder::new()
-                        .fill_color(value.to_owned())
-                        .stroke_color(styles.fg_color)
-                        .stroke_width(1)
-                        .stroke_alignment(StrokeAlignment::Inside)
-                        .build();
-
-                    Rectangle::new(Point::new(x1 - 30, y - 30), Size::new(30, 30))
-                        .into_styled(fill_style)
-                        .draw(display)?;
-
-                    display.draw_text(
-                        Point::new(x1 - 30 - 12, y),
-                        &value.to_string(),
-                        text_style.clone(),
-                        Alignment::Right,
-                    )?;
-                }
-            };
+            setting
+                .value
+                .draw(display, styles, Point::new(x1, y), i == selected, editing)?;
             y += 42;
         }
         Ok(())
@@ -235,7 +260,85 @@ impl Settings {
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum SettingValue {
     Bool(bool),
-    Percentage(i32),
+    Percentage(u8),
     String(String),
     Color(Color),
+}
+
+impl SettingValue {
+    fn draw(
+        &self,
+        display: &mut impl Display,
+        styles: &Stylesheet,
+        point: Point,
+        selected: bool,
+        editing: bool,
+    ) -> Result<()> {
+        match self {
+            SettingValue::Bool(value) => {
+                display.draw_entry(
+                    point,
+                    if *value { "Yes" } else { "No" },
+                    styles,
+                    Alignment::Right,
+                    224,
+                    selected,
+                    editing,
+                    0,
+                )?;
+            }
+            SettingValue::Percentage(value) => {
+                display.draw_entry(
+                    point,
+                    &format!("{}%", value),
+                    styles,
+                    Alignment::Right,
+                    224,
+                    selected,
+                    editing,
+                    0,
+                )?;
+            }
+            SettingValue::String(value) => {
+                display.draw_entry(
+                    point,
+                    value.as_str(),
+                    styles,
+                    Alignment::Right,
+                    224,
+                    selected,
+                    editing,
+                    0,
+                )?;
+            }
+            SettingValue::Color(value) => {
+                display.draw_entry(
+                    point,
+                    &value.to_string(),
+                    styles,
+                    Alignment::Right,
+                    224,
+                    selected,
+                    editing,
+                    30 + 12,
+                )?;
+
+                let fill_style = PrimitiveStyleBuilder::new()
+                    .fill_color(value.to_owned())
+                    .stroke_color(styles.foreground_color)
+                    .stroke_width(1)
+                    .stroke_alignment(StrokeAlignment::Inside)
+                    .build();
+
+                Rectangle::new(
+                    Point::new(point.x - styles.ui_font_size as i32 - 6, point.y - 2),
+                    Size::new(30, 30),
+                )
+                .into_styled(fill_style)
+                .draw(display)
+                .map_err(|_| anyhow!("failed to draw rectangle"))?;
+            }
+        }
+        Ok(())
+    }
 }

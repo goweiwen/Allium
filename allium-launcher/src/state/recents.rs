@@ -35,7 +35,7 @@ impl State for RecentsState {
     ) -> Result<()> {
         let Size { width, height } = display.size();
         Rectangle::new(Point::new(0, 46), Size::new(width, height - 46))
-            .into_styled(PrimitiveStyle::with_fill(styles.bg_color))
+            .into_styled(PrimitiveStyle::with_fill(styles.background_color))
             .draw(display)?;
         Ok(())
     }

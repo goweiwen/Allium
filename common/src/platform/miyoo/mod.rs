@@ -1,6 +1,7 @@
 mod battery;
 mod evdev;
 mod framebuffer;
+mod screen;
 mod volume;
 
 use std::fmt;
@@ -70,6 +71,10 @@ impl Platform for MiyooPlatform {
             MiyooDeviceModel::Miyoo283 => Ok(()),
             MiyooDeviceModel::Miyoo354 => volume::set_volume(volume),
         }
+    }
+
+    fn set_brightness(&mut self, brightness: u8) -> Result<()> {
+        screen::set_brightness(brightness)
     }
 
     fn device_model() -> String {
