@@ -8,7 +8,8 @@ all: static build package-build package-retroarch
 
 simulator-env:
 	rsync -a assets/root/.allium/cores.toml assets/simulator/cores.toml
-	rsync -aR assets/root/.allium/cores assets/simulator/cores
+	rsync -ar assets/root/.allium/cores assets/simulator/
+	rsync -ar assets/root/.allium/images assets/simulator/
 
 simulator-launcher: simulator-env
 	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_CONFIG_DIR=assets/simulator ALLIUM_ROMS_DIR=assets/simulator/Roms cargo run --bin allium-launcher
