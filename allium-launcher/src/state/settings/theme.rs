@@ -2,7 +2,6 @@ use anyhow::Result;
 use common::display::color::Color;
 use common::display::font::FontTextStyleBuilder;
 use common::platform::Key;
-use embedded_graphics::primitives::PrimitiveStyle;
 use embedded_graphics::text::Alignment;
 use embedded_graphics::{prelude::*, primitives::Rectangle};
 use strum::{EnumCount, EnumIter, FromRepr, IntoEnumIterator};
@@ -23,6 +22,7 @@ pub struct SettingsThemeState {
     stylesheet: Stylesheet,
     selected: usize,
     selected_color: Option<ColorEditState>,
+    confirm_reset: bool,
 }
 
 impl SettingsThemeState {
@@ -32,6 +32,7 @@ impl SettingsThemeState {
             stylesheet,
             selected: 0,
             selected_color: None,
+            confirm_reset: false,
         }
     }
 
@@ -41,15 +42,20 @@ impl SettingsThemeState {
                 Some(ThemeSetting::HighlightColor) => {
                     self.stylesheet.highlight_color = color.into()
                 }
+                Some(ThemeSetting::ForegroundColor) => {
+                    self.stylesheet.foreground_color = color.into()
+                }
+                Some(ThemeSetting::BackgroundColor) => {
+                    self.stylesheet.background_color = color.into()
+                }
                 Some(ThemeSetting::ButtonAColor) => self.stylesheet.button_a_color = color.into(),
                 Some(ThemeSetting::ButtonBColor) => self.stylesheet.button_b_color = color.into(),
                 Some(ThemeSetting::ButtonXColor) => self.stylesheet.button_x_color = color.into(),
                 Some(ThemeSetting::ButtonYColor) => self.stylesheet.button_y_color = color.into(),
-                Some(setting) => {
-                    warn!(
-                        "Trying to change color for non-color setting: {:?}",
-                        setting
-                    );
+                Some(s @ ThemeSetting::DarkMode)
+                | Some(s @ ThemeSetting::EnableBoxArt)
+                | Some(s @ ThemeSetting::ResetToDefault) => {
+                    warn!("Trying to change color for non-color setting: {:?}", s);
                 }
                 None => {
                     warn!("Invalid theme setting selected: {}", selected);
@@ -60,8 +66,29 @@ impl SettingsThemeState {
             ))))
         } else {
             match ThemeSetting::from_repr(selected) {
+                Some(ThemeSetting::DarkMode) => {
+                    self.stylesheet.foreground_color = self.stylesheet.foreground_color.invert();
+                    self.stylesheet.background_color = self.stylesheet.background_color.invert();
+                    Ok(Some(AlliumCommand::SaveStylesheet(Box::new(
+                        self.stylesheet.clone(),
+                    ))))
+                }
+                Some(ThemeSetting::EnableBoxArt) => {
+                    self.stylesheet.enable_box_art = !self.stylesheet.enable_box_art;
+                    Ok(Some(AlliumCommand::SaveStylesheet(Box::new(
+                        self.stylesheet.clone(),
+                    ))))
+                }
                 Some(ThemeSetting::HighlightColor) => {
                     self.selected_color = Some(self.stylesheet.highlight_color.into());
+                    Ok(None)
+                }
+                Some(ThemeSetting::ForegroundColor) => {
+                    self.selected_color = Some(self.stylesheet.foreground_color.into());
+                    Ok(None)
+                }
+                Some(ThemeSetting::BackgroundColor) => {
+                    self.selected_color = Some(self.stylesheet.background_color.into());
                     Ok(None)
                 }
                 Some(ThemeSetting::ButtonAColor) => {
@@ -80,11 +107,16 @@ impl SettingsThemeState {
                     self.selected_color = Some(self.stylesheet.button_y_color.into());
                     Ok(None)
                 }
-                Some(ThemeSetting::EnableBoxArt) => {
-                    self.stylesheet.enable_box_art = !self.stylesheet.enable_box_art;
-                    Ok(Some(AlliumCommand::SaveStylesheet(Box::new(
-                        self.stylesheet.clone(),
-                    ))))
+                Some(ThemeSetting::ResetToDefault) => {
+                    if self.confirm_reset {
+                        self.stylesheet = Stylesheet::default();
+                        Ok(Some(AlliumCommand::SaveStylesheet(Box::new(
+                            self.stylesheet.clone(),
+                        ))))
+                    } else {
+                        self.confirm_reset = true;
+                        Ok(None)
+                    }
                 }
                 None => {
                     warn!("Invalid theme setting selected: {}", selected);
@@ -123,7 +155,16 @@ impl State for SettingsThemeState {
 
         let settings = Settings(
             ThemeSetting::iter()
-                .map(|s| s.setting(&self.stylesheet))
+                .map(|s| match s {
+                    ThemeSetting::ResetToDefault => {
+                        if self.confirm_reset {
+                            Setting::none("Confirm Reset?")
+                        } else {
+                            Setting::none("Reset to Default")
+                        }
+                    }
+                    s => s.setting(&self.stylesheet),
+                })
                 .collect(),
         );
 
@@ -158,6 +199,15 @@ impl State for SettingsThemeState {
                 .font_size(styles.ui_font_size)
                 .text_color(styles.foreground_color)
                 .background_color(styles.highlight_color)
+                .draw_background()
+                .build();
+
+            let selected_style = FontTextStyleBuilder::new(styles.ui_font.clone())
+                .font_size(styles.ui_font_size)
+                .text_color(styles.foreground_color)
+                .background_color(styles.highlight_color)
+                .draw_background()
+                .underline()
                 .build();
 
             x = x - 30 - 12;
@@ -165,20 +215,13 @@ impl State for SettingsThemeState {
                 let rect = display.draw_text(
                     Point::new(x, y),
                     &state.color.char(i),
-                    text_style.clone(),
+                    if i == state.selected {
+                        selected_style.clone()
+                    } else {
+                        text_style.clone()
+                    },
                     Alignment::Right,
                 )?;
-                if i == state.selected {
-                    Rectangle::new(
-                        Point::new(
-                            rect.top_left.x,
-                            rect.top_left.y + rect.size.height as i32 - 2,
-                        ),
-                        Size::new(rect.size.width, 3),
-                    )
-                    .into_styled(PrimitiveStyle::with_fill(styles.foreground_color))
-                    .draw(display)?;
-                }
                 x = rect.top_left.x - 1;
             }
             display.draw_text(Point::new(x, y), "#", text_style, Alignment::Right)?;
@@ -188,7 +231,16 @@ impl State for SettingsThemeState {
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<(Option<AlliumCommand>, bool)> {
-        if let Some(state) = self.selected_color.as_mut() {
+        if self.confirm_reset {
+            match key_event {
+                KeyEvent::Pressed(Key::A) => Ok((self.select_entry(self.selected)?, true)),
+                KeyEvent::Pressed(_) => {
+                    self.confirm_reset = false;
+                    Ok((None, true))
+                }
+                _ => Ok((None, false)),
+            }
+        } else if let Some(state) = self.selected_color.as_mut() {
             match key_event {
                 KeyEvent::Pressed(Key::Up) | KeyEvent::Autorepeat(Key::Up) => {
                     state.color = match state.selected {
@@ -282,23 +334,35 @@ impl State for SettingsThemeState {
 
 #[derive(Debug, EnumCount, EnumIter, FromRepr)]
 enum ThemeSetting {
+    DarkMode,
+    EnableBoxArt,
     HighlightColor,
+    ForegroundColor,
+    BackgroundColor,
     ButtonAColor,
     ButtonBColor,
     ButtonXColor,
     ButtonYColor,
-    EnableBoxArt,
+    ResetToDefault,
 }
 
 impl ThemeSetting {
     fn setting(&self, stylesheet: &Stylesheet) -> Setting {
         match self {
+            Self::DarkMode => Setting::string("Dark Mode", "Toggle"),
+            Self::EnableBoxArt => Setting::bool("Enable Box Art", stylesheet.enable_box_art),
             Self::HighlightColor => Setting::color("Highlight Color", stylesheet.highlight_color),
+            Self::ForegroundColor => {
+                Setting::color("Foreground Color", stylesheet.foreground_color)
+            }
+            Self::BackgroundColor => {
+                Setting::color("Background Color", stylesheet.background_color)
+            }
             Self::ButtonAColor => Setting::color("Button A Color", stylesheet.button_a_color),
             Self::ButtonBColor => Setting::color("Button B Color", stylesheet.button_b_color),
             Self::ButtonXColor => Setting::color("Button X Color", stylesheet.button_x_color),
             Self::ButtonYColor => Setting::color("Button Y Color", stylesheet.button_y_color),
-            Self::EnableBoxArt => Setting::bool("Enable Box Art", stylesheet.enable_box_art),
+            Self::ResetToDefault => Setting::none("Reset to Default"),
         }
     }
 }

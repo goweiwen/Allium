@@ -236,6 +236,10 @@ impl Setting {
     fn color(label: &'static str, value: Color) -> Self {
         Self::new(label, SettingValue::Color(value))
     }
+
+    fn none(label: &'static str) -> Self {
+        Self::new(label, SettingValue::None)
+    }
 }
 
 impl Settings {
@@ -272,6 +276,7 @@ impl Settings {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum SettingValue {
+    None,
     Bool(bool),
     Percentage(u8),
     String(String),
@@ -288,6 +293,7 @@ impl SettingValue {
         editing: bool,
     ) -> Result<()> {
         match self {
+            SettingValue::None => {}
             SettingValue::Bool(value) => {
                 display.draw_entry(
                     point,
