@@ -224,7 +224,7 @@ retroarch_core = "mednafen_pce_fast_libretro.so"
 # Nintendo - NES (FCEUmm)
 [cores.fceumm]
 patterns = ["FDS", "FC", "NES"]
-extensions = ["fds", "nes", "unif", "unf", "fds", "nes", "unif", "unf"]
+extensions = ["fds", "nes", "unif", "unf"]
 retroarch_core = "fceumm_libretro.so"
 
 # Nintendo - Game & Watch (gw)
@@ -233,19 +233,35 @@ patterns = ["GW"]
 extensions = ["mgw"]
 retroarch_core = "gw_libretro.so"
 
+# (non-default)
+# Nintendo - Game Boy (TGBDual)
+# Nintendo - Game Boy Color (TGBDual)
+[cores.tgbdual]
+patterns = ["TGBDual"]
+extensions = []
+retroarch_core = "tgbdual_libretro.so"
+
 # Nintendo - Game Boy (Gambatte)
 # Nintendo - Game Boy Color (Gambatte)
 [cores.gambatte]
 patterns = ["GB", "GBC"]
-extensions = ["dmg", "gb", "gbc", "dmg", "gb", "gbc"]
+extensions = ["dmg", "gb", "gbc"]
 retroarch_core = "gambatte_libretro.so"
 
+# (non-default)
 # Nintendo - GBA (mGBA)
 # Nintendo - Super Game Boy (mGBA)
 [cores.mgba]
-patterns = ["GBA", "SGB"]
-extensions = ["gba", "gb", "gbc", "gba"]
+patterns = ["MGBA"]
+extensions = []
 retroarch_core = "mgba_libretro.so"
+
+# Nintendo - GBA (gpSP)
+# Nintendo - Super Game Boy (gpSP)
+[cores.gpsp]
+patterns = ["GBA", "SGB"]
+extensions = ["gba", "gb", "gbc"]
+retroarch_core = "gpsp_libretro.so"
 
 # Nintendo - Pokemon Mini (PokeMini)
 [cores.pokemini]
