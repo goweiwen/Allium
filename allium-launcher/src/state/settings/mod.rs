@@ -3,7 +3,7 @@ mod system;
 mod theme;
 
 use anyhow::{anyhow, Result};
-use embedded_font::FontTextStyleBuilder;
+use common::display::font::FontTextStyleBuilder;
 use embedded_graphics::{
     prelude::*,
     primitives::{Primitive, PrimitiveStyleBuilder, Rectangle, StrokeAlignment},

@@ -4,10 +4,10 @@ use anyhow::Result;
 use common::battery::Battery;
 use common::constants::ALLIUM_GAME_INFO;
 use common::constants::BATTERY_UPDATE_INTERVAL;
+use common::display::font::FontTextStyleBuilder;
 use common::display::Display;
 use common::platform::{DefaultPlatform, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
-use embedded_font::FontTextStyleBuilder;
 use embedded_graphics::prelude::*;
 use embedded_graphics::text::{Alignment, Text};
 

@@ -1,5 +1,6 @@
 use anyhow::Result;
 use common::constants::{ALLIUM_CONFIG_DIR, SELECTION_HEIGHT, SELECTION_MARGIN};
+use common::display::font::FontTextStyleBuilder;
 use common::display::settings::DisplaySettings;
 use common::platform::Key;
 use embedded_graphics::{prelude::*, primitives::Rectangle};

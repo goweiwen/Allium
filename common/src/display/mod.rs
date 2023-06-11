@@ -1,4 +1,5 @@
 pub mod color;
+pub mod font;
 pub mod image;
 pub mod settings;
 
@@ -6,7 +7,6 @@ use std::borrow::Cow;
 use std::path::Path;
 
 use anyhow::{anyhow, Result};
-use embedded_font::{FontTextStyle, FontTextStyleBuilder};
 use embedded_graphics::image::{Image, ImageRaw};
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Circle, PrimitiveStyle, Rectangle};
@@ -14,6 +14,7 @@ use embedded_graphics::text::{Alignment, Baseline, Text, TextStyleBuilder};
 
 use crate::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
 use crate::display::color::Color;
+use crate::display::font::{FontTextStyle, FontTextStyleBuilder};
 use crate::platform::Key;
 use crate::stylesheet::Stylesheet;
 

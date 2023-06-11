@@ -8,7 +8,7 @@ use anyhow::Result;
 use common::constants::ALLIUM_GAME_INFO;
 use common::constants::ALLIUM_LAUNCHER_STATE;
 use common::display::color::Color;
-use embedded_font::FontTextStyleBuilder;
+use common::display::font::FontTextStyleBuilder;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::text::{Alignment, Text};

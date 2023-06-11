@@ -1,7 +1,7 @@
 use anyhow::Result;
 use common::display::color::Color;
+use common::display::font::FontTextStyleBuilder;
 use common::platform::Key;
-use embedded_font::FontTextStyleBuilder;
 use embedded_graphics::primitives::PrimitiveStyle;
 use embedded_graphics::text::Alignment;
 use embedded_graphics::{prelude::*, primitives::Rectangle};

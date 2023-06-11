@@ -51,7 +51,6 @@ dependencies = [
  "anyhow",
  "common",
  "embedded-graphics",
- "embedded_font",
  "image 0.24.6",
  "lazy_static",
  "nix 0.26.2",
@@ -210,13 +209,12 @@ checksum = "3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b"
 
 [[package]]
 name = "common"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "async-trait",
  "embedded-graphics",
  "embedded-graphics-simulator",
- "embedded_font",
  "evdev",
  "framebuffer",
  "image 0.24.6",
