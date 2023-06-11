@@ -1,4 +1,5 @@
 use anyhow::Result;
+use common::constants::ALLIUM_VERSION;
 use common::platform::Key;
 use embedded_graphics::{prelude::*, primitives::Rectangle};
 
@@ -23,7 +24,7 @@ impl SettingsSystemState {
         let device = DefaultPlatform::device_model();
         Self {
             settings: Settings(vec![
-                Setting::string("Version", "Allium v0.3.0"),
+                Setting::string("Version", format!("Allium v{}", ALLIUM_VERSION)),
                 Setting::string("Device Model", device),
             ]),
             selected: 0,

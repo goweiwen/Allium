@@ -6,6 +6,8 @@ use std::time::Duration;
 use embedded_graphics::prelude::Size;
 use lazy_static::lazy_static;
 
+pub const ALLIUM_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 lazy_static! {
     pub static ref ALLIUM_CONFIG_DIR: PathBuf = PathBuf::from(
         &env::var("ALLIUM_CONFIG_DIR").unwrap_or_else(|_| "/mnt/SDCARD/.allium".to_string())
