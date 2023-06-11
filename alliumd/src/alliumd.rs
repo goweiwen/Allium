@@ -7,7 +7,7 @@ use anyhow::Result;
 use common::constants::{ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU};
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
-use tracing::{debug, info, trace};
+use tracing::{debug, info, trace, warn};
 
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 
@@ -204,15 +204,17 @@ impl AlliumD<DefaultPlatform> {
     }
 
     pub fn load() -> Result<AlliumD<DefaultPlatform>> {
-        if !ALLIUMD_STATE.exists() {
-            debug!("can't find state, creating new");
-            Self::new()
-        } else {
+        if ALLIUMD_STATE.exists() {
             debug!("found state, loading from file");
-            let json = fs::read_to_string(ALLIUMD_STATE.as_path())?;
-            let alliumd: AlliumD<DefaultPlatform> = serde_json::from_str(&json)?;
-            Ok(alliumd)
+            if let Ok(json) = fs::read_to_string(ALLIUMD_STATE.as_path()) {
+                if let Ok(json) = serde_json::from_str(&json) {
+                    return Ok(json);
+                }
+            }
+            warn!("failed to read state file, removing");
+            fs::remove_file(ALLIUMD_STATE.as_path())?;
         }
+        Self::new()
     }
 
     fn save(&self) -> Result<()> {

@@ -6,7 +6,7 @@ use std::{
 use anyhow::Result;
 use rusttype::Font;
 use serde::{Deserialize, Serialize};
-use tracing::{debug, trace};
+use tracing::{debug, trace, warn};
 
 use crate::{constants::ALLIUM_STYLESHEET, display::color::Color};
 
@@ -32,15 +32,17 @@ impl Stylesheet {
     }
 
     pub fn load() -> Result<Self> {
-        trace!("loading stylesheet: {}", ALLIUM_STYLESHEET.display());
-        Ok(if !ALLIUM_STYLESHEET.exists() {
-            debug!("can't find stylesheet, creating new");
-            Self::new()
-        } else {
-            debug!("found stylesheet, loading from file");
-            let json = fs::read_to_string(ALLIUM_STYLESHEET.as_path())?;
-            serde_json::from_str(&json)?
-        })
+        if ALLIUM_STYLESHEET.exists() {
+            debug!("found state, loading from file");
+            if let Ok(json) = fs::read_to_string(ALLIUM_STYLESHEET.as_path()) {
+                if let Ok(json) = serde_json::from_str(&json) {
+                    return Ok(json);
+                }
+            }
+            warn!("failed to read state file, removing");
+            fs::remove_file(ALLIUM_STYLESHEET.as_path())?;
+        }
+        Ok(Self::new())
     }
 
     pub fn save(&self) -> Result<()> {

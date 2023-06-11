@@ -5,7 +5,7 @@ use std::{
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use tracing::{debug, trace};
+use tracing::{debug, warn};
 
 use crate::constants::ALLIUM_DISPLAY_SETTINGS;
 
@@ -24,18 +24,17 @@ impl DisplaySettings {
     }
 
     pub fn load() -> Result<Self> {
-        trace!(
-            "loading display settings: {}",
-            ALLIUM_DISPLAY_SETTINGS.display()
-        );
-        Ok(if !ALLIUM_DISPLAY_SETTINGS.exists() {
-            debug!("can't find display settings, creating new");
-            Self::new()
-        } else {
-            debug!("found display settings, loading from file");
-            let json = fs::read_to_string(ALLIUM_DISPLAY_SETTINGS.as_path())?;
-            serde_json::from_str(&json)?
-        })
+        if ALLIUM_DISPLAY_SETTINGS.exists() {
+            debug!("found state, loading from file");
+            if let Ok(json) = fs::read_to_string(ALLIUM_DISPLAY_SETTINGS.as_path()) {
+                if let Ok(json) = serde_json::from_str(&json) {
+                    return Ok(json);
+                }
+            }
+            warn!("failed to read state file, removing");
+            fs::remove_file(ALLIUM_DISPLAY_SETTINGS.as_path())?;
+        }
+        Ok(Self::new())
     }
 
     pub fn save(&self) -> Result<()> {

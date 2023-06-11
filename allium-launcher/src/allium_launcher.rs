@@ -99,14 +99,17 @@ impl AlliumLauncher<DefaultPlatform> {
     }
 
     fn load() -> Result<AlliumLauncherState> {
-        Ok(if !ALLIUM_LAUNCHER_STATE.exists() {
-            debug!("can't find state, creating new");
-            AlliumLauncherState::new()?
-        } else {
+        if ALLIUM_LAUNCHER_STATE.exists() {
             debug!("found state, loading from file");
-            let json = fs::read_to_string(ALLIUM_LAUNCHER_STATE.as_path())?;
-            serde_json::from_str(&json)?
-        })
+            if let Ok(json) = fs::read_to_string(ALLIUM_LAUNCHER_STATE.as_path()) {
+                if let Ok(json) = serde_json::from_str(&json) {
+                    return Ok(json);
+                }
+            }
+            warn!("failed to read state file, removing");
+            fs::remove_file(ALLIUM_LAUNCHER_STATE.as_path())?;
+        }
+        AlliumLauncherState::new()
     }
 
     fn save(&self) -> Result<()> {
