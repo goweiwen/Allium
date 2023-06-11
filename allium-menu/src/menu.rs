@@ -52,7 +52,7 @@ impl Menu {
                 styles,
                 Alignment::Left,
                 300,
-                true,
+                self.selected == entry,
                 true,
                 0,
             )?;
