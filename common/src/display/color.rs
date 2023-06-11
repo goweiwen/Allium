@@ -46,7 +46,7 @@ impl Color {
 
     pub fn char(&self, i: usize) -> String {
         format!(
-            "{:x}",
+            "{:X}",
             match i {
                 0 => self.r() / 16,
                 1 => self.r() % 16,
