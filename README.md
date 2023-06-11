@@ -37,20 +37,26 @@ The SD card layout should look like this:
 - Launch RetroArch for all supported cores
 - Battery indicator
 - Volume control
+- Brightness control (menu + volume up/down)
 - In-game menu (view game name, battery %, save, load, reset, access RetroArch menu, quit)
 - Automatic game save/resume when powering off/on
+- Settings page
+    - Customize theme
+    - Change LCD settings
+- Recents list (sort by last played or most played)
 
 ### Todo
 (roughly in order of priority)
 - Settings page:
-    - Button colors
-    - Theme color
-    - Toggle box art
     - WiFi
     - Clock
-- Recents list (sort by frecency)
-- Brightness control
-- File-system database to cache folder structure
+- Fix volume reset bug
+- WiFi stuff:
+    - NTP
+    - OTA update
+    - Metadata/box art scraper
+    - Cloud save sync
+    - Seamless netplay from ingame menu
 - UI improvements:
     - Folder icon
     - Battery icon
@@ -58,16 +64,14 @@ The SD card layout should look like this:
     - Brightness indicator
     - Error toast (e.g. no core found for game)
     - Anti-aliased circles
-- WiFi stuff:
-    - NTP
-    - OTA update
-    - Metadata/box art scraper
-    - Cloud save sync
-    - Seamless netplay from ingame menu
+- Theme manager
+    - Built-in themes
+    - Save current theme to file
+- File-system database to cache folder structure
 
 ### Known bugs
 - Volume resets when RetroArch launches
-- Battery indicator draws over previous value
+- Brightness in settings is not linked to menu+vol hotkey adjustments
 
 ## Development
 
