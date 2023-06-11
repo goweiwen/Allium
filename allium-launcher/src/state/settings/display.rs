@@ -128,18 +128,20 @@ impl State for SettingsDisplayState {
     fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<(Option<AlliumCommand>, bool)> {
         if let Some(value) = self.value {
             match key_event {
-                KeyEvent::Pressed(Key::Up)
-                | KeyEvent::Pressed(Key::Right)
-                | KeyEvent::Autorepeat(Key::Up)
-                | KeyEvent::Autorepeat(Key::Right) => {
+                KeyEvent::Pressed(Key::Up) | KeyEvent::Autorepeat(Key::Up) => {
+                    self.value = Some((value + 1).min(100));
+                    Ok((None, true))
+                }
+                KeyEvent::Pressed(Key::Down) | KeyEvent::Autorepeat(Key::Down) => {
+                    self.value = Some((value as i8 - 1).max(0) as u8);
+                    Ok((None, true))
+                }
+                KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
                     self.value = Some((value + 10).min(100));
                     Ok((None, true))
                 }
-                KeyEvent::Pressed(Key::Down)
-                | KeyEvent::Pressed(Key::Left)
-                | KeyEvent::Autorepeat(Key::Down)
-                | KeyEvent::Autorepeat(Key::Left) => {
-                    self.value = Some((value as i8 - 10).min(100) as u8);
+                KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
+                    self.value = Some((value as i8 - 10).max(0) as u8);
                     Ok((None, true))
                 }
                 KeyEvent::Pressed(Key::A) => Ok((self.select_entry(self.selected)?, true)),
