@@ -207,6 +207,7 @@ impl AlliumLauncher<DefaultPlatform> {
             AlliumCommand::Exec(mut cmd) => {
                 self.save()?;
                 self.display.load(self.display.bounding_box())?;
+                self.display.flush()?;
                 trace!("executing command: {:?}", cmd);
                 #[cfg(unix)]
                 cmd.exec();
