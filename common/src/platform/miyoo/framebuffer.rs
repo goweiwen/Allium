@@ -1,5 +1,4 @@
 use anyhow::{bail, Result};
-use embedded_graphics::pixelcolor::Rgb888;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::Pixel;

@@ -6,7 +6,7 @@ mod simulator;
 use anyhow::Result;
 use async_trait::async_trait;
 
-use crate::display::Display;
+use crate::display::{settings::DisplaySettings, Display};
 
 #[cfg(target_arch = "arm")]
 pub type DefaultPlatform = miyoo::MiyooPlatform;
@@ -33,6 +33,8 @@ pub trait Platform {
     fn set_volume(&mut self, volume: i32) -> Result<()>;
 
     fn set_brightness(&mut self, brightness: u8) -> Result<()>;
+
+    fn set_display_settings(&mut self, settings: &DisplaySettings) -> Result<()>;
 
     fn device_model() -> String;
 }

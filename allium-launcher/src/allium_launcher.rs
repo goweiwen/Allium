@@ -215,7 +215,7 @@ impl AlliumLauncher<DefaultPlatform> {
             }
             AlliumCommand::SaveDisplaySettings(settings) => {
                 settings.save()?;
-                self.platform.set_brightness(settings.brightness)?;
+                self.platform.set_display_settings(&settings)?;
                 self.dirty = true;
             }
         }

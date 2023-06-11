@@ -10,6 +10,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 
 use crate::battery::Battery;
+use crate::display::settings::DisplaySettings;
 use crate::platform::miyoo::evdev::EvdevKeys;
 use crate::platform::miyoo::framebuffer::FramebufferDisplay;
 use crate::platform::KeyEvent;
@@ -75,6 +76,10 @@ impl Platform for MiyooPlatform {
 
     fn set_brightness(&mut self, brightness: u8) -> Result<()> {
         screen::set_brightness(brightness)
+    }
+
+    fn set_display_settings(&mut self, settings: &DisplaySettings) -> Result<()> {
+        screen::set_display_settings(settings)
     }
 
     fn device_model() -> String {

@@ -15,6 +15,7 @@ use sdl2::keyboard::Keycode;
 
 use crate::battery::Battery;
 use crate::display::color::Color;
+use crate::display::settings::DisplaySettings;
 use crate::display::Display;
 use crate::platform::{Key, KeyEvent, Platform};
 
@@ -87,6 +88,10 @@ impl Platform for SimulatorPlatform {
     }
 
     fn set_brightness(&mut self, _brightness: u8) -> Result<()> {
+        Ok(())
+    }
+
+    fn set_display_settings(&mut self, _settings: &DisplaySettings) -> Result<()> {
         Ok(())
     }
 
