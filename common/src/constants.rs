@@ -30,7 +30,7 @@ lazy_static! {
         .unwrap_or_else(|_| ALLIUM_CONFIG_DIR.join("allium-menu"));
     pub static ref ALLIUM_RETROARCH: PathBuf = env::var("ALLIUM_RETROARCH")
         .map(PathBuf::from)
-        .unwrap_or_else(|_| ALLIUM_CONFIG_DIR.join("retroarch/launch.sh"));
+        .unwrap_or_else(|_| ALLIUM_CONFIG_DIR.join("cores/retroarch/launch.sh"));
 }
 pub const RETROARCH_UDP_SOCKET: &str = "127.0.0.1:55355";
 
