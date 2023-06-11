@@ -352,6 +352,7 @@ impl Default for Directory {
     }
 }
 
+const EXCLUDE_EXTENSIONS: [&str; 1] = ["db"];
 const IMAGE_EXTENSIONS: [&str; 7] = ["png", "jpg", "jpeg", "webp", "gif", "tga", "bmp"];
 
 impl Entry {
@@ -375,7 +376,7 @@ impl Entry {
         if file_name == "Imgs" {
             return Ok(None);
         }
-        if IMAGE_EXTENSIONS.contains(&extension.as_str()) {
+        if EXCLUDE_EXTENSIONS.contains(&extension.as_str()) {
             return Ok(None);
         }
 
