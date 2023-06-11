@@ -67,6 +67,6 @@ impl GameInfo {
 
     /// How long the game has been running.
     pub fn play_time(&self) -> Duration {
-        self.start_time.signed_duration_since(Utc::now())
+        Utc::now().signed_duration_since(self.start_time)
     }
 }

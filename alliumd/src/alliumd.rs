@@ -3,6 +3,7 @@ use std::io::Write;
 use std::path::Path;
 
 use anyhow::Result;
+use chrono::{Duration, Utc};
 use common::constants::{ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU};
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
@@ -40,7 +41,11 @@ pub struct AlliumD<P: Platform> {
 
 fn spawn_main() -> Child {
     match GameInfo::load().unwrap() {
-        Some(game) => game.command().into(),
+        Some(mut game) => {
+            game.start_time = Utc::now();
+            game.save().unwrap();
+            game.command().into()
+        }
         None => Command::new(ALLIUM_LAUNCHER.as_path()),
     }
     .spawn()
@@ -159,6 +164,7 @@ impl AlliumD<DefaultPlatform> {
                 }
                 #[cfg(unix)]
                 {
+                    self.update_play_time()?;
                     std::process::Command::new("sync").spawn()?;
                     std::process::Command::new("poweroff").exec();
                 }
@@ -217,6 +223,12 @@ impl AlliumD<DefaultPlatform> {
 
         let file = File::open(ALLIUM_GAME_INFO.as_path())?;
         let game: GameInfo = serde_json::from_reader(file)?;
+
+        // ignore if play time is less than 3 seconds, delete game info in case of crash loop
+        if game.play_time() < Duration::seconds(3) {
+            fs::remove_file(ALLIUM_GAME_INFO.as_path())?;
+            return Ok(());
+        }
 
         let database = Database::new()?;
         database.add_play_time(game.path.as_path(), game.play_time())

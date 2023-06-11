@@ -3,10 +3,7 @@ use std::fs::File;
 use std::io::Write;
 use std::rc::Rc;
 #[cfg(unix)]
-use {
-    std::os::unix::process::CommandExt, std::process, std::process::Command as StdCommand,
-    tokio::signal::unix::SignalKind,
-};
+use {std::os::unix::process::CommandExt, std::process, tokio::signal::unix::SignalKind};
 
 use anyhow::Result;
 use embedded_graphics::prelude::*;
