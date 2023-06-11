@@ -145,7 +145,11 @@ impl State for GamesState {
         display.load(Rectangle::new(
             Point::new(x - 12, y - 4),
             Size::new(
-                336,
+                if styles.enable_box_art {
+                    300 + 12 * 2
+                } else {
+                    640 - 12 * 2
+                },
                 LISTING_SIZE as u32 * (SELECTION_HEIGHT + SELECTION_MARGIN),
             ),
         ))?;
@@ -160,43 +164,49 @@ impl State for GamesState {
             let entry = &self.entries[i];
 
             if view.selected == i as i32 {
-                if let Entry::Game(Game {
-                    image: Some(image), ..
-                }) = entry
-                {
-                    let mut image = image::open(image)?;
-                    if image.width() != IMAGE_SIZE.width || image.height() > IMAGE_SIZE.height {
-                        let new_height = min(
-                            IMAGE_SIZE.height,
-                            IMAGE_SIZE.width * image.height() / image.width(),
-                        );
-                        image = image.resize_to_fill(
-                            IMAGE_SIZE.width,
-                            new_height,
-                            image::imageops::FilterType::Triangle,
-                        );
-                    }
-                    display.load(Rectangle::new(
-                        Point::new(
-                            width as i32 - IMAGE_SIZE.width as i32 - 24,
-                            54 + image.height() as i32,
-                        ),
-                        Size::new(IMAGE_SIZE.width, IMAGE_SIZE.height - image.height()),
-                    ))?;
+                if styles.enable_box_art {
+                    if let Entry::Game(Game {
+                        image: Some(image), ..
+                    }) = entry
+                    {
+                        let mut image = image::open(image)?;
+                        if image.width() != IMAGE_SIZE.width || image.height() > IMAGE_SIZE.height {
+                            let new_height = min(
+                                IMAGE_SIZE.height,
+                                IMAGE_SIZE.width * image.height() / image.width(),
+                            );
+                            image = image.resize_to_fill(
+                                IMAGE_SIZE.width,
+                                new_height,
+                                image::imageops::FilterType::Triangle,
+                            );
+                        }
+                        display.load(Rectangle::new(
+                            Point::new(
+                                width as i32 - IMAGE_SIZE.width as i32 - 24,
+                                54 + image.height() as i32,
+                            ),
+                            Size::new(IMAGE_SIZE.width, IMAGE_SIZE.height - image.height()),
+                        ))?;
 
-                    let mut image = image.to_rgb8();
-                    common::display::image::round(&mut image, image::Rgb([0u8; 3]), 12);
-                    let image: ImageRaw<Color> = ImageRaw::new(&image, IMAGE_SIZE.width);
-                    let image = Image::new(
-                        &image,
-                        Point::new(width as i32 - IMAGE_SIZE.width as i32 - 24, 54),
-                    );
-                    image.draw(display)?;
-                } else {
-                    display.load(Rectangle::new(
-                        Point::new(width as i32 - IMAGE_SIZE.width as i32 - 24, 54),
-                        IMAGE_SIZE,
-                    ))?;
+                        let mut image = image.to_rgb8();
+                        common::display::image::round(
+                            &mut image,
+                            styles.background_color.into(),
+                            12,
+                        );
+                        let image: ImageRaw<Color> = ImageRaw::new(&image, IMAGE_SIZE.width);
+                        let image = Image::new(
+                            &image,
+                            Point::new(width as i32 - IMAGE_SIZE.width as i32 - 24, 54),
+                        );
+                        image.draw(display)?;
+                    } else {
+                        display.load(Rectangle::new(
+                            Point::new(width as i32 - IMAGE_SIZE.width as i32 - 24, 54),
+                            IMAGE_SIZE,
+                        ))?;
+                    }
                 }
 
                 display.draw_entry(
@@ -204,7 +214,7 @@ impl State for GamesState {
                     entry.name(),
                     styles,
                     Alignment::Left,
-                    300,
+                    if styles.enable_box_art { 300 } else { 592 },
                     true,
                     true,
                     0,
@@ -215,7 +225,7 @@ impl State for GamesState {
                     entry.name(),
                     styles,
                     Alignment::Left,
-                    300,
+                    if styles.enable_box_art { 300 } else { 592 },
                     false,
                     true,
                     0,

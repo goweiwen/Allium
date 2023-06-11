@@ -2,6 +2,7 @@ use std::fmt;
 
 use embedded_graphics::pixelcolor::{raw::RawU24, Rgb888};
 use embedded_graphics::prelude::{PixelColor, RgbColor};
+use image::Rgb;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -57,6 +58,10 @@ impl Color {
             }
         )
     }
+
+    pub fn invert(&self) -> Self {
+        Self(Rgb888::new(255 - self.r(), 255 - self.g(), 255 - self.b()))
+    }
 }
 
 impl Serialize for Color {
@@ -104,5 +109,11 @@ impl From<Color> for Rgb888 {
 impl From<RawU24> for Color {
     fn from(raw: RawU24) -> Self {
         Color(Rgb888::from(raw))
+    }
+}
+
+impl From<Color> for Rgb<u8> {
+    fn from(color: Color) -> Self {
+        Rgb([color.r(), color.g(), color.b()])
     }
 }
