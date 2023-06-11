@@ -1,11 +1,9 @@
-use std::fs;
-
 use anyhow::Result;
 use common::battery::Battery;
-use common::constants::ALLIUM_GAME_INFO;
 use common::constants::BATTERY_UPDATE_INTERVAL;
 use common::display::font::FontTextStyleBuilder;
 use common::display::Display;
+use common::game_info::GameInfo;
 use common::platform::{DefaultPlatform, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 use embedded_graphics::prelude::*;
@@ -32,9 +30,7 @@ impl AlliumMenu<DefaultPlatform> {
         let display = platform.display()?;
         let battery = platform.battery()?;
 
-        let game_info = fs::read_to_string(ALLIUM_GAME_INFO.as_path()).unwrap_or("".to_owned());
-        let mut split = game_info.split('\n');
-        let name = split.next().unwrap_or("").to_owned();
+        let game_info = GameInfo::load()?;
 
         Ok(AlliumMenu {
             platform,
@@ -43,7 +39,7 @@ impl AlliumMenu<DefaultPlatform> {
             styles: Stylesheet::load()?,
             menu: Menu::new()?,
             dirty: true,
-            name,
+            name: game_info.map(|game| game.name).unwrap_or("".to_string()),
         })
     }
 

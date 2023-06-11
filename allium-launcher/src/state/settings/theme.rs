@@ -149,7 +149,7 @@ impl State for SettingsThemeState {
     ) -> Result<()> {
         let Size { width, height } = display.size();
         display.load(Rectangle::new(
-            Point::new(156 - 12, 58 - 4),
+            Point::new(146 - 12, 58 - 4),
             Size::new(width - 156 - 12, height - 58 - 4),
         ))?;
 
@@ -173,7 +173,7 @@ impl State for SettingsThemeState {
             styles,
             self.selected,
             self.selected_color.is_some(),
-            460,
+            470,
         )?;
 
         if let Some(state) = &self.selected_color {

@@ -96,6 +96,11 @@ impl State for SettingsDisplayState {
         styles: &Stylesheet,
     ) -> Result<()> {
         if !self.has_drawn_image {
+            let Size { width, height } = display.size();
+            display.load(Rectangle::new(
+                Point::new(146 - 12, 58 - 4),
+                Size::new(width - 156 - 12, height - 58 - 4),
+            ))?;
             display.draw_image(
                 Point::new(358, 58),
                 &ALLIUM_CONFIG_DIR.join("images/display.png"),
@@ -115,11 +120,11 @@ impl State for SettingsDisplayState {
             )?;
         }
 
-        let (x, y) = (156, 58);
+        let (x, y) = (146, 58);
         display.load(Rectangle::new(
             Point::new(x - 12, y - 4),
             Size::new(
-                214,
+                200 + 12 * 2,
                 (SELECTION_HEIGHT + SELECTION_MARGIN) * DisplaySetting::COUNT as u32,
             ),
         ))?;
@@ -130,7 +135,7 @@ impl State for SettingsDisplayState {
                 .collect(),
         );
 
-        settings.draw(display, styles, self.selected, self.value.is_some(), 190)?;
+        settings.draw(display, styles, self.selected, self.value.is_some(), 200)?;
 
         if let Some(value) = self.value {
             let x = 156 + 214 - 24;

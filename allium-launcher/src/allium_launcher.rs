@@ -3,7 +3,10 @@ use std::fs::File;
 use std::io::Write;
 use std::rc::Rc;
 #[cfg(unix)]
-use {std::os::unix::process::CommandExt, std::process, tokio::signal::unix::SignalKind};
+use {
+    std::os::unix::process::CommandExt, std::process, std::process::Command as StdCommand,
+    tokio::signal::unix::SignalKind,
+};
 
 use anyhow::Result;
 use embedded_graphics::prelude::*;
@@ -16,7 +19,6 @@ use tracing::trace;
 use tracing::{debug, warn};
 
 use common::battery::Battery;
-use common::constants::ALLIUM_GAME_INFO;
 use common::constants::ALLIUM_LAUNCHER_STATE;
 use common::constants::BATTERY_UPDATE_INTERVAL;
 use common::database::Database;
@@ -133,13 +135,6 @@ impl AlliumLauncher<DefaultPlatform> {
     }
 
     pub async fn run_event_loop(&mut self) -> Result<()> {
-        // Remove game info now that Allium is running again
-        if ALLIUM_GAME_INFO.exists() {
-            fs::remove_file(ALLIUM_GAME_INFO.as_path())
-                .map_err(|e| warn!("failed to remove game info: {}", e))
-                .ok();
-        }
-
         self.display.clear(self.styles.background_color)?;
         self.display.save()?;
 

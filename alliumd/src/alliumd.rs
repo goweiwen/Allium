@@ -1,7 +1,6 @@
 use std::fs::{self, File};
 use std::io::Write;
-use std::path::{Path, PathBuf};
-use std::str::FromStr;
+use std::path::Path;
 
 use anyhow::Result;
 use common::constants::{ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU};
@@ -9,6 +8,8 @@ use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
 use tracing::{debug, info, trace, warn};
 
+use common::database::Database;
+use common::game_info::GameInfo;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 
 #[cfg(unix)]
@@ -38,28 +39,12 @@ pub struct AlliumD<P: Platform> {
 }
 
 fn spawn_main() -> Child {
-    try_load_game().unwrap_or_else(|| {
-        let path = Path::new(&*ALLIUM_GAME_INFO);
-        if path.exists() {
-            info!("no game info found, launching menu");
-            fs::remove_file(path).unwrap();
-        } else {
-            info!("failed to load game, launching menu");
-        }
-        Command::new(ALLIUM_LAUNCHER.as_path()).spawn().unwrap()
-    })
-}
-
-fn try_load_game() -> Option<Child> {
-    if ALLIUM_GAME_INFO.exists() {
-        let game_info = fs::read_to_string(ALLIUM_GAME_INFO.as_path()).ok()?;
-        let mut split = game_info.split('\n');
-        let _name = split.next();
-        let core = split.next().and_then(|path| PathBuf::from_str(path).ok())?;
-        Command::new(core).args(split).spawn().ok()
-    } else {
-        None
+    match GameInfo::load().unwrap() {
+        Some(game) => game.command().into(),
+        None => Command::new(ALLIUM_LAUNCHER.as_path()),
     }
+    .spawn()
+    .unwrap()
 }
 
 impl AlliumD<DefaultPlatform> {
@@ -104,6 +89,7 @@ impl AlliumD<DefaultPlatform> {
                     }
                     _ = self.main.wait() => {
                         info!("main process terminated, restarting");
+                        self.update_play_time()?;
                         self.main = spawn_main();
                     }
                     _ = menu_terminated => {
@@ -221,6 +207,19 @@ impl AlliumD<DefaultPlatform> {
         let json = serde_json::to_string(self).unwrap();
         File::create(ALLIUMD_STATE.as_path())?.write_all(json.as_bytes())?;
         Ok(())
+    }
+
+    #[allow(unused)]
+    fn update_play_time(&self) -> Result<()> {
+        if !self.is_ingame() {
+            return Ok(());
+        }
+
+        let file = File::open(ALLIUM_GAME_INFO.as_path())?;
+        let game: GameInfo = serde_json::from_reader(file)?;
+
+        let database = Database::new()?;
+        database.add_play_time(game.path.as_path(), game.play_time())
     }
 
     fn is_ingame(&self) -> bool {

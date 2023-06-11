@@ -121,7 +121,7 @@ impl State for GamesState {
             Point::new(x - 12, y - 4),
             Size::new(
                 if styles.enable_box_art {
-                    300 + 12 * 2
+                    324 + 12 * 2
                 } else {
                     640 - 12 * 2
                 },
@@ -189,7 +189,7 @@ impl State for GamesState {
                     entry.name(),
                     styles,
                     Alignment::Left,
-                    if styles.enable_box_art { 300 } else { 592 },
+                    if styles.enable_box_art { 324 } else { 592 },
                     true,
                     true,
                     0,
@@ -200,7 +200,7 @@ impl State for GamesState {
                     entry.name(),
                     styles,
                     Alignment::Left,
-                    if styles.enable_box_art { 300 } else { 592 },
+                    if styles.enable_box_art { 324 } else { 592 },
                     false,
                     true,
                     0,
@@ -213,12 +213,17 @@ impl State for GamesState {
         let y = height as i32 - BUTTON_DIAMETER as i32 - 8;
         let mut x = width as i32 - 12;
 
+        display.load(Rectangle::new(
+            Point::new(360, y),
+            Size::new(width - 360, BUTTON_DIAMETER),
+        ))?;
+
         x = display
-            .draw_button_hint(Point::new(x, y), Key::A, "Start", styles)?
+            .draw_button_hint(Point::new(x, y), Key::A, "Start", styles, Alignment::Right)?
             .top_left
             .x
             - 18;
-        display.draw_button_hint(Point::new(x, y), Key::B, "Back", styles)?;
+        display.draw_button_hint(Point::new(x, y), Key::B, "Back", styles, Alignment::Right)?;
 
         Ok(())
     }

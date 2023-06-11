@@ -12,12 +12,7 @@ use embedded_graphics::{
 use serde::{Deserialize, Serialize};
 use strum::{EnumCount, FromRepr, VariantNames};
 
-use common::{
-    constants::{SELECTION_HEIGHT, SELECTION_MARGIN},
-    display::color::Color,
-    platform::Key,
-    stylesheet::Stylesheet,
-};
+use common::{display::color::Color, platform::Key, stylesheet::Stylesheet};
 use common::{
     display::Display,
     platform::{DefaultPlatform, KeyEvent, Platform},
@@ -64,10 +59,7 @@ impl State for SettingsState {
         let (x, mut y) = (24, 58);
         display.load(Rectangle::new(
             Point::new(x - 12, y - 4),
-            Size::new(
-                120,
-                (SELECTION_HEIGHT + SELECTION_MARGIN) * SettingsSection::COUNT as u32,
-            ),
+            Size::new(110 + 12 * 2, display.size().height - y as u32 + 4),
         ))?;
 
         if self.section.is_none() {
@@ -85,7 +77,7 @@ impl State for SettingsState {
                 y += 42;
             }
             display.load(Rectangle::new(
-                Point::new(156 - 12, 58 - 4),
+                Point::new(146 - 12, 58 - 4),
                 Size::new(484, 422),
             ))?;
         } else {
@@ -124,11 +116,11 @@ impl State for SettingsState {
         let mut x = display.size().width as i32 - 12;
 
         x = display
-            .draw_button_hint(Point::new(x, y), Key::A, "Select", styles)?
+            .draw_button_hint(Point::new(x, y), Key::A, "Select", styles, Alignment::Right)?
             .top_left
             .x
             - 18;
-        display.draw_button_hint(Point::new(x, y), Key::B, "Back", styles)?;
+        display.draw_button_hint(Point::new(x, y), Key::B, "Back", styles, Alignment::Right)?;
 
         Ok(())
     }
@@ -251,8 +243,8 @@ impl Settings {
         editing: bool,
         width: i32,
     ) -> Result<()> {
-        let x0 = 156;
-        let x1 = 156 + width;
+        let x0 = 146;
+        let x1 = 146 + width;
         let mut y = 58;
         for (i, setting) in self.0.iter().enumerate() {
             display.draw_entry(
@@ -333,7 +325,7 @@ impl SettingValue {
             SettingValue::Color(value) => {
                 display.draw_entry(
                     point,
-                    &value.to_string(),
+                    &format!("{:X}", value),
                     styles,
                     Alignment::Right,
                     224,

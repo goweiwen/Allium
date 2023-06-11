@@ -109,6 +109,13 @@ impl fmt::Display for Color {
     }
 }
 
+impl fmt::UpperHex for Color {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let (r, g, b) = (self.r(), self.g(), self.b());
+        write!(f, "#{:02X}{:02X}{:02X}", r, g, b)
+    }
+}
+
 impl PixelColor for Color {
     type Raw = RawU24;
 }

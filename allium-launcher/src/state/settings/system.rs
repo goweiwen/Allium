@@ -1,5 +1,4 @@
 use anyhow::Result;
-use common::constants::{SELECTION_HEIGHT, SELECTION_MARGIN};
 use common::platform::Key;
 use embedded_graphics::{prelude::*, primitives::Rectangle};
 
@@ -52,14 +51,14 @@ impl State for SettingsSystemState {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<()> {
-        let (x, y) = (156, 58);
+        let Size { width, height } = display.size();
         display.load(Rectangle::new(
-            Point::new(x - 12, y - 4),
-            Size::new(484, (SELECTION_HEIGHT + SELECTION_MARGIN) * 2),
+            Point::new(146 - 12, 58 - 4),
+            Size::new(width - 156 - 12, height - 58 - 4),
         ))?;
 
         self.settings
-            .draw(display, styles, self.selected, false, 460)?;
+            .draw(display, styles, self.selected, false, 470)?;
 
         Ok(())
     }

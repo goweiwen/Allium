@@ -39,6 +39,7 @@ pub struct RecentsState {
     database: Database,
     #[serde(skip)]
     core_mapper: Option<Rc<CoreMapper>>,
+    sort: Sort,
 }
 
 impl RecentsState {
@@ -49,6 +50,7 @@ impl RecentsState {
             entries: vec![],
             database: Default::default(),
             core_mapper: None,
+            sort: Sort::LastPlayed,
         }
     }
 
@@ -58,19 +60,19 @@ impl RecentsState {
     }
 
     fn select_entry(&self, game: Game) -> Result<Option<AlliumCommand>> {
-        self
-            .core_mapper
+        self.core_mapper
             .as_ref()
             .unwrap()
             .launch_game(&self.database, &game)
     }
-}
 
-impl State for RecentsState {
-    fn enter(&mut self) -> Result<()> {
-        self.entries = self
-            .database
-            .select_last_played(RECENT_GAMES_LIMIT)?
+    fn load_entries(&mut self) -> Result<()> {
+        let games = match self.sort {
+            Sort::LastPlayed => self.database.select_last_played(RECENT_GAMES_LIMIT)?,
+            Sort::MostPlayed => self.database.select_most_played(RECENT_GAMES_LIMIT)?,
+        };
+
+        self.entries = games
             .into_iter()
             .map(|game| {
                 let extension = game
@@ -94,6 +96,14 @@ impl State for RecentsState {
                 }
             })
             .collect();
+
+        Ok(())
+    }
+}
+
+impl State for RecentsState {
+    fn enter(&mut self) -> Result<()> {
+        self.load_entries()?;
         Ok(())
     }
 
@@ -116,7 +126,7 @@ impl State for RecentsState {
             Point::new(x - 12, y - 4),
             Size::new(
                 if styles.enable_box_art {
-                    300 + 12 * 2
+                    324 + 12 * 2
                 } else {
                     640 - 12 * 2
                 },
@@ -180,7 +190,7 @@ impl State for RecentsState {
                     &entry.name,
                     styles,
                     Alignment::Left,
-                    if styles.enable_box_art { 300 } else { 592 },
+                    if styles.enable_box_art { 324 } else { 592 },
                     true,
                     true,
                     0,
@@ -191,7 +201,7 @@ impl State for RecentsState {
                     &entry.name,
                     styles,
                     Alignment::Left,
-                    if styles.enable_box_art { 300 } else { 592 },
+                    if styles.enable_box_art { 324 } else { 592 },
                     false,
                     true,
                     0,
@@ -202,14 +212,25 @@ impl State for RecentsState {
 
         // Draw button hints
         let y = height as i32 - BUTTON_DIAMETER as i32 - 8;
-        let mut x = width as i32 - 12;
+        let x = width as i32 - 12;
 
-        x = display
-            .draw_button_hint(Point::new(x, y), Key::A, "Start", styles)?
+        display.load(Rectangle::new(
+            Point::new(360, y),
+            Size::new(width - 360, BUTTON_DIAMETER),
+        ))?;
+
+        let x = display
+            .draw_button_hint(Point::new(x, y), Key::A, "Start", styles, Alignment::Right)?
             .top_left
             .x
             - 18;
-        display.draw_button_hint(Point::new(x, y), Key::B, "Back", styles)?;
+        display.draw_button_hint(
+            Point::new(x, y),
+            Key::Y,
+            self.sort.button_hint(),
+            styles,
+            Alignment::Right,
+        )?;
 
         Ok(())
     }
@@ -223,6 +244,13 @@ impl State for RecentsState {
                 } else {
                     (None, false)
                 }
+            }
+            KeyEvent::Pressed(Key::Y) => {
+                self.sort = self.sort.next();
+                self.load_entries()?;
+                self.top = 0;
+                self.selected = 0;
+                (None, true)
             }
             KeyEvent::Pressed(key) | KeyEvent::Autorepeat(key) => match key {
                 Key::Up => {
@@ -269,5 +297,27 @@ impl State for RecentsState {
             },
             _ => (None, false),
         })
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+enum Sort {
+    LastPlayed,
+    MostPlayed,
+}
+
+impl Sort {
+    fn button_hint(&self) -> &'static str {
+        match self {
+            Sort::LastPlayed => "Sort: Last Played",
+            Sort::MostPlayed => "Sort: Most Played",
+        }
+    }
+
+    fn next(self) -> Self {
+        match self {
+            Sort::LastPlayed => Sort::MostPlayed,
+            Sort::MostPlayed => Sort::LastPlayed,
+        }
     }
 }

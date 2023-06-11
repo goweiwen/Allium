@@ -1,8 +1,6 @@
-use std::fs;
 use std::process::{self};
 
 use anyhow::Result;
-use common::constants::ALLIUM_GAME_INFO;
 use embedded_graphics::{prelude::*, primitives::Rectangle, text::Alignment};
 use strum::{Display, EnumCount, EnumIter, IntoEnumIterator};
 
@@ -64,11 +62,11 @@ impl Menu {
         let mut x = width as i32 - 12;
 
         x = display
-            .draw_button_hint(Point::new(x, y), Key::A, "Select", styles)?
+            .draw_button_hint(Point::new(x, y), Key::A, "Select", styles, Alignment::Right)?
             .top_left
             .x
             - 18;
-        display.draw_button_hint(Point::new(x, y), Key::B, "Back", styles)?;
+        display.draw_button_hint(Point::new(x, y), Key::B, "Back", styles, Alignment::Right)?;
 
         Ok(())
     }
@@ -132,7 +130,6 @@ impl Menu {
                 RetroArchCommand::MenuToggle.send().await?;
             }
             MenuEntry::Quit => {
-                fs::remove_file(ALLIUM_GAME_INFO.as_path())?;
                 RetroArchCommand::Quit.send().await?;
             }
         }

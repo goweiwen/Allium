@@ -1,10 +1,10 @@
 use std::{
     path::{Path, PathBuf},
     rc::Rc,
-    time::Duration,
 };
 
 use anyhow::Result;
+use chrono::Duration;
 use rusqlite::{params, Connection, OptionalExtension};
 use rusqlite_migration::{Migrations, M};
 
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS games (
     }
 
     pub fn select_most_played(&self, limit: i64) -> Result<Vec<Game>> {
-        let mut stmt = self.conn.as_ref().unwrap().prepare("SELECT id, name, path, image, play_count, play_time, last_played FROM games ORDER BY play_count DESC LIMIT ?")?;
+        let mut stmt = self.conn.as_ref().unwrap().prepare("SELECT id, name, path, image, play_count, play_time, last_played FROM games ORDER BY play_time DESC LIMIT ?")?;
 
         let rows = stmt.query_map([limit], |row| {
             Ok(Game {
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS games (
                 path: PathBuf::from(row.get::<_, String>(2)?),
                 image: row.get::<_, Option<String>>(3)?.map(PathBuf::from),
                 play_count: row.get(4)?,
-                play_time: Duration::from_secs(row.get(5)?),
+                play_time: Duration::seconds(row.get(5)?),
                 last_played: row.get(6)?,
             })
         })?;
@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS games (
                 path: PathBuf::from(row.get::<_, String>(2)?),
                 image: row.get::<_, Option<String>>(3)?.map(PathBuf::from),
                 play_count: row.get(4)?,
-                play_time: Duration::from_secs(row.get(5)?),
+                play_time: Duration::seconds(row.get(5)?),
                 last_played: row.get(6)?,
             })
         })?;
@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS games (
                 path: PathBuf::from(row.get::<_, String>(2)?),
                 image: row.get::<_, Option<String>>(3)?.map(PathBuf::from),
                 play_count: row.get(4)?,
-                play_time: Duration::from_secs(row.get(5)?),
+                play_time: Duration::seconds(row.get(5)?),
                 last_played: row.get(6)?,
             })
         }).optional()?;
@@ -148,14 +148,14 @@ CREATE TABLE IF NOT EXISTS games (
         Ok(())
     }
 
-    pub fn add_play_time(&self, path: &str, play_time: Duration) -> Result<()> {
+    pub fn add_play_time(&self, path: &Path, play_time: Duration) -> Result<()> {
         let mut stmt = self
             .conn
             .as_ref()
             .unwrap()
             .prepare("UPDATE games SET play_time = play_time + ? WHERE path = ?")?;
 
-        stmt.execute(params![play_time.as_secs(), path])?;
+        stmt.execute(params![play_time.num_seconds(), path.display().to_string()])?;
 
         Ok(())
     }
@@ -181,7 +181,7 @@ mod tests {
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
                 play_count: 0,
-                play_time: Duration::ZERO,
+                play_time: Duration::zero(),
                 last_played: 0,
             },
             Game {
@@ -190,31 +190,21 @@ mod tests {
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
                 play_count: 0,
-                play_time: Duration::ZERO,
+                play_time: Duration::zero(),
                 last_played: 0,
             },
         ];
 
         database
-            .increment_play_count(
-                &games[1].name,
-                games[1].path.as_path(),
-                games[1].image.as_deref(),
-            )
+            .add_play_time(games[1].path.as_path(), Duration::seconds(1))
             .unwrap();
         let most_played = database.select_most_played(2).unwrap();
         assert_eq!(most_played.len(), 1);
         assert_eq!(most_played[0].path, games[1].path);
 
-        for _ in 0..2 {
-            database
-                .increment_play_count(
-                    &games[0].name,
-                    games[0].path.as_path(),
-                    games[0].image.as_deref(),
-                )
-                .unwrap();
-        }
+        database
+            .add_play_time(games[0].path.as_path(), Duration::seconds(2))
+            .unwrap();
         let most_played = database.select_most_played(2).unwrap();
         assert_eq!(most_played.len(), 2);
         assert_eq!(most_played[0].path, games[0].path);
@@ -232,7 +222,7 @@ mod tests {
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
                 play_count: 0,
-                play_time: Duration::ZERO,
+                play_time: Duration::zero(),
                 last_played: 0,
             },
             Game {
@@ -241,7 +231,7 @@ mod tests {
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
                 play_count: 0,
-                play_time: Duration::ZERO,
+                play_time: Duration::zero(),
                 last_played: 0,
             },
         ];

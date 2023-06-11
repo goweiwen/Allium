@@ -182,6 +182,7 @@ pub trait Display: OriginDimensions + DrawTarget<Color = Color> + Sized {
         button: Key,
         text: &str,
         styles: &Stylesheet,
+        alignment: Alignment,
     ) -> Result<Rectangle> {
         let text_style = FontTextStyleBuilder::new(styles.ui_font.clone())
             .font_size(styles.ui_font_size)
@@ -189,29 +190,44 @@ pub trait Display: OriginDimensions + DrawTarget<Color = Color> + Sized {
             .background_color(styles.background_color)
             .build();
 
-        let x = point.x
-            - self
-                .draw_text(
-                    Point::new(point.x, point.y + 4),
-                    text,
-                    text_style,
-                    Alignment::Right,
-                )?
-                .size
-                .width as i32
-            - 4;
-        self.draw_button(
-            Point::new(x - BUTTON_DIAMETER as i32, point.y),
-            button,
-            styles,
-        )?;
-        Ok(Rectangle::new(
-            Point::new(x - BUTTON_DIAMETER as i32, point.y),
-            Size::new(
-                (point.x - (x - BUTTON_DIAMETER as i32)) as u32,
-                BUTTON_DIAMETER,
-            ),
-        ))
+        Ok(match alignment {
+            Alignment::Right => {
+                let width = self
+                    .draw_text(
+                        Point::new(point.x, point.y + 4),
+                        text,
+                        text_style,
+                        alignment,
+                    )?
+                    .size
+                    .width;
+                self.draw_button(
+                    Point::new(point.x - width as i32 - 4 - BUTTON_DIAMETER as i32, point.y),
+                    button,
+                    styles,
+                )?;
+                let width = width + BUTTON_DIAMETER + 4;
+                Rectangle::new(
+                    Point::new(point.x - width as i32, point.y),
+                    Size::new(width, BUTTON_DIAMETER),
+                )
+            }
+            Alignment::Left => {
+                self.draw_button(point, button, styles)?;
+                let width = self
+                    .draw_text(
+                        Point::new(point.x + BUTTON_DIAMETER as i32 + 4, point.y + 4),
+                        text,
+                        text_style,
+                        alignment,
+                    )?
+                    .size
+                    .width;
+                let width = width + BUTTON_DIAMETER + 4;
+                Rectangle::new(point, Size::new(width, BUTTON_DIAMETER))
+            }
+            Alignment::Center => unimplemented!("Alignment should be Left or Right"),
+        })
     }
 
     fn draw_button(&mut self, point: Point, button: Key, styles: &Stylesheet) -> Result<()> {

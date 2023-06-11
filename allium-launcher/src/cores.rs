@@ -1,15 +1,12 @@
-use std::fs::File;
-use std::io::Write;
 use std::path::PathBuf;
-use std::process::Command;
 use std::{collections::HashMap, path::Path};
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use common::database::Database;
+use common::game_info::GameInfo;
 use serde::{Deserialize, Serialize};
 
-use common::constants::{ALLIUM_CONFIG_DIR, ALLIUM_GAME_INFO, ALLIUM_RETROARCH};
-use tracing::{trace, warn};
+use common::constants::{ALLIUM_CONFIG_DIR, ALLIUM_RETROARCH};
 
 use crate::command::AlliumCommand;
 
@@ -34,25 +31,6 @@ pub struct Core {
     pub extensions: Vec<String>,
     pub path: Option<PathBuf>,
     pub retroarch_core: Option<String>,
-}
-
-impl Core {
-    pub fn launch(&self, rom: &PathBuf) -> Option<AlliumCommand> {
-        trace!("launching: {:?}", rom);
-        if let Some(path) = self.path.as_ref() {
-            let mut cmd = Command::new(path);
-            cmd.arg(rom);
-            Some(AlliumCommand::Exec(cmd))
-        } else if let Some(retroarch_core) = self.retroarch_core.as_ref() {
-            trace!("ra: {:?}, core: {:?}", &*ALLIUM_RETROARCH, retroarch_core);
-            let mut cmd = Command::new(ALLIUM_RETROARCH.as_path());
-            cmd.arg(retroarch_core).arg(rom);
-            Some(AlliumCommand::Exec(cmd))
-        } else {
-            warn!("No path or retroarch_core specified for core {}", self.name);
-            None
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -152,33 +130,29 @@ impl CoreMapper {
     }
 
     pub fn launch_game(&self, database: &Database, game: &Game) -> Result<Option<AlliumCommand>> {
-        database.increment_play_count(
-            &game.name,
-            game.path.as_path(),
-            game.image.as_deref(),
-        )?;
+        database.increment_play_count(&game.name, game.path.as_path(), game.image.as_deref())?;
 
         let core = self.get_core(game.path.as_path());
         Ok(if let Some(core) = core {
-            if let Some(path) = core.path.as_ref() {
-                write!(
-                    File::create(ALLIUM_GAME_INFO.as_path())?,
-                    "{}\n{}\n{}",
-                    game.name,
-                    path.as_path().as_os_str().to_str().unwrap_or(""),
-                    game.path.as_path().as_os_str().to_str().unwrap_or(""),
-                )?;
+            let game_info = if let Some(path) = core.path.as_ref() {
+                GameInfo::new(
+                    game.name.clone(),
+                    game.path.to_owned(),
+                    path.display().to_string(),
+                    vec![game.path.display().to_string()],
+                )
             } else if let Some(retroarch_core) = core.retroarch_core.as_ref() {
-                write!(
-                    File::create(&*ALLIUM_GAME_INFO)?,
-                    "{}\n{}\n{}\n{}",
-                    game.name,
-                    ALLIUM_RETROARCH.as_os_str().to_str().unwrap_or(""),
-                    retroarch_core,
-                    game.path.as_path().as_os_str().to_str().unwrap_or(""),
-                )?;
-            }
-            core.launch(&game.path)
+                GameInfo::new(
+                    game.name.clone(),
+                    game.path.to_owned(),
+                    ALLIUM_RETROARCH.display().to_string(),
+                    vec![retroarch_core.to_owned(), game.path.display().to_string()],
+                )
+            } else {
+                bail!("Core {} has no path or retroarch_core.", core.name);
+            };
+            game_info.save()?;
+            Some(AlliumCommand::Exec(game_info.command()))
         } else {
             None
         })
