@@ -62,6 +62,25 @@ impl Color {
     pub fn invert(&self) -> Self {
         Self(Rgb888::new(255 - self.r(), 255 - self.g(), 255 - self.b()))
     }
+
+    pub fn blend(&self, other: Self, alpha: u8) -> Self {
+        Self(Rgb888::new(
+            ((self.r() as i32 * (255 - alpha as i32) + other.r() as i32 * alpha as i32) / 255)
+                as u8,
+            ((self.g() as i32 * (255 - alpha as i32) + other.g() as i32 * alpha as i32) / 255)
+                as u8,
+            ((self.b() as i32 * (255 - alpha as i32) + other.b() as i32 * alpha as i32) / 255)
+                as u8,
+        ))
+    }
+
+    pub fn overlay(&self, other: Self) -> Self {
+        Self(Rgb888::new(
+            overlay(self.r(), other.r()),
+            overlay(self.g(), other.g()),
+            overlay(self.b(), other.b()),
+        ))
+    }
 }
 
 impl Serialize for Color {
@@ -115,5 +134,13 @@ impl From<RawU24> for Color {
 impl From<Color> for Rgb<u8> {
     fn from(color: Color) -> Self {
         Rgb([color.r(), color.g(), color.b()])
+    }
+}
+
+fn overlay(a: u8, b: u8) -> u8 {
+    if a < 128 {
+        (a as i32 * b as i32 / 255) as u8
+    } else {
+        255 - ((255 - a as i32) * (255 - b as i32) / 255) as u8
     }
 }

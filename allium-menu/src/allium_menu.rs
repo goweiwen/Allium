@@ -48,7 +48,8 @@ impl AlliumMenu<DefaultPlatform> {
     }
 
     pub async fn run_event_loop(&mut self) -> Result<()> {
-        self.display.darken()?;
+        self.display
+            .map_pixels(|pixel| pixel.blend(self.styles.background_color.overlay(pixel), 192))?;
         self.display.save()?;
 
         let mut last_updated_battery = std::time::Instant::now();
@@ -116,11 +117,13 @@ impl AlliumMenu<DefaultPlatform> {
         let text_style = FontTextStyleBuilder::new(self.styles.ui_font.clone())
             .font_size(self.styles.ui_font_size)
             .text_color(self.styles.foreground_color)
+            .background_color(self.styles.background_color)
             .build();
 
         let primary_style = FontTextStyleBuilder::new(self.styles.ui_font.clone())
             .font_size(self.styles.ui_font_size)
             .text_color(self.styles.highlight_color)
+            .background_color(self.styles.background_color)
             .build();
 
         // Draw battery percentage

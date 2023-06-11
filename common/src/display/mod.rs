@@ -30,11 +30,6 @@ pub trait Display: OriginDimensions + DrawTarget<Color = Color> + Sized {
     fn save(&mut self) -> Result<()>;
     fn load(&mut self, area: Rectangle) -> Result<()>;
 
-    fn darken(&mut self) -> Result<()> {
-        self.map_pixels(|p| Color::new(p.r() / 4, p.g() / 4, p.b() / 4))?;
-        self.flush()
-    }
-
     fn draw_text(
         &mut self,
         point: Point,
