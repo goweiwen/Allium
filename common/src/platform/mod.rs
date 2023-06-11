@@ -32,6 +32,8 @@ pub trait Platform {
 
     fn set_volume(&mut self, volume: i32) -> Result<()>;
 
+    fn get_brightness(&self) -> Result<u8>;
+
     fn set_brightness(&mut self, brightness: u8) -> Result<()>;
 
     fn set_display_settings(&mut self, settings: &DisplaySettings) -> Result<()>;

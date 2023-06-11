@@ -74,6 +74,10 @@ impl Platform for MiyooPlatform {
         }
     }
 
+    fn get_brightness(&self) -> Result<u8> {
+        screen::get_brightness()
+    }
+
     fn set_brightness(&mut self, brightness: u8) -> Result<()> {
         screen::set_brightness(brightness)
     }

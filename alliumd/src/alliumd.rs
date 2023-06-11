@@ -30,8 +30,11 @@ pub struct AlliumD<P: Platform> {
     #[serde(skip)]
     menu: Option<Child>,
     #[serde(skip)]
+    is_menu_pressed: bool,
+    #[serde(skip)]
     is_menu_pressed_alone: bool,
     volume: i32,
+    brightness: u8,
 }
 
 fn spawn_main() -> Child {
@@ -62,13 +65,16 @@ fn try_load_game() -> Option<Child> {
 impl AlliumD<DefaultPlatform> {
     pub fn new() -> Result<AlliumD<DefaultPlatform>> {
         let platform = DefaultPlatform::new()?;
+        let brightness = platform.get_brightness()?;
 
         Ok(AlliumD {
             platform,
             main: spawn_main(),
             menu: None,
+            is_menu_pressed: false,
             is_menu_pressed_alone: false,
             volume: 0,
+            brightness,
         })
     }
 
@@ -134,16 +140,25 @@ impl AlliumD<DefaultPlatform> {
             self.is_ingame()
         );
         if matches!(key_event, KeyEvent::Pressed(Key::Menu)) {
+            self.is_menu_pressed = true;
             self.is_menu_pressed_alone = true;
         } else if !matches!(key_event, KeyEvent::Released(Key::Menu)) {
             self.is_menu_pressed_alone = false;
         }
         match key_event {
             KeyEvent::Pressed(Key::VolDown) | KeyEvent::Autorepeat(Key::VolDown) => {
-                self.add_volume(-1)?
+                if self.is_menu_pressed {
+                    self.add_brightness(-5)?;
+                } else {
+                    self.add_volume(-1)?
+                }
             }
             KeyEvent::Pressed(Key::VolUp) | KeyEvent::Autorepeat(Key::VolUp) => {
-                self.add_volume(1)?
+                if self.is_menu_pressed {
+                    self.add_brightness(5)?;
+                } else {
+                    self.add_volume(1)?
+                }
             }
             KeyEvent::Autorepeat(Key::Power) => {
                 self.save()?;
@@ -163,6 +178,7 @@ impl AlliumD<DefaultPlatform> {
                 }
             }
             KeyEvent::Released(Key::Menu) => {
+                self.is_menu_pressed = false;
                 if self.is_ingame() && self.is_menu_pressed_alone {
                     self.is_menu_pressed_alone = false;
                     if let Some(menu) = &mut self.menu {
@@ -209,15 +225,16 @@ impl AlliumD<DefaultPlatform> {
         Path::new(&*ALLIUM_GAME_INFO).exists()
     }
 
-    fn set_volume(&mut self, volume: i32) -> Result<()> {
-        self.volume = volume.clamp(0, 20);
-        debug!("set volume: {}", self.volume);
+    fn add_volume(&mut self, add: i32) -> Result<()> {
+        self.volume = (self.volume + add).clamp(0, 20);
         self.platform.set_volume(self.volume)?;
         Ok(())
     }
 
-    fn add_volume(&mut self, add: i32) -> Result<()> {
-        self.set_volume(self.volume + add)
+    fn add_brightness(&mut self, add: i8) -> Result<()> {
+        self.brightness = (self.brightness as i8 + add).clamp(0, 100) as u8;
+        self.platform.set_brightness(self.brightness)?;
+        Ok(())
     }
 }
 

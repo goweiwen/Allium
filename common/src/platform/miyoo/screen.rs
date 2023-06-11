@@ -6,6 +6,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::display::settings::DisplaySettings;
 
+pub fn get_brightness() -> Result<u8> {
+    Ok(
+        fs::read_to_string("/sys/devices/soc0/soc/1f003400.pwm/pwm/pwmchip0/pwm0/duty_cycle")?
+            .parse()?,
+    )
+}
+
 pub fn set_brightness(brightness: u8) -> Result<()> {
     let mut file = File::create("/sys/devices/soc0/soc/1f003400.pwm/pwm/pwmchip0/pwm0/duty_cycle")?;
     file.write_all(format!("{}", brightness.max(3)).as_bytes())?;
@@ -37,7 +44,10 @@ pub fn set_display_settings(settings: &DisplaySettings) -> Result<()> {
     let json = fs::read_to_string("/appconfigs/system.json")?;
 
     let mut config: SystemConfig = serde_json::from_str(&json)?;
-    config.brightness = settings.brightness;
+
+    // Expects 10 as maximum, but we use 100 as maximum.
+    config.brightness = settings.brightness / 10;
+
     // Expects 20 as maximum, but we use 100 as maximum.
     config.lumination = settings.luminance / 5;
     config.hue = settings.hue / 5;

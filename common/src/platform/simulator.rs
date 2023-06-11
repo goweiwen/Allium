@@ -87,6 +87,10 @@ impl Platform for SimulatorPlatform {
         Ok(())
     }
 
+    fn get_brightness(&self) -> Result<u8> {
+        Ok(50)
+    }
+
     fn set_brightness(&mut self, _brightness: u8) -> Result<()> {
         Ok(())
     }
