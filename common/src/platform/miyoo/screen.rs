@@ -1,5 +1,5 @@
 use std::fs::{self, File};
-use std::io::{Read, Write};
+use std::io::Write;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};

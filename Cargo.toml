@@ -1,10 +1,5 @@
 [workspace]
-members = [
-    "common",
-    "alliumd",
-    "allium-launcher",
-    "allium-menu",
-]
+members = ["common", "alliumd", "allium-launcher", "allium-menu"]
 resolver = "2"
 
 # Following: https://github.com/johnthagen/min-sized-rust
@@ -13,6 +8,3 @@ strip = true
 opt-level = "z"
 lto = true
 codegen-units = 1
-
-[profile.dev.package.sqlx-macros]
-opt-level = 3

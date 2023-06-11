@@ -1,11 +1,14 @@
+use std::fs::File;
+use std::io::Write;
 use std::path::PathBuf;
 use std::process::Command;
 use std::{collections::HashMap, path::Path};
 
 use anyhow::{anyhow, Context, Result};
-use serde::Deserialize;
+use common::database::Database;
+use serde::{Deserialize, Serialize};
 
-use common::constants::{ALLIUM_CONFIG_DIR, ALLIUM_RETROARCH};
+use common::constants::{ALLIUM_CONFIG_DIR, ALLIUM_GAME_INFO, ALLIUM_RETROARCH};
 use tracing::{trace, warn};
 
 use crate::command::AlliumCommand;
@@ -49,6 +52,27 @@ impl Core {
             warn!("No path or retroarch_core specified for core {}", self.name);
             None
         }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Game {
+    pub name: String,
+    pub full_name: String,
+    pub path: PathBuf,
+    pub image: Option<PathBuf>,
+    pub extension: String,
+}
+
+impl Ord for Game {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.full_name.cmp(&other.full_name)
+    }
+}
+
+impl PartialOrd for Game {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -125,6 +149,39 @@ impl CoreMapper {
         }
 
         None
+    }
+
+    pub fn launch_game(&self, database: &Database, game: &Game) -> Result<Option<AlliumCommand>> {
+        database.increment_play_count(
+            &game.name,
+            game.path.as_path(),
+            game.image.as_deref(),
+        )?;
+
+        let core = self.get_core(game.path.as_path());
+        Ok(if let Some(core) = core {
+            if let Some(path) = core.path.as_ref() {
+                write!(
+                    File::create(ALLIUM_GAME_INFO.as_path())?,
+                    "{}\n{}\n{}",
+                    game.name,
+                    path.as_path().as_os_str().to_str().unwrap_or(""),
+                    game.path.as_path().as_os_str().to_str().unwrap_or(""),
+                )?;
+            } else if let Some(retroarch_core) = core.retroarch_core.as_ref() {
+                write!(
+                    File::create(&*ALLIUM_GAME_INFO)?,
+                    "{}\n{}\n{}\n{}",
+                    game.name,
+                    ALLIUM_RETROARCH.as_os_str().to_str().unwrap_or(""),
+                    retroarch_core,
+                    game.path.as_path().as_os_str().to_str().unwrap_or(""),
+                )?;
+            }
+            core.launch(&game.path)
+        } else {
+            None
+        })
     }
 }
 

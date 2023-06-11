@@ -14,6 +14,7 @@ lazy_static! {
         &env::var("ALLIUM_ROMS_DIR").unwrap_or_else(|_| "/mnt/SDCARD/Roms".to_string())
     );
     pub static ref ALLIUMD_STATE: PathBuf = ALLIUM_CONFIG_DIR.join(Path::new("state/alliumd.json"));
+    pub static ref ALLIUM_DATABASE: PathBuf = ALLIUM_CONFIG_DIR.join(Path::new("state/allium.db"));
     pub static ref ALLIUM_LAUNCHER_STATE: PathBuf =
         ALLIUM_CONFIG_DIR.join(Path::new("state/allium-launcher.json"));
     pub static ref ALLIUM_GAME_INFO: PathBuf =
@@ -34,10 +35,11 @@ lazy_static! {
 }
 pub const RETROARCH_UDP_SOCKET: &str = "127.0.0.1:55355";
 
+pub const BATTERY_UPDATE_INTERVAL: Duration = Duration::from_secs(5);
 pub const BUTTON_DIAMETER: u32 = 34;
+pub const IMAGE_SIZE: Size = Size::new(250, 376);
+pub const LISTING_JUMP_SIZE: i32 = 5;
+pub const LISTING_SIZE: i32 = 10;
+pub const RECENT_GAMES_LIMIT: i64 = 100;
 pub const SELECTION_HEIGHT: u32 = 34;
 pub const SELECTION_MARGIN: u32 = 8;
-pub const IMAGE_SIZE: Size = Size::new(250, 376);
-pub const LISTING_SIZE: i32 = 10;
-pub const LISTING_JUMP_SIZE: i32 = 5;
-pub const BATTERY_UPDATE_INTERVAL: Duration = Duration::from_secs(5);

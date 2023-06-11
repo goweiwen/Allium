@@ -1,13 +1,11 @@
 use std::fs;
 use std::fs::File;
 use std::io::Write;
+use std::rc::Rc;
 #[cfg(unix)]
 use {std::os::unix::process::CommandExt, std::process, tokio::signal::unix::SignalKind};
 
 use anyhow::Result;
-use common::constants::ALLIUM_GAME_INFO;
-use common::constants::ALLIUM_LAUNCHER_STATE;
-use common::display::font::FontTextStyleBuilder;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::text::{Alignment, Text};
@@ -18,12 +16,17 @@ use tracing::trace;
 use tracing::{debug, warn};
 
 use common::battery::Battery;
+use common::constants::ALLIUM_GAME_INFO;
+use common::constants::ALLIUM_LAUNCHER_STATE;
 use common::constants::BATTERY_UPDATE_INTERVAL;
+use common::database::Database;
+use common::display::font::FontTextStyleBuilder;
 use common::display::Display;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 
 use crate::command::AlliumCommand;
+use crate::cores::CoreMapper;
 use crate::state::GamesState;
 use crate::state::RecentsState;
 use crate::state::SettingsState;
@@ -86,13 +89,25 @@ impl AlliumLauncher<DefaultPlatform> {
         let mut platform = DefaultPlatform::new()?;
         let display = platform.display()?;
         let battery = platform.battery()?;
+        let database = Database::new()?;
+
+        let mut core_mapper = CoreMapper::new();
+        core_mapper.load_config()?;
+        let core_mapper = Rc::new(core_mapper);
+
+        let mut state = Self::load()?;
+        state
+            .states
+            .0
+            .init(Rc::clone(&core_mapper), database.clone());
+        state.states.1.init(core_mapper, database);
 
         Ok(AlliumLauncher {
             platform,
             display,
             battery,
             styles: Stylesheet::load()?,
-            state: Self::load()?,
+            state,
             dirty: true,
         })
     }

@@ -186,7 +186,7 @@ where
                         let off_x = off_x as i32 + bb.min.x;
                         let off_y = off_y as i32 + bb.min.y;
                         // There's still a possibility that the glyph clips the boundaries of the bitmap
-                        if off_x >= 0 && off_x < width as i32 && off_y >= 0 && off_y < height as i32
+                        if off_x >= 0 && off_x < width && off_y >= 0 && off_y < height
                         {
                             let c = (v * 255.0) as u32;
 
@@ -251,7 +251,7 @@ where
         let width = glyphs
             .iter()
             .rev()
-            .map(|g| g.position().x as f32 + g.unpositioned().h_metrics().advance_width)
+            .map(|g| g.position().x + g.unpositioned().h_metrics().advance_width)
             .next()
             .unwrap_or(0.0)
             .ceil() as f64;

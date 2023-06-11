@@ -1,8 +1,6 @@
-use std::cmp::min;
 use std::ffi::OsStr;
-use std::fs::File;
-use std::io::Write;
 use std::path::PathBuf;
+use std::{cmp::min, rc::Rc};
 
 use anyhow::{anyhow, Result};
 use embedded_graphics::{
@@ -17,38 +15,28 @@ use serde::{Deserialize, Serialize};
 use tracing::trace;
 
 use common::constants::{
-    ALLIUM_GAMES_DIR, ALLIUM_GAME_INFO, ALLIUM_RETROARCH, BUTTON_DIAMETER, IMAGE_SIZE,
-    LISTING_JUMP_SIZE, LISTING_SIZE, SELECTION_HEIGHT, SELECTION_MARGIN,
+    ALLIUM_GAMES_DIR, BUTTON_DIAMETER, IMAGE_SIZE, LISTING_JUMP_SIZE, LISTING_SIZE,
+    SELECTION_HEIGHT, SELECTION_MARGIN,
 };
+use common::database::Database;
 use common::display::{color::Color, Display};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 
-use crate::{command::AlliumCommand, cores::CoreMapper, state::State};
+use crate::{
+    command::AlliumCommand,
+    cores::{CoreMapper, Game},
+    state::State,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GamesState {
     entries: Vec<Entry>,
     stack: Vec<View>,
     #[serde(skip)]
-    core_mapper: CoreMapper,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct View {
-    top: i32,
-    selected: i32,
-    directory: Directory,
-}
-
-impl View {
-    pub fn new(directory: Directory, top: i32, selected: i32) -> View {
-        View {
-            top,
-            selected,
-            directory,
-        }
-    }
+    core_mapper: Option<Rc<CoreMapper>>,
+    #[serde(skip)]
+    database: Database,
 }
 
 impl GamesState {
@@ -57,8 +45,14 @@ impl GamesState {
         Ok(GamesState {
             entries: entries(&directory)?,
             stack: vec![View::new(directory, 0, 0)],
-            core_mapper: CoreMapper::new(),
+            core_mapper: None,
+            database: Default::default(),
         })
+    }
+
+    pub fn init(&mut self, core_mapper: Rc<CoreMapper>, database: Database) {
+        self.core_mapper = Some(core_mapper);
+        self.database = database;
     }
 
     fn view(&self) -> &View {
@@ -70,44 +64,22 @@ impl GamesState {
     }
 
     fn push_directory(&mut self, directory: Directory) -> Result<()> {
-        self.entries = entries(&directory)?;
         self.stack.push(View::new(directory, 0, 0));
+        self.change_directory()?;
         Ok(())
     }
 
     fn pop_directory(&mut self) -> Result<()> {
         if self.stack.len() > 1 {
             self.stack.pop();
-            self.entries = entries(&self.view().directory)?;
         }
+        self.change_directory()?;
         Ok(())
     }
 
-    fn launch_game(&mut self, game: &Game) -> Result<Option<AlliumCommand>> {
-        let core = self.core_mapper.get_core(game.path.as_path());
-        Ok(if let Some(core) = core {
-            if let Some(path) = core.path.as_ref() {
-                write!(
-                    File::create(ALLIUM_GAME_INFO.as_path())?,
-                    "{}\n{}\n{}",
-                    game.name,
-                    path.as_path().as_os_str().to_str().unwrap_or(""),
-                    game.path.as_path().as_os_str().to_str().unwrap_or(""),
-                )?;
-            } else if let Some(retroarch_core) = core.retroarch_core.as_ref() {
-                write!(
-                    File::create(&*ALLIUM_GAME_INFO)?,
-                    "{}\n{}\n{}\n{}",
-                    game.name,
-                    ALLIUM_RETROARCH.as_os_str().to_str().unwrap_or(""),
-                    retroarch_core,
-                    game.path.as_path().as_os_str().to_str().unwrap_or(""),
-                )?;
-            }
-            core.launch(&game.path)
-        } else {
-            None
-        })
+    fn change_directory(&mut self) -> Result<()> {
+        self.entries = entries(&self.view().directory)?;
+        Ok(())
     }
 
     fn select_entry(&mut self, entry: Entry) -> Result<Option<AlliumCommand>> {
@@ -116,14 +88,17 @@ impl GamesState {
                 self.push_directory(directory)?;
                 None
             }
-            Entry::Game(game) => self.launch_game(&game)?,
+            Entry::Game(game) => self
+                .core_mapper
+                .as_ref()
+                .unwrap()
+                .launch_game(&self.database, &game)?,
         })
     }
 }
 
 impl State for GamesState {
     fn enter(&mut self) -> Result<()> {
-        self.core_mapper.load_config()?;
         Ok(())
     }
 
@@ -344,27 +319,6 @@ impl Entry {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct Game {
-    pub name: String,
-    pub full_name: String,
-    pub path: PathBuf,
-    pub image: Option<PathBuf>,
-    pub extension: String,
-}
-
-impl Ord for Game {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.full_name.cmp(&other.full_name)
-    }
-}
-
-impl PartialOrd for Game {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Directory {
     pub name: String,
     pub full_name: String,
@@ -468,5 +422,22 @@ impl Entry {
             image,
             extension,
         })))
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct View {
+    top: i32,
+    selected: i32,
+    directory: Directory,
+}
+
+impl View {
+    pub fn new(directory: Directory, top: i32, selected: i32) -> View {
+        View {
+            top,
+            selected,
+            directory,
+        }
     }
 }
