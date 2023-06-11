@@ -1,5 +1,5 @@
 use anyhow::Result;
-use common::constants::{SELECTION_HEIGHT, SELECTION_MARGIN};
+use common::constants::{ALLIUM_CONFIG_DIR, SELECTION_HEIGHT, SELECTION_MARGIN};
 use common::display::settings::DisplaySettings;
 use common::platform::Key;
 use embedded_graphics::{prelude::*, primitives::Rectangle};
@@ -20,6 +20,7 @@ pub struct SettingsDisplayState {
     settings: DisplaySettings,
     selected: usize,
     value: Option<u8>,
+    has_drawn_image: bool,
 }
 
 impl SettingsDisplayState {
@@ -28,6 +29,7 @@ impl SettingsDisplayState {
             settings: DisplaySettings::load()?,
             selected: 0,
             value: None,
+            has_drawn_image: false,
         })
     }
 
@@ -79,11 +81,18 @@ impl State for SettingsDisplayState {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<()> {
+        if !self.has_drawn_image {
+            display.draw_image(
+                Point::new(358, 58),
+                &ALLIUM_CONFIG_DIR.join("images/display.png"),
+            )?;
+        }
+
         let (x, y) = (156, 58);
         display.load(Rectangle::new(
             Point::new(x - 12, y - 4),
             Size::new(
-                484,
+                214,
                 (SELECTION_HEIGHT + SELECTION_MARGIN) * DisplaySetting::COUNT as u32,
             ),
         ))?;
@@ -94,18 +103,15 @@ impl State for SettingsDisplayState {
                 .collect(),
         );
 
-        settings.draw(display, styles, self.selected, self.value.is_some())?;
+        settings.draw(display, styles, self.selected, self.value.is_some(), 190)?;
 
         if let Some(value) = self.value {
-            let x = display.size().width as i32 - 24;
+            let x = 156 + 214 - 24;
             let y = 58 + self.selected as i32 * 42;
             let selected = true;
             let editing = true;
 
-            display.load(Rectangle::new(
-                Point::new(x - 224, y - 4),
-                Size::new(224, 42),
-            ))?;
+            display.load(Rectangle::new(Point::new(x - 64, y - 4), Size::new(64, 42)))?;
 
             SettingValue::Percentage(value).draw(
                 display,

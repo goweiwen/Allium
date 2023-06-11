@@ -58,7 +58,8 @@ impl State for SettingsSystemState {
             Size::new(484, (SELECTION_HEIGHT + SELECTION_MARGIN) * 2),
         ))?;
 
-        self.settings.draw(display, styles, self.selected, false)?;
+        self.settings
+            .draw(display, styles, self.selected, false, 460)?;
 
         Ok(())
     }

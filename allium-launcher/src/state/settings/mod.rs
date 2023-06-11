@@ -233,9 +233,10 @@ impl Settings {
         styles: &Stylesheet,
         selected: usize,
         editing: bool,
+        width: i32,
     ) -> Result<()> {
         let x0 = 156;
-        let x1 = display.size().width as i32 - 24;
+        let x1 = 156 + width;
         let mut y = 58;
         for (i, setting) in self.0.iter().enumerate() {
             display.draw_entry(

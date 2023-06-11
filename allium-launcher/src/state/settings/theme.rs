@@ -132,6 +132,7 @@ impl State for SettingsThemeState {
             styles,
             self.selected,
             self.selected_color.is_some(),
+            460,
         )?;
 
         if let Some(state) = &self.selected_color {

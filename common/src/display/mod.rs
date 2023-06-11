@@ -3,9 +3,11 @@ pub mod image;
 pub mod settings;
 
 use std::borrow::Cow;
+use std::path::Path;
 
 use anyhow::{anyhow, Result};
 use embedded_font::{FontTextStyle, FontTextStyleBuilder};
+use embedded_graphics::image::{Image, ImageRaw};
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Circle, PrimitiveStyle, Rectangle};
 use embedded_graphics::text::{Alignment, Baseline, Text, TextStyleBuilder};
@@ -247,6 +249,18 @@ pub trait Display: OriginDimensions + DrawTarget<Color = Color> + Sized {
         .draw(self)
         .map_err(|_| anyhow!("failed to draw button text"))?;
 
+        Ok(())
+    }
+
+    fn draw_image(&mut self, point: Point, path: &Path) -> Result<()> {
+        let image = ::image::open(path)?;
+        let width = image.width();
+        let image = image.to_rgb8();
+        let image: ImageRaw<Color> = ImageRaw::new(&image, width);
+        let image = Image::new(&image, point);
+        image
+            .draw(self)
+            .map_err(|_| anyhow!("failed to draw image: {}", path.display()))?;
         Ok(())
     }
 }
