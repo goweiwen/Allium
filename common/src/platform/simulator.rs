@@ -144,6 +144,19 @@ impl Display for SimulatorWindow {
             bail!("No saved image");
         };
 
+        let size = self.size();
+        if area.top_left.x as u32 + area.size.width > size.width
+            || area.top_left.y as u32 + area.size.height > size.height
+        {
+            bail!(
+                "Area exceeds display bounds: x: {}, y: {}, w: {}, h: {}",
+                area.top_left.x,
+                area.top_left.y,
+                area.size.width,
+                area.size.height
+            );
+        }
+
         let image: ImageRaw<_, BigEndian> = ImageRaw::new(&saved.0, saved.1);
         let image = image.sub_image(&area);
         let image = Image::new(&image, area.top_left);
