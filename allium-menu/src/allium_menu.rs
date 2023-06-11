@@ -32,7 +32,7 @@ impl AlliumMenu<DefaultPlatform> {
         let display = platform.display()?;
         let battery = platform.battery()?;
 
-        let game_info = fs::read_to_string(ALLIUM_GAME_INFO.as_path())?;
+        let game_info = fs::read_to_string(ALLIUM_GAME_INFO.as_path()).unwrap_or("".to_owned());
         let mut split = game_info.split('\n');
         let name = split.next().unwrap_or("").to_owned();
 
