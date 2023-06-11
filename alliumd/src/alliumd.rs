@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::Path;
 
 use anyhow::Result;
-use chrono::{Duration, Utc};
+use chrono::Utc;
 use common::constants::{ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU};
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
@@ -35,18 +35,24 @@ pub struct AlliumD<P: Platform> {
     is_menu_pressed: bool,
     #[serde(skip)]
     is_menu_pressed_alone: bool,
+    #[serde(skip)]
+    is_terminating: bool,
     volume: i32,
     brightness: u8,
 }
 
 fn spawn_main() -> Child {
     match GameInfo::load().unwrap() {
-        Some(mut game) => {
-            game.start_time = Utc::now();
-            game.save().unwrap();
-            game.command().into()
+        Some(mut game_info) => {
+            debug!("found game info, resuming game");
+            game_info.start_time = Utc::now();
+            game_info.save().unwrap();
+            game_info.command().into()
         }
-        None => Command::new(ALLIUM_LAUNCHER.as_path()),
+        None => {
+            debug!("no game info found, launching launcher");
+            Command::new(ALLIUM_LAUNCHER.as_path())
+        }
     }
     .spawn()
     .unwrap()
@@ -62,6 +68,7 @@ impl AlliumD<DefaultPlatform> {
             menu: None,
             is_menu_pressed: false,
             is_menu_pressed_alone: false,
+            is_terminating: false,
             volume: 0,
             brightness: 50,
         })
@@ -93,9 +100,12 @@ impl AlliumD<DefaultPlatform> {
                         }
                     }
                     _ = self.main.wait() => {
-                        info!("main process terminated, restarting");
-                        self.update_play_time()?;
-                        self.main = spawn_main();
+                        if !self.is_terminating {
+                            info!("main process terminated, recording play time");
+                            self.update_play_time()?;
+                            GameInfo::delete()?;
+                            self.main = spawn_main();
+                        }
                     }
                     _ = menu_terminated => {
                         info!("menu process terminated, resuming game");
@@ -152,6 +162,7 @@ impl AlliumD<DefaultPlatform> {
                 }
             }
             KeyEvent::Autorepeat(Key::Power) => {
+                self.is_terminating = true;
                 self.save()?;
                 if self.is_ingame() {
                     if self.menu.is_some() {
@@ -222,16 +233,12 @@ impl AlliumD<DefaultPlatform> {
         }
 
         let file = File::open(ALLIUM_GAME_INFO.as_path())?;
-        let game: GameInfo = serde_json::from_reader(file)?;
-
-        // ignore if play time is less than 3 seconds, delete game info in case of crash loop
-        if game.play_time() < Duration::seconds(3) {
-            fs::remove_file(ALLIUM_GAME_INFO.as_path())?;
-            return Ok(());
-        }
+        let mut game_info: GameInfo = serde_json::from_reader(file)?;
 
         let database = Database::new()?;
-        database.add_play_time(game.path.as_path(), game.play_time())
+        database.add_play_time(game_info.path.as_path(), game_info.play_time());
+
+        Ok(())
     }
 
     fn is_ingame(&self) -> bool {

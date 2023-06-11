@@ -58,6 +58,12 @@ impl GameInfo {
         Ok(())
     }
 
+    /// Deletes the current game info file.
+    pub fn delete() -> Result<()> {
+        fs::remove_file(ALLIUM_GAME_INFO.as_path())?;
+        Ok(())
+    }
+
     /// Returns a command to run the game.
     pub fn command(self) -> Command {
         let mut command = Command::new(self.command);
