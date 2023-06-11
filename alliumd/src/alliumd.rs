@@ -65,7 +65,6 @@ fn try_load_game() -> Option<Child> {
 impl AlliumD<DefaultPlatform> {
     pub fn new() -> Result<AlliumD<DefaultPlatform>> {
         let platform = DefaultPlatform::new()?;
-        let brightness = platform.get_brightness()?;
 
         Ok(AlliumD {
             platform,
@@ -74,7 +73,7 @@ impl AlliumD<DefaultPlatform> {
             is_menu_pressed: false,
             is_menu_pressed_alone: false,
             volume: 0,
-            brightness,
+            brightness: 50,
         })
     }
 
@@ -82,6 +81,7 @@ impl AlliumD<DefaultPlatform> {
         info!("running Alliumd");
 
         self.platform.set_volume(self.volume)?;
+        self.platform.set_brightness(self.brightness)?;
 
         #[cfg(unix)]
         {
