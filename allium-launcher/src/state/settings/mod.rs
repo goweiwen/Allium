@@ -3,7 +3,7 @@ mod system;
 mod theme;
 
 use anyhow::{anyhow, Result};
-use common::display::font::FontTextStyleBuilder;
+use common::{constants::BUTTON_DIAMETER, display::font::FontTextStyleBuilder};
 use embedded_graphics::{
     prelude::*,
     primitives::{Primitive, PrimitiveStyleBuilder, Rectangle, StrokeAlignment},
@@ -118,6 +118,18 @@ impl State for SettingsState {
         if let Some(ref section) = self.section {
             section.draw(display, styles)?;
         }
+
+        // Draw button hints
+        let y = display.size().height as i32 - BUTTON_DIAMETER as i32 - 8;
+        let mut x = display.size().width as i32 - 12;
+
+        x = display
+            .draw_button_hint(Point::new(x, y), Key::A, "Select", styles)?
+            .top_left
+            .x
+            - 18;
+        display.draw_button_hint(Point::new(x, y), Key::B, "Back", styles)?;
+
         Ok(())
     }
 
