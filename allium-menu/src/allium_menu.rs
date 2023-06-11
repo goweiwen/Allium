@@ -40,7 +40,7 @@ impl AlliumMenu<DefaultPlatform> {
             platform,
             display,
             battery,
-            styles: Default::default(),
+            styles: Stylesheet::load()?,
             menu: Menu::new()?,
             dirty: true,
             name,
