@@ -99,17 +99,19 @@ pub trait Display: OriginDimensions + DrawTarget<Color = Color> + Sized {
     ) -> Result<Rectangle> {
         let Point { x, y } = point;
 
-        let mut style = FontTextStyleBuilder::new(styles.ui_font.clone())
+        let style = FontTextStyleBuilder::new(styles.ui_font.clone())
             .font_size(styles.ui_font_size)
             .text_color(if !active && selected {
                 styles.highlight_color
             } else {
                 styles.foreground_color
-            });
-        if active && selected {
-            style = style.background_color(styles.highlight_color);
-        }
-        let style = style.build();
+            })
+            .background_color(if active && selected {
+                styles.highlight_color
+            } else {
+                styles.background_color
+            })
+            .build();
 
         let truncated_text = self.truncate_text_ellipsis(
             Point::new(x, y),

@@ -7,7 +7,6 @@ use {std::os::unix::process::CommandExt, std::process, tokio::signal::unix::Sign
 use anyhow::Result;
 use common::constants::ALLIUM_GAME_INFO;
 use common::constants::ALLIUM_LAUNCHER_STATE;
-use common::display::color::Color;
 use common::display::font::FontTextStyleBuilder;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::Rectangle;
@@ -126,7 +125,7 @@ impl AlliumLauncher<DefaultPlatform> {
                 .ok();
         }
 
-        self.display.clear(Color::new(0, 0, 0))?;
+        self.display.clear(self.styles.background_color)?;
         self.display.save()?;
 
         self.state.state_mut().enter()?;
@@ -216,6 +215,8 @@ impl AlliumLauncher<DefaultPlatform> {
             }
             AlliumCommand::SaveStylesheet(styles) => {
                 styles.save()?;
+                self.display.clear(styles.background_color)?;
+                self.display.save()?;
                 self.styles = *styles;
                 self.dirty = true;
             }
@@ -234,11 +235,13 @@ impl AlliumLauncher<DefaultPlatform> {
         let text_style = FontTextStyleBuilder::new(self.styles.ui_font.clone())
             .font_size(self.styles.ui_font_size)
             .text_color(self.styles.foreground_color)
+            .background_color(self.styles.background_color)
             .build();
 
         let primary_style = FontTextStyleBuilder::new(self.styles.ui_font.clone())
             .font_size(self.styles.ui_font_size)
             .text_color(self.styles.highlight_color)
+            .background_color(self.styles.background_color)
             .build();
 
         // Draw battery percentage
