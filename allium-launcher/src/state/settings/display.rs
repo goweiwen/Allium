@@ -22,6 +22,7 @@ pub struct SettingsDisplayState {
     selected: usize,
     value: Option<u8>,
     has_drawn_image: bool,
+    has_changes: bool,
 }
 
 impl SettingsDisplayState {
@@ -31,11 +32,23 @@ impl SettingsDisplayState {
             selected: 0,
             value: None,
             has_drawn_image: false,
+            has_changes: false,
         })
     }
 
     pub fn select_entry(&mut self, index: usize) -> Result<Option<AlliumCommand>> {
         if let Some(value) = self.value {
+            match DisplaySetting::from_repr(index) {
+                Some(
+                    DisplaySetting::Luminance
+                    | DisplaySetting::Hue
+                    | DisplaySetting::Saturation
+                    | DisplaySetting::Contrast,
+                ) => self.has_changes = true,
+                Some(DisplaySetting::Brightness) => (),
+                None => panic!("Invalid display setting index"),
+            }
+
             match DisplaySetting::from_repr(index) {
                 Some(DisplaySetting::Brightness) => self.settings.brightness = value,
                 Some(DisplaySetting::Luminance) => self.settings.luminance = value,
@@ -86,6 +99,19 @@ impl State for SettingsDisplayState {
             display.draw_image(
                 Point::new(358, 58),
                 &ALLIUM_CONFIG_DIR.join("images/display.png"),
+            )?;
+        }
+
+        if self.has_changes {
+            display.draw_text(
+                Point::new(display.size().width as i32 - 12, 392),
+                "*Restart device to apply changes",
+                FontTextStyleBuilder::new(styles.ui_font.clone())
+                    .font_size(styles.ui_font_size)
+                    .text_color(styles.foreground_color)
+                    .background_color(styles.background_color)
+                    .build(),
+                embedded_graphics::text::Alignment::Right,
             )?;
         }
 
