@@ -10,6 +10,7 @@ use common::constants::ALLIUM_LAUNCHER_STATE;
 use common::display::color::Color;
 use embedded_font::FontTextStyleBuilder;
 use embedded_graphics::prelude::*;
+use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::text::{Alignment, Text};
 use embedded_graphics::Drawable;
 use serde::Deserialize;
@@ -236,6 +237,8 @@ impl AlliumLauncher<DefaultPlatform> {
             .build();
 
         // Draw battery percentage
+        self.display
+            .load(Rectangle::new(Point::new(508, 3), Size::new(120, 40)))?;
         if self.battery.charging() {
             Text::with_alignment(
                 &format!("Charging: {}%", self.battery.percentage()),
