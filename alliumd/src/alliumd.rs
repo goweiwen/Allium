@@ -157,7 +157,10 @@ impl AlliumD<DefaultPlatform> {
                     self.main.wait().await?;
                 }
                 #[cfg(unix)]
-                std::process::Command::new("poweroff").exec();
+                {
+                    std::process::Command::new("sync").spawn()?;
+                    std::process::Command::new("poweroff").exec();
+                }
             }
             KeyEvent::Released(Key::Menu) => {
                 if self.is_ingame() && self.is_menu_pressed_alone {
