@@ -25,6 +25,8 @@ lazy_static! {
         ALLIUM_CONFIG_DIR.join(Path::new("state/stylesheet.json"));
     pub static ref ALLIUM_DISPLAY_SETTINGS: PathBuf =
         ALLIUM_CONFIG_DIR.join(Path::new("state/display.json"));
+    pub static ref ALLIUM_WIFI_SETTINGS: PathBuf =
+        ALLIUM_CONFIG_DIR.join(Path::new("state/wifi.json"));
     pub static ref ALLIUM_LAUNCHER: PathBuf = env::var("ALLIUM_LAUNCHER")
         .map(PathBuf::from)
         .unwrap_or_else(|_| ALLIUM_CONFIG_DIR.join("allium-launcher"));

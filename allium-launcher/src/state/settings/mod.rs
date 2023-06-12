@@ -1,6 +1,7 @@
 mod display;
 mod system;
 mod theme;
+mod wifi;
 
 use anyhow::{anyhow, Result};
 use common::{constants::BUTTON_DIAMETER, display::font::FontTextStyleBuilder};
@@ -23,6 +24,7 @@ use crate::{
     command::AlliumCommand,
     state::settings::{
         display::SettingsDisplayState, system::SettingsSystemState, theme::SettingsThemeState,
+        wifi::SettingsWiFiState,
     },
 };
 
@@ -163,13 +165,14 @@ impl State for SettingsState {
 
 #[derive(Debug, Clone, EnumCount, FromRepr)]
 enum SettingsSection {
+    WiFi(SettingsWiFiState),
     Display(SettingsDisplayState),
     Theme(SettingsThemeState),
     System(SettingsSystemState),
 }
 
 impl VariantNames for SettingsSection {
-    const VARIANTS: &'static [&'static str] = &["Display", "Theme", "System"];
+    const VARIANTS: &'static [&'static str] = &["Wi-Fi", "Display", "Theme", "System"];
 }
 
 impl SettingsSection {
@@ -179,6 +182,7 @@ impl SettingsSection {
         styles: &Stylesheet,
     ) -> Result<()> {
         match self {
+            Self::WiFi(s) => s.draw(display, styles),
             Self::Display(s) => s.draw(display, styles),
             Self::Theme(s) => s.draw(display, styles),
             Self::System(s) => s.draw(display, styles),
@@ -187,6 +191,7 @@ impl SettingsSection {
 
     fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<(Option<AlliumCommand>, bool)> {
         match self {
+            Self::WiFi(s) => s.handle_key_event(key_event),
             Self::Display(s) => s.handle_key_event(key_event),
             Self::Theme(s) => s.handle_key_event(key_event),
             Self::System(s) => s.handle_key_event(key_event),
