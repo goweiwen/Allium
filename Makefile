@@ -21,6 +21,7 @@ clean:
 	rm -r $(DIST_DIR)
 
 static:
+	mkdir -p $(DIST_DIR)
 	rsync -a --exclude='.gitkeep' assets/root/. $(DIST_DIR)
 
 build:
