@@ -1,5 +1,5 @@
 use std::ffi::OsStr;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::{cmp::min, rc::Rc};
 
 use anyhow::{anyhow, Result};
@@ -31,6 +31,7 @@ use crate::{
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GamesState {
+    #[serde(skip)]
     entries: Vec<Entry>,
     stack: Vec<View>,
     #[serde(skip)]
@@ -82,9 +83,11 @@ impl GamesState {
         Ok(())
     }
 
-    fn select_entry(&mut self, entry: Entry) -> Result<Option<AlliumCommand>> {
+    fn select_entry(&mut self, selected: i32) -> Result<Option<AlliumCommand>> {
+        let entry = &mut self.entries[selected as usize];
         Ok(match entry {
             Entry::Directory(directory) => {
+                let directory = directory.to_owned();
                 self.push_directory(directory)?;
                 None
             }
@@ -92,13 +95,14 @@ impl GamesState {
                 .core_mapper
                 .as_ref()
                 .unwrap()
-                .launch_game(&self.database, &game)?,
+                .launch_game(&self.database, game)?,
         })
     }
 }
 
 impl State for GamesState {
     fn enter(&mut self) -> Result<()> {
+        self.change_directory()?;
         Ok(())
     }
 
@@ -107,7 +111,7 @@ impl State for GamesState {
     }
 
     fn draw(
-        &self,
+        &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<()> {
@@ -129,21 +133,18 @@ impl State for GamesState {
             ),
         ))?;
 
-        let view = self.view();
-        for i in (view.top as usize)
+        let selected = self.view().selected;
+        for i in (self.view().top as usize)
             ..std::cmp::min(
                 self.entries.len(),
-                view.top as usize + LISTING_SIZE as usize,
+                self.view().top as usize + LISTING_SIZE as usize,
             )
         {
-            let entry = &self.entries[i];
+            let entry = &mut self.entries[i];
 
-            if view.selected == i as i32 {
+            if selected == i as i32 {
                 if styles.enable_box_art {
-                    if let Entry::Game(Game {
-                        image: Some(image), ..
-                    }) = entry
-                    {
+                    if let Some(image) = entry.image() {
                         let mut image = image::open(image)?;
                         if image.width() != IMAGE_SIZE.width || image.height() > IMAGE_SIZE.height {
                             let new_height = min(
@@ -233,8 +234,8 @@ impl State for GamesState {
             KeyEvent::Pressed(Key::A) => {
                 let view = self.view();
                 let entry = self.entries.get(view.selected as usize);
-                if let Some(entry) = entry {
-                    (self.select_entry(entry.to_owned())?, true)
+                if entry.is_some() {
+                    (self.select_entry(view.selected)?, true)
                 } else {
                     (None, false)
                 }
@@ -321,6 +322,13 @@ impl Entry {
             Entry::Directory(directory) => &directory.name,
         }
     }
+
+    pub fn image(&mut self) -> Option<&Path> {
+        match self {
+            Entry::Game(game) => game.image(),
+            Entry::Directory(_) => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -353,7 +361,6 @@ impl Default for Directory {
 }
 
 const EXCLUDE_EXTENSIONS: [&str; 1] = ["db"];
-const IMAGE_EXTENSIONS: [&str; 7] = ["png", "jpg", "jpeg", "webp", "gif", "tga", "bmp"];
 
 impl Entry {
     fn new(path: PathBuf) -> Result<Option<Entry>> {
@@ -410,24 +417,7 @@ impl Entry {
             })));
         }
 
-        let image = path.parent().and_then(|path| {
-            let mut path = path.to_path_buf();
-            path.extend(["Imgs", file_name]);
-            for extension in IMAGE_EXTENSIONS {
-                if path.set_extension(extension) && path.exists() {
-                    return Some(path);
-                }
-            }
-            None
-        });
-
-        Ok(Some(Entry::Game(Game {
-            name,
-            full_name,
-            path,
-            image,
-            extension,
-        })))
+        Ok(Some(Entry::Game(Game::new(name, path))))
     }
 }
 

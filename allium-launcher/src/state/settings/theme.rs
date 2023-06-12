@@ -143,7 +143,7 @@ impl State for SettingsThemeState {
     }
 
     fn draw(
-        &self,
+        &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<()> {

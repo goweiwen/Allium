@@ -52,7 +52,7 @@ impl State for SettingsState {
     }
 
     fn draw(
-        &self,
+        &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<()> {
@@ -107,7 +107,7 @@ impl State for SettingsState {
             }
         }
 
-        if let Some(ref section) = self.section {
+        if let Some(ref mut section) = self.section {
             section.draw(display, styles)?;
         }
 
@@ -174,7 +174,7 @@ impl VariantNames for SettingsSection {
 
 impl SettingsSection {
     fn draw(
-        &self,
+        &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<()> {

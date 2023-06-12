@@ -59,11 +59,12 @@ impl RecentsState {
         self.core_mapper = Some(core_mapper);
     }
 
-    fn select_entry(&self, game: Game) -> Result<Option<AlliumCommand>> {
+    fn select_entry(&mut self, selected: i32) -> Result<Option<AlliumCommand>> {
+        let game = &mut self.entries[selected as usize];
         self.core_mapper
             .as_ref()
             .unwrap()
-            .launch_game(&self.database, &game)
+            .launch_game(&self.database, game)
     }
 
     fn load_entries(&mut self) -> Result<()> {
@@ -74,27 +75,7 @@ impl RecentsState {
 
         self.entries = games
             .into_iter()
-            .map(|game| {
-                let extension = game
-                    .path
-                    .extension()
-                    .and_then(|p| p.to_str())
-                    .unwrap_or("")
-                    .to_owned();
-                let full_name = game
-                    .path
-                    .file_stem()
-                    .and_then(|p| p.to_str())
-                    .unwrap_or("")
-                    .to_owned();
-                Game {
-                    name: game.name,
-                    path: game.path,
-                    image: game.image,
-                    extension,
-                    full_name,
-                }
-            })
+            .map(|game| Game::new(game.name, game.path))
             .collect();
 
         Ok(())
@@ -112,7 +93,7 @@ impl State for RecentsState {
     }
 
     fn draw(
-        &self,
+        &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<()> {
@@ -140,11 +121,11 @@ impl State for RecentsState {
                 self.top as usize + LISTING_SIZE as usize,
             )
         {
-            let entry = &self.entries[i];
+            let entry = &mut self.entries[i];
 
             if self.selected == i as i32 {
                 if styles.enable_box_art {
-                    if let Some(image) = &entry.image {
+                    if let Some(image) = entry.image().as_deref() {
                         let mut image = image::open(image)?;
                         if image.width() != IMAGE_SIZE.width || image.height() > IMAGE_SIZE.height {
                             let new_height = min(
@@ -239,8 +220,8 @@ impl State for RecentsState {
         Ok(match key_event {
             KeyEvent::Pressed(Key::A) => {
                 let entry = self.entries.get(self.selected as usize);
-                if let Some(entry) = entry {
-                    (self.select_entry(entry.to_owned())?, true)
+                if entry.is_some() {
+                    (self.select_entry(self.selected)?, true)
                 } else {
                     (None, false)
                 }

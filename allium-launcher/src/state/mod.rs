@@ -17,7 +17,7 @@ pub trait State {
     fn enter(&mut self) -> Result<()>;
     fn leave(&mut self) -> Result<()>;
     fn draw(
-        &self,
+        &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<()>;
