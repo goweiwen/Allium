@@ -1,6 +1,7 @@
 use anyhow::Result;
 use common::battery::Battery;
 use common::constants::BATTERY_UPDATE_INTERVAL;
+use common::display::color::Color;
 use common::display::font::FontTextStyleBuilder;
 use common::display::Display;
 use common::game_info::GameInfo;
@@ -76,7 +77,7 @@ impl AlliumMenu<DefaultPlatform> {
             #[cfg(unix)]
             tokio::select! {
                 _ = sigterm.recv() => {
-                    self.display.load(self.display.bounding_box())?;
+                    self.display.clear(Color::new(0, 0, 0))?;
                     self.display.flush()?;
                     process::exit(0);
                 }
