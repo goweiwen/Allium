@@ -48,6 +48,28 @@ impl Stylesheet {
     pub fn save(&self) -> Result<()> {
         let json = serde_json::to_string(&self).unwrap();
         File::create(ALLIUM_STYLESHEET.as_path())?.write_all(json.as_bytes())?;
+        self.patch_ra_config()?;
+        Ok(())
+    }
+
+    fn patch_ra_config(&self) -> Result<()> {
+        let mut file = File::create("/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.cfg")?;
+        write!(
+            file,
+            r#"rgui_entry_normal_color = "0xFF{foreground:X}"
+rgui_entry_hover_color = "0xFF{highlight:X}"
+rgui_title_color = "0xFF{highlight:X}"
+rgui_bg_dark_color = "0xFF{background:X}"
+rgui_bg_light_color = "0xFF{background:X}"
+rgui_border_dark_color = "0xFF{background:X}"
+rgui_border_light_color = "0xFF{background:X}"
+rgui_shadow_color = "0xFF000000"
+rgui_particle_color = "0xFF{highlight:X}"
+"#,
+            foreground = self.foreground_color,
+            highlight = self.highlight_color,
+            background = self.background_color
+        )?;
         Ok(())
     }
 

@@ -325,7 +325,7 @@ impl SettingValue {
             SettingValue::Color(value) => {
                 display.draw_entry(
                     point,
-                    &format!("{:X}", value),
+                    &format!("#{:X}", value),
                     styles,
                     Alignment::Right,
                     224,
