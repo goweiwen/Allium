@@ -34,9 +34,12 @@ if [ -f "/mnt/SDCARD/.tmp_update/wifi.sh" ] ; then
 	"/mnt/SDCARD/.tmp_update/wifi.sh"
 fi
 
-if [ -f "/mnt/SDCARD/.tmp_update/run.sh" ] ; then
-	"/mnt/SDCARD/.tmp_update/run.sh"
-fi
+# run Allium
+export DIR="/mnt/SDCARD/.allium"
+cd "$DIR"
+while true; do
+	RUST_BACKTRACE=1 RUST_LOG=debug ./alliumd > ./alliumd.log 2>&1
+done
 
 while true; do
 	reboot # under no circumstances should stock be allowed to touch this card
