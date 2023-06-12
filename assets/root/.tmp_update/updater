@@ -21,6 +21,12 @@ export CPU_PATH=/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 export LD_LIBRARY_PATH="/mnt/SDCARD/.tmp_update/lib:$LD_LIBRARY_PATH"
 export PATH="/mnt/SDCARD/.tmp_update/bin:$PATH"
 
+# use audioserver to prevent pop-noise
+if [ -f /customer/lib/libpadsp.so ]; then
+	LD_PRELOAD=as_preload.so audioserver.mod &
+	export LD_PRELOAD=libpadsp.so
+fi
+
 echo ondemand > "$CPU_PATH"
 rm -f "$SDCARD_PATH/update.log"
 
