@@ -37,9 +37,7 @@ fi
 # run Allium
 export DIR="/mnt/SDCARD/.allium"
 cd "$DIR"
-while true; do
-	RUST_BACKTRACE=1 RUST_LOG=debug ./alliumd > ./alliumd.log 2>&1
-done
+RUST_LOG=debug RUST_BACKTRACE=1 ./alliumd > "./alliumd.log" 2>&1
 
 while true; do
 	reboot # under no circumstances should stock be allowed to touch this card
