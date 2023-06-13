@@ -43,14 +43,14 @@ The SD card layout should look like this:
 - Settings page
     - Customize theme
     - Change LCD settings
+    - WiFi (IP Address, Telnet, FTP)
 - Recents list (sort by last played or most played)
 
 ### Todo
 (roughly in order of priority)
+- Disk changer (.m3u support)
 - Settings page:
-    - WiFi
     - Clock
-- Fix volume reset bug
 - WiFi stuff:
     - NTP
     - OTA update
