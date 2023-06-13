@@ -80,7 +80,7 @@ impl State for SettingsState {
             }
             display.load(Rectangle::new(
                 Point::new(146 - 12, 58 - 4),
-                Size::new(484, 422),
+                Size::new(506, 422),
             ))?;
         } else {
             let selected_style = FontTextStyleBuilder::new(styles.ui_font.clone())

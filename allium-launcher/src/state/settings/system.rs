@@ -55,7 +55,7 @@ impl State for SettingsSystemState {
         let Size { width, height } = display.size();
         display.load(Rectangle::new(
             Point::new(146 - 12, 58 - 4),
-            Size::new(width - 146 - 12, height - 58 - 4),
+            Size::new(width - 146 + 12, height - 58 - 4),
         ))?;
 
         self.settings
