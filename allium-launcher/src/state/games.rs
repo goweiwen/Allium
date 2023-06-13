@@ -190,7 +190,11 @@ impl State for GamesState {
                     entry.name(),
                     styles,
                     Alignment::Left,
-                    if styles.enable_box_art { 324 } else { 592 },
+                    if styles.enable_box_art {
+                        566 - IMAGE_SIZE.width
+                    } else {
+                        592
+                    },
                     true,
                     true,
                     0,
@@ -201,7 +205,11 @@ impl State for GamesState {
                     entry.name(),
                     styles,
                     Alignment::Left,
-                    if styles.enable_box_art { 324 } else { 592 },
+                    if styles.enable_box_art {
+                        566 - IMAGE_SIZE.width
+                    } else {
+                        592
+                    },
                     false,
                     true,
                     0,
