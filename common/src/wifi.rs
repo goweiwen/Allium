@@ -42,6 +42,19 @@ impl WiFiSettings {
         Ok(Self::load_wpa_supplicant_conf().unwrap_or_default())
     }
 
+    pub fn init(&self) -> Result<()> {
+        if self.wifi {
+            enable_wifi()?;
+            if self.telnet {
+                enable_telnet()?;
+            }
+            if self.ftp {
+                enable_ftp()?;
+            }
+        }
+        Ok(())
+    }
+
     pub fn save(&self) -> Result<()> {
         let json = serde_json::to_string(&self).unwrap();
         File::create(ALLIUM_WIFI_SETTINGS.as_path())?.write_all(json.as_bytes())?;

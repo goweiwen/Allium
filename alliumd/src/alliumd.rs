@@ -5,6 +5,7 @@ use std::path::Path;
 use anyhow::Result;
 use chrono::Utc;
 use common::constants::{ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU};
+use common::wifi::WiFiSettings;
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
 use tracing::{debug, info, trace, warn};
@@ -79,6 +80,7 @@ impl AlliumD<DefaultPlatform> {
 
         self.platform.set_volume(self.volume)?;
         self.platform.set_brightness(self.brightness)?;
+        WiFiSettings::load()?.init()?;
 
         #[cfg(unix)]
         {

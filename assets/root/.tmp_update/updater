@@ -30,10 +30,6 @@ fi
 echo ondemand > "$CPU_PATH"
 rm -f "$SDCARD_PATH/update.log"
 
-if [ -f "/mnt/SDCARD/.tmp_update/wifi.sh" ] ; then
-	"/mnt/SDCARD/.tmp_update/wifi.sh"
-fi
-
 # run Allium
 export DIR="/mnt/SDCARD/.allium"
 cd "$DIR"
