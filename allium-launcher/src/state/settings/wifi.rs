@@ -1,11 +1,8 @@
-use std::fs::{self, File};
-use std::io::Write;
-
 use anyhow::Result;
-use common::constants::ALLIUM_WIFI_SETTINGS;
+use common::display::font::FontTextStyleBuilder;
 use common::platform::Key;
+use common::wifi::{self, WiFiSettings};
 use embedded_graphics::{prelude::*, primitives::Rectangle};
-use serde::{Deserialize, Serialize};
 use strum::{EnumCount, EnumIter, FromRepr, IntoEnumIterator};
 
 use common::stylesheet::Stylesheet;
@@ -13,7 +10,6 @@ use common::{
     display::Display,
     platform::{DefaultPlatform, KeyEvent, Platform},
 };
-use tracing::{debug, warn};
 
 use crate::state::settings::Settings;
 use crate::state::State;
@@ -23,6 +19,7 @@ use crate::{command::AlliumCommand, state::settings::Setting};
 pub struct SettingsWiFiState {
     settings: WiFiSettings,
     selected: usize,
+    ip_address: Option<String>,
 }
 
 impl SettingsWiFiState {
@@ -30,14 +27,22 @@ impl SettingsWiFiState {
         Ok(Self {
             settings: WiFiSettings::load()?,
             selected: 0,
+            ip_address: None,
         })
     }
 
     pub fn select_entry(&mut self, index: usize) -> Result<Option<AlliumCommand>> {
         match WiFiSetting::from_repr(index) {
-            Some(WiFiSetting::WiFi) => self.settings.wifi = !self.settings.wifi,
-            Some(WiFiSetting::Telnet) => self.settings.telnet = !self.settings.telnet,
-            Some(WiFiSetting::Ftp) => self.settings.ftp = !self.settings.ftp,
+            Some(WiFiSetting::WiFi) => {
+                self.settings.toggle_wifi()?;
+                if !self.settings.wifi {
+                    self.ip_address = None;
+                }
+            }
+            Some(WiFiSetting::Ssid) => (),
+            Some(WiFiSetting::Password) => (),
+            Some(WiFiSetting::Telnet) => self.settings.toggle_telnet()?,
+            Some(WiFiSetting::Ftp) => self.settings.toggle_ftp()?,
             None => panic!("Invalid wifi setting index"),
         }
         self.settings.save()?;
@@ -68,7 +73,7 @@ impl State for SettingsWiFiState {
         let Size { width, height } = display.size();
         display.load(Rectangle::new(
             Point::new(146 - 12, 58 - 4),
-            Size::new(width - 156 - 12, height - 58 - 4),
+            Size::new(width - 146 - 12, height - 58 - 4),
         ))?;
 
         let settings = Settings(
@@ -78,6 +83,23 @@ impl State for SettingsWiFiState {
         );
 
         settings.draw(display, styles, self.selected, false, 470)?;
+
+        // Try to get the IP address if we don't have it yet
+        if self.ip_address.is_none() {
+            self.ip_address = wifi::ip_address();
+        }
+        if let Some(ip_address) = self.ip_address.as_deref() {
+            display.draw_text(
+                Point::new(display.size().width as i32 - 12, 392),
+                &format!("IP Address: {}", ip_address),
+                FontTextStyleBuilder::new(styles.ui_font.clone())
+                    .font_size(styles.ui_font_size)
+                    .text_color(styles.foreground_color)
+                    .background_color(styles.background_color)
+                    .build(),
+                embedded_graphics::text::Alignment::Right,
+            )?;
+        }
 
         Ok(())
     }
@@ -103,6 +125,8 @@ impl State for SettingsWiFiState {
 #[derive(Debug, EnumCount, EnumIter, FromRepr)]
 enum WiFiSetting {
     WiFi,
+    Ssid,
+    Password,
     Telnet,
     Ftp,
 }
@@ -111,51 +135,18 @@ impl WiFiSetting {
     fn setting(&self, settings: &WiFiSettings) -> Setting {
         match self {
             Self::WiFi => Setting::bool("Wi-Fi Enabled", settings.wifi),
-            Self::Telnet => Setting::bool("Telnet Enabled", settings.telnet),
-            Self::Ftp => Setting::bool("FTP Enabled", settings.ftp),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WiFiSettings {
-    pub wifi: bool,
-    pub telnet: bool,
-    pub ftp: bool,
-}
-
-impl WiFiSettings {
-    pub fn new() -> Self {
-        Self {
-            wifi: false,
-            telnet: false,
-            ftp: false,
-        }
-    }
-
-    pub fn load() -> Result<Self> {
-        if ALLIUM_WIFI_SETTINGS.exists() {
-            debug!("found state, loading from file");
-            if let Ok(json) = fs::read_to_string(ALLIUM_WIFI_SETTINGS.as_path()) {
-                if let Ok(json) = serde_json::from_str(&json) {
-                    return Ok(json);
-                }
+            Self::Ssid => Setting::string("Wi-Fi Network", &settings.ssid),
+            Self::Password => Setting::string("Wi-Fi Password", "********"),
+            Self::Telnet => {
+                let mut setting = Setting::bool("Telnet Enabled", settings.telnet);
+                setting.disabled = !settings.wifi;
+                setting
             }
-            warn!("failed to read state file, removing");
-            fs::remove_file(ALLIUM_WIFI_SETTINGS.as_path())?;
+            Self::Ftp => {
+                let mut setting = Setting::bool("FTP Enabled", settings.ftp);
+                setting.disabled = !settings.wifi;
+                setting
+            }
         }
-        Ok(Self::new())
-    }
-
-    pub fn save(&self) -> Result<()> {
-        let json = serde_json::to_string(&self).unwrap();
-        File::create(ALLIUM_WIFI_SETTINGS.as_path())?.write_all(json.as_bytes())?;
-        Ok(())
-    }
-}
-
-impl Default for WiFiSettings {
-    fn default() -> Self {
-        Self::new()
     }
 }

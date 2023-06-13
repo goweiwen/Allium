@@ -125,7 +125,7 @@ impl State for RecentsState {
 
             if self.selected == i as i32 {
                 if styles.enable_box_art {
-                    if let Some(image) = entry.image().as_deref() {
+                    if let Some(image) = entry.image() {
                         let mut image = image::open(image)?;
                         if image.width() != IMAGE_SIZE.width || image.height() > IMAGE_SIZE.height {
                             let new_height = min(

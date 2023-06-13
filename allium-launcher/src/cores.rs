@@ -198,7 +198,7 @@ impl CoreMapper {
         database.increment_play_count(
             &game.name,
             game.path.as_path(),
-            game.image_ref().as_deref(),
+            game.image_ref(),
         )?;
 
         let core = self.get_core(game.path.as_path());

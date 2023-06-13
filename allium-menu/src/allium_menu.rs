@@ -1,7 +1,6 @@
 use anyhow::Result;
 use common::battery::Battery;
 use common::constants::BATTERY_UPDATE_INTERVAL;
-use common::display::color::Color;
 use common::display::font::FontTextStyleBuilder;
 use common::display::Display;
 use common::game_info::GameInfo;
@@ -13,7 +12,7 @@ use embedded_graphics::text::{Alignment, Text};
 use crate::menu::Menu;
 
 #[cfg(unix)]
-use {std::process, tokio::signal::unix::SignalKind};
+use {common::display::color::Color, std::process, tokio::signal::unix::SignalKind};
 
 pub struct AlliumMenu<P: Platform> {
     platform: P,

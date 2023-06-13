@@ -15,18 +15,19 @@ lazy_static! {
     pub static ref ALLIUM_GAMES_DIR: PathBuf = PathBuf::from(
         &env::var("ALLIUM_ROMS_DIR").unwrap_or_else(|_| "/mnt/SDCARD/Roms".to_string())
     );
-    pub static ref ALLIUMD_STATE: PathBuf = ALLIUM_CONFIG_DIR.join(Path::new("state/alliumd.json"));
-    pub static ref ALLIUM_DATABASE: PathBuf = ALLIUM_CONFIG_DIR.join(Path::new("state/allium.db"));
+    pub static ref ALLIUM_SCRIPTS_DIR: PathBuf = ALLIUM_CONFIG_DIR.join("scripts");
+
+    // State
+    pub static ref ALLIUMD_STATE: PathBuf = ALLIUM_CONFIG_DIR.join("state/alliumd.json");
+    pub static ref ALLIUM_DATABASE: PathBuf = ALLIUM_CONFIG_DIR.join("state/allium.db");
     pub static ref ALLIUM_LAUNCHER_STATE: PathBuf =
-        ALLIUM_CONFIG_DIR.join(Path::new("state/allium-launcher.json"));
-    pub static ref ALLIUM_GAME_INFO: PathBuf =
-        ALLIUM_CONFIG_DIR.join(Path::new("state/current_game"));
-    pub static ref ALLIUM_STYLESHEET: PathBuf =
-        ALLIUM_CONFIG_DIR.join(Path::new("state/stylesheet.json"));
-    pub static ref ALLIUM_DISPLAY_SETTINGS: PathBuf =
-        ALLIUM_CONFIG_DIR.join(Path::new("state/display.json"));
-    pub static ref ALLIUM_WIFI_SETTINGS: PathBuf =
-        ALLIUM_CONFIG_DIR.join(Path::new("state/wifi.json"));
+        ALLIUM_CONFIG_DIR.join("state/allium-launcher.json");
+    pub static ref ALLIUM_GAME_INFO: PathBuf = ALLIUM_CONFIG_DIR.join("state/current_game");
+    pub static ref ALLIUM_STYLESHEET: PathBuf = ALLIUM_CONFIG_DIR.join("state/stylesheet.json");
+    pub static ref ALLIUM_DISPLAY_SETTINGS: PathBuf = ALLIUM_CONFIG_DIR.join("state/display.json");
+    pub static ref ALLIUM_WIFI_SETTINGS: PathBuf = ALLIUM_CONFIG_DIR.join("state/wifi.json");
+
+    // Binaries & Scripts
     pub static ref ALLIUM_LAUNCHER: PathBuf = env::var("ALLIUM_LAUNCHER")
         .map(PathBuf::from)
         .unwrap_or_else(|_| ALLIUM_CONFIG_DIR.join("allium-launcher"));

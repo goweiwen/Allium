@@ -6,3 +6,4 @@ pub mod game_info;
 pub mod platform;
 pub mod retroarch;
 pub mod stylesheet;
+pub mod wifi;
