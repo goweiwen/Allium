@@ -1,6 +1,9 @@
+use std::process;
+
 use anyhow::Result;
 use common::battery::Battery;
 use common::constants::BATTERY_UPDATE_INTERVAL;
+use common::display::color::Color;
 use common::display::font::FontTextStyleBuilder;
 use common::display::Display;
 use common::game_info::GameInfo;
@@ -9,10 +12,11 @@ use common::stylesheet::Stylesheet;
 use embedded_graphics::prelude::*;
 use embedded_graphics::text::{Alignment, Text};
 
+use crate::command::AlliumMenuCommand;
 use crate::menu::Menu;
 
 #[cfg(unix)]
-use {common::display::color::Color, std::process, tokio::signal::unix::SignalKind};
+use tokio::signal::unix::SignalKind;
 
 pub struct AlliumMenu<P: Platform> {
     platform: P,
@@ -96,12 +100,15 @@ impl AlliumMenu<DefaultPlatform> {
 
     async fn handle_key_event(&mut self, key_event: Option<KeyEvent>) -> Result<()> {
         if let Some(key_event) = key_event {
-            let dirty = self
-                .menu
-                .handle_key_event(key_event, &mut self.display)
-                .await?;
+            let (command, dirty) = self.menu.handle_key_event(key_event).await?;
             if dirty {
                 self.dirty = true;
+            }
+
+            if let Some(AlliumMenuCommand::Close) = command {
+                self.display.clear(Color::new(0, 0, 0))?;
+                self.display.flush()?;
+                process::exit(0);
             }
         }
         Ok(())

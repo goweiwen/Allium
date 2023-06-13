@@ -1,5 +1,3 @@
-use std::process::{self};
-
 use anyhow::Result;
 use embedded_graphics::{prelude::*, primitives::Rectangle, text::Alignment};
 use strum::{Display, EnumCount, EnumIter, IntoEnumIterator};
@@ -11,6 +9,8 @@ use common::{
     constants::{BUTTON_DIAMETER, LISTING_SIZE, SELECTION_HEIGHT, SELECTION_MARGIN},
     retroarch::RetroArchCommand,
 };
+
+use crate::command::AlliumMenuCommand;
 
 #[derive(Debug, Clone)]
 pub struct Menu {
@@ -78,43 +78,32 @@ impl Menu {
     pub async fn handle_key_event(
         &mut self,
         key_event: KeyEvent,
-        display: &mut <DefaultPlatform as Platform>::Display,
-    ) -> Result<bool> {
+    ) -> Result<(Option<AlliumMenuCommand>, bool)> {
         Ok(match key_event {
             // we intentionally ignore autorepeat in menu to avoid accidental actions
             KeyEvent::Pressed(Key::Up) => {
                 self.selected = self.selected.prev();
-                true
+                (None, true)
             }
             KeyEvent::Pressed(Key::Down) => {
                 self.selected = self.selected.next();
-                true
+                (None, true)
             }
             KeyEvent::Pressed(Key::Left) => {
                 self.selected = MenuEntry::Continue;
-                true
+                (None, true)
             }
             KeyEvent::Pressed(Key::Right) => {
                 self.selected = MenuEntry::Quit;
-                true
+                (None, true)
             }
-            KeyEvent::Pressed(Key::A) => {
-                self.select_entry(display).await?;
-                true
-            }
-            KeyEvent::Pressed(Key::B) => {
-                self.selected = MenuEntry::Continue;
-                self.select_entry(display).await?;
-                true
-            }
-            _ => false,
+            KeyEvent::Pressed(Key::A) => (self.select_entry().await?, true),
+            KeyEvent::Pressed(Key::B) => (Some(AlliumMenuCommand::Close), true),
+            _ => (None, false),
         })
     }
 
-    async fn select_entry(
-        &mut self,
-        display: &mut <DefaultPlatform as Platform>::Display,
-    ) -> Result<()> {
+    async fn select_entry(&mut self) -> Result<Option<AlliumMenuCommand>> {
         match self.selected {
             MenuEntry::Continue => {}
             MenuEntry::Save => {
@@ -133,9 +122,7 @@ impl Menu {
                 RetroArchCommand::Quit.send().await?;
             }
         }
-        display.load(display.bounding_box())?;
-        display.flush()?;
-        process::exit(0);
+        Ok(Some(AlliumMenuCommand::Close))
     }
 }
 
