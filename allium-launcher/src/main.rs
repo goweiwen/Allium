@@ -2,7 +2,7 @@
 
 mod allium_launcher;
 mod command;
-mod cores;
+mod devices;
 mod state;
 
 use anyhow::Result;

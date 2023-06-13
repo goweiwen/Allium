@@ -26,7 +26,7 @@ use tracing::trace;
 
 use crate::{
     command::AlliumCommand,
-    cores::{CoreMapper, Game},
+    devices::{DeviceMapper, Game},
     state::State,
 };
 
@@ -38,7 +38,7 @@ pub struct RecentsState {
     #[serde(skip)]
     database: Database,
     #[serde(skip)]
-    core_mapper: Option<Rc<CoreMapper>>,
+    core_mapper: Option<Rc<DeviceMapper>>,
     sort: Sort,
 }
 
@@ -54,7 +54,7 @@ impl RecentsState {
         }
     }
 
-    pub fn init(&mut self, core_mapper: Rc<CoreMapper>, database: Database) {
+    pub fn init(&mut self, core_mapper: Rc<DeviceMapper>, database: Database) {
         self.database = database;
         self.core_mapper = Some(core_mapper);
     }

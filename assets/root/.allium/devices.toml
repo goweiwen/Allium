@@ -1,0 +1,334 @@
+["Amstrad - CPC"]
+cores = ["crocods"]
+folders = ["CPC"]
+extensions = ["sna", "kcr"]
+
+[Arcade]
+cores = ["mame2003_plus"]
+folders = ["ARCADE"]
+extensions = []
+
+["Atari - 2600"]
+cores = ["stella2014"]
+folders = ["ATARI"]
+extensions = ["a26"]
+
+["Atari - 5200"]
+cores = ["a5200"]
+folders = ["FIFTYTWOHUNDRED"]
+extensions = ["a52"]
+
+["Atari - 7800"]
+cores = ["prosystem"]
+folders = ["SEVENTYEIGHTHUNDRED"]
+extensions = ["a78"]
+
+["Atari - Lynx"]
+cores = ["handy"]
+folders = ["LYNX"]
+extensions = ["lnx"]
+
+["Bandai - Sufami Turbo"]
+cores = ["snes9x"]
+folders = ["SUFAMI"]
+extensions = []
+
+["Bandai - WonderSwanColor"]
+cores = ["mednafen_wswan"]
+folders = ["WS"]
+extensions = ["ws", "pc2"]
+
+["Capcom - CPS1"]
+cores = ["fbalpha2012_cps1"]
+folders = ["CPS1"]
+extensions = []
+
+["Capcom - CPS2"]
+cores = ["fbalpha2012_cps2"]
+folders = ["CPS2"]
+extensions = []
+
+["Capcom - CPS3"]
+cores = ["fbalpha2012_cps3"]
+folders = ["CPS3"]
+extensions = []
+
+["Coleco - ColecoVision"]
+cores = ["bluemsx"]
+folders = ["COLECO"]
+extensions = ["ri", "col", "sc"]
+
+["Commodore - Amiga"]
+cores = ["puae2021"]
+folders = ["AMIGA"]
+extensions = [
+    "adf",
+    "adz",
+    "dms",
+    "fdi",
+    "ipf",
+    "hdf",
+    "hdz",
+    "lha",
+    "slave",
+    "info",
+    "nrg",
+    "mds",
+    "uae",
+    "rp9",
+]
+
+["Commodore - C64"]
+cores = ["vice_x64"]
+folders = ["COMMODORE"]
+extensions = []
+
+["Commodore - VIC-20"]
+cores = ["vice_xvic"]
+folders = ["VIC20"]
+extensions = [
+    "d64",
+    "d6z",
+    "d71",
+    "d7z",
+    "d80",
+    "d81",
+    "d82",
+    "d8z",
+    "g64",
+    "g6z",
+    "g41",
+    "g4z",
+    "x64",
+    "x6z",
+    "nib",
+    "nbz",
+    "d2m",
+    "d4m",
+    "t64",
+    "tcrt",
+    "prg",
+    "p00",
+    "crt",
+    "cmd",
+    "vfl",
+    "vsf",
+    "gz",
+    "20",
+    "40",
+    "60",
+    "a0",
+    "b0",
+]
+
+["Fairchild - ChannelF"]
+cores = ["freechaf"]
+folders = ["FAIRCHILD"]
+extensions = ["chf"]
+
+["GCE - Vectrex"]
+cores = ["vecx"]
+folders = ["VECTREX"]
+extensions = ["vec"]
+
+["Magnavox - Odyssey2"]
+cores = ["o2em"]
+folders = ["ODYSSEY"]
+extensions = []
+
+["Mattel - Intellivision"]
+cores = ["freeintv"]
+folders = ["INTELLIVISION"]
+extensions = ["int"]
+
+["Mega Duck"]
+cores = ["sameduck"]
+folders = ["MEGADUCK"]
+extensions = []
+
+["Microsoft - DOS"]
+cores = ["dosbox_pure"]
+folders = ["DOS"]
+extensions = [
+    "dosz",
+    "exe",
+    "com",
+    "bat",
+    "ins",
+    "ima",
+    "vhd",
+    "jrc",
+    "tc",
+    "m3u8",
+    "conf",
+]
+
+["Microsoft - MSX"]
+cores = ["bluemsx"]
+folders = ["MSX"]
+extensions = []
+
+["NEC - SuperGrafx"]
+cores = ["mednafen_supergrafx"]
+folders = ["SGFX"]
+extensions = ["sgx"]
+
+["NEC - TurboGrafx CD"]
+cores = ["mednafen_pce_fast"]
+folders = ["PCECD"]
+extensions = []
+
+["NEC - TurboGrafx-16"]
+cores = ["mednafen_pce_fast"]
+folders = ["PCE"]
+extensions = ["pce"]
+
+["Nintendo - Famicom Disk Syst."]
+cores = ["fceumm"]
+folders = ["FDS"]
+extensions = ["fds"]
+
+["Nintendo - Game & Watch"]
+cores = ["gw"]
+folders = ["GW"]
+extensions = ["mgw"]
+
+["Nintendo - Game Boy"]
+cores = ["gambatte", "tgbdual"]
+folders = ["GB", "TGB_Dual"]
+extensions = ["gb"]
+
+["Nintendo - Game Boy Color"]
+cores = ["gambatte", "mgba"]
+folders = ["GBC", "SGB"]
+extensions = ["gbc"]
+
+["Nintendo - Game Boy Advance"]
+cores = ["gpsp", "mgba"]
+folders = ["GBA"]
+extensions = ["gba"]
+
+["Nintendo - NES"]
+cores = ["fceumm", "nestopia"]
+folders = ["FC", "NES"]
+extensions = ["nes", "unif", "unf"]
+
+["Nintendo - Pokemon Mini"]
+cores = ["pokemini"]
+folders = ["POKE", "PKM"]
+extensions = ["min"]
+
+["Nintendo - Satellaview"]
+cores = ["snes9x"]
+folders = ["SATELLAVIEW"]
+extensions = ["st"]
+
+["Nintendo - SNES"]
+cores = ["mednafen_supafaust", "snes9x"]
+folders = ["SFC", "SNES"]
+extensions = ["sfc", "smc", "swc", "fig"]
+
+["Nintendo - Virtual Boy"]
+cores = ["mednafen_vb"]
+folders = ["VB"]
+extensions = ["vb", "vboy"]
+
+["Phillips - Videopac+"]
+cores = ["o2em"]
+folders = ["VIDEOPAC"]
+extensions = []
+
+[PICO-8]
+cores = ["fake08"]
+folders = ["PICO"]
+extensions = ["p8", "png"]
+
+["Ports Collection"]
+cores = ["None"]
+folders = ["PORTS"]
+extensions = ["port"]
+
+[SCUMM]
+cores = ["scummvm"]
+folders = ["SCUMMVM"]
+extensions = ["scummvm", "target"]
+
+["Sega - 32X"]
+cores = ["picodrive"]
+folders = ["THIRTYTWOX"]
+extensions = ["32x"]
+
+["Sega - CD"]
+cores = ["picodrive"]
+folders = ["SEGACD"]
+extensions = []
+
+["Sega - Game Gear"]
+cores = ["picodrive"]
+folders = ["GG"]
+extensions = ["gg"]
+
+["Sega - Genesis"]
+cores = ["picodrive"]
+folders = ["MD"]
+extensions = ["gen", "smd", "md"]
+
+["Sega - Master System"]
+cores = ["picodrive"]
+folders = ["MS"]
+extensions = ["sms"]
+
+["Sega - SG-1000"]
+cores = ["gearsystem"]
+folders = ["SEGASGONE"]
+extensions = ["sg"]
+
+["Sinclair - ZX Spectrum"]
+cores = ["fuse"]
+folders = ["ZXS"]
+extensions = ["tzx", "z80", "rzx", "scl", "trd"]
+
+["SNK - Neo Geo"]
+cores = ["fbalpha2012_neogeo"]
+folders = ["NEOGEO"]
+extensions = []
+
+["SNK - Neo Geo CD"]
+cores = ["neocd"]
+folders = ["NEOCD"]
+extensions = []
+
+["SNK - Neo Geo Pocket Color"]
+cores = ["mednafen_ngp"]
+folders = ["NGP", "NGC"]
+extensions = ["ngp", "ngc"]
+
+["Sony - PlayStation"]
+cores = ["pcsx_rearmed"]
+folders = ["PSX", "PS", "PS1"]
+extensions = ["mdf", "pbp", "toc", "cbn"]
+
+[TIC-80]
+cores = ["tic80"]
+folders = ["TIC"]
+extensions = ["tic", "fd", "sap", "k7", "m7"]
+
+["Watara - Supervision"]
+cores = ["potator"]
+folders = ["SUPERVISION"]
+extensions = ["sv"]
+
+["Java - J2ME"]
+cores = ["squirreljme"]
+folders = ["J2ME"]
+extensions = []
+
+["NEC - PC-98"]
+cores = ["np2kai"]
+folders = ["PC98", "PCNINETYEIGHT", "NINETYEIGHT"]
+extensions = []
+
+["NEC - PC-FX"]
+cores = ["mednafen_pcfx"]
+folders = ["PCFX"]
+extensions = []

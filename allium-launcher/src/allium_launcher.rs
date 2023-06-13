@@ -25,7 +25,7 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 
 use crate::command::AlliumCommand;
-use crate::cores::CoreMapper;
+use crate::devices::DeviceMapper;
 use crate::state::GamesState;
 use crate::state::RecentsState;
 use crate::state::SettingsState;
@@ -90,7 +90,7 @@ impl AlliumLauncher<DefaultPlatform> {
         let battery = platform.battery()?;
         let database = Database::new()?;
 
-        let mut core_mapper = CoreMapper::new();
+        let mut core_mapper = DeviceMapper::new();
         core_mapper.load_config()?;
         let core_mapper = Rc::new(core_mapper);
 

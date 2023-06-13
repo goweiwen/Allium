@@ -25,7 +25,7 @@ use common::stylesheet::Stylesheet;
 
 use crate::{
     command::AlliumCommand,
-    cores::{CoreMapper, Game},
+    devices::{DeviceMapper, Game},
     state::State,
 };
 
@@ -35,7 +35,7 @@ pub struct GamesState {
     entries: Vec<Entry>,
     stack: Vec<View>,
     #[serde(skip)]
-    core_mapper: Option<Rc<CoreMapper>>,
+    core_mapper: Option<Rc<DeviceMapper>>,
     #[serde(skip)]
     database: Database,
 }
@@ -51,7 +51,7 @@ impl GamesState {
         })
     }
 
-    pub fn init(&mut self, core_mapper: Rc<CoreMapper>, database: Database) {
+    pub fn init(&mut self, core_mapper: Rc<DeviceMapper>, database: Database) {
         self.core_mapper = Some(core_mapper);
         self.database = database;
     }

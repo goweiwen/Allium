@@ -7,7 +7,7 @@ TOOLCHAIN := mholdg16/miyoomini-toolchain:latest
 all: static build package-build package-retroarch
 
 simulator-env:
-	rsync -a assets/root/.allium/cores.toml assets/simulator/cores.toml
+	rsync -a assets/root/.allium/devices.toml assets/simulator/devices.toml
 	rsync -ar assets/root/.allium/cores assets/simulator/
 	rsync -ar assets/root/.allium/images assets/simulator/
 
