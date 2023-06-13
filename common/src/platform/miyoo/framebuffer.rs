@@ -67,8 +67,8 @@ impl Display for FramebufferDisplay {
             .chunks(self.framebuffer.bytes_per_pixel as usize)
             .flat_map(|raw| {
                 // framebuffer should be divisible by bytespp, we don't have to worry about out of bounds
-                let pixel = f(Color::new(raw[0], raw[1], raw[2]));
-                [pixel.r(), pixel.g(), pixel.b(), raw[3]]
+                let pixel = f(Color::new(raw[2], raw[1], raw[0]));
+                [pixel.b(), pixel.g(), pixel.r(), raw[3]]
             })
             .collect();
         Ok(())
