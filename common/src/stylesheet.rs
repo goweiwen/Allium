@@ -63,7 +63,7 @@ rgui_bg_dark_color = "0xFF{background:X}"
 rgui_bg_light_color = "0xFF{background:X}"
 rgui_border_dark_color = "0xFF{background:X}"
 rgui_border_light_color = "0xFF{background:X}"
-rgui_shadow_color = "0xFF000000"
+rgui_shadow_color = "0xFF{background:X}"
 rgui_particle_color = "0xFF{highlight:X}"
 "#,
             foreground = self.foreground_color,
