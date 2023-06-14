@@ -1,3 +1,8 @@
+["Native"]
+path = "/mnt/SDCARD/.allium/cores/pak/launch.sh"
+folders = ["PORTS", "SH"]
+extensions = ["pak"]
+
 ["Amstrad - CPC"]
 cores = ["crocods"]
 folders = ["CPC"]
