@@ -186,8 +186,7 @@ where
                         let off_x = off_x as i32 + bb.min.x;
                         let off_y = off_y as i32 + bb.min.y;
                         // There's still a possibility that the glyph clips the boundaries of the bitmap
-                        if off_x >= 0 && off_x < width && off_y >= 0 && off_y < height
-                        {
+                        if off_x >= 0 && off_x < width && off_y >= 0 && off_y < height {
                             let c = (v * 255.0) as u32;
 
                             let (text_r, text_g, text_b, text_a) =
