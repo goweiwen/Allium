@@ -1,4 +1,5 @@
 ["Native"]
+cores = []
 path = "/mnt/SDCARD/.allium/cores/pak/launch.sh"
 folders = ["PORTS", "SH"]
 extensions = ["pak"]
