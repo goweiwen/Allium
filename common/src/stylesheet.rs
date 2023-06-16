@@ -23,6 +23,7 @@ pub struct Stylesheet {
     pub button_y_color: Color,
     #[serde(skip, default = "Stylesheet::font")]
     pub ui_font: Font<'static>,
+    #[serde(skip, default = "Stylesheet::font_size")]
     pub ui_font_size: u32,
 }
 
@@ -75,7 +76,11 @@ rgui_particle_color = "0xFF{highlight:X}"
 
     fn font() -> Font<'static> {
         trace!("loading font");
-        Font::try_from_bytes(include_bytes!("../../assets/font/Lato/Lato-Bold.ttf")).unwrap()
+        Font::try_from_bytes(include_bytes!("../../assets/font/Nunito/Nunito-Bold.ttf")).unwrap()
+    }
+
+    fn font_size() -> u32 {
+        32
     }
 }
 
@@ -92,7 +97,7 @@ impl Default for Stylesheet {
             button_x_color: Color::new(7, 73, 180),
             button_y_color: Color::new(0, 141, 69),
             ui_font: Self::font(),
-            ui_font_size: 24,
+            ui_font_size: Self::font_size(),
         }
     }
 }
