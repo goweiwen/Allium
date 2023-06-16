@@ -22,7 +22,6 @@ pub struct Display {
     restart_label: Label<String>,
     button_hints: Row<ButtonHint<String>>,
     has_changed: bool,
-    has_drawn_images: bool,
 }
 
 impl Display {
@@ -98,7 +97,6 @@ impl Display {
             restart_label,
             button_hints,
             has_changed: false,
-            has_drawn_images: false,
         }
     }
 }
@@ -111,33 +109,6 @@ impl View for Display {
         styles: &Stylesheet,
     ) -> Result<bool> {
         let mut drawn = false;
-
-        if !self.has_drawn_images {
-            let w = 56;
-            let h = w;
-            let x = self.rect.x + self.rect.w as i32 - w as i32 - 12;
-            let y = self.rect.y + 8;
-
-            let colors = [
-                Color::new(255, 0, 0),
-                Color::new(0, 255, 0),
-                Color::new(0, 0, 255),
-                Color::new(255, 255, 0),
-                Color::new(0, 255, 255),
-                Color::new(255, 0, 255),
-            ];
-            for (i, color) in colors.iter().enumerate() {
-                Rectangle::new(
-                    Point::new(x, y + i as i32 * h as i32).into(),
-                    Size::new(w, h),
-                )
-                .into_styled(PrimitiveStyle::with_fill(*color))
-                .draw(display)?;
-            }
-
-            self.has_drawn_images = true;
-            drawn = true;
-        }
 
         if self.list.should_draw() && self.list.draw(display, styles)? {
             drawn = true;

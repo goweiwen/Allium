@@ -16,14 +16,14 @@ use crate::stylesheet::Stylesheet;
 use crate::view::{Command, View};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct Button {
+pub struct ButtonIcon {
     point: Point,
     button: Key,
     alignment: Alignment,
     dirty: bool,
 }
 
-impl Button {
+impl ButtonIcon {
     pub fn new(point: Point, button: Key, alignment: Alignment) -> Self {
         Self {
             point,
@@ -35,7 +35,7 @@ impl Button {
 }
 
 #[async_trait(?Send)]
-impl View for Button {
+impl View for ButtonIcon {
     fn draw(
         &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,

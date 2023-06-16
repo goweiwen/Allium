@@ -3,19 +3,89 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
-use common::geom::{Point, Rect};
-use common::platform::{DefaultPlatform, KeyEvent, Platform};
+use common::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
+use common::geom::{Alignment, Point, Rect};
+use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
-use common::view::View;
+use common::view::{ButtonHint, Label, NullView, Row, SettingsList, TextBox, Toggle, View};
+use common::wifi::WiFiSettings;
 use tokio::sync::mpsc::Sender;
 
 pub struct Wifi {
     rect: Rect,
+    settings: WiFiSettings,
+    list: SettingsList,
+    ip_address_label: Label<String>,
+    button_hints: Row<ButtonHint<String>>,
 }
 
 impl Wifi {
     pub fn new(rect: Rect) -> Self {
-        Self { rect }
+        let settings = WiFiSettings::load().unwrap();
+
+        let list = SettingsList::new(
+            Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 8),
+            vec![
+                "Wi-Fi Enabled".to_string(),
+                "Wi-Fi Network Name".to_string(),
+                "Wi-Fi Password".to_string(),
+                "Telnet Enabled".to_string(),
+                "FTP Enabled".to_string(),
+            ],
+            vec![
+                Box::new(Toggle::new(Point::zero(), settings.wifi, Alignment::Right)),
+                Box::new(TextBox::new(
+                    Point::zero(),
+                    settings.ssid.clone(),
+                    Alignment::Right,
+                    false,
+                )),
+                Box::new(TextBox::new(
+                    Point::zero(),
+                    settings.password.clone(),
+                    Alignment::Right,
+                    true,
+                )),
+                Box::new(Toggle::new(
+                    Point::zero(),
+                    settings.telnet,
+                    Alignment::Right,
+                )),
+                Box::new(Toggle::new(Point::zero(), settings.ftp, Alignment::Right)),
+            ],
+            SELECTION_HEIGHT,
+        );
+
+        let ip_address_label = Label::new(
+            Point::new(
+                rect.x + rect.w as i32 - 12,
+                rect.y + rect.h as i32 - 58 - 30,
+            ),
+            String::new(),
+            Alignment::Right,
+            None,
+        );
+
+        let button_hints = Row::new(
+            Point::new(
+                rect.x + rect.w as i32 - 12,
+                rect.y + rect.h as i32 - BUTTON_DIAMETER as i32 - 8,
+            ),
+            vec![
+                ButtonHint::new(Point::zero(), Key::A, "Edit".to_owned(), Alignment::Right),
+                ButtonHint::new(Point::zero(), Key::B, "Back".to_owned(), Alignment::Right),
+            ],
+            Alignment::Right,
+            12,
+        );
+
+        Self {
+            rect,
+            settings,
+            list,
+            ip_address_label,
+            button_hints,
+        }
     }
 }
 
@@ -26,15 +96,33 @@ impl View for Wifi {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        todo!()
+        let mut drawn = false;
+
+        if self.list.should_draw() && self.list.draw(display, styles)? {
+            drawn = true;
+        }
+
+        if self.ip_address_label.should_draw() && self.ip_address_label.draw(display, styles)? {
+            drawn = true;
+        }
+
+        if self.button_hints.should_draw() && self.button_hints.draw(display, styles)? {
+            drawn = true;
+        }
+
+        Ok(drawn)
     }
 
     fn should_draw(&self) -> bool {
-        todo!()
+        self.list.should_draw()
+            || self.ip_address_label.should_draw()
+            || self.button_hints.should_draw()
     }
 
     fn set_should_draw(&mut self) {
-        todo!()
+        self.list.set_should_draw();
+        self.ip_address_label.set_should_draw();
+        self.button_hints.set_should_draw();
     }
 
     async fn handle_key_event(
@@ -43,22 +131,50 @@ impl View for Wifi {
         commands: Sender<Command>,
         bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
-        todo!()
+        if self.list.handle_key_event(event, commands, bubble).await? {
+            while let Some(command) = bubble.pop_front() {
+                match command {
+                    Command::ValueChanged(i, val) => match i {
+                        0 => self.settings.toggle_wifi(val.as_bool().unwrap())?,
+                        1 => self.settings.ssid = val.as_string().unwrap().to_string(),
+                        2 => self.settings.password = val.as_string().unwrap().to_string(),
+                        3 => self.settings.toggle_telnet(val.as_bool().unwrap())?,
+                        4 => self.settings.toggle_ftp(val.as_bool().unwrap())?,
+                        _ => unreachable!("Invalid index"),
+                    },
+                    _ => {}
+                }
+                self.settings.save()?;
+            }
+            return Ok(true);
+        }
+
+        match event {
+            KeyEvent::Pressed(Key::B) => {
+                bubble.push_back(Command::CloseView);
+                Ok(true)
+            }
+            _ => Ok(true),
+        }
     }
 
     fn children(&self) -> Vec<&dyn View> {
-        todo!()
+        vec![&self.list, &self.ip_address_label, &self.button_hints]
     }
 
     fn children_mut(&mut self) -> Vec<&mut dyn View> {
-        todo!()
+        vec![
+            &mut self.list,
+            &mut self.ip_address_label,
+            &mut self.button_hints,
+        ]
     }
 
-    fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
+    fn bounding_box(&mut self, _styles: &Stylesheet) -> Rect {
         self.rect
     }
 
-    fn set_position(&mut self, point: Point) {
+    fn set_position(&mut self, _point: Point) {
         unimplemented!()
     }
 }

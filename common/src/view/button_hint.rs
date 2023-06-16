@@ -9,7 +9,7 @@ use crate::constants::BUTTON_DIAMETER;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use crate::stylesheet::Stylesheet;
-use crate::view::{Button, Command, Label, View};
+use crate::view::{ButtonIcon, Command, Label, View};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ButtonHint<S>
@@ -17,7 +17,7 @@ where
     S: AsRef<str>,
 {
     point: Point,
-    button: Button,
+    button: ButtonIcon,
     label: Label<S>,
     alignment: Alignment,
     has_layout: bool,
@@ -29,7 +29,7 @@ where
 {
     pub fn new(point: Point, button: Key, text: S, alignment: Alignment) -> Self {
         let label = Label::new(Point::zero(), text, alignment, None);
-        let button = Button::new(Point::zero(), button, alignment);
+        let button = ButtonIcon::new(Point::zero(), button, alignment);
 
         Self {
             point,

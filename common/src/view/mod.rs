@@ -1,6 +1,6 @@
 mod battery_indicator;
-mod button;
 mod button_hint;
+mod button_icon;
 mod image;
 mod input;
 mod label;
@@ -14,11 +14,13 @@ use std::collections::VecDeque;
 use std::fmt;
 
 pub use self::battery_indicator::BatteryIndicator;
-pub use self::button::Button;
 pub use self::button_hint::ButtonHint;
+pub use self::button_icon::ButtonIcon;
 pub use self::image::{Image, ImageMode};
+pub use self::input::button::Button;
 pub use self::input::color_picker::ColorPicker;
 pub use self::input::percentage::Percentage;
+pub use self::input::text_box::TextBox;
 pub use self::input::toggle::Toggle;
 pub use self::label::Label;
 pub use self::list::List;

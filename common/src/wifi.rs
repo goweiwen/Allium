@@ -101,8 +101,8 @@ network={{
         Ok(())
     }
 
-    pub fn toggle_wifi(&mut self) -> Result<()> {
-        self.wifi = !self.wifi;
+    pub fn toggle_wifi(&mut self, enabled: bool) -> Result<()> {
+        self.wifi = enabled;
         if self.wifi {
             enable_wifi()?;
             if self.telnet {
@@ -117,8 +117,8 @@ network={{
         Ok(())
     }
 
-    pub fn toggle_telnet(&mut self) -> Result<()> {
-        self.telnet = !self.telnet;
+    pub fn toggle_telnet(&mut self, enabled: bool) -> Result<()> {
+        self.telnet = enabled;
         if self.telnet {
             enable_telnet()?;
         } else {
@@ -127,8 +127,8 @@ network={{
         Ok(())
     }
 
-    pub fn toggle_ftp(&mut self) -> Result<()> {
-        self.ftp = !self.ftp;
+    pub fn toggle_ftp(&mut self, enabled: bool) -> Result<()> {
+        self.ftp = enabled;
         if self.ftp {
             enable_ftp()?;
         } else {
