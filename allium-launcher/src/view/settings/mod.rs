@@ -92,7 +92,7 @@ impl Settings {
         let rect = Rect::new(
             self.rect.x + 146,
             self.rect.y,
-            self.rect.w - 146 - 12,
+            self.rect.w - 146,
             self.rect.h,
         );
         match self.list.selected() {

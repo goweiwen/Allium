@@ -31,7 +31,6 @@ pub struct ColorPicker {
 #[derive(Debug, Clone)]
 struct EditState {
     selected: usize,
-    original: Color,
     value: Color,
 }
 
@@ -247,11 +246,6 @@ impl View for ColorPicker {
                     Ok(true)
                 }
                 KeyEvent::Pressed(Key::B) => {
-                    if self.value != state.original {
-                        self.value = state.original;
-                        self.dirty = true;
-                        bubble.push_back(Command::ValueChanged(0, Value::Color(self.value)));
-                    }
                     self.edit_state = None;
                     bubble.push_back(Command::Unfocus);
                     Ok(true)
@@ -260,7 +254,6 @@ impl View for ColorPicker {
             }
         } else {
             self.edit_state = Some(EditState {
-                original: self.value,
                 value: self.value,
                 selected: 0,
             });

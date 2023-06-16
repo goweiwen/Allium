@@ -128,7 +128,14 @@ impl View for SettingsList {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        if self.dirty {
+        if self.dirty
+            || (self.focused
+                && self
+                    .right
+                    .get(self.selected - self.top)
+                    .map(|s| s.should_draw())
+                    .unwrap_or(false))
+        {
             display.load(self.bounding_box(styles).into())?;
 
             let rect = if self.focused {

@@ -3,17 +3,18 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::SELECTION_HEIGHT;
+use common::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
 use common::geom::{Alignment, Point, Rect};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
-use common::view::{ColorPicker, SettingsList, Toggle, View};
+use common::view::{ButtonHint, ColorPicker, Row, SettingsList, Toggle, View};
 use tokio::sync::mpsc::Sender;
 
 pub struct Theme {
     rect: Rect,
     stylesheet: Stylesheet,
     list: SettingsList,
+    button_hints: Row<ButtonHint<String>>,
 }
 
 impl Theme {
@@ -21,7 +22,7 @@ impl Theme {
         let stylesheet = Stylesheet::load().unwrap();
 
         let list = SettingsList::new(
-            Rect::new(rect.x, rect.y + 8, rect.w, rect.h - 16),
+            Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 16),
             vec![
                 "Dark Mode".to_string(),
                 "Enable Box Art".to_string(),
@@ -89,10 +90,24 @@ impl Theme {
             SELECTION_HEIGHT,
         );
 
+        let button_hints = Row::new(
+            Point::new(
+                rect.x + rect.w as i32 - 12,
+                rect.y + rect.h as i32 - BUTTON_DIAMETER as i32 - 8,
+            ),
+            vec![
+                ButtonHint::new(Point::zero(), Key::A, "Edit".to_owned(), Alignment::Right),
+                ButtonHint::new(Point::zero(), Key::B, "Back".to_owned(), Alignment::Right),
+            ],
+            Alignment::Right,
+            12,
+        );
+
         Self {
             rect,
             stylesheet,
             list,
+            button_hints,
         }
     }
 }
@@ -104,15 +119,26 @@ impl View for Theme {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        self.list.draw(display, styles)
+        let mut drawn = false;
+
+        if self.list.should_draw() && self.list.draw(display, styles)? {
+            drawn = true;
+        }
+
+        if self.button_hints.should_draw() && self.button_hints.draw(display, styles)? {
+            drawn = true;
+        }
+
+        Ok(drawn)
     }
 
     fn should_draw(&self) -> bool {
-        self.list.should_draw()
+        self.list.should_draw() || self.button_hints.should_draw()
     }
 
     fn set_should_draw(&mut self) {
-        self.list.set_should_draw()
+        self.list.set_should_draw();
+        self.button_hints.set_should_draw();
     }
 
     async fn handle_key_event(
@@ -212,11 +238,11 @@ impl View for Theme {
     }
 
     fn children(&self) -> Vec<&dyn View> {
-        vec![&self.list]
+        vec![&self.list, &self.button_hints]
     }
 
     fn children_mut(&mut self) -> Vec<&mut dyn View> {
-        vec![&mut self.list]
+        vec![&mut self.list, &mut self.button_hints]
     }
 
     fn bounding_box(&mut self, _styles: &Stylesheet) -> Rect {

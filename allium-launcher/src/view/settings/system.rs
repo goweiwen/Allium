@@ -3,22 +3,23 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::{ALLIUM_VERSION, SELECTION_HEIGHT};
+use common::constants::{ALLIUM_VERSION, BUTTON_DIAMETER, SELECTION_HEIGHT};
 use common::geom::{Alignment, Point, Rect};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
-use common::view::{Label, SettingsList, View};
+use common::view::{ButtonHint, Label, Row, SettingsList, View};
 use tokio::sync::mpsc::Sender;
 
 pub struct System {
     rect: Rect,
     list: SettingsList,
+    button_hints: Row<ButtonHint<String>>,
 }
 
 impl System {
     pub fn new(rect: Rect) -> Self {
         let list = SettingsList::new(
-            rect,
+            Rect::new(rect.x, rect.y, rect.w - 12, rect.h),
             vec!["Version".to_string(), "Device Model".to_string()],
             vec![
                 Box::new(Label::new(
@@ -37,7 +38,26 @@ impl System {
             SELECTION_HEIGHT,
         );
 
-        Self { rect, list }
+        let button_hints = Row::new(
+            Point::new(
+                rect.x + rect.w as i32 - 12,
+                rect.y + rect.h as i32 - BUTTON_DIAMETER as i32 - 8,
+            ),
+            vec![ButtonHint::new(
+                Point::zero(),
+                Key::B,
+                "Back".to_owned(),
+                Alignment::Right,
+            )],
+            Alignment::Right,
+            12,
+        );
+
+        Self {
+            rect,
+            list,
+            button_hints,
+        }
     }
 }
 
@@ -48,15 +68,26 @@ impl View for System {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        self.list.draw(display, styles)
+        let mut drawn = false;
+
+        if self.list.should_draw() && self.list.draw(display, styles)? {
+            drawn = true;
+        }
+
+        if self.button_hints.should_draw() && self.button_hints.draw(display, styles)? {
+            drawn = true;
+        }
+
+        Ok(drawn)
     }
 
     fn should_draw(&self) -> bool {
-        self.list.should_draw()
+        self.list.should_draw() || self.button_hints.should_draw()
     }
 
     fn set_should_draw(&mut self) {
-        self.list.set_should_draw()
+        self.list.set_should_draw();
+        self.button_hints.set_should_draw();
     }
 
     async fn handle_key_event(
@@ -78,11 +109,11 @@ impl View for System {
     }
 
     fn children(&self) -> Vec<&dyn View> {
-        vec![&self.list]
+        vec![&self.list, &self.button_hints]
     }
 
     fn children_mut(&mut self) -> Vec<&mut dyn View> {
-        vec![&mut self.list]
+        vec![&mut self.list, &mut self.button_hints]
     }
 
     fn bounding_box(&mut self, _styles: &Stylesheet) -> Rect {
