@@ -46,3 +46,10 @@ $(RETROARCH)/retroarch_miyoo283:
 
 lint:
 	cargo clippy --fix --allow-dirty --allow-staged --all-targets
+
+bump-version:
+	sed -i "s/^version = \".*\"/version = \"$(version)\"/" allium-launcher/Cargo.toml
+	sed -i "s/^version = \".*\"/version = \"$(version)\"/" allium-menu/Cargo.toml
+	sed -i "s/^version = \".*\"/version = \"$(version)\"/" alliumd/Cargo.toml
+	sed -i "s/^version = \".*\"/version = \"$(version)\"/" common/Cargo.toml
+	cargo check
