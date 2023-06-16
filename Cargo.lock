@@ -60,6 +60,7 @@ name = "allium-launcher"
 version = "0.5.1"
 dependencies = [
  "anyhow",
+ "async-trait",
  "common",
  "embedded-graphics",
  "image 0.24.6",
@@ -81,6 +82,7 @@ name = "allium-menu"
 version = "0.5.1"
 dependencies = [
  "anyhow",
+ "async-trait",
  "common",
  "embedded-graphics",
  "embedded_font",

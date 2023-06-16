@@ -2,30 +2,30 @@ use std::collections::VecDeque;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use embedded_graphics::prelude::Size;
+use embedded_graphics::prelude::{Dimensions, Size};
 use embedded_graphics::primitives::{Primitive, PrimitiveStyleBuilder, Rectangle, StrokeAlignment};
+use embedded_graphics::text::Text;
 use embedded_graphics::Drawable;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
 use crate::command::Value;
 use crate::display::color::Color;
-use crate::display::font::FontTextStyleBuilder;
-use crate::display::Display;
+use crate::display::font::{FontTextStyle, FontTextStyleBuilder};
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
-use crate::stylesheet::Stylesheet;
-use crate::view::{Command, Label, View};
+use crate::stylesheet::{Stylesheet, StylesheetColor};
+use crate::view::{Command, View};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ColorPicker {
     point: Point,
     value: Color,
-    label: Label<String>,
     alignment: Alignment,
     dirty: bool,
     #[serde(skip)]
     edit_state: Option<EditState>,
+    background_color: StylesheetColor,
 }
 
 #[derive(Debug, Clone)]
@@ -37,26 +37,18 @@ struct EditState {
 
 impl ColorPicker {
     pub fn new(point: Point, value: Color, alignment: Alignment) -> Self {
-        let label = Label::new(
-            Point::new(point.x + (30 + 12) * alignment.sign(), point.y),
-            format!("#{:X}", value),
-            alignment,
-            None,
-        );
-
         Self {
             point,
             value,
-            label,
             alignment,
             dirty: true,
             edit_state: None,
+            background_color: StylesheetColor::Background,
         }
     }
 
     pub fn set_value(&mut self, value: Color) {
         self.value = value;
-        self.label.set_text(format!("#{:X}", value));
         self.dirty = true;
     }
 
@@ -72,92 +64,102 @@ impl View for ColorPicker {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        let mut drawn = false;
-
-        if self.dirty {
-            let fill_style = PrimitiveStyleBuilder::new()
-                .fill_color(
-                    self.edit_state
-                        .as_ref()
-                        .map(|s| s.value)
-                        .unwrap_or(self.value)
-                        .into(),
-                )
-                .stroke_color(styles.foreground_color)
-                .stroke_alignment(StrokeAlignment::Inside)
-                .stroke_width(1)
-                .build();
-
-            Rectangle::new(
-                Point::new(
-                    self.point.x - (30 * (1 - self.alignment.sign()) / 2),
-                    self.point.y,
-                )
-                .into(),
-                Size::new_equal(30),
-            )
-            .into_styled(fill_style)
-            .draw(display)?;
-            drawn = true;
-
-            if let Some(state) = self.edit_state.as_ref() {
-                let text_style = FontTextStyleBuilder::new(styles.ui_font.clone())
-                    .font_size(styles.ui_font_size)
-                    .text_color(styles.foreground_color)
-                    .background_color(styles.highlight_color)
-                    .draw_background()
-                    .build();
-
-                let selected_style = FontTextStyleBuilder::new(styles.ui_font.clone())
-                    .font_size(styles.ui_font_size)
-                    .text_color(styles.foreground_color)
-                    .background_color(styles.highlight_color)
-                    .draw_background()
-                    .underline()
-                    .build();
-
-                match self.alignment {
-                    Alignment::Right => {
-                        let mut x = self.point.x - 30 - 12;
-                        for i in (0..6).rev() {
-                            let rect = display.draw_text(
-                                Point::new(x, self.point.y).into(),
-                                &state.value.char(i),
-                                if i == state.selected {
-                                    selected_style.clone()
-                                } else {
-                                    text_style.clone()
-                                },
-                                Alignment::Right.into(),
-                            )?;
-                            x = rect.top_left.x - 1;
-                        }
-                        display.draw_text(
-                            Point::new(x, self.point.y).into(),
-                            "#",
-                            text_style,
-                            Alignment::Right.into(),
-                        )?;
-                    }
-                    Alignment::Center => unimplemented!("alignment should be left or right"),
-                    Alignment::Left => todo!(),
-                }
-            }
-        } else {
-            if self.label.should_draw() && self.label.draw(display, styles)? {
-                drawn = true;
-            }
+        if !self.dirty {
+            return Ok(false);
         }
 
-        Ok(drawn)
+        let color = self
+            .edit_state
+            .as_ref()
+            .map(|s| s.value)
+            .unwrap_or(self.value);
+        let edit_index = self.edit_state.as_ref().map(|s| s.selected);
+
+        let fill_style = PrimitiveStyleBuilder::new()
+            .fill_color(color.into())
+            .stroke_color(styles.foreground_color)
+            .stroke_alignment(StrokeAlignment::Inside)
+            .stroke_width(1)
+            .build();
+
+        Rectangle::new(
+            Point::new(
+                self.point.x - (30 * (1 - self.alignment.sign()) / 2),
+                self.point.y + 2,
+            )
+            .into(),
+            Size::new_equal(30),
+        )
+        .into_styled(fill_style)
+        .draw(display)?;
+
+        let text_style = FontTextStyleBuilder::new(styles.ui_font.clone())
+            .font_size(styles.ui_font_size)
+            .text_color(styles.foreground_color)
+            .background_color(self.background_color.to_color(styles))
+            .build();
+
+        let focused_style = FontTextStyleBuilder::new(styles.ui_font.clone())
+            .font_size(styles.ui_font_size)
+            .text_color(styles.foreground_color)
+            .background_color(styles.highlight_color)
+            .draw_background()
+            .build();
+
+        let selected_style = FontTextStyleBuilder::new(styles.ui_font.clone())
+            .font_size(styles.ui_font_size)
+            .text_color(styles.foreground_color)
+            .background_color(styles.highlight_color)
+            .underline()
+            .draw_background()
+            .build();
+
+        match self.alignment {
+            Alignment::Right => {
+                let mut x = self.point.x - 30 - 12;
+                for i in (0..6).rev() {
+                    let c = color.char(i);
+                    let text = Text::with_alignment(
+                        &c,
+                        Point::new(x, self.point.y).into(),
+                        if edit_index == Some(i) {
+                            selected_style.clone()
+                        } else if self.edit_state.is_some() {
+                            focused_style.clone()
+                        } else {
+                            text_style.clone()
+                        },
+                        Alignment::Right.into(),
+                    );
+                    text.draw(display)?;
+                    x = text.bounding_box().top_left.x - 1;
+                }
+
+                Text::with_alignment(
+                    "#",
+                    Point::new(x, self.point.y).into(),
+                    if self.edit_state.is_some() {
+                        focused_style.clone()
+                    } else {
+                        text_style.clone()
+                    },
+                    Alignment::Right.into(),
+                )
+                .draw(display)?;
+            }
+            Alignment::Center => unimplemented!("alignment should be left or right"),
+            Alignment::Left => todo!(),
+        }
+
+        Ok(true)
     }
 
     fn should_draw(&self) -> bool {
-        self.dirty || self.label.should_draw()
+        self.dirty
     }
 
     fn set_should_draw(&mut self) {
-        self.label.set_should_draw();
+        self.dirty = true;
     }
 
     async fn handle_key_event(
@@ -166,6 +168,10 @@ impl View for ColorPicker {
         _command: Sender<Command>,
         bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
+        println!(
+            "color picker key event: {:?}, state: {:?}",
+            event, self.edit_state
+        );
         if let Some(state) = &mut self.edit_state {
             match event {
                 KeyEvent::Pressed(Key::Up) | KeyEvent::Autorepeat(Key::Up) => {
@@ -234,7 +240,6 @@ impl View for ColorPicker {
                 }
                 KeyEvent::Pressed(Key::A) => {
                     self.value = state.value;
-                    self.label.set_text(format!("#{:X}", self.value));
                     self.dirty = true;
                     self.edit_state = None;
                     bubble.push_back(Command::ValueChanged(0, Value::Color(self.value)));
@@ -242,11 +247,12 @@ impl View for ColorPicker {
                     Ok(true)
                 }
                 KeyEvent::Pressed(Key::B) => {
-                    self.value = state.original;
-                    self.label.set_text(format!("#{:X}", self.value));
-                    self.dirty = true;
+                    if self.value != state.original {
+                        self.value = state.original;
+                        self.dirty = true;
+                        bubble.push_back(Command::ValueChanged(0, Value::Color(self.value)));
+                    }
                     self.edit_state = None;
-                    bubble.push_back(Command::ValueChanged(0, Value::Color(self.value)));
                     bubble.push_back(Command::Unfocus);
                     Ok(true)
                 }
@@ -264,27 +270,53 @@ impl View for ColorPicker {
     }
 
     fn children(&self) -> Vec<&dyn View> {
-        vec![&self.label]
+        vec![]
     }
 
     fn children_mut(&mut self) -> Vec<&mut dyn View> {
-        vec![&mut self.label]
+        vec![]
     }
 
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
-        self.label.bounding_box(styles).union(&Rect::new(
-            self.point.x - (30 * (1 - self.alignment.sign()) / 2),
+        let text_style: FontTextStyle<Color> = FontTextStyleBuilder::new(styles.ui_font.clone())
+            .font_size(styles.ui_font_size)
+            .draw_background()
+            .build();
+
+        let mut x = self.point.x - 30 - 12;
+        for i in (0..6).rev() {
+            let c = self.value.char(i);
+            let text = Text::with_alignment(
+                &c,
+                Point::new(x, self.point.y).into(),
+                text_style.clone(),
+                Alignment::Right.into(),
+            );
+            x = text.bounding_box().top_left.x - 1;
+        }
+
+        let rect: Rect = Text::with_alignment(
+            "#",
+            Point::new(x, self.point.y).into(),
+            text_style,
+            Alignment::Right.into(),
+        )
+        .bounding_box()
+        .into();
+
+        Rect::new(
+            rect.x,
             self.point.y,
-            30,
-            30,
-        ))
+            (self.point.x - rect.x) as u32,
+            rect.h + 1,
+        )
     }
 
     fn set_position(&mut self, point: Point) {
         self.point = point;
-        self.label.set_position(Point::new(
-            point.x + (30 + 12) * self.alignment.sign(),
-            point.y,
-        ));
+    }
+
+    fn set_background_color(&mut self, color: StylesheetColor) {
+        self.background_color = color;
     }
 }

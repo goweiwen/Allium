@@ -109,6 +109,11 @@ impl SettingsList {
             .min(self.right.len())
     }
 
+    pub fn set_child(&mut self, index: usize, child: Box<dyn View>) {
+        self.right[index] = child;
+        self.dirty = true;
+    }
+
     fn update_children(&mut self) {
         for (i, child) in self.left.iter_mut().enumerate() {
             child.set_text(self.labels[self.top + i].to_owned());
@@ -261,6 +266,9 @@ impl View for SettingsList {
                                     Command::TrapFocus => {
                                         self.focused = true;
                                         self.dirty = true;
+                                    }
+                                    Command::ValueChanged(_, val) => {
+                                        bubble.push_back(Command::ValueChanged(self.selected, val))
                                     }
                                     command => bubble.push_back(command),
                                 }

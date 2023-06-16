@@ -128,14 +128,17 @@ impl View for Browser {
             drawn = true;
         }
 
-        let entry = &mut self.entries[self.list.selected()];
-        if let Some(path) = entry.image() {
-            self.image.set_path(Some(path.to_path_buf()));
-        } else {
-            self.image.set_path(None);
-        }
-        if self.image.should_draw() && self.image.draw(display, styles)? {
-            drawn = true;
+        if styles.enable_box_art {
+            // TODO: relayout list if box art is enabled/disabled
+            let entry = &mut self.entries[self.list.selected()];
+            if let Some(path) = entry.image() {
+                self.image.set_path(Some(path.to_path_buf()));
+            } else {
+                self.image.set_path(None);
+            }
+            if self.image.should_draw() && self.image.draw(display, styles)? {
+                drawn = true;
+            }
         }
 
         if self.button_hints.should_draw() && self.button_hints.draw(display, styles)? {
@@ -151,7 +154,6 @@ impl View for Browser {
             .map(|c| c.should_draw())
             .unwrap_or(false)
             || self.list.should_draw()
-            || self.image.should_draw()
             || self.button_hints.should_draw()
     }
 

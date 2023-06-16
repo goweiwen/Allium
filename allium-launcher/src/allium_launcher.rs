@@ -122,6 +122,7 @@ impl AlliumLauncher<DefaultPlatform> {
                 self.display.clear(styles.background_color)?;
                 self.display.save()?;
                 self.styles = *styles.to_owned();
+                self.view.set_should_draw();
             }
             Command::SaveDisplaySettings(settings) => {
                 settings.save()?;

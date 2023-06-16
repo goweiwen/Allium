@@ -76,7 +76,9 @@ impl Stylesheet {
     pub fn save(&self) -> Result<()> {
         let json = serde_json::to_string(&self).unwrap();
         File::create(ALLIUM_STYLESHEET.as_path())?.write_all(json.as_bytes())?;
-        self.patch_ra_config()?;
+        if let Err(e) = self.patch_ra_config() {
+            warn!("failed to patch RA config: {}", e);
+        }
         Ok(())
     }
 

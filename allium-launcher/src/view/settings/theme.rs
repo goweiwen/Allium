@@ -130,7 +130,56 @@ impl View for Theme {
                 match command {
                     Command::ValueChanged(i, val) => {
                         match i {
-                            0 => todo!(),
+                            0 => match val.as_bool().unwrap() {
+                                true => {
+                                    if !self.stylesheet.background_color.is_dark() {
+                                        self.stylesheet.foreground_color =
+                                            self.stylesheet.foreground_color.invert();
+                                        self.stylesheet.background_color =
+                                            self.stylesheet.background_color.invert();
+                                        self.list.set_child(
+                                            3,
+                                            Box::new(ColorPicker::new(
+                                                Point::zero(),
+                                                self.stylesheet.foreground_color,
+                                                Alignment::Right,
+                                            )),
+                                        );
+                                        self.list.set_child(
+                                            4,
+                                            Box::new(ColorPicker::new(
+                                                Point::zero(),
+                                                self.stylesheet.background_color,
+                                                Alignment::Right,
+                                            )),
+                                        );
+                                    }
+                                }
+                                false => {
+                                    if self.stylesheet.background_color.is_dark() {
+                                        self.stylesheet.foreground_color =
+                                            self.stylesheet.foreground_color.invert();
+                                        self.stylesheet.background_color =
+                                            self.stylesheet.background_color.invert();
+                                        self.list.set_child(
+                                            3,
+                                            Box::new(ColorPicker::new(
+                                                Point::zero(),
+                                                self.stylesheet.foreground_color,
+                                                Alignment::Right,
+                                            )),
+                                        );
+                                        self.list.set_child(
+                                            4,
+                                            Box::new(ColorPicker::new(
+                                                Point::zero(),
+                                                self.stylesheet.background_color,
+                                                Alignment::Right,
+                                            )),
+                                        );
+                                    }
+                                }
+                            },
                             1 => self.stylesheet.enable_box_art = val.as_bool().unwrap(),
                             2 => self.stylesheet.highlight_color = val.as_color().unwrap(),
                             3 => self.stylesheet.foreground_color = val.as_color().unwrap(),

@@ -110,8 +110,8 @@ impl<C: PixelColor> FontTextStyle<C> {
         D: DrawTarget<Color = C>,
     {
         if let Some(underline_color) = self.resolve_decoration_color(self.underline_color) {
-            let top_left = position + Point::new(0, self.font_size as i32 - 1);
             let size = Size::new(width, self.font_size / 12);
+            let top_left = position + Point::new(0, self.font_size as i32 - size.height as i32);
 
             target.fill_solid(&Rectangle::new(top_left, size), underline_color)?;
         }
