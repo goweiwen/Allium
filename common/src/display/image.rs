@@ -1,22 +1,50 @@
-use image::{ImageBuffer, Rgb};
+use image::{Rgb, RgbImage};
 
 /// Draw rounded corners on an image.
-pub fn round(image: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, color: Rgb<u8>, radius: u32) {
+pub fn round(image: &mut RgbImage, color: Rgb<u8>, radius: u32) {
     let (width, height) = image.dimensions();
 
     let radius_squared = radius.pow(2) as i32;
+    let radius_squared_1 = (radius + 1).pow(2) as i32;
 
     // Draw the corners.
-    for x in 0..radius {
-        for y in 0..radius {
-            if (x as i32 - radius as i32).pow(2) + (y as i32 - radius as i32).pow(2)
-                > radius_squared
-            {
+    for x in 0..radius + 1 {
+        for y in 0..radius + 1 {
+            let distance_squared =
+                (x as i32 - radius as i32).pow(2) + (y as i32 - radius as i32).pow(2);
+            if distance_squared > radius_squared_1 {
                 image.put_pixel(x, y, color);
                 image.put_pixel(width - x - 1, y, color);
                 image.put_pixel(x, height - y - 1, color);
                 image.put_pixel(width - x - 1, height - y - 1, color);
+            } else if distance_squared > radius_squared {
+                let v = 1. - (distance_squared as f32).sqrt() + (radius_squared as f32).sqrt();
+                println!("x: {}, y: {}, v: {}", x, y, v);
+                image.put_pixel(x, y, blend(image.get_pixel(x, y), &color, v));
+                image.put_pixel(
+                    width - x - 1,
+                    y,
+                    blend(image.get_pixel(width - x - 1, y), &color, v),
+                );
+                image.put_pixel(
+                    x,
+                    height - y - 1,
+                    blend(image.get_pixel(x, height - y - 1), &color, v),
+                );
+                image.put_pixel(
+                    width - x - 1,
+                    height - y - 1,
+                    blend(image.get_pixel(width - x - 1, height - y - 1), &color, v),
+                );
             }
         }
     }
+}
+
+fn blend(a: &Rgb<u8>, b: &Rgb<u8>, v: f32) -> Rgb<u8> {
+    let v = v.min(1.0).max(0.0);
+    let r = (a[0] as f32 * v + b[0] as f32 * (1.0 - v)) as u8;
+    let g = (a[1] as f32 * v + b[1] as f32 * (1.0 - v)) as u8;
+    let b = (a[2] as f32 * v + b[2] as f32 * (1.0 - v)) as u8;
+    Rgb([r, g, b])
 }
