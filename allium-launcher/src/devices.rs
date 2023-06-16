@@ -2,13 +2,12 @@ use std::path::PathBuf;
 use std::{collections::HashMap, path::Path};
 
 use anyhow::{anyhow, bail, Context, Result};
+use common::command::Command;
 use common::database::Database;
 use common::game_info::GameInfo;
 use serde::{Deserialize, Serialize};
 
 use common::constants::{ALLIUM_CONFIG_DIR, ALLIUM_GAMES_DIR, ALLIUM_RETROARCH};
-
-use crate::command::AlliumCommand;
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct Device {
@@ -185,17 +184,13 @@ impl DeviceMapper {
         None
     }
 
-    pub fn launch_game(
-        &self,
-        database: &Database,
-        game: &mut Game,
-    ) -> Result<Option<AlliumCommand>> {
+    pub fn launch_game(&self, database: &Database, game: &mut Game) -> Result<Option<Command>> {
         game.image();
         database.increment_play_count(&game.name, game.path.as_path(), game.image_ref())?;
 
         let core = self.get_device(game.path.as_path());
         Ok(if let Some(device) = core {
-            let game_info = if let Some(path) = device.path.as_ref() {
+            let game_info = if let Some(ref path) = device.path {
                 GameInfo::new(
                     game.name.clone(),
                     game.path.to_owned(),
@@ -213,7 +208,7 @@ impl DeviceMapper {
                 bail!("Device \"{}\" has no path or cores.", device.name);
             };
             game_info.save()?;
-            Some(AlliumCommand::Exec(game_info.command()))
+            Some(Command::Exec(game_info.command()))
         } else {
             None
         })

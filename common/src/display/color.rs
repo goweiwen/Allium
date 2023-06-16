@@ -59,6 +59,10 @@ impl Color {
         )
     }
 
+    pub fn is_dark(&self) -> bool {
+        self.r() < 128 && self.g() < 128 && self.b() < 128
+    }
+
     pub fn invert(&self) -> Self {
         Self(Rgb888::new(255 - self.r(), 255 - self.g(), 255 - self.b()))
     }

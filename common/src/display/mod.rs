@@ -15,10 +15,13 @@ use embedded_graphics::text::{Alignment, Baseline, Text, TextStyleBuilder};
 use crate::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
 use crate::display::color::Color;
 use crate::display::font::{FontTextStyle, FontTextStyleBuilder};
+use crate::geom::Rect;
 use crate::platform::Key;
 use crate::stylesheet::Stylesheet;
 
-pub trait Display: OriginDimensions + DrawTarget<Color = Color> + Sized {
+pub trait Display:
+    OriginDimensions + DrawTarget<Color = Color, Error = anyhow::Error> + Sized
+{
     fn map_pixels<F>(&mut self, f: F) -> Result<()>
     where
         F: FnMut(Color) -> Color;
@@ -28,7 +31,7 @@ pub trait Display: OriginDimensions + DrawTarget<Color = Color> + Sized {
     }
 
     fn save(&mut self) -> Result<()>;
-    fn load(&mut self, area: Rectangle) -> Result<()>;
+    fn load(&mut self, area: Rect) -> Result<()>;
 
     fn draw_text(
         &mut self,

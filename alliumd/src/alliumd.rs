@@ -97,9 +97,7 @@ impl AlliumD<DefaultPlatform> {
 
                 tokio::select! {
                     key_event = self.platform.poll() => {
-                        if let Some(key_event) = key_event? {
-                            self.handle_key_event(key_event).await?;
-                        }
+                        self.handle_key_event(key_event).await?;
                     }
                     _ = self.main.wait() => {
                         if !self.is_terminating {
@@ -127,9 +125,7 @@ impl AlliumD<DefaultPlatform> {
         loop {
             tokio::select! {
                 key_event = self.platform.poll() => {
-                    if let Some(key_event) = key_event? {
-                        self.handle_key_event(key_event).await?;
-                    }
+                    self.handle_key_event(key_event).await?;
                 }
             }
         }

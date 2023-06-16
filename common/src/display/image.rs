@@ -18,8 +18,9 @@ pub fn round(image: &mut RgbImage, color: Rgb<u8>, radius: u32) {
                 image.put_pixel(x, height - y - 1, color);
                 image.put_pixel(width - x - 1, height - y - 1, color);
             } else if distance_squared > radius_squared {
-                let v = 1. - (distance_squared as f32).sqrt() + (radius_squared as f32).sqrt();
-                println!("x: {}, y: {}, v: {}", x, y, v);
+                // Rough approximation of the coverage of the pixel by the circle.
+                let v = (radius_squared_1 - distance_squared) as f32
+                    / (radius_squared_1 - radius_squared) as f32;
                 image.put_pixel(x, y, blend(image.get_pixel(x, y), &color, v));
                 image.put_pixel(
                     width - x - 1,

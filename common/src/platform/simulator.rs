@@ -17,6 +17,7 @@ use crate::battery::Battery;
 use crate::display::color::Color;
 use crate::display::settings::DisplaySettings;
 use crate::display::Display;
+use crate::geom::Rect;
 use crate::platform::{Key, KeyEvent, Platform};
 
 pub const SCREEN_WIDTH: u32 = 640;
@@ -39,27 +40,26 @@ impl Platform for SimulatorPlatform {
         })
     }
 
-    async fn poll(&mut self) -> Result<Option<KeyEvent>> {
-        let event = self.window.borrow_mut().events().next();
-        if let Some(event) = event {
-            match event {
-                SimulatorEvent::KeyDown {
-                    keycode, repeat, ..
-                } => Ok(Some(if repeat {
-                    KeyEvent::Autorepeat(Key::from(keycode))
-                } else {
-                    KeyEvent::Pressed(Key::from(keycode))
-                })),
-                SimulatorEvent::KeyUp { keycode, .. } => {
-                    Ok(Some(KeyEvent::Released(Key::from(keycode))))
-                }
-                _ => {
-                    // Ignore other events
-                    Ok(None)
+    async fn poll(&mut self) -> KeyEvent {
+        loop {
+            let event = self.window.borrow_mut().events().next();
+            if let Some(event) = event {
+                match event {
+                    SimulatorEvent::KeyDown {
+                        keycode, repeat, ..
+                    } => {
+                        return if repeat {
+                            KeyEvent::Autorepeat(Key::from(keycode))
+                        } else {
+                            KeyEvent::Pressed(Key::from(keycode))
+                        }
+                    }
+                    SimulatorEvent::KeyUp { keycode, .. } => {
+                        return KeyEvent::Released(Key::from(keycode))
+                    }
+                    _ => {}
                 }
             }
-        } else {
-            Ok(None)
         }
     }
 
@@ -71,7 +71,6 @@ impl Platform for SimulatorPlatform {
                     Color::new(0, 0, 0),
                 )
             });
-        self.window.borrow_mut().update(&display);
         Ok(SimulatorWindow {
             window: Rc::clone(&self.window),
             display,
@@ -148,27 +147,25 @@ impl Display for SimulatorWindow {
         Ok(())
     }
 
-    fn load(&mut self, area: Rectangle) -> Result<()> {
+    fn load(&mut self, rect: Rect) -> Result<()> {
         let Some(saved) = &self.saved else {
             bail!("No saved image");
         };
 
         let size = self.size();
-        if area.top_left.x as u32 + area.size.width > size.width
-            || area.top_left.y as u32 + area.size.height > size.height
-        {
+        if rect.x as u32 + rect.w > size.width || rect.y as u32 + rect.h > size.height {
             bail!(
                 "Area exceeds display bounds: x: {}, y: {}, w: {}, h: {}",
-                area.top_left.x,
-                area.top_left.y,
-                area.size.width,
-                area.size.height
+                rect.x,
+                rect.y,
+                rect.w,
+                rect.h,
             );
         }
 
         let image: ImageRaw<_, BigEndian> = ImageRaw::new(&saved.0, saved.1);
-        let image = image.sub_image(&area);
-        let image = Image::new(&image, area.top_left);
+        let image = image.sub_image(&rect.into());
+        let image = Image::new(&image, rect.top_left().into());
         image.draw(&mut self.display)?;
 
         Ok(())
@@ -177,13 +174,13 @@ impl Display for SimulatorWindow {
 
 impl DrawTarget for SimulatorWindow {
     type Color = Color;
-    type Error = <SimulatorDisplay<Color> as DrawTarget>::Error;
+    type Error = anyhow::Error;
 
     fn draw_iter<I>(&mut self, pixels: I) -> std::result::Result<(), Self::Error>
     where
         I: IntoIterator<Item = embedded_graphics::Pixel<Self::Color>>,
     {
-        self.display.draw_iter(pixels)
+        Ok(self.display.draw_iter(pixels)?)
     }
 
     fn fill_contiguous<I>(
@@ -194,7 +191,7 @@ impl DrawTarget for SimulatorWindow {
     where
         I: IntoIterator<Item = Self::Color>,
     {
-        self.display.fill_contiguous(area, colors)
+        Ok(self.display.fill_contiguous(area, colors)?)
     }
 
     fn fill_solid(
@@ -202,11 +199,11 @@ impl DrawTarget for SimulatorWindow {
         area: &Rectangle,
         color: Self::Color,
     ) -> std::result::Result<(), Self::Error> {
-        self.display.fill_solid(area, color)
+        Ok(self.display.fill_solid(area, color)?)
     }
 
     fn clear(&mut self, color: Self::Color) -> std::result::Result<(), Self::Error> {
-        self.display.clear(color)
+        Ok(self.display.clear(color)?)
     }
 }
 

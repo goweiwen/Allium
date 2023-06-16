@@ -10,6 +10,33 @@ use tracing::{debug, trace, warn};
 
 use crate::{constants::ALLIUM_STYLESHEET, display::color::Color};
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum StylesheetColor {
+    Foreground,
+    Background,
+    Highlight,
+    Disabled,
+    ButtonA,
+    ButtonB,
+    ButtonX,
+    ButtonY,
+}
+
+impl StylesheetColor {
+    pub fn to_color(&self, stylesheet: &Stylesheet) -> Color {
+        match self {
+            Self::Foreground => stylesheet.foreground_color,
+            Self::Background => stylesheet.background_color,
+            Self::Highlight => stylesheet.highlight_color,
+            Self::Disabled => stylesheet.disabled_color,
+            Self::ButtonA => stylesheet.button_a_color,
+            Self::ButtonB => stylesheet.button_b_color,
+            Self::ButtonX => stylesheet.button_x_color,
+            Self::ButtonY => stylesheet.button_y_color,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Stylesheet {
     pub enable_box_art: bool,

@@ -1,9 +1,12 @@
 pub mod battery;
+pub mod command;
 pub mod constants;
 pub mod database;
 pub mod display;
 pub mod game_info;
+pub mod geom;
 pub mod platform;
 pub mod retroarch;
 pub mod stylesheet;
+pub mod view;
 pub mod wifi;

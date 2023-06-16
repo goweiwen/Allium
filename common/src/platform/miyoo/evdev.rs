@@ -42,21 +42,22 @@ impl EvdevKeys {
         })
     }
 
-    pub async fn poll(&mut self) -> Result<Option<KeyEvent>> {
-        let event = self.events.next_event().await?;
-        match event.event_type() {
-            EventType::KEY => {
-                let key = event.code();
-                let key: Key = evdev::Key(key).into();
-                return Ok(Some(match event.value() {
-                    0 => KeyEvent::Released(key),
-                    1 => KeyEvent::Pressed(key),
-                    2 => KeyEvent::Autorepeat(key),
-                    _ => bail!("unrecognized key event"),
-                }));
+    pub async fn poll(&mut self) -> KeyEvent {
+        loop {
+            let event = self.events.next_event().await.unwrap();
+            match event.event_type() {
+                EventType::KEY => {
+                    let key = event.code();
+                    let key: Key = evdev::Key(key).into();
+                    return Ok(Some(match event.value() {
+                        0 => KeyEvent::Released(key),
+                        1 => KeyEvent::Pressed(key),
+                        2 => KeyEvent::Autorepeat(key),
+                        _ => bail!("unrecognized key event"),
+                    }));
+                }
+                _ => {}
             }
-            _ => {}
         }
-        Ok(None)
     }
 }

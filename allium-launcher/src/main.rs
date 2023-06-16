@@ -1,13 +1,13 @@
 #![feature(async_fn_in_trait)]
 
 mod allium_launcher;
-mod command;
 mod devices;
-mod state;
+mod view;
 
 use anyhow::Result;
 
 use allium_launcher::AlliumLauncher;
+use common::platform::{DefaultPlatform, Platform};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -16,7 +16,8 @@ async fn main() -> Result<()> {
         .finish();
     tracing::subscriber::set_global_default(subscriber)?;
 
-    let mut app = AlliumLauncher::new()?;
+    let platform = DefaultPlatform::new()?;
+    let mut app = AlliumLauncher::new(platform)?;
     app.run_event_loop().await?;
     Ok(())
 }

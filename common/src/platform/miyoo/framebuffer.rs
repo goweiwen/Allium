@@ -91,20 +91,18 @@ impl Display for FramebufferDisplay {
         Ok(())
     }
 
-    fn load(&mut self, area: Rectangle) -> Result<()> {
+    fn load(&mut self, rect: Rect) -> Result<()> {
         let Some(ref saved) = self.saved else {
              bail!("No saved image");
         };
 
-        let Point { x, y } = area.top_left;
-        let Size { width, height } = area.size;
-        let x = self.framebuffer.size.width - x as u32;
-        let y = self.framebuffer.size.height - y as u32;
+        let x = self.framebuffer.size.width - rect.x as u32;
+        let y = self.framebuffer.size.height - rect.y as u32;
 
-        for y in (y - height)..y {
+        for y in (y - rect.h)..y {
             let to = (y * self.framebuffer.size.width + x) as usize
                 * self.framebuffer.bytes_per_pixel as usize;
-            let from = to - width as usize * self.framebuffer.bytes_per_pixel as usize;
+            let from = to - rect.w as usize * self.framebuffer.bytes_per_pixel as usize;
             self.framebuffer.buffer[from..to].copy_from_slice(&saved[from..to]);
         }
 

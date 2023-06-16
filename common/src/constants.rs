@@ -46,5 +46,4 @@ pub const IMAGE_SIZE: Size = Size::new(250, 376);
 pub const LISTING_JUMP_SIZE: i32 = 5;
 pub const LISTING_SIZE: i32 = 10;
 pub const RECENT_GAMES_LIMIT: i64 = 100;
-pub const SELECTION_HEIGHT: u32 = 34;
-pub const SELECTION_MARGIN: u32 = 8;
+pub const SELECTION_HEIGHT: u32 = 42;

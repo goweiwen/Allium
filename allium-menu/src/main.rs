@@ -1,12 +1,12 @@
 #![feature(async_fn_in_trait)]
 
 mod allium_menu;
-mod command;
-mod menu;
+pub mod view;
 
 use anyhow::Result;
 
 use allium_menu::AlliumMenu;
+use common::platform::{DefaultPlatform, Platform};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -15,7 +15,8 @@ async fn main() -> Result<()> {
         .finish();
     tracing::subscriber::set_global_default(subscriber)?;
 
-    let mut app = AlliumMenu::new()?;
+    let platform = DefaultPlatform::new()?;
+    let mut app = AlliumMenu::new(platform)?;
     app.run_event_loop().await?;
     Ok(())
 }

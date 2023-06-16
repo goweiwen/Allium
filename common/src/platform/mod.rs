@@ -5,8 +5,12 @@ mod simulator;
 
 use anyhow::Result;
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 
-use crate::display::{settings::DisplaySettings, Display};
+use crate::{
+    battery::Battery,
+    display::{settings::DisplaySettings, Display},
+};
 
 #[cfg(target_arch = "arm")]
 pub type DefaultPlatform = miyoo::MiyooPlatform;
@@ -18,7 +22,7 @@ pub type DefaultPlatform = simulator::SimulatorPlatform;
 #[async_trait(?Send)]
 pub trait Platform {
     type Display: Display;
-    type Battery;
+    type Battery: Battery;
 
     fn new() -> Result<Self>
     where
@@ -28,7 +32,7 @@ pub trait Platform {
 
     fn battery(&self) -> Result<Self::Battery>;
 
-    async fn poll(&mut self) -> Result<Option<KeyEvent>>;
+    async fn poll(&mut self) -> KeyEvent;
 
     fn set_volume(&mut self, volume: i32) -> Result<()>;
 
@@ -48,7 +52,7 @@ pub enum KeyEvent {
     Autorepeat(Key),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Key {
     Up,
     Down,
