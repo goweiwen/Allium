@@ -81,6 +81,9 @@ impl Browser {
     }
 
     pub fn init(&mut self, database: Database, device_mapper: Rc<DeviceMapper>) {
+        if let Some(child) = self.child.as_mut() {
+            child.init(database.clone(), Rc::clone(&device_mapper));
+        }
         self.database = database;
         self.device_mapper = Some(device_mapper);
     }
