@@ -135,17 +135,20 @@ impl View for Recents {
             drawn = true;
         }
 
-        if let Some(entry) = self.entries.get_mut(self.list.selected()) {
-            if let Some(path) = entry.image() {
-                self.image.set_path(Some(path.to_path_buf()));
+        if styles.enable_box_art {
+            // TODO: relayout list if box art is enabled/disabled
+            if let Some(entry) = self.entries.get_mut(self.list.selected()) {
+                if let Some(path) = entry.image() {
+                    self.image.set_path(Some(path.to_path_buf()));
+                } else {
+                    self.image.set_path(None);
+                }
+                if self.image.should_draw() && self.image.draw(display, styles)? {
+                    drawn = true;
+                }
             } else {
                 self.image.set_path(None);
             }
-            if self.image.should_draw() && self.image.draw(display, styles)? {
-                drawn = true;
-            }
-        } else {
-            self.image.set_path(None);
         }
 
         if self.button_hints.should_draw() && self.button_hints.draw(display, styles)? {
