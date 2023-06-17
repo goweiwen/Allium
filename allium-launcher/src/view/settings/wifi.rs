@@ -24,7 +24,7 @@ impl Wifi {
         let settings = WiFiSettings::load().unwrap();
 
         let list = SettingsList::new(
-            Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 8 - 46 - 54),
+            Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 8 - 46 - 34 - 12),
             vec![
                 "Wi-Fi Enabled".to_string(),
                 "Wi-Fi Network Name".to_string(),
@@ -59,7 +59,7 @@ impl Wifi {
         let ip_address_label = Label::new(
             Point::new(
                 rect.x + rect.w as i32 - 12,
-                rect.y + rect.h as i32 - 46 - 12,
+                rect.y + rect.h as i32 - 46 - 34,
             ),
             String::new(),
             Alignment::Right,
