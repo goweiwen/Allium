@@ -22,7 +22,7 @@ impl Theme {
         let stylesheet = Stylesheet::load().unwrap();
 
         let list = SettingsList::new(
-            Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 16),
+            Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 58),
             vec![
                 "Dark Mode".to_string(),
                 "Enable Box Art".to_string(),
@@ -153,76 +153,73 @@ impl View for Theme {
             .await?
         {
             while let Some(command) = bubble.pop_front() {
-                match command {
-                    Command::ValueChanged(i, val) => {
-                        match i {
-                            0 => match val.as_bool().unwrap() {
-                                true => {
-                                    if !self.stylesheet.background_color.is_dark() {
-                                        self.stylesheet.foreground_color =
-                                            self.stylesheet.foreground_color.invert();
-                                        self.stylesheet.background_color =
-                                            self.stylesheet.background_color.invert();
-                                        self.list.set_child(
-                                            3,
-                                            Box::new(ColorPicker::new(
-                                                Point::zero(),
-                                                self.stylesheet.foreground_color,
-                                                Alignment::Right,
-                                            )),
-                                        );
-                                        self.list.set_child(
-                                            4,
-                                            Box::new(ColorPicker::new(
-                                                Point::zero(),
-                                                self.stylesheet.background_color,
-                                                Alignment::Right,
-                                            )),
-                                        );
-                                    }
+                if let Command::ValueChanged(i, val) = command {
+                    match i {
+                        0 => match val.as_bool().unwrap() {
+                            true => {
+                                if !self.stylesheet.background_color.is_dark() {
+                                    self.stylesheet.foreground_color =
+                                        self.stylesheet.foreground_color.invert();
+                                    self.stylesheet.background_color =
+                                        self.stylesheet.background_color.invert();
+                                    self.list.set_child(
+                                        3,
+                                        Box::new(ColorPicker::new(
+                                            Point::zero(),
+                                            self.stylesheet.foreground_color,
+                                            Alignment::Right,
+                                        )),
+                                    );
+                                    self.list.set_child(
+                                        4,
+                                        Box::new(ColorPicker::new(
+                                            Point::zero(),
+                                            self.stylesheet.background_color,
+                                            Alignment::Right,
+                                        )),
+                                    );
                                 }
-                                false => {
-                                    if self.stylesheet.background_color.is_dark() {
-                                        self.stylesheet.foreground_color =
-                                            self.stylesheet.foreground_color.invert();
-                                        self.stylesheet.background_color =
-                                            self.stylesheet.background_color.invert();
-                                        self.list.set_child(
-                                            3,
-                                            Box::new(ColorPicker::new(
-                                                Point::zero(),
-                                                self.stylesheet.foreground_color,
-                                                Alignment::Right,
-                                            )),
-                                        );
-                                        self.list.set_child(
-                                            4,
-                                            Box::new(ColorPicker::new(
-                                                Point::zero(),
-                                                self.stylesheet.background_color,
-                                                Alignment::Right,
-                                            )),
-                                        );
-                                    }
+                            }
+                            false => {
+                                if self.stylesheet.background_color.is_dark() {
+                                    self.stylesheet.foreground_color =
+                                        self.stylesheet.foreground_color.invert();
+                                    self.stylesheet.background_color =
+                                        self.stylesheet.background_color.invert();
+                                    self.list.set_child(
+                                        3,
+                                        Box::new(ColorPicker::new(
+                                            Point::zero(),
+                                            self.stylesheet.foreground_color,
+                                            Alignment::Right,
+                                        )),
+                                    );
+                                    self.list.set_child(
+                                        4,
+                                        Box::new(ColorPicker::new(
+                                            Point::zero(),
+                                            self.stylesheet.background_color,
+                                            Alignment::Right,
+                                        )),
+                                    );
                                 }
-                            },
-                            1 => self.stylesheet.enable_box_art = val.as_bool().unwrap(),
-                            2 => self.stylesheet.highlight_color = val.as_color().unwrap(),
-                            3 => self.stylesheet.foreground_color = val.as_color().unwrap(),
-                            4 => self.stylesheet.background_color = val.as_color().unwrap(),
-                            5 => self.stylesheet.disabled_color = val.as_color().unwrap(),
-                            6 => self.stylesheet.button_a_color = val.as_color().unwrap(),
-                            7 => self.stylesheet.button_b_color = val.as_color().unwrap(),
-                            8 => self.stylesheet.button_x_color = val.as_color().unwrap(),
-                            9 => self.stylesheet.button_y_color = val.as_color().unwrap(),
-                            _ => unreachable!("Invalid index"),
-                        }
-
-                        commands
-                            .send(Command::SaveStylesheet(Box::new(self.stylesheet.clone())))
-                            .await?;
+                            }
+                        },
+                        1 => self.stylesheet.enable_box_art = val.as_bool().unwrap(),
+                        2 => self.stylesheet.highlight_color = val.as_color().unwrap(),
+                        3 => self.stylesheet.foreground_color = val.as_color().unwrap(),
+                        4 => self.stylesheet.background_color = val.as_color().unwrap(),
+                        5 => self.stylesheet.disabled_color = val.as_color().unwrap(),
+                        6 => self.stylesheet.button_a_color = val.as_color().unwrap(),
+                        7 => self.stylesheet.button_b_color = val.as_color().unwrap(),
+                        8 => self.stylesheet.button_x_color = val.as_color().unwrap(),
+                        9 => self.stylesheet.button_y_color = val.as_color().unwrap(),
+                        _ => unreachable!("Invalid index"),
                     }
-                    _ => {}
+
+                    commands
+                        .send(Command::SaveStylesheet(Box::new(self.stylesheet.clone())))
+                        .await?;
                 }
             }
             return Ok(true);

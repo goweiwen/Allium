@@ -69,9 +69,9 @@ impl SettingsList {
         self.left
             .get_mut(0)
             .map(|c| c.set_background_color(StylesheetColor::Highlight));
-        self.right
-            .get_mut(0)
-            .map(|c| c.set_background_color(StylesheetColor::Highlight));
+        if let Some(c) = self.right.get_mut(0) {
+            c.set_background_color(StylesheetColor::Highlight)
+        }
 
         self.top = 0;
         if self.selected >= self.top + self.visible_count() {
@@ -136,7 +136,7 @@ impl View for SettingsList {
                     .map(|s| s.should_draw())
                     .unwrap_or(false))
         {
-            display.load(self.bounding_box(styles).into())?;
+            display.load(self.bounding_box(styles))?;
 
             let rect = if self.focused {
                 self.right
@@ -234,30 +234,30 @@ impl View for SettingsList {
                 }
             }
             Ok(false)
-        } else if self.left.len() != 0 {
+        } else if !self.left.is_empty() {
             match event {
                 KeyEvent::Pressed(Key::Up) | KeyEvent::Autorepeat(Key::Up) => {
                     self.select(
-                        (self.selected as isize - 1).rem_euclid(self.left.len() as isize) as usize,
+                        (self.selected as isize - 1).rem_euclid(self.right.len() as isize) as usize,
                     );
                     self.dirty = true;
                     Ok(true)
                 }
                 KeyEvent::Pressed(Key::Down) | KeyEvent::Autorepeat(Key::Down) => {
-                    self.select((self.selected + 1).rem_euclid(self.left.len()));
+                    self.select((self.selected + 1).rem_euclid(self.right.len()));
                     self.dirty = true;
                     Ok(true)
                 }
                 KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
                     self.select(
-                        (self.selected as isize - 5).clamp(0, self.left.len() as isize - 1)
+                        (self.selected as isize - 5).clamp(0, self.right.len() as isize - 1)
                             as usize,
                     );
                     self.dirty = true;
                     Ok(true)
                 }
                 KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
-                    self.select((self.selected + 5).clamp(0, self.left.len() - 1));
+                    self.select((self.selected + 5).clamp(0, self.right.len() - 1));
                     self.dirty = true;
                     Ok(true)
                 }

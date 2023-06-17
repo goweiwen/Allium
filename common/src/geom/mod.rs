@@ -28,9 +28,9 @@ impl From<embedded_graphics::prelude::Point> for Point {
     }
 }
 
-impl Into<embedded_graphics::prelude::Point> for Point {
-    fn into(self) -> embedded_graphics::prelude::Point {
-        embedded_graphics::prelude::Point::new(self.x, self.y)
+impl From<Point> for embedded_graphics::prelude::Point {
+    fn from(val: Point) -> Self {
+        embedded_graphics::prelude::Point::new(val.x, val.y)
     }
 }
 
@@ -81,11 +81,11 @@ impl From<embedded_graphics::primitives::Rectangle> for Rect {
     }
 }
 
-impl Into<embedded_graphics::primitives::Rectangle> for Rect {
-    fn into(self) -> embedded_graphics::primitives::Rectangle {
+impl From<Rect> for embedded_graphics::primitives::Rectangle {
+    fn from(val: Rect) -> Self {
         embedded_graphics::primitives::Rectangle::new(
-            embedded_graphics::prelude::Point::new(self.x, self.y),
-            embedded_graphics::geometry::Size::new(self.w, self.h),
+            embedded_graphics::prelude::Point::new(val.x, val.y),
+            embedded_graphics::geometry::Size::new(val.w, val.h),
         )
     }
 }
@@ -117,12 +117,12 @@ impl From<embedded_graphics::text::Alignment> for Alignment {
     }
 }
 
-impl Into<embedded_graphics::text::Alignment> for Alignment {
-    fn into(self) -> embedded_graphics::text::Alignment {
-        match self {
-            Self::Left => embedded_graphics::text::Alignment::Left,
-            Self::Center => embedded_graphics::text::Alignment::Center,
-            Self::Right => embedded_graphics::text::Alignment::Right,
+impl From<Alignment> for embedded_graphics::text::Alignment {
+    fn from(val: Alignment) -> Self {
+        match val {
+            Alignment::Left => embedded_graphics::text::Alignment::Left,
+            Alignment::Center => embedded_graphics::text::Alignment::Center,
+            Alignment::Right => embedded_graphics::text::Alignment::Right,
         }
     }
 }

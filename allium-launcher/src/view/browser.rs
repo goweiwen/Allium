@@ -158,7 +158,9 @@ impl View for Browser {
     }
 
     fn set_should_draw(&mut self) {
-        self.child.as_mut().map(|c| c.set_should_draw());
+        if let Some(c) = self.child.as_mut() {
+            c.set_should_draw()
+        }
         self.list.set_should_draw();
         self.image.set_should_draw();
         self.button_hints.set_should_draw();

@@ -52,7 +52,7 @@ impl Platform for MiyooPlatform {
         })
     }
 
-    async fn poll(&mut self) -> Result<Option<KeyEvent>> {
+    async fn poll(&mut self) -> KeyEvent {
         self.keys.poll().await
     }
 

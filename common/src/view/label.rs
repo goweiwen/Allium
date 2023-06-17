@@ -137,7 +137,7 @@ where
         let text = Text::with_alignment(
             self.truncated_text.as_ref().unwrap(),
             self.point.into(),
-            text_style.clone(),
+            text_style,
             self.alignment.into(),
         );
 

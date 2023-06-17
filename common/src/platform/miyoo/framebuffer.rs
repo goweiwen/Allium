@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::Pixel;
@@ -7,6 +7,7 @@ use tracing::trace;
 
 use crate::display::color::Color;
 use crate::display::Display;
+use crate::geom::Rect;
 
 pub struct Buffer {
     buffer: Vec<u8>,
@@ -112,36 +113,36 @@ impl Display for FramebufferDisplay {
 
 impl DrawTarget for FramebufferDisplay {
     type Color = Color;
-    type Error = core::convert::Infallible;
+    type Error = anyhow::Error;
 
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    fn draw_iter<I>(&mut self, pixels: I) -> Result<()>
     where
         I: IntoIterator<Item = embedded_graphics::Pixel<Self::Color>>,
     {
-        self.framebuffer.draw_iter(pixels)
+        self.framebuffer
+            .draw_iter(pixels)
+            .map_err(|e| anyhow!("failed to draw: {}", e))
     }
 
-    fn fill_contiguous<I>(
-        &mut self,
-        area: &Rectangle,
-        colors: I,
-    ) -> std::result::Result<(), Self::Error>
+    fn fill_contiguous<I>(&mut self, area: &Rectangle, colors: I) -> Result<()>
     where
         I: IntoIterator<Item = Self::Color>,
     {
-        self.framebuffer.fill_contiguous(area, colors)
+        self.framebuffer
+            .fill_contiguous(area, colors)
+            .map_err(|e| anyhow!("failed to draw: {}", e))
     }
 
-    fn fill_solid(
-        &mut self,
-        area: &Rectangle,
-        color: Self::Color,
-    ) -> std::result::Result<(), Self::Error> {
-        self.framebuffer.fill_solid(area, color)
+    fn fill_solid(&mut self, area: &Rectangle, color: Self::Color) -> Result<()> {
+        self.framebuffer
+            .fill_solid(area, color)
+            .map_err(|e| anyhow!("failed to draw: {}", e))
     }
 
-    fn clear(&mut self, color: Self::Color) -> std::result::Result<(), Self::Error> {
-        self.framebuffer.clear(color)
+    fn clear(&mut self, color: Self::Color) -> Result<()> {
+        self.framebuffer
+            .clear(color)
+            .map_err(|e| anyhow!("failed to draw: {}", e))
     }
 }
 
@@ -153,9 +154,9 @@ impl OriginDimensions for FramebufferDisplay {
 
 impl DrawTarget for Buffer {
     type Color = Color;
-    type Error = core::convert::Infallible;
+    type Error = anyhow::Error;
 
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    fn draw_iter<I>(&mut self, pixels: I) -> Result<()>
     where
         I: IntoIterator<Item = embedded_graphics::Pixel<Self::Color>>,
     {

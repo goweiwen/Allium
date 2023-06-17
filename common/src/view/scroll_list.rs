@@ -61,9 +61,6 @@ impl ScrollList {
             ));
             y += self.entry_height as i32;
         }
-        self.children
-            .get_mut(0)
-            .map(|c| c.set_background_color(StylesheetColor::Highlight));
 
         self.selected = if preserve_selection {
             self.items
@@ -73,6 +70,11 @@ impl ScrollList {
         } else {
             0
         };
+
+        self.children
+            .get_mut(self.selected)
+            .map(|c| c.set_background_color(StylesheetColor::Highlight));
+
         self.top = 0;
         if self.selected >= self.top + self.visible_count() {
             self.top = self.selected;
@@ -124,7 +126,7 @@ impl View for ScrollList {
         styles: &Stylesheet,
     ) -> Result<bool> {
         if self.dirty {
-            display.load(self.bounding_box(styles).into())?;
+            display.load(self.bounding_box(styles))?;
 
             if let Some(selected) = self.children.get_mut(self.selected - self.top) {
                 let rect = selected.bounding_box(styles);
@@ -177,7 +179,7 @@ impl View for ScrollList {
         _command: Sender<Command>,
         _bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
-        if self.items.len() != 0 {
+        if !self.items.is_empty() {
             match event {
                 KeyEvent::Pressed(Key::Up) | KeyEvent::Autorepeat(Key::Up) => {
                     self.select(

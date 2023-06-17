@@ -75,7 +75,7 @@ impl View for ColorPicker {
         let edit_index = self.edit_state.as_ref().map(|s| s.selected);
 
         let fill_style = PrimitiveStyleBuilder::new()
-            .fill_color(color.into())
+            .fill_color(color)
             .stroke_color(styles.foreground_color)
             .stroke_alignment(StrokeAlignment::Inside)
             .stroke_width(1)
@@ -138,9 +138,9 @@ impl View for ColorPicker {
                     "#",
                     Point::new(x, self.point.y).into(),
                     if self.edit_state.is_some() {
-                        focused_style.clone()
+                        focused_style
                     } else {
-                        text_style.clone()
+                        text_style
                     },
                     Alignment::Right.into(),
                 )

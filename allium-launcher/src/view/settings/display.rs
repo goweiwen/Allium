@@ -4,15 +4,13 @@ use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
 use common::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
-use common::display::color::Color;
+
 use common::display::settings::DisplaySettings;
 use common::geom::{Alignment, Point, Rect};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 use common::view::{ButtonHint, Label, Percentage, Row, SettingsList, View};
-use embedded_graphics::prelude::Size;
-use embedded_graphics::primitives::{Primitive, PrimitiveStyle, Rectangle};
-use embedded_graphics::Drawable;
+
 use tokio::sync::mpsc::Sender;
 
 pub struct Display {
@@ -149,26 +147,23 @@ impl View for Display {
             .await?
         {
             while let Some(command) = bubble.pop_front() {
-                match command {
-                    Command::ValueChanged(i, val) => {
-                        match i {
-                            0 => self.settings.brightness = val.as_int().unwrap() as u8,
-                            1 => self.settings.luminance = val.as_int().unwrap() as u8,
-                            2 => self.settings.hue = val.as_int().unwrap() as u8,
-                            3 => self.settings.saturation = val.as_int().unwrap() as u8,
-                            4 => self.settings.contrast = val.as_int().unwrap() as u8,
-                            _ => unreachable!("Invalid index"),
-                        }
-
-                        self.has_changed = true;
-
-                        commands
-                            .send(Command::SaveDisplaySettings(Box::new(
-                                self.settings.clone(),
-                            )))
-                            .await?;
+                if let Command::ValueChanged(i, val) = command {
+                    match i {
+                        0 => self.settings.brightness = val.as_int().unwrap() as u8,
+                        1 => self.settings.luminance = val.as_int().unwrap() as u8,
+                        2 => self.settings.hue = val.as_int().unwrap() as u8,
+                        3 => self.settings.saturation = val.as_int().unwrap() as u8,
+                        4 => self.settings.contrast = val.as_int().unwrap() as u8,
+                        _ => unreachable!("Invalid index"),
                     }
-                    _ => {}
+
+                    self.has_changed = true;
+
+                    commands
+                        .send(Command::SaveDisplaySettings(Box::new(
+                            self.settings.clone(),
+                        )))
+                        .await?;
                 }
             }
             return Ok(true);

@@ -64,7 +64,7 @@ impl AlliumMenu<DefaultPlatform> {
             #[cfg(unix)]
             tokio::select! {
                 _ = sigterm.recv() => {
-                    self.handle_command(Command::Exit);
+                    self.handle_command(Command::Exit)?;
                 }
                 Some(command) = rx.recv() => {
                     self.handle_command(command)?;

@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 use evdev::{Device, EventStream, EventType};
 
 use crate::platform::{Key, KeyEvent};
@@ -49,12 +49,12 @@ impl EvdevKeys {
                 EventType::KEY => {
                     let key = event.code();
                     let key: Key = evdev::Key(key).into();
-                    return Ok(Some(match event.value() {
+                    return match event.value() {
                         0 => KeyEvent::Released(key),
                         1 => KeyEvent::Pressed(key),
                         2 => KeyEvent::Autorepeat(key),
-                        _ => bail!("unrecognized key event"),
-                    }));
+                        _ => unreachable!(),
+                    };
                 }
                 _ => {}
             }

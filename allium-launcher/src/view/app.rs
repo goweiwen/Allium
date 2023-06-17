@@ -71,7 +71,7 @@ impl State {
     }
 
     fn save(&self) -> Result<()> {
-        let file = File::open(ALLIUM_LAUNCHER_STATE.as_path())?;
+        let file = File::create(ALLIUM_LAUNCHER_STATE.as_path())?;
         serde_json::to_writer(file, &self)?;
         Ok(())
     }
@@ -88,22 +88,22 @@ impl State {
         self.dirty = true;
     }
 
-    fn view_mut(&mut self) -> Box<&mut dyn View> {
+    fn view_mut(&mut self) -> &mut dyn View {
         match self.selected {
-            0 => Box::new(&mut self.views.0),
-            1 => Box::new(&mut self.views.1),
-            2 => Box::new(&mut self.views.2),
-            3 => Box::new(&mut self.views.3),
+            0 => &mut self.views.0,
+            1 => &mut self.views.1,
+            2 => &mut self.views.2,
+            3 => &mut self.views.3,
             _ => unreachable!(),
         }
     }
 
-    fn view(&self) -> Box<&dyn View> {
+    fn view(&self) -> &dyn View {
         match self.selected {
-            0 => Box::new(&self.views.0),
-            1 => Box::new(&self.views.1),
-            2 => Box::new(&self.views.2),
-            3 => Box::new(&self.views.3),
+            0 => &self.views.0,
+            1 => &self.views.1,
+            2 => &self.views.2,
+            3 => &self.views.3,
             _ => unreachable!(),
         }
     }
@@ -257,13 +257,13 @@ where
     }
 
     fn children(&self) -> Vec<&dyn View> {
-        vec![&self.battery_indicator, *self.state.view(), &self.tabs]
+        vec![&self.battery_indicator, self.state.view(), &self.tabs]
     }
 
     fn children_mut(&mut self) -> Vec<&mut dyn View> {
         vec![
             &mut self.battery_indicator,
-            *self.state.view_mut(),
+            self.state.view_mut(),
             &mut self.tabs,
         ]
     }

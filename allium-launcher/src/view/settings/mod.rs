@@ -116,7 +116,7 @@ impl View for Settings {
         let mut drawn = false;
 
         if self.dirty {
-            display.load(self.bounding_box(styles).into())?;
+            display.load(self.bounding_box(styles))?;
             self.dirty = false;
         }
 
@@ -128,10 +128,8 @@ impl View for Settings {
             if child.draw(display, styles)? {
                 drawn = true;
             }
-        } else {
-            if self.button_hints.should_draw() && self.button_hints.draw(display, styles)? {
-                drawn = true;
-            }
+        } else if self.button_hints.should_draw() && self.button_hints.draw(display, styles)? {
+            drawn = true;
         }
 
         Ok(drawn)

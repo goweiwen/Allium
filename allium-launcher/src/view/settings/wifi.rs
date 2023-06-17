@@ -7,8 +7,8 @@ use common::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
 use common::geom::{Alignment, Point, Rect};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, Label, NullView, Row, SettingsList, TextBox, Toggle, View};
-use common::wifi::WiFiSettings;
+use common::view::{ButtonHint, Label, Row, SettingsList, TextBox, Toggle, View};
+use common::wifi::{self, WiFiSettings};
 use tokio::sync::mpsc::Sender;
 
 pub struct Wifi {
@@ -102,6 +102,13 @@ impl View for Wifi {
             drawn = true;
         }
 
+        if self.ip_address_label.text().is_empty() {
+            // Try to get the IP address if we don't have it yet
+            if let Some(ip_address) = wifi::ip_address() {
+                self.ip_address_label.set_text(ip_address);
+            }
+        }
+
         if self.ip_address_label.should_draw() && self.ip_address_label.draw(display, styles)? {
             drawn = true;
         }
@@ -133,16 +140,15 @@ impl View for Wifi {
     ) -> Result<bool> {
         if self.list.handle_key_event(event, commands, bubble).await? {
             while let Some(command) = bubble.pop_front() {
-                match command {
-                    Command::ValueChanged(i, val) => match i {
+                if let Command::ValueChanged(i, val) = command {
+                    match i {
                         0 => self.settings.toggle_wifi(val.as_bool().unwrap())?,
                         1 => self.settings.ssid = val.as_string().unwrap().to_string(),
                         2 => self.settings.password = val.as_string().unwrap().to_string(),
                         3 => self.settings.toggle_telnet(val.as_bool().unwrap())?,
                         4 => self.settings.toggle_ftp(val.as_bool().unwrap())?,
                         _ => unreachable!("Invalid index"),
-                    },
-                    _ => {}
+                    }
                 }
                 self.settings.save()?;
             }
