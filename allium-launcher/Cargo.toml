@@ -8,7 +8,7 @@ include = ["/src"]
 
 [dependencies]
 anyhow = "1.0.70"
-embedded-graphics = "0.7.1"
+embedded-graphics = "0.8.0"
 lazy_static = "1.4.0"
 image = "0.24.6"
 nix = "0.26.2"
