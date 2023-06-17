@@ -9,6 +9,7 @@ use tracing::error;
 
 use crate::battery::Battery;
 use crate::constants::BATTERY_UPDATE_INTERVAL;
+use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, KeyEvent, Platform};
 use crate::stylesheet::Stylesheet;
@@ -67,6 +68,7 @@ where
             }
         }
 
+        display.load(self.bounding_box(styles).into())?;
         self.label.draw(display, styles)
     }
 
