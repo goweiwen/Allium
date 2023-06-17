@@ -3,7 +3,7 @@ use std::{
     rc::Rc,
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use chrono::Duration;
 use rusqlite::{params, Connection, OptionalExtension};
 use rusqlite_migration::{Migrations, M};
@@ -17,7 +17,6 @@ pub struct Database {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Game {
-    pub id: i64,
     pub name: String,
     pub path: PathBuf,
     pub image: Option<PathBuf>,
@@ -28,7 +27,8 @@ pub struct Game {
 
 impl Database {
     pub fn new() -> Result<Self> {
-        let mut conn = Connection::open(ALLIUM_DATABASE.as_path())?;
+        let mut conn = Connection::open(ALLIUM_DATABASE.as_path())
+            .with_context(|| format!("{}", ALLIUM_DATABASE.display()))?;
         Self::migrations().to_latest(&mut conn)?;
         Ok(Self {
             conn: Some(Rc::new(conn)),
@@ -54,23 +54,73 @@ CREATE TABLE IF NOT EXISTS games (
     play_count INTEGER NOT NULL,
     play_time INTEGER NOT NULL,
     last_played INTEGER NOT NULL
-);
-            ",
+);"
+            ), M::up("
+CREATE VIRTUAL TABLE games_fts USING fts5(name, path, content='games', content_rowid='id');
+
+CREATE TRIGGER games_fts_ai AFTER INSERT ON games BEGIN
+    INSERT INTO games_fts(rowid, name, path) VALUES (new.id, new.name, new.path);
+END;
+CREATE TRIGGER games_fts_ad AFTER DELETE ON games BEGIN
+    INSERT INTO games_fts(games_fts, rowid, name, path) VALUES ('delete', old.id, old.name, old.path);
+END;
+CREATE TRIGGER games_fts_au AFTER UPDATE ON games BEGIN
+    INSERT INTO games_fts(games_fts, rowid, name, path) VALUES ('delete', old.id, old.name, old.path);
+    INSERT INTO games_fts(rowid, name, path) VALUES (new.id, new.name, new.path);
+END;
+                ",
         )])
     }
 
+    pub fn delete_game(&self, path: &Path) -> Result<()> {
+        let conn = self.conn.as_ref().unwrap();
+        conn.execute(
+            "DELETE FROM games WHERE path = ?; DELETE FROM games_search WHERE path = ?;",
+            params![path.display().to_string(), path.display().to_string()],
+        )?;
+        Ok(())
+    }
+
+    pub fn update_games(&self, games: &[Game]) -> Result<()> {
+        let conn = self.conn.as_ref().unwrap();
+        let mut stmt = conn.prepare("
+INSERT INTO games (name, path, image, play_count, play_time, last_played)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, play_count = ?, play_time = ?, last_played = ?")?;
+
+        for game in games {
+            let path = game.path.display().to_string();
+            let image = game.image.as_ref().map(|p| p.to_str().unwrap());
+            stmt.execute(params![
+                game.name,
+                path,
+                image,
+                game.play_count,
+                game.play_time.num_seconds(),
+                game.last_played,
+                game.name,
+                image,
+                game.play_count,
+                game.play_time.num_seconds(),
+                game.last_played
+            ])?;
+        }
+
+        Ok(())
+    }
+
+    /// Selects played games sorted by most play time first.
     pub fn select_most_played(&self, limit: i64) -> Result<Vec<Game>> {
-        let mut stmt = self.conn.as_ref().unwrap().prepare("SELECT id, name, path, image, play_count, play_time, last_played FROM games ORDER BY play_time DESC LIMIT ?")?;
+        let mut stmt = self.conn.as_ref().unwrap().prepare("SELECT name, path, image, play_count, play_time, last_played FROM games WHERE play_time > 0 ORDER BY play_time DESC LIMIT ?")?;
 
         let rows = stmt.query_map([limit], |row| {
             Ok(Game {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                path: PathBuf::from(row.get::<_, String>(2)?),
-                image: row.get::<_, Option<String>>(3)?.map(PathBuf::from),
-                play_count: row.get(4)?,
-                play_time: Duration::seconds(row.get(5)?),
-                last_played: row.get(6)?,
+                name: row.get(0)?,
+                path: PathBuf::from(row.get::<_, String>(1)?),
+                image: row.get::<_, Option<String>>(2)?.map(PathBuf::from),
+                play_count: row.get(3)?,
+                play_time: Duration::seconds(row.get(4)?),
+                last_played: row.get(5)?,
             })
         })?;
 
@@ -82,18 +132,41 @@ CREATE TABLE IF NOT EXISTS games (
         Ok(games)
     }
 
+    /// Selects played games sorted by last played first.
     pub fn select_last_played(&self, limit: i64) -> Result<Vec<Game>> {
-        let mut stmt = self.conn.as_ref().unwrap().prepare("SELECT id, name, path, image, play_count, play_time, last_played FROM games ORDER BY last_played DESC LIMIT ?")?;
+        let mut stmt = self.conn.as_ref().unwrap().prepare("SELECT name, path, image, play_count, play_time, last_played FROM games WHERE last_played > 0 ORDER BY last_played DESC LIMIT ?")?;
 
         let rows = stmt.query_map([limit], |row| {
             Ok(Game {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                path: PathBuf::from(row.get::<_, String>(2)?),
-                image: row.get::<_, Option<String>>(3)?.map(PathBuf::from),
-                play_count: row.get(4)?,
-                play_time: Duration::seconds(row.get(5)?),
-                last_played: row.get(6)?,
+                name: row.get(0)?,
+                path: PathBuf::from(row.get::<_, String>(1)?),
+                image: row.get::<_, Option<String>>(2)?.map(PathBuf::from),
+                play_count: row.get(3)?,
+                play_time: Duration::seconds(row.get(4)?),
+                last_played: row.get(5)?,
+            })
+        })?;
+
+        let mut games = Vec::new();
+        for row in rows {
+            games.push(row?);
+        }
+
+        Ok(games)
+    }
+
+    /// Search for games by name. The query is a prefix search on words, so "Fi" will match both "Fire Emblem" and "Pokemon Fire Red".
+    pub fn search(&self, query: &str, limit: i64) -> Result<Vec<Game>> {
+        let mut stmt = self.conn.as_ref().unwrap().prepare("SELECT games.name, games.path, image, play_count, play_time, last_played FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.name MATCH ? LIMIT ?")?;
+
+        let rows = stmt.query_map(params![format!("{}*", query), limit], |row| {
+            Ok(Game {
+                name: row.get(0)?,
+                path: PathBuf::from(row.get::<_, String>(1)?),
+                image: row.get::<_, Option<String>>(2)?.map(PathBuf::from),
+                play_count: row.get(3)?,
+                play_time: Duration::seconds(row.get(4)?),
+                last_played: row.get(5)?,
             })
         })?;
 
@@ -107,22 +180,22 @@ CREATE TABLE IF NOT EXISTS games (
 
     pub fn select_game(&self, path: &str) -> Result<Option<Game>> {
         let game = self.conn.as_ref().unwrap().query_row(
-            "SELECT id, name, path, image, play_count, play_time, last_played FROM games WHERE path = ? LIMIT 1",
+            "SELECT name, path, image, play_count, play_time, last_played FROM games WHERE path = ? LIMIT 1",
        [path], |row| {
             Ok(Game {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                path: PathBuf::from(row.get::<_, String>(2)?),
-                image: row.get::<_, Option<String>>(3)?.map(PathBuf::from),
-                play_count: row.get(4)?,
-                play_time: Duration::seconds(row.get(5)?),
-                last_played: row.get(6)?,
+                name: row.get(0)?,
+                path: PathBuf::from(row.get::<_, String>(1)?),
+                image: row.get::<_, Option<String>>(2)?.map(PathBuf::from),
+                play_count: row.get(3)?,
+                play_time: Duration::seconds(row.get(4)?),
+                last_played: row.get(5)?,
             })
         }).optional()?;
 
         Ok(game)
     }
 
+    /// Increment the play count of a game, inserting a new row if it doesn't exist.
     pub fn increment_play_count(
         &self,
         name: &str,
@@ -130,24 +203,29 @@ CREATE TABLE IF NOT EXISTS games (
         image: Option<&Path>,
     ) -> Result<()> {
         let mut stmt = self.conn.as_ref().unwrap().prepare(
-            "INSERT OR IGNORE INTO games (name, path, image, play_count, play_time, last_played) VALUES (?, ?, ?, ?, ?, ?)",)?;
+            "
+INSERT INTO games (name, path, image, play_count, play_time, last_played)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
+        )?;
         stmt.execute(params![
             name,
             path.display().to_string(),
             image.map(|p| p.display().to_string()),
-            0,
+            1,
             0,
             0
         ])?;
 
         let mut stmt = self.conn.as_ref().unwrap().prepare(
-             "UPDATE games SET play_count = play_count + 1, last_played = (SELECT MAX(last_played) from games) + 1 WHERE path = ?",
+            "UPDATE games SET last_played = (SELECT MAX(last_played) FROM games) + 1 WHERE path = ?",
         )?;
         stmt.execute([path.display().to_string()])?;
 
         Ok(())
     }
 
+    /// Increases the play time of a game. Does nothing if the game doesn't exist.
     pub fn add_play_time(&self, path: &Path, play_time: Duration) -> Result<()> {
         let mut stmt = self
             .conn
@@ -176,7 +254,6 @@ mod tests {
 
         let games = vec![
             Game {
-                id: 0,
                 name: "Game One".to_string(),
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
@@ -185,7 +262,6 @@ mod tests {
                 last_played: 0,
             },
             Game {
-                id: 1,
                 name: "Game Two".to_string(),
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
@@ -195,6 +271,15 @@ mod tests {
             },
         ];
 
+        database.update_games(&games).unwrap();
+
+        database
+            .increment_play_count(
+                &games[1].name,
+                games[1].path.as_path(),
+                games[1].image.as_deref(),
+            )
+            .unwrap();
         database
             .add_play_time(games[1].path.as_path(), Duration::seconds(1))
             .unwrap();
@@ -202,6 +287,13 @@ mod tests {
         assert_eq!(most_played.len(), 1);
         assert_eq!(most_played[0].path, games[1].path);
 
+        database
+            .increment_play_count(
+                &games[0].name,
+                games[0].path.as_path(),
+                games[0].image.as_deref(),
+            )
+            .unwrap();
         database
             .add_play_time(games[0].path.as_path(), Duration::seconds(2))
             .unwrap();
@@ -217,7 +309,6 @@ mod tests {
 
         let games = vec![
             Game {
-                id: 0,
                 name: "Game One".to_string(),
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
@@ -226,7 +317,6 @@ mod tests {
                 last_played: 0,
             },
             Game {
-                id: 1,
                 name: "Game Two".to_string(),
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
@@ -235,6 +325,8 @@ mod tests {
                 last_played: 0,
             },
         ];
+
+        database.update_games(&games).unwrap();
 
         for _ in 0..2 {
             database
@@ -260,5 +352,43 @@ mod tests {
         assert_eq!(last_played.len(), 2);
         assert_eq!(last_played[0].path, games[0].path);
         assert_eq!(last_played[1].path, games[1].path);
+    }
+
+    #[test]
+    fn test_search() {
+        let database = Database::in_memory().unwrap();
+
+        let games = vec![
+            Game {
+                name: "Game One".to_string(),
+                path: PathBuf::from("test_directory/Game One.rom"),
+                image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
+                play_count: 0,
+                play_time: Duration::zero(),
+                last_played: 0,
+            },
+            Game {
+                name: "Game Two".to_string(),
+                path: PathBuf::from("test_directory/Game Two.rom"),
+                image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
+                play_count: 0,
+                play_time: Duration::zero(),
+                last_played: 0,
+            },
+        ];
+
+        database.update_games(&games).unwrap();
+
+        let results = database.search("Game", 100).unwrap();
+        assert_eq!(results.len(), 2);
+
+        let results = database.search("One", 100).unwrap();
+        assert_eq!(results[0].path, games[0].path);
+
+        let results = database.search("Game One", 100).unwrap();
+        assert_eq!(results[0].path, games[0].path);
+
+        let results = database.search("Ga", 100).unwrap();
+        assert_eq!(results[0].path, games[0].path);
     }
 }
