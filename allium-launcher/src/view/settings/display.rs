@@ -157,7 +157,7 @@ impl View for Display {
                         _ => unreachable!("Invalid index"),
                     }
 
-                    self.has_changed = true;
+                    self.has_changed |= i != 0;
 
                     commands
                         .send(Command::SaveDisplaySettings(Box::new(
