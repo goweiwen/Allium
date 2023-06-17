@@ -19,9 +19,17 @@ use tokio::sync::mpsc::Sender;
 
 use crate::devices::{DeviceMapper, Game};
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BrowserState {
+    pub directory: Directory,
+    pub selected: usize,
+    pub child: Option<Box<BrowserState>>,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Browser {
     rect: Rect,
+    directory: Directory,
     entries: Vec<Entry>,
     list: ScrollList,
     image: Image,
@@ -34,16 +42,17 @@ pub struct Browser {
 }
 
 impl Browser {
-    pub fn new(rect: Rect, directory: Directory) -> Result<Self> {
+    pub fn new(rect: Rect, directory: Directory, selected: usize) -> Result<Self> {
         let Rect { x, y, w, h } = rect;
 
         let entries = entries(&directory)?;
-        let list = ScrollList::new(
+        let mut list = ScrollList::new(
             Rect::new(x + 12, y + 8, w - IMAGE_SIZE.width - 12 - 12 - 24, h - 16),
             entries.iter().map(|e| e.name().to_string()).collect(),
             Alignment::Left,
             SELECTION_HEIGHT,
         );
+        list.select(selected);
 
         let mut image = Image::empty(
             Rect::new(
@@ -70,6 +79,7 @@ impl Browser {
 
         Ok(Self {
             rect,
+            directory,
             entries,
             list,
             image,
@@ -78,6 +88,22 @@ impl Browser {
             database: Default::default(),
             device_mapper: None,
         })
+    }
+
+    pub fn load(rect: Rect, state: BrowserState) -> Result<Self> {
+        let mut browser = Self::new(rect, state.directory, state.selected)?;
+        if let Some(child) = state.child {
+            browser.child = Some(Box::new(Self::load(rect, *child)?));
+        }
+        Ok(browser)
+    }
+
+    pub fn save(&self) -> BrowserState {
+        BrowserState {
+            directory: self.directory.clone(),
+            selected: self.list.selected(),
+            child: self.child.as_ref().map(|c| Box::new(c.save())),
+        }
     }
 
     pub fn init(&mut self, database: Database, device_mapper: Rc<DeviceMapper>) {
@@ -92,7 +118,7 @@ impl Browser {
         let entry = &mut self.entries[self.list.selected()];
         match entry {
             Entry::Directory(dir) => {
-                let mut child = Browser::new(self.rect, dir.to_owned())?;
+                let mut child = Browser::new(self.rect, dir.to_owned(), 0)?;
                 child.init(
                     self.database.clone(),
                     Rc::clone(self.device_mapper.as_ref().unwrap()),
