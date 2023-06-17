@@ -98,3 +98,63 @@ impl fmt::Debug for dyn View {
         write!(f, "View")
     }
 }
+
+#[async_trait(?Send)]
+impl View for Box<dyn View> {
+    fn update(&mut self) -> Result<()> {
+        (**self).update()
+    }
+
+    fn draw(
+        &mut self,
+        display: &mut <DefaultPlatform as Platform>::Display,
+        styles: &Stylesheet,
+    ) -> Result<bool> {
+        (**self).draw(display, styles)
+    }
+
+    fn should_draw(&self) -> bool {
+        (**self).should_draw()
+    }
+
+    fn set_should_draw(&mut self) {
+        (**self).set_should_draw()
+    }
+
+    /// Handle a key event. Returns true if the event was consumed.
+    async fn handle_key_event(
+        &mut self,
+        event: KeyEvent,
+        // Sends to the root.
+        commands: Sender<Command>,
+        // Bubbles the signal upwards, starting from the parent view to the top.
+        bubble: &mut VecDeque<Command>,
+    ) -> Result<bool> {
+        (**self).handle_key_event(event, commands, bubble).await
+    }
+
+    /// Returns a list of references to the children of the view.
+    fn children(&self) -> Vec<&dyn View> {
+        (**self).children()
+    }
+
+    /// Returns a list of mutable references to the children of the view.
+    fn children_mut(&mut self) -> Vec<&mut dyn View> {
+        (**self).children_mut()
+    }
+
+    /// Get the bounding box of the view.
+    fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
+        (**self).bounding_box(styles)
+    }
+
+    /// Sets the position of the view.
+    fn set_position(&mut self, point: Point) {
+        (**self).set_position(point)
+    }
+
+    /// Sets the background color of the view.
+    fn set_background_color(&mut self, _color: StylesheetColor) {
+        (**self).set_background_color(_color)
+    }
+}
