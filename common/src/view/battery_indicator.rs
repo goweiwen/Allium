@@ -5,6 +5,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
+use tracing::error;
 
 use crate::battery::Battery;
 use crate::constants::BATTERY_UPDATE_INTERVAL;
@@ -58,7 +59,10 @@ where
         styles: &Stylesheet,
     ) -> Result<bool> {
         if self.last_updated.elapsed() >= BATTERY_UPDATE_INTERVAL {
-            if let Some(ref battery) = self.battery {
+            if let Some(ref mut battery) = self.battery {
+                if let Err(e) = battery.update() {
+                    error!("Failed to update battery: {}", e);
+                }
                 self.label.set_text(text(battery));
             }
         }
