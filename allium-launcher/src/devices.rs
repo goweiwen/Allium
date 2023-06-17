@@ -8,6 +8,7 @@ use common::game_info::GameInfo;
 use serde::{Deserialize, Serialize};
 
 use common::constants::{ALLIUM_CONFIG_DIR, ALLIUM_GAMES_DIR, ALLIUM_RETROARCH};
+use tracing::debug;
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct Device {
@@ -207,6 +208,7 @@ impl DeviceMapper {
             } else {
                 bail!("Device \"{}\" has no path or cores.", device.name);
             };
+            debug!("Saving game info: {:?}", game_info);
             game_info.save()?;
             Some(Command::Exec(game_info.command()))
         } else {

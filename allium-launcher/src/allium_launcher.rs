@@ -70,7 +70,7 @@ impl AlliumLauncher<DefaultPlatform> {
             #[cfg(unix)]
             tokio::select! {
                 _ = sigterm.recv() => {
-                    self.handle_command(Command::Exit);
+                    self.handle_command(Command::Exit).await?;
                 }
                 Some(command) = rx.recv() => {
                     self.handle_command(command).await?;
@@ -99,16 +99,17 @@ impl AlliumLauncher<DefaultPlatform> {
     async fn handle_command(&mut self, command: Command) -> Result<()> {
         match command {
             Command::Exit => {
+                trace!("goodbye from allium launcher");
                 self.view.save()?;
                 self.display.clear(Color::new(0, 0, 0))?;
                 self.display.flush()?;
                 process::exit(0);
             }
             Command::Exec(mut cmd) => {
+                trace!("executing command: {:?}", cmd);
                 self.view.save()?;
                 self.display.load(self.display.bounding_box().into())?;
                 self.display.flush()?;
-                trace!("executing command: {:?}", cmd);
                 #[cfg(unix)]
                 {
                     use std::os::unix::process::CommandExt;
@@ -118,13 +119,15 @@ impl AlliumLauncher<DefaultPlatform> {
                 cmd.spawn()?;
             }
             Command::SaveStylesheet(styles) => {
+                trace!("saving stylesheet");
                 styles.save()?;
                 self.display.clear(styles.background_color)?;
                 self.display.save()?;
-                self.styles = *styles.to_owned();
+                self.styles = *styles;
                 self.view.set_should_draw();
             }
             Command::SaveDisplaySettings(settings) => {
+                trace!("saving display settings");
                 settings.save()?;
                 self.platform.set_display_settings(&settings)?;
             }
