@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
 use crate::constants::BUTTON_DIAMETER;
+use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use crate::stylesheet::Stylesheet;
@@ -42,6 +43,7 @@ where
 
     pub fn set_text(&mut self, text: S) {
         self.label.set_text(text);
+        self.has_layout = false;
     }
 
     fn layout(&mut self, styles: &Stylesheet) {
@@ -83,6 +85,7 @@ where
     ) -> Result<bool> {
         if !self.has_layout {
             self.layout(styles);
+            display.load(self.bounding_box(styles).into())?;
         }
 
         let mut drawn = false;
