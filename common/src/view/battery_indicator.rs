@@ -71,7 +71,7 @@ where
     }
 
     fn should_draw(&self) -> bool {
-        self.label.should_draw()
+        self.last_updated.elapsed() >= BATTERY_UPDATE_INTERVAL || self.label.should_draw()
     }
 
     fn set_should_draw(&mut self) {
