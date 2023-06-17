@@ -107,14 +107,12 @@ impl View for Image {
             }
         }
 
+        display.load(self.rect.into())?;
         if let Some(ref image) = self.image {
             let image: ImageRaw<Color> = ImageRaw::new(image, self.rect.w);
             let image = embedded_graphics::image::Image::new(&image, self.rect.top_left().into());
-            image.draw(display)?;
             trace!("drawing image: {:?}", self.rect);
-        } else {
-            display.load(self.rect)?;
-            trace!("clearing: {:?}", self.rect);
+            image.draw(display)?;
         }
 
         self.dirty = false;
