@@ -41,7 +41,7 @@ lazy_static! {
 pub const RETROARCH_UDP_SOCKET: &str = "127.0.0.1:55355";
 
 pub const BATTERY_UPDATE_INTERVAL: Duration = Duration::from_secs(5);
-pub const BUTTON_DIAMETER: u32 = 34;
+pub const BUTTON_DIAMETER: u32 = 31;
 pub const IMAGE_SIZE: Size = Size::new(250, 376);
 pub const LISTING_JUMP_SIZE: i32 = 5;
 pub const LISTING_SIZE: i32 = 10;

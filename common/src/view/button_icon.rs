@@ -115,7 +115,7 @@ impl View for ButtonIcon {
             _ => {}
         }
 
-        let button_style = FontTextStyleBuilder::new(styles.ui_font.clone())
+        let text_style = FontTextStyleBuilder::new(styles.ui_font.clone())
             .font_size(28)
             .text_color(styles.foreground_color)
             .background_color(color)
@@ -124,9 +124,9 @@ impl View for ButtonIcon {
             text,
             embedded_graphics::prelude::Point::new(
                 point.x + (BUTTON_DIAMETER / 2) as i32,
-                point.y + 4,
+                point.y + 2,
             ),
-            button_style,
+            text_style,
             TextStyleBuilder::new()
                 .alignment(Alignment::Center.into())
                 .build(),
