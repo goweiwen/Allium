@@ -180,7 +180,10 @@ impl View for Browser {
             {
                 while let Some(command) = child_bubble.pop_front() {
                     match command {
-                        Command::CloseView => self.child = None,
+                        Command::CloseView => {
+                            self.child = None;
+                            self.set_should_draw();
+                        }
                         _ => bubble.push_back(command),
                     }
                 }
