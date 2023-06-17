@@ -2,7 +2,10 @@ use std::collections::VecDeque;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use embedded_graphics::primitives::{Circle, Primitive, PrimitiveStyle};
+use embedded_graphics::prelude::Size;
+use embedded_graphics::primitives::{
+    Circle, CornerRadiiBuilder, Primitive, PrimitiveStyle, Rectangle, RoundedRectangle,
+};
 use embedded_graphics::text::{Text, TextStyleBuilder};
 use embedded_graphics::Drawable;
 use serde::{Deserialize, Serialize};
@@ -46,20 +49,20 @@ impl View for ButtonIcon {
             Key::B => (styles.button_b_color, "B"),
             Key::X => (styles.button_x_color, "X"),
             Key::Y => (styles.button_y_color, "Y"),
-            Key::Up => (styles.highlight_color, "▲"),
-            Key::Down => (styles.highlight_color, "▼"),
-            Key::Left => (styles.highlight_color, "◀"),
-            Key::Right => (styles.highlight_color, "▶"),
-            Key::Start => (styles.highlight_color, "Start"),
-            Key::Select => (styles.highlight_color, "Select"),
-            Key::L => (styles.highlight_color, "L"),
-            Key::R => (styles.highlight_color, "R"),
-            Key::Menu => (styles.highlight_color, "Menu"),
-            Key::L2 => (styles.highlight_color, "L2"),
-            Key::R2 => (styles.highlight_color, "R2"),
-            Key::Power => (styles.highlight_color, "Power"),
-            Key::VolDown => (styles.highlight_color, "Vol-"),
-            Key::VolUp => (styles.highlight_color, "Vol+"),
+            Key::Up => (styles.disabled_color, "▲"),
+            Key::Down => (styles.disabled_color, "▼"),
+            Key::Left => (styles.disabled_color, "◀"),
+            Key::Right => (styles.disabled_color, "▶"),
+            Key::Start => (styles.disabled_color, "Start"),
+            Key::Select => (styles.disabled_color, "Select"),
+            Key::L => (styles.disabled_color, "L"),
+            Key::R => (styles.disabled_color, "R"),
+            Key::Menu => (styles.disabled_color, "Menu"),
+            Key::L2 => (styles.disabled_color, "L2"),
+            Key::R2 => (styles.disabled_color, "R2"),
+            Key::Power => (styles.disabled_color, "Power"),
+            Key::VolDown => (styles.disabled_color, "Vol-"),
+            Key::VolUp => (styles.disabled_color, "Vol+"),
             Key::Unknown => unimplemented!("unknown button"),
         };
 
@@ -75,18 +78,54 @@ impl View for ButtonIcon {
             ),
         };
 
-        Circle::new(point, BUTTON_DIAMETER)
-            .into_styled(PrimitiveStyle::with_fill(color))
-            .draw(display)?;
+        match self.button {
+            Key::A | Key::B | Key::X | Key::Y | Key::Menu => {
+                Circle::new(point, BUTTON_DIAMETER)
+                    .into_styled(PrimitiveStyle::with_fill(color))
+                    .draw(display)?;
+            }
+            Key::L | Key::L2 => {
+                RoundedRectangle::new(
+                    Rectangle::new(
+                        Point::new(point.x, point.y + BUTTON_DIAMETER as i32 / 8).into(),
+                        Size::new(BUTTON_DIAMETER, BUTTON_DIAMETER * 3 / 4),
+                    ),
+                    CornerRadiiBuilder::new()
+                        .all(Size::new_equal(8))
+                        .top_left(Size::new_equal(16))
+                        .build(),
+                )
+                .into_styled(PrimitiveStyle::with_fill(color))
+                .draw(display)?;
+            }
+            Key::R | Key::R2 => {
+                RoundedRectangle::new(
+                    Rectangle::new(
+                        Point::new(point.x, point.y + BUTTON_DIAMETER as i32 / 8).into(),
+                        Size::new(BUTTON_DIAMETER, BUTTON_DIAMETER * 3 / 4),
+                    ),
+                    CornerRadiiBuilder::new()
+                        .all(Size::new_equal(8))
+                        .top_right(Size::new_equal(16))
+                        .build(),
+                )
+                .into_styled(PrimitiveStyle::with_fill(color))
+                .draw(display)?;
+            }
+            _ => {}
+        }
 
         let button_style = FontTextStyleBuilder::new(styles.ui_font.clone())
-            .font_size(34)
+            .font_size(28)
             .text_color(styles.foreground_color)
             .background_color(color)
             .build();
         Text::with_text_style(
             text,
-            embedded_graphics::prelude::Point::new(point.x + (BUTTON_DIAMETER / 2) as i32, point.y),
+            embedded_graphics::prelude::Point::new(
+                point.x + (BUTTON_DIAMETER / 2) as i32,
+                point.y + 4,
+            ),
             button_style,
             TextStyleBuilder::new()
                 .alignment(Alignment::Center.into())

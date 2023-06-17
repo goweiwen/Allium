@@ -55,6 +55,14 @@ impl Rect {
         Point::new(self.x, self.y)
     }
 
+    pub fn right(&self) -> i32 {
+        self.x + self.w as i32
+    }
+
+    pub fn bottom(&self) -> i32 {
+        self.y + self.h as i32
+    }
+
     pub fn union(&self, other: &Self) -> Self {
         let x = self.x.min(other.x);
         let y = self.y.min(other.y);
