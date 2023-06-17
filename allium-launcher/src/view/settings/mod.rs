@@ -102,6 +102,7 @@ impl Settings {
             3 => self.child = Some(Box::new(System::new(rect))),
             _ => unreachable!("Invalid index"),
         }
+        self.dirty = true;
         Ok(())
     }
 }
