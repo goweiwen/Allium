@@ -43,7 +43,8 @@ where
         }
     }
 
-    pub fn init(&mut self, battery: B) {
+    pub fn init(&mut self, mut battery: B) {
+        battery.update().unwrap();
         self.label.set_text(text(&battery));
         self.battery = Some(battery);
     }
