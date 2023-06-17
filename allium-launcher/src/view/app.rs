@@ -24,7 +24,7 @@ use crate::view::{Browser, Settings};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct State {
-    views: (Browser, Recents, Label<String>, Settings),
+    views: (Browser, Recents, Settings),
     selected: usize,
     dirty: bool,
 }
@@ -34,12 +34,6 @@ impl State {
         let views = (
             Browser::new(rect, Directory::default()).unwrap(),
             Recents::new(rect).unwrap(),
-            Label::new(
-                rect.top_left(),
-                "Placeholder".to_owned(),
-                Alignment::Left,
-                None,
-            ),
             Settings::new(rect).unwrap(),
         );
         Self {
@@ -76,7 +70,7 @@ impl State {
         Ok(())
     }
 
-    const VIEW_COUNT: usize = 4;
+    const VIEW_COUNT: usize = 3;
 
     fn next(&mut self) {
         self.selected = (self.selected + 1).rem_euclid(Self::VIEW_COUNT);
@@ -93,7 +87,6 @@ impl State {
             0 => &mut self.views.0,
             1 => &mut self.views.1,
             2 => &mut self.views.2,
-            3 => &mut self.views.3,
             _ => unreachable!(),
         }
     }
@@ -103,7 +96,6 @@ impl State {
             0 => &self.views.0,
             1 => &self.views.1,
             2 => &self.views.2,
-            3 => &self.views.3,
             _ => unreachable!(),
         }
     }
@@ -147,7 +139,6 @@ where
             vec![
                 Label::new(Point::zero(), "Games", Alignment::Left, None),
                 Label::new(Point::zero(), "Recents", Alignment::Left, None),
-                Label::new(Point::zero(), "Favorites", Alignment::Left, None),
                 Label::new(Point::zero(), "Settings", Alignment::Left, None),
             ],
             Alignment::Left,
