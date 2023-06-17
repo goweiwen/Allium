@@ -27,7 +27,7 @@ impl Display {
         let settings = DisplaySettings::load().unwrap();
 
         let list = SettingsList::new(
-            Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 8),
+            Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 8 - 46 - 54),
             vec![
                 "Brightness".to_string(),
                 "Luminance".to_string(),
@@ -68,7 +68,7 @@ impl Display {
         let restart_label = Label::new(
             Point::new(
                 rect.x + rect.w as i32 - 12,
-                rect.y + rect.h as i32 - 58 - 30,
+                rect.y + rect.h as i32 - 46 - 12,
             ),
             "*Restart device to apply changes".to_owned(),
             Alignment::Right,

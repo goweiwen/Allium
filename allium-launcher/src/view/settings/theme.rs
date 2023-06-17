@@ -22,7 +22,7 @@ impl Theme {
         let stylesheet = Stylesheet::load().unwrap();
 
         let list = SettingsList::new(
-            Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 58),
+            Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 8 - 46),
             vec![
                 "Dark Mode".to_string(),
                 "Enable Box Art".to_string(),

@@ -19,7 +19,7 @@ pub struct System {
 impl System {
     pub fn new(rect: Rect) -> Self {
         let list = SettingsList::new(
-            Rect::new(rect.x, rect.y, rect.w - 12, rect.h),
+            Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 8 - 46),
             vec!["Version".to_string(), "Device Model".to_string()],
             vec![
                 Box::new(Label::new(
