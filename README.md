@@ -5,19 +5,9 @@ Allium is a custom launcher for the Miyoo Mini and Miyoo Mini Plus handheld devi
 ![Allium's main menu](assets/screenshots/main-menu.png)
 ![Allium's ingame menu](assets/screenshots/ingame-menu.png)
 
-## Project Goals
-
-The goal of Allium is to replace MainUI (stock UI) with a faster and more user-friendly UI.
-
-### Goals
-- It just works
-- Fast
-- Clean UI
-- RetroArch (with Netplay)
-- Box art
-- Support running on both Miyoo Mini and Miyoo Mini Plus without changes
-
 ## Installation
+
+Allium only supports the Miyoo Mini Plus for now.
 
 Download the latest release and extract into your SD card. e.g. `E:/`.
 
@@ -30,27 +20,25 @@ The SD card layout should look like this:
 - Saves
 
 ## Features
-
-### Done
-- Supports stock SD card layout without configuration
+- Supports stock/Onion/DotUI SD card layout
+- Works without configuration
 - Box art (PNG, JPG, GIF, TGA, BMP)
-- Launch RetroArch for all supported cores
+- Recents list (sort by last played or playtime)
+- RetroArch for all supported cores
 - Battery indicator
-- Volume control
-- Brightness control (menu + volume up/down)
-- In-game menu (view game name, battery %, save, load, reset, access RetroArch menu, quit)
-- Automatic game save/resume when powering off/on
+- Volume & Brightness (menu + vol up/down) control
+- In-game menu (save, load, reset, access RetroArch menu, quit)
+- Automatic resume when powering off/on
 - Settings page
-    - Customize theme
-    - Change LCD settings
     - WiFi (IP Address, Telnet, FTP)
-- Recents list (sort by last played or most played)
+    - Change LCD settings
+    - Customize theme colours
 
-### Todo
+## Todo
 (roughly in order of priority)
-- Disk changer (.m3u support)
-- Settings page:
-    - Clock
+- Ingame menu disk changer
+- Ingame guide reader
+- Clock adjustment
 - WiFi stuff:
     - NTP
     - OTA update
@@ -69,8 +57,7 @@ The SD card layout should look like this:
     - Save current theme to file
 - File-system database to cache folder structure
 
-### Known bugs
-- Volume resets when RetroArch launches
+## Known bugs
 - Brightness in settings is not linked to menu+vol hotkey adjustments
 
 ## Development
