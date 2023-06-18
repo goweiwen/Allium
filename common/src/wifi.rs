@@ -58,7 +58,9 @@ impl WiFiSettings {
     pub fn save(&self) -> Result<()> {
         let json = serde_json::to_string(&self).unwrap();
         File::create(ALLIUM_WIFI_SETTINGS.as_path())?.write_all(json.as_bytes())?;
-        self.update_wpa_supplicant_conf()?;
+        if let Err(e) = self.update_wpa_supplicant_conf() {
+            warn!("failed to update wpa_supplicant.conf: {}", e);
+        }
         Ok(())
     }
 
