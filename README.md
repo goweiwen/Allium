@@ -9,7 +9,8 @@ Allium is a custom launcher for the Miyoo Mini and Miyoo Mini Plus handheld devi
 
 Allium only supports the Miyoo Mini Plus for now.
 
-Download the latest release and extract into your SD card. e.g. `E:/`.
+1. Format the SD card to [FAT32](https://github.com/anzz1/DotUI-X/wiki/fat32format).
+2. Download the latest release and extract into your SD card. e.g. `E:/`.
 
 The SD card layout should look like this:
 - .allium
