@@ -15,6 +15,7 @@ pub struct Wifi {
     rect: Rect,
     settings: WiFiSettings,
     list: SettingsList,
+    has_ip_address: bool,
     ip_address_label: Label<String>,
     button_hints: Row<ButtonHint<String>>,
 }
@@ -83,6 +84,7 @@ impl Wifi {
             rect,
             settings,
             list,
+            has_ip_address: false,
             ip_address_label,
             button_hints,
         }
@@ -98,11 +100,18 @@ impl View for Wifi {
     ) -> Result<bool> {
         let mut drawn = false;
 
-        if self.ip_address_label.text().is_empty() {
-            // Try to get the IP address if we don't have it yet
-            if let Some(ip_address) = wifi::ip_address() {
-                self.ip_address_label.set_text(ip_address);
+        if self.settings.wifi {
+            if !self.has_ip_address {
+                // Try to get the IP address if we don't have it yet
+                if let Some(ip_address) = wifi::ip_address() {
+                    self.has_ip_address = true;
+                    self.ip_address_label.set_text(ip_address);
+                } else {
+                    self.ip_address_label.set_text("Connecting...".to_owned());
+                }
             }
+        } else if self.has_ip_address {
+            self.ip_address_label.set_text("".to_owned());
         }
 
         drawn |=

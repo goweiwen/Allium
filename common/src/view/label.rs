@@ -19,7 +19,7 @@ use crate::view::View;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Label<S>
 where
-    S: AsRef<str>,
+    S: AsRef<str> + PartialEq + Send,
 {
     point: Point,
     text: S,
@@ -33,7 +33,7 @@ where
 
 impl<S> Label<S>
 where
-    S: AsRef<str>,
+    S: AsRef<str> + PartialEq + Send,
 {
     pub fn new(point: Point, text: S, alignment: Alignment, width: Option<u32>) -> Self {
         Self {
@@ -65,9 +65,11 @@ where
     }
 
     pub fn set_text(&mut self, text: S) -> &mut Self {
-        self.text = text;
-        self.truncated_text = None;
-        self.dirty = true;
+        if self.text != text {
+            self.text = text;
+            self.truncated_text = None;
+            self.dirty = true;
+        }
         self
     }
 
@@ -117,7 +119,7 @@ where
 #[async_trait(?Send)]
 impl<S> View for Label<S>
 where
-    S: AsRef<str> + Send,
+    S: AsRef<str> + PartialEq + Send,
 {
     fn draw(
         &mut self,

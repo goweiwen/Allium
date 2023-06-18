@@ -15,7 +15,7 @@ use crate::view::{ButtonIcon, Command, Label, View};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ButtonHint<S>
 where
-    S: AsRef<str>,
+    S: AsRef<str> + PartialEq + Send,
 {
     point: Point,
     button: ButtonIcon,
@@ -27,7 +27,7 @@ where
 
 impl<S> ButtonHint<S>
 where
-    S: AsRef<str> + Send,
+    S: AsRef<str> + PartialEq + Send,
 {
     pub fn new(point: Point, button: Key, text: S, alignment: Alignment) -> Self {
         let label = Label::new(Point::zero(), text, alignment, None);
@@ -78,7 +78,7 @@ where
 #[async_trait(?Send)]
 impl<S> View for ButtonHint<S>
 where
-    S: AsRef<str> + Send,
+    S: AsRef<str> + PartialEq + Send,
 {
     fn draw(
         &mut self,
