@@ -4,6 +4,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
 use common::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
+use common::display::Display;
 use common::geom::{Alignment, Point, Rect};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
@@ -105,12 +106,15 @@ impl View for Wifi {
                 // Try to get the IP address if we don't have it yet
                 if let Some(ip_address) = wifi::ip_address() {
                     self.has_ip_address = true;
+                    display.load(self.ip_address_label.bounding_box(styles).into())?;
                     self.ip_address_label.set_text(ip_address);
                 } else {
+                    display.load(self.ip_address_label.bounding_box(styles).into())?;
                     self.ip_address_label.set_text("Connecting...".to_owned());
                 }
             }
         } else if self.has_ip_address {
+            display.load(self.ip_address_label.bounding_box(styles).into())?;
             self.ip_address_label.set_text("".to_owned());
         }
 
