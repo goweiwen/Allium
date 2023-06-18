@@ -34,7 +34,7 @@ impl Recents {
         let Rect { x, y, w, h } = rect;
 
         let list = ScrollList::new(
-            Rect::new(x + 12, y + 8, w - IMAGE_SIZE.width - 12 - 12 - 24, h - 16),
+            Rect::new(x + 12, y, w - IMAGE_SIZE.width - 12 - 12 - 24, h - 40),
             Vec::new(),
             Alignment::Left,
             SELECTION_HEIGHT,
