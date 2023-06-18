@@ -85,7 +85,7 @@ impl SettingsList {
 
     pub fn select(&mut self, index: usize) {
         self.left[self.selected - self.top].set_background_color(StylesheetColor::Background);
-        self.right[self.selected - self.top].set_background_color(StylesheetColor::Background);
+        self.right[self.selected].set_background_color(StylesheetColor::Background);
 
         if index >= self.top + self.visible_count() {
             self.top = index - self.visible_count() + 1;
@@ -98,7 +98,7 @@ impl SettingsList {
         self.selected = index;
 
         self.left[self.selected - self.top].set_background_color(StylesheetColor::Highlight);
-        self.right[self.selected - self.top].set_background_color(StylesheetColor::Highlight);
+        self.right[self.selected].set_background_color(StylesheetColor::Highlight);
 
         self.dirty = true;
     }
@@ -140,7 +140,7 @@ impl View for SettingsList {
 
             let rect = if self.focused {
                 self.right
-                    .get_mut(self.selected - self.top)
+                    .get_mut(self.selected)
                     .map(|s| s.bounding_box(styles))
             } else {
                 self.left
@@ -165,11 +165,11 @@ impl View for SettingsList {
             }
 
             for i in 0..self.visible_count() {
-                self.right[i].set_position(Point::new(
+                self.right[self.top + i].set_position(Point::new(
                     self.rect.x + self.rect.w as i32 - 13,
                     self.rect.y + 8 + i as i32 * self.entry_height as i32,
                 ));
-                self.right[i].draw(display, styles)?;
+                self.right[self.top + i].draw(display, styles)?;
             }
 
             self.dirty = false;
@@ -183,7 +183,8 @@ impl View for SettingsList {
                 drawn = true;
             }
         }
-        for child in self.right.iter_mut() {
+        for i in 0..self.visible_count() {
+            let child = &mut self.right[self.top + i];
             if child.should_draw() && child.draw(display, styles)? {
                 drawn = true;
             }
