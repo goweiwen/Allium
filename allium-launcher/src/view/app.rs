@@ -118,7 +118,7 @@ where
         let views = (
             Browser::new(tab_rect, Default::default(), 0)?,
             Recents::new(tab_rect)?,
-            Settings::new(rect)?,
+            Settings::new(tab_rect)?,
         );
         let selected = 0;
         Self::new(rect, views, selected, database, device_mapper, battery)
