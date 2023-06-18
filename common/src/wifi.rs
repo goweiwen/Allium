@@ -67,14 +67,14 @@ impl WiFiSettings {
     fn load_wpa_supplicant_conf() -> Option<Self> {
         let data = fs::read_to_string("/appconfigs/wpa_supplicant.conf").ok()?;
 
-        let ssid_index = data.find("ssid=\"").unwrap();
+        let ssid_index = data.find("ssid=\"")?;
         let ssid = &data[ssid_index + 6..];
-        let ssid_end = ssid.find('"').unwrap();
+        let ssid_end = ssid.find('"')?;
         let ssid = &ssid[..ssid_end];
 
-        let psk_index = data.find("psk=\"").unwrap();
+        let psk_index = data.find("psk=\"")?;
         let psk = &data[psk_index + 5..];
-        let psk_end = psk.find('"').unwrap();
+        let psk_end = psk.find('"')?;
         let psk = &psk[..psk_end];
 
         Some(Self {
