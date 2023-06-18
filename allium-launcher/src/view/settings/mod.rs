@@ -38,7 +38,7 @@ impl Settings {
         let Rect { x, y, w, h } = rect;
 
         let list = List::new(
-            Rect::new(x + 12, y + 8, 110 + 12 + 12 - 24, h - 16),
+            Rect::new(x + 12, y + 8, 110 + 12 + 12 - 24, h - 8 - 48),
             vec![
                 Label::new(
                     Point::zero(),

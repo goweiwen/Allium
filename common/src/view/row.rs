@@ -6,13 +6,14 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
 use crate::command::Command;
+use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, KeyEvent, Platform};
 use crate::stylesheet::Stylesheet;
 use crate::view::View;
 
 /// A horizontal row of views.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Row<V>
 where
     V: View,
@@ -95,6 +96,13 @@ where
         }
 
         let mut drawn = false;
+
+        if self.dirty {
+            display.load(self.bounding_box(styles).into())?;
+            drawn = true;
+            self.dirty = false;
+        }
+
         for entry in &mut self.children.iter_mut() {
             if entry.should_draw() && entry.draw(display, styles)? {
                 drawn = true;
@@ -104,7 +112,7 @@ where
     }
 
     fn should_draw(&self) -> bool {
-        self.dirty
+        self.dirty || self.children.iter().any(|c| c.should_draw())
     }
 
     fn set_should_draw(&mut self) {

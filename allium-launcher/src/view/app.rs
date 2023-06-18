@@ -223,22 +223,26 @@ where
         commands: Sender<Command>,
         bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
+        if self
+            .view_mut()
+            .handle_key_event(event, commands, bubble)
+            .await?
+        {
+            return Ok(true);
+        }
+
         match event {
             KeyEvent::Pressed(Key::L) => {
                 trace!("switch state prev");
                 self.prev();
-                return Ok(true);
+                Ok(true)
             }
             KeyEvent::Pressed(Key::R) => {
                 trace!("switch state next");
                 self.next();
-                return Ok(true);
+                Ok(true)
             }
-            _ => {
-                self.view_mut()
-                    .handle_key_event(event, commands, bubble)
-                    .await
-            }
+            _ => Ok(false),
         }
     }
 

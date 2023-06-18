@@ -11,9 +11,10 @@ pub enum Command {
     ValueChanged(usize, Value),
     TrapFocus,
     Unfocus,
+    Redraw,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Bool(bool),
     Int(i32),

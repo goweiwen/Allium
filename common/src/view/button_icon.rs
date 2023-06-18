@@ -53,11 +53,11 @@ impl View for ButtonIcon {
             Key::Down => (styles.disabled_color, "▼"),
             Key::Left => (styles.disabled_color, "◀"),
             Key::Right => (styles.disabled_color, "▶"),
-            Key::Start => (styles.disabled_color, "Start"),
-            Key::Select => (styles.disabled_color, "Select"),
+            Key::Start => (styles.disabled_color, "+"),
+            Key::Select => (styles.disabled_color, "-"),
             Key::L => (styles.disabled_color, "L"),
             Key::R => (styles.disabled_color, "R"),
-            Key::Menu => (styles.disabled_color, "Menu"),
+            Key::Menu => (styles.disabled_color, "M"),
             Key::L2 => (styles.disabled_color, "L2"),
             Key::R2 => (styles.disabled_color, "R2"),
             Key::Power => (styles.disabled_color, "Power"),
@@ -83,6 +83,17 @@ impl View for ButtonIcon {
                 Circle::new(point, BUTTON_DIAMETER)
                     .into_styled(PrimitiveStyle::with_fill(color))
                     .draw(display)?;
+            }
+            Key::Start | Key::Select => {
+                RoundedRectangle::with_equal_corners(
+                    Rectangle::new(
+                        Point::new(point.x, point.y + BUTTON_DIAMETER as i32 / 5 + 1).into(),
+                        Size::new(BUTTON_DIAMETER, BUTTON_DIAMETER * 3 / 5),
+                    ),
+                    Size::new_equal(8),
+                )
+                .into_styled(PrimitiveStyle::with_fill(color))
+                .draw(display)?;
             }
             Key::L | Key::L2 => {
                 RoundedRectangle::new(
@@ -171,7 +182,7 @@ impl View for ButtonIcon {
             Alignment::Right => self.point.x - BUTTON_DIAMETER as i32,
         };
 
-        Rect::new(x, self.point.y, BUTTON_DIAMETER, BUTTON_DIAMETER)
+        Rect::new(x, self.point.y - 1, BUTTON_DIAMETER, BUTTON_DIAMETER)
     }
 
     fn set_position(&mut self, point: Point) {

@@ -22,6 +22,7 @@ where
     label: Label<S>,
     alignment: Alignment,
     has_layout: bool,
+    dirty: bool,
 }
 
 impl<S> ButtonHint<S>
@@ -38,6 +39,7 @@ where
             label,
             alignment,
             has_layout: false,
+            dirty: true,
         }
     }
 
@@ -85,16 +87,18 @@ where
     ) -> Result<bool> {
         if !self.has_layout {
             self.layout(styles);
-            display.load(self.bounding_box(styles).into())?;
         }
 
         let mut drawn = false;
-        if self.button.draw(display, styles)? {
+
+        if self.dirty {
+            display.load(self.bounding_box(styles).into())?;
             drawn = true;
+            self.dirty = false;
         }
-        if self.label.draw(display, styles)? {
-            drawn = true;
-        }
+
+        drawn |= self.label.should_draw() && self.button.draw(display, styles)?;
+        drawn |= self.label.should_draw() && self.label.draw(display, styles)?;
         Ok(drawn)
     }
 
@@ -103,6 +107,7 @@ where
     }
 
     fn set_should_draw(&mut self) {
+        self.dirty = true;
         self.button.set_should_draw();
         self.label.set_should_draw();
     }

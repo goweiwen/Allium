@@ -72,9 +72,6 @@ impl AlliumLauncher<DefaultPlatform> {
                 _ = sigterm.recv() => {
                     self.handle_command(Command::Exit).await?;
                 }
-                Some(command) = rx.recv() => {
-                    self.handle_command(command).await?;
-                }
                 event = self.platform.poll() => {
                     let mut bubble = VecDeque::new();
                     self.view.handle_key_event(event, tx.clone(), &mut bubble).await?;
@@ -84,14 +81,15 @@ impl AlliumLauncher<DefaultPlatform> {
 
             #[cfg(not(unix))]
             tokio::select! {
-                Some(command) = rx.recv() => {
-                    self.handle_command(command).await?;
-                }
                 event = self.platform.poll() => {
                     let mut bubble = VecDeque::new();
                     self.view.handle_key_event(event, tx.clone(), &mut bubble).await?;
                 }
                 else => {}
+            }
+
+            while let Ok(cmd) = rx.try_recv() {
+                self.handle_command(cmd).await?;
             }
         }
     }
@@ -130,6 +128,11 @@ impl AlliumLauncher<DefaultPlatform> {
                 trace!("saving display settings");
                 settings.save()?;
                 self.platform.set_display_settings(&settings)?;
+            }
+            Command::Redraw => {
+                trace!("redrawing");
+                self.display.load(self.display.bounding_box().into())?;
+                self.view.set_should_draw();
             }
             command => {
                 warn!("unhandled command: {:?}", command);

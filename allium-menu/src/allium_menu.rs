@@ -97,6 +97,10 @@ impl AlliumMenu<DefaultPlatform> {
                 self.display.flush()?;
                 process::exit(0);
             }
+            Command::Redraw => {
+                self.display.load(self.display.bounding_box().into())?;
+                self.view.set_should_draw();
+            }
             command => {
                 warn!("unhandled command: {:?}", command);
             }

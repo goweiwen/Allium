@@ -98,10 +98,6 @@ impl View for Wifi {
     ) -> Result<bool> {
         let mut drawn = false;
 
-        if self.list.should_draw() && self.list.draw(display, styles)? {
-            drawn = true;
-        }
-
         if self.ip_address_label.text().is_empty() {
             // Try to get the IP address if we don't have it yet
             if let Some(ip_address) = wifi::ip_address() {
@@ -109,13 +105,10 @@ impl View for Wifi {
             }
         }
 
-        if self.ip_address_label.should_draw() && self.ip_address_label.draw(display, styles)? {
-            drawn = true;
-        }
-
-        if self.button_hints.should_draw() && self.button_hints.draw(display, styles)? {
-            drawn = true;
-        }
+        drawn |=
+            self.ip_address_label.should_draw() && self.ip_address_label.draw(display, styles)?;
+        drawn |= self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
+        drawn |= self.list.should_draw() && self.list.draw(display, styles)?;
 
         Ok(drawn)
     }

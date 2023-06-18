@@ -149,7 +149,7 @@ impl View for SettingsList {
             }
             .unwrap_or_default();
 
-            let fill_style = PrimitiveStyle::with_fill(styles.highlight_color);
+            let selection_style = PrimitiveStyle::with_fill(styles.highlight_color);
             RoundedRectangle::with_equal_corners(
                 Rectangle::new(
                     embedded_graphics::prelude::Point::new(rect.x - 12, rect.y - 4),
@@ -157,7 +157,7 @@ impl View for SettingsList {
                 ),
                 Size::new_equal(rect.h),
             )
-            .into_styled(fill_style)
+            .into_styled(selection_style)
             .draw(display)?;
 
             for child in self.left.iter_mut() {
@@ -166,7 +166,7 @@ impl View for SettingsList {
 
             for i in 0..self.visible_count() {
                 self.right[i].set_position(Point::new(
-                    self.rect.x + self.rect.w as i32 - 12,
+                    self.rect.x + self.rect.w as i32 - 13,
                     self.rect.y + 8 + i as i32 * self.entry_height as i32,
                 ));
                 self.right[i].draw(display, styles)?;
@@ -216,7 +216,6 @@ impl View for SettingsList {
                     .handle_key_event(event, command, &mut child_bubble)
                     .await?
                 {
-                    println!("child bubble: {:?}", child_bubble);
                     while let Some(cmd) = child_bubble.pop_front() {
                         match cmd {
                             Command::TrapFocus => (),

@@ -2,24 +2,21 @@ use std::collections::VecDeque;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
-use crate::command::Value;
 use crate::geom::{Alignment, Point, Rect};
-use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use crate::platform::{DefaultPlatform, KeyEvent, Platform};
 use crate::stylesheet::Stylesheet;
+use crate::view::input::keyboard::Keyboard;
 use crate::view::{Command, Label, View};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct TextBox {
     point: Point,
     value: String,
-    alignment: Alignment,
     is_password: bool,
     label: Label<String>,
-    #[serde(skip)]
-    edit_state: Option<String>,
+    keyboard: Option<Keyboard>,
 }
 
 impl TextBox {
@@ -34,10 +31,9 @@ impl TextBox {
         Self {
             point,
             value,
-            alignment,
             is_password,
             label,
-            edit_state: None,
+            keyboard: None,
         }
     }
 
@@ -59,41 +55,62 @@ impl View for TextBox {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        self.label.draw(display, styles)
+        let mut drawn = false;
+
+        drawn |= self.label.should_draw() && self.label.draw(display, styles)?;
+
+        if let Some(keyboard) = self.keyboard.as_mut() {
+            drawn |= keyboard.should_draw() && keyboard.draw(display, styles)?;
+        }
+
+        Ok(drawn)
     }
 
     fn should_draw(&self) -> bool {
-        self.label.should_draw()
+        self.label.should_draw() || self.keyboard.as_ref().map_or(false, |k| k.should_draw())
     }
 
     fn set_should_draw(&mut self) {
-        self.label.set_should_draw()
+        self.label.set_should_draw();
+        if let Some(keyboard) = self.keyboard.as_mut() {
+            keyboard.set_should_draw();
+        }
     }
 
     async fn handle_key_event(
         &mut self,
         event: KeyEvent,
-        _command: Sender<Command>,
+        command: Sender<Command>,
         bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
-        if self.edit_state.is_some() {
-            match event {
-                KeyEvent::Pressed(Key::A) => {
-                    self.value = self.edit_state.take().unwrap();
-                    bubble.push_back(Command::ValueChanged(0, Value::String(self.value.clone())));
-                    bubble.push_back(Command::Unfocus);
-                    Ok(true)
+        if let Some(keyboard) = self.keyboard.as_mut() {
+            let mut child_bubble = VecDeque::new();
+            if keyboard
+                .handle_key_event(event, command, &mut child_bubble)
+                .await?
+            {
+                println!("child_bubble: {:?}", child_bubble);
+                while let Some(cmd) = child_bubble.pop_front() {
+                    match cmd {
+                        Command::CloseView => {
+                            bubble.push_back(Command::Unfocus);
+                            self.keyboard = None;
+                        }
+                        Command::ValueChanged(i, value) => {
+                            bubble.push_back(Command::ValueChanged(i, value.clone()));
+                            self.value = value.as_string().unwrap();
+                            self.label
+                                .set_text(masked_value(&self.value, self.is_password));
+                        }
+                        cmd => bubble.push_back(cmd),
+                    }
                 }
-                KeyEvent::Pressed(Key::B) => {
-                    self.edit_state = None;
-                    self.label.set_text(format!("{}%", self.value));
-                    bubble.push_back(Command::Unfocus);
-                    Ok(true)
-                }
-                _ => Ok(false),
+                Ok(true)
+            } else {
+                Ok(false)
             }
         } else {
-            self.edit_state = Some(self.value.clone());
+            self.keyboard = Some(Keyboard::new(self.value.clone(), self.is_password));
             bubble.push_back(Command::TrapFocus);
             Ok(true)
         }
