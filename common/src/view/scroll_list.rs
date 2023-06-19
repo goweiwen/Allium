@@ -48,18 +48,17 @@ impl ScrollList {
     }
 
     pub fn set_items(&mut self, items: Vec<String>, preserve_selection: bool) {
-        self.children.clear();
-
-        self.selected = if preserve_selection {
+        let selected = if preserve_selection {
             self.items
                 .get(self.selected)
                 .and_then(|selected| items.iter().position(|s| s == selected))
-                .unwrap_or(self.selected.min(items.len().saturating_sub(1)))
+                .unwrap_or(0)
         } else {
             0
         };
         self.items = items;
 
+        self.children.clear();
         let mut y = self.rect.y + 8;
         for i in 0..self.visible_count() {
             self.children.push(Label::new(
@@ -71,16 +70,8 @@ impl ScrollList {
             y += self.entry_height as i32;
         }
 
-        self.children
-            .get_mut(self.selected)
-            .map(|c| c.set_background_color(StylesheetColor::Highlight));
-
-        self.top = 0;
-        if self.selected >= self.top + self.visible_count() {
-            self.top = self.selected;
-        } else if self.selected < self.top {
-            self.top = self.selected.min(self.items.len() - self.visible_count());
-        }
+        self.select(selected);
+        self.update_children();
 
         self.dirty = true;
     }
