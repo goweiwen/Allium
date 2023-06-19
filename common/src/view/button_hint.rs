@@ -46,6 +46,7 @@ where
     pub fn set_text(&mut self, text: S) {
         self.label.set_text(text);
         self.has_layout = false;
+        self.dirty = true;
     }
 
     fn layout(&mut self, styles: &Stylesheet) {

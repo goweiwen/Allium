@@ -6,10 +6,12 @@ use async_trait::async_trait;
 use common::command::Command;
 use common::constants::{BUTTON_DIAMETER, IMAGE_SIZE, RECENT_GAMES_LIMIT, SELECTION_HEIGHT};
 use common::database::Database;
+use common::display::Display;
 use common::geom::{Alignment, Point, Rect};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::{Stylesheet, StylesheetColor};
 use common::view::{ButtonHint, Image, ImageMode, Row, ScrollList, View};
+use embedded_graphics::prelude::OriginDimensions;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
@@ -151,8 +153,17 @@ impl View for Recents {
             }
         }
 
-        if self.button_hints.should_draw() && self.button_hints.draw(display, styles)? {
-            drawn = true;
+        if self.button_hints.should_draw() {
+            display.load(Rect::new(
+                0,
+                display.size().height as i32 - 48,
+                display.size().width,
+                48,
+            ))?;
+            self.button_hints.set_should_draw();
+            if self.button_hints.draw(display, styles)? {
+                drawn = true;
+            }
         }
 
         Ok(drawn)
