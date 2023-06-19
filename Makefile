@@ -48,7 +48,7 @@ lint:
 	cargo fmt
 	cargo clippy --fix --allow-dirty --allow-staged --all-targets
 
-bump-version:
+bump-version: lint
 	sed -i "s/^version = \".*\"/version = \"$(version)\"/" allium-launcher/Cargo.toml
 	sed -i "s/^version = \".*\"/version = \"$(version)\"/" allium-menu/Cargo.toml
 	sed -i "s/^version = \".*\"/version = \"$(version)\"/" alliumd/Cargo.toml
