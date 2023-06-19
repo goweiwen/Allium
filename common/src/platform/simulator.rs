@@ -128,7 +128,7 @@ impl Display for SimulatorWindow {
                 Pixel(point, f(color))
             })
             .collect::<Vec<_>>();
-        self.display.draw_iter(pixels.into_iter())?;
+        self.display.draw_iter(pixels)?;
         Ok(())
     }
 

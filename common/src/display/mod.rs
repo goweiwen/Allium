@@ -3,21 +3,13 @@ pub mod font;
 pub mod image;
 pub mod settings;
 
-
-
-
-use anyhow::{Result};
+use anyhow::Result;
 
 use embedded_graphics::prelude::*;
-
-
-
 
 use crate::display::color::Color;
 
 use crate::geom::Rect;
-
-
 
 pub trait Display:
     OriginDimensions + DrawTarget<Color = Color, Error = anyhow::Error> + Sized

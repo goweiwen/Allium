@@ -45,6 +45,7 @@ $(RETROARCH)/retroarch_miyoo283:
 	docker run --rm -v /$(ROOT_DIR)/third-party:/root/workspace $(TOOLCHAIN) bash -c "source /root/.bashrc; cd RetroArch; make clean all PACKAGE_NAME=retroarch_miyoo283"
 
 lint:
+	cargo fmt
 	cargo clippy --fix --allow-dirty --allow-staged --all-targets
 
 bump-version:

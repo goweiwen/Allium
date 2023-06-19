@@ -81,7 +81,9 @@ where
         if self.truncated_text.is_none() {
             if let Some(width) = self.width {
                 let mut text = Text::with_alignment(
-                    self.truncated_text.as_deref().unwrap_or(self.text.as_ref()),
+                    self.truncated_text
+                        .as_deref()
+                        .unwrap_or_else(|| self.text.as_ref()),
                     self.point.into(),
                     text_style.clone(),
                     self.alignment.into(),

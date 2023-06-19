@@ -1,5 +1,3 @@
-#![feature(async_fn_in_trait)]
-
 mod alliumd;
 
 use anyhow::Result;

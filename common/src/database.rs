@@ -90,7 +90,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, play_count = ?, play_time =
 
         for game in games {
             let path = game.path.display().to_string();
-            let image = game.image.as_ref().map(|p| p.to_str().unwrap());
+            let image = game.image.as_ref().map(|p| p.display().to_string());
             stmt.execute(params![
                 game.name,
                 path,

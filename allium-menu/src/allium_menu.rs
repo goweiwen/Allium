@@ -34,7 +34,7 @@ impl AlliumMenu<DefaultPlatform> {
         let rect = display.bounding_box().into();
 
         let game_info = GameInfo::load()?;
-        let name = game_info.map(|game| game.name).unwrap_or("".to_string());
+        let name = game_info.map_or_else(String::new, |game| game.name);
 
         Ok(AlliumMenu {
             platform,

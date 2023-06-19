@@ -96,10 +96,7 @@ impl View for Keyboard {
 
             Rectangle::new(
                 Point::new(0, y0 - styles.ui_font_size as i32 - 8).into(),
-                Size::new(
-                    display.size().width,
-                    h as u32 + styles.ui_font_size + 8,
-                ),
+                Size::new(display.size().width, h as u32 + styles.ui_font_size + 8),
             )
             .into_styled(fill_style)
             .draw(display)?;
