@@ -26,6 +26,8 @@ lazy_static! {
     pub static ref ALLIUM_DATABASE: PathBuf = ALLIUM_CONFIG_DIR.join("state/allium.db");
     pub static ref ALLIUM_LAUNCHER_STATE: PathBuf =
         ALLIUM_CONFIG_DIR.join("state/allium-launcher.json");
+    pub static ref ALLIUM_MENU_STATE: PathBuf =
+        ALLIUM_CONFIG_DIR.join("state/allium-menu.json");
     pub static ref ALLIUM_GAME_INFO: PathBuf = ALLIUM_CONFIG_DIR.join("state/current_game");
     pub static ref ALLIUM_STYLESHEET: PathBuf = ALLIUM_CONFIG_DIR.join("state/stylesheet.json");
     pub static ref ALLIUM_DISPLAY_SETTINGS: PathBuf = ALLIUM_CONFIG_DIR.join("state/display.json");
@@ -44,6 +46,7 @@ lazy_static! {
 }
 pub const RETROARCH_UDP_SOCKET: &str = "127.0.0.1:55355";
 
+pub const MAXIMUM_FRAME_TIME: Duration = Duration::from_millis(100);
 pub const BATTERY_UPDATE_INTERVAL: Duration = Duration::from_secs(5);
 pub const CLOCK_UPDATE_INTERVAL: Duration = Duration::from_secs(1);
 pub const BUTTON_DIAMETER: u32 = 31;

@@ -44,8 +44,8 @@ impl Database {
     }
 
     pub fn migrations<'a>() -> Migrations<'a> {
-        Migrations::new(vec![M::up(
-            "
+        Migrations::new(vec![
+M::up("
 CREATE TABLE IF NOT EXISTS games (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
@@ -54,8 +54,8 @@ CREATE TABLE IF NOT EXISTS games (
     play_count INTEGER NOT NULL,
     play_time INTEGER NOT NULL,
     last_played INTEGER NOT NULL
-);"
-            ), M::up("
+);"),
+M::up("
 CREATE VIRTUAL TABLE games_fts USING fts5(name, path, content='games', content_rowid='id');
 
 CREATE TRIGGER games_fts_ai AFTER INSERT ON games BEGIN
@@ -67,9 +67,14 @@ END;
 CREATE TRIGGER games_fts_au AFTER UPDATE ON games BEGIN
     INSERT INTO games_fts(games_fts, rowid, name, path) VALUES ('delete', old.id, old.name, old.path);
     INSERT INTO games_fts(rowid, name, path) VALUES (new.id, new.name, new.path);
-END;
-                ",
-        )])
+END;"),
+M::up("
+CREATE TABLE IF NOT EXISTS guides (
+    id INTEGER PRIMARY KEY,
+    path TEXT NOT NULL UNIQUE,
+    cursor INTEGER NOT NULL
+);"),
+        ])
     }
 
     pub fn delete_game(&self, path: &Path) -> Result<()> {
@@ -234,6 +239,32 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
             .prepare("UPDATE games SET play_time = play_time + ? WHERE path = ?")?;
 
         stmt.execute(params![play_time.num_seconds(), path.display().to_string()])?;
+
+        Ok(())
+    }
+
+    pub fn get_guide_cursor(&self, path: &Path) -> Result<u64> {
+        let mut stmt = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .prepare("SELECT cursor FROM guides WHERE path = ?")?;
+
+        let cursor = stmt
+            .query_row([path.display().to_string()], |row| row.get(0))
+            .optional()?;
+
+        Ok(cursor.unwrap_or(0))
+    }
+
+    pub fn update_guide_cursor(&self, path: &Path, cursor: u64) -> Result<()> {
+        let mut stmt = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .prepare("INSERT INTO guides (path, cursor) VALUES (?, ?) ON CONFLICT(path) DO UPDATE SET cursor = ?")?;
+
+        stmt.execute(params![path.display().to_string(), cursor, cursor])?;
 
         Ok(())
     }

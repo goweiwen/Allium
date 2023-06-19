@@ -92,11 +92,17 @@ impl View for Keyboard {
             let w = key_size as i32 * KEYBOARD_COLUMNS + key_padding * 14;
             let h = key_size as i32 * KEYBOARD_ROWS + key_padding * 5;
             let x0 = (display.size().width as i32 - w) / 2;
-            let y0 = display.size().height as i32 - h - 48;
+            let y0 = display.size().height as i32 - h - 47;
 
-            Rectangle::new(
-                Point::new(0, y0 - styles.ui_font_size as i32 - 8).into(),
-                Size::new(display.size().width, h as u32 + styles.ui_font_size + 8),
+            RoundedRectangle::with_equal_corners(
+                Rectangle::new(
+                    Point::new(8, y0 - styles.ui_font_size as i32 - 8).into(),
+                    Size::new(
+                        display.size().width - 16,
+                        h as u32 + styles.ui_font_size + 8,
+                    ),
+                ),
+                Size::new_equal(8),
             )
             .into_styled(fill_style)
             .draw(display)?;
@@ -139,7 +145,7 @@ impl View for Keyboard {
                 &masked_value(&self.value, self.is_password),
                 Point::new(
                     display.size().width as i32 / 2,
-                    display.size().height as i32 - h - 48 - styles.ui_font_size as i32 - 8,
+                    display.size().height as i32 - h - 48 - styles.ui_font_size as i32,
                 )
                 .into(),
                 text_style,
