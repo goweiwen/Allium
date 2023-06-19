@@ -52,7 +52,7 @@ impl View for Toggle {
         RoundedRectangle::with_equal_corners(
             Rect::new(
                 self.point.x - (44 * (1 - self.alignment.sign()) / 2),
-                self.point.y,
+                self.point.y + 2,
                 44,
                 28,
             )
@@ -72,7 +72,7 @@ impl View for Toggle {
                         true => 20,
                         false => 4,
                     },
-                self.point.y + 4,
+                self.point.y + 6,
             )
             .into(),
             20,
