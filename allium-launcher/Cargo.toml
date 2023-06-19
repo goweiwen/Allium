@@ -1,6 +1,6 @@
 [package]
 name = "allium-launcher"
-version = "0.6.3"
+version = "0.6.4"
 edition = "2021"
 include = ["/src"]
 
