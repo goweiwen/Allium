@@ -149,7 +149,18 @@ impl View for SettingsList {
             }
             .unwrap_or_default();
 
-            let selection_style = PrimitiveStyle::with_fill(styles.highlight_color);
+            RoundedRectangle::with_equal_corners(
+                Rectangle::new(
+                    embedded_graphics::prelude::Point::new(self.rect.x, rect.y - 4),
+                    Size::new(self.rect.w, rect.h + 8),
+                ),
+                Size::new_equal(rect.h),
+            )
+            .into_styled(PrimitiveStyle::with_fill(
+                styles.highlight_color.blend(styles.background_color, 128),
+            ))
+            .draw(display)?;
+
             RoundedRectangle::with_equal_corners(
                 Rectangle::new(
                     embedded_graphics::prelude::Point::new(rect.x - 12, rect.y - 4),
@@ -157,7 +168,7 @@ impl View for SettingsList {
                 ),
                 Size::new_equal(rect.h),
             )
-            .into_styled(selection_style)
+            .into_styled(PrimitiveStyle::with_fill(styles.highlight_color))
             .draw(display)?;
 
             for child in self.left.iter_mut() {
