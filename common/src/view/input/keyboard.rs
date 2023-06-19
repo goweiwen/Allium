@@ -98,7 +98,7 @@ impl View for Keyboard {
                 Point::new(0, y0 - styles.ui_font_size as i32 - 8).into(),
                 Size::new(
                     display.size().width,
-                    h as u32 + styles.ui_font_size as u32 + 8,
+                    h as u32 + styles.ui_font_size + 8,
                 ),
             )
             .into_styled(fill_style)
@@ -230,10 +230,10 @@ impl View for Keyboard {
         let key_size = 32_u32;
         let key_padding = 4;
 
-        let w = key_size as u32 * KEYBOARD_COLUMNS as u32 + key_padding * 14;
-        let h = key_size as u32 * KEYBOARD_ROWS as u32 + key_padding * 5;
+        let w = key_size * KEYBOARD_COLUMNS as u32 + key_padding * 14;
+        let h = key_size * KEYBOARD_ROWS as u32 + key_padding * 5;
         let x = (640 - w as i32) / 2;
-        let y = 480 as i32 - h as i32;
+        let y = 480_i32 - h as i32;
 
         Rect::new(x, y, w, h)
     }

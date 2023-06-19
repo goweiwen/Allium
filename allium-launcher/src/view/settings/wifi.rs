@@ -106,15 +106,15 @@ impl View for Wifi {
                 // Try to get the IP address if we don't have it yet
                 if let Some(ip_address) = wifi::ip_address() {
                     self.has_ip_address = true;
-                    display.load(self.ip_address_label.bounding_box(styles).into())?;
+                    display.load(self.ip_address_label.bounding_box(styles))?;
                     self.ip_address_label.set_text(ip_address);
                 } else {
-                    display.load(self.ip_address_label.bounding_box(styles).into())?;
+                    display.load(self.ip_address_label.bounding_box(styles))?;
                     self.ip_address_label.set_text("Connecting...".to_owned());
                 }
             }
         } else if self.has_ip_address {
-            display.load(self.ip_address_label.bounding_box(styles).into())?;
+            display.load(self.ip_address_label.bounding_box(styles))?;
             self.ip_address_label.set_text("".to_owned());
         }
 

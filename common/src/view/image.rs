@@ -107,7 +107,7 @@ impl View for Image {
             }
         }
 
-        display.load(self.rect.into())?;
+        display.load(self.rect)?;
         if let Some(ref image) = self.image {
             let image: ImageRaw<Color> = ImageRaw::new(image, self.rect.w);
             let image = embedded_graphics::image::Image::new(&image, self.rect.top_left().into());

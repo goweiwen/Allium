@@ -69,7 +69,7 @@ where
             }
         }
 
-        display.load(self.bounding_box(styles).into())?;
+        display.load(self.bounding_box(styles))?;
         self.label.draw(display, styles)
     }
 
