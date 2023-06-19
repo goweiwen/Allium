@@ -177,15 +177,17 @@ impl AlliumD<DefaultPlatform> {
             KeyEvent::Released(Key::Menu) => {
                 self.is_menu_pressed = false;
                 if self.is_ingame() && self.is_menu_pressed_alone {
-                    self.is_menu_pressed_alone = false;
-                    if let Some(menu) = &mut self.menu {
-                        terminate(menu).await?;
-                    } else {
-                        #[cfg(unix)]
-                        signal(&self.main, Signal::SIGSTOP)?;
-                        self.menu = Some(Command::new(ALLIUM_MENU.as_path()).spawn()?);
+                    if let Some(game_info) = GameInfo::load()? {
+                        if let Some(menu) = &mut self.menu {
+                            terminate(menu).await?;
+                        } else if game_info.has_menu {
+                            #[cfg(unix)]
+                            signal(&self.main, Signal::SIGSTOP)?;
+                            self.menu = Some(Command::new(ALLIUM_MENU.as_path()).spawn()?);
+                        }
                     }
                 }
+                self.is_menu_pressed_alone = false;
             }
             _ => {}
         }

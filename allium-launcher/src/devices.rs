@@ -197,6 +197,7 @@ impl DeviceMapper {
                     game.path.to_owned(),
                     path.display().to_string(),
                     vec![game.path.display().to_string()],
+                    false,
                 )
             } else if let Some(retroarch_core) = device.cores.first() {
                 GameInfo::new(
@@ -204,6 +205,7 @@ impl DeviceMapper {
                     game.path.to_owned(),
                     ALLIUM_RETROARCH.display().to_string(),
                     vec![retroarch_core.to_owned(), game.path.display().to_string()],
+                    true,
                 )
             } else {
                 bail!("Device \"{}\" has no path or cores.", device.name);

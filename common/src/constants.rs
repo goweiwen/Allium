@@ -9,6 +9,9 @@ use lazy_static::lazy_static;
 pub const ALLIUM_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 lazy_static! {
+    pub static ref ALLIUM_SD_ROOT: PathBuf = PathBuf::from(
+        &env::var("ALLIUM_SD_ROOT").unwrap_or_else(|_| "/mnt/SDCARD/".to_string())
+    );
     pub static ref ALLIUM_CONFIG_DIR: PathBuf = PathBuf::from(
         &env::var("ALLIUM_CONFIG_DIR").unwrap_or_else(|_| "/mnt/SDCARD/.allium".to_string())
     );
@@ -16,6 +19,7 @@ lazy_static! {
         &env::var("ALLIUM_ROMS_DIR").unwrap_or_else(|_| "/mnt/SDCARD/Roms".to_string())
     );
     pub static ref ALLIUM_SCRIPTS_DIR: PathBuf = ALLIUM_CONFIG_DIR.join("scripts");
+    pub static ref ALLIUM_TOOLS_DIR: PathBuf = ALLIUM_CONFIG_DIR.join("tools");
 
     // State
     pub static ref ALLIUMD_STATE: PathBuf = ALLIUM_CONFIG_DIR.join("state/alliumd.json");

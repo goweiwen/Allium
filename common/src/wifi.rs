@@ -6,7 +6,7 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, warn};
 
-use crate::constants::{ALLIUM_SCRIPTS_DIR, ALLIUM_WIFI_SETTINGS};
+use crate::constants::{ALLIUM_SCRIPTS_DIR, ALLIUM_SD_ROOT, ALLIUM_WIFI_SETTINGS};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WiFiSettings {
@@ -45,6 +45,7 @@ impl WiFiSettings {
     pub fn init(&self) -> Result<()> {
         if self.wifi {
             enable_wifi()?;
+            disable_telnet()?;
             if self.telnet {
                 enable_telnet()?;
             }
@@ -158,6 +159,7 @@ pub fn disable_wifi() -> Result<()> {
 
 pub fn enable_telnet() -> Result<()> {
     Command::new("telnetd")
+        .current_dir(ALLIUM_SD_ROOT.as_path())
         .args(["-l", "sh"])
         .stdout(Stdio::null())
         .spawn()?;
@@ -174,6 +176,7 @@ pub fn disable_telnet() -> Result<()> {
 
 pub fn enable_ftp() -> Result<()> {
     Command::new("tcpsvd")
+        .current_dir(ALLIUM_SD_ROOT.as_path())
         .args(["-E", "0.0.0.0", "21", "ftpd", "-w", "/mnt/SDCARD"])
         .stdout(Stdio::null())
         .spawn()?;

@@ -7,14 +7,14 @@ TOOLCHAIN := mholdg16/miyoomini-toolchain:latest
 all: static build package-build package-retroarch
 
 simulator-env:
-	rsync -a assets/root/.allium/devices.toml assets/simulator/devices.toml
-	rsync -ar assets/root/.allium/cores assets/simulator/
+	mkdir -p assets/simulator
+	rsync -ar assets/root/.allium assets/simulator/
 
 simulator-launcher: simulator-env
-	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_CONFIG_DIR=assets/simulator ALLIUM_ROMS_DIR=assets/simulator/Roms cargo run --bin allium-launcher
+	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_CONFIG_DIR=assets/simulator/.allium ALLIUM_ROMS_DIR=assets/simulator/Roms cargo run --bin allium-launcher
 
 simulator-menu: simulator-env
-	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_CONFIG_DIR=assets/simulator ALLIUM_ROMS_DIR=assets/simulator/Roms cargo run --bin allium-menu
+	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_CONFIG_DIR=assets/simulator/.allium ALLIUM_ROMS_DIR=assets/simulator/Roms cargo run --bin allium-menu
 
 clean:
 	rm -r $(DIST_DIR)

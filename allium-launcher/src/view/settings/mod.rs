@@ -13,7 +13,7 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::BUTTON_DIAMETER;
+use common::constants::{ALLIUM_TOOLS_DIR, BUTTON_DIAMETER};
 use common::display::Display as DisplayTrait;
 use common::geom::{Alignment, Point, Rect};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
@@ -60,6 +60,12 @@ impl Settings {
                 ),
                 Label::new(
                     Point::zero(),
+                    "Files".to_owned(),
+                    Alignment::Left,
+                    Some(110),
+                ),
+                Label::new(
+                    Point::zero(),
                     "System".to_owned(),
                     Alignment::Left,
                     Some(110),
@@ -88,7 +94,7 @@ impl Settings {
         })
     }
 
-    async fn select_entry(&mut self, _commands: Sender<Command>) -> Result<()> {
+    async fn select_entry(&mut self, commands: Sender<Command>) -> Result<()> {
         let rect = Rect::new(
             self.rect.x + 146,
             self.rect.y,
@@ -99,7 +105,13 @@ impl Settings {
             0 => self.child = Some(Box::new(Wifi::new(rect))),
             1 => self.child = Some(Box::new(Display::new(rect))),
             2 => self.child = Some(Box::new(Theme::new(rect))),
-            3 => self.child = Some(Box::new(System::new(rect))),
+            3 => {
+                let path = ALLIUM_TOOLS_DIR.join("Files.pak");
+                let mut command = std::process::Command::new(path.join("launch.sh"));
+                command.current_dir(path);
+                commands.send(Command::Exec(command)).await?;
+            }
+            4 => self.child = Some(Box::new(System::new(rect))),
             _ => unreachable!("Invalid index"),
         }
         self.dirty = true;

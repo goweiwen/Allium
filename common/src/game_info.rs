@@ -21,18 +21,27 @@ pub struct GameInfo {
     pub command: String,
     /// Arguments to pass to the core to run the game.
     pub args: Vec<String>,
-    /// Start time
+    /// Do we enable the menu? Currently only enabled if RetroArch is used.
+    pub has_menu: bool,
+    /// Start time. Used to measure playtime.
     pub start_time: DateTime<Utc>,
 }
 
 impl GameInfo {
     /// Create a new GameInfo object.
-    pub fn new(name: String, path: PathBuf, command: String, args: Vec<String>) -> Self {
+    pub fn new(
+        name: String,
+        path: PathBuf,
+        command: String,
+        args: Vec<String>,
+        has_menu: bool,
+    ) -> Self {
         Self {
             name,
             path,
             command,
             args,
+            has_menu,
             start_time: Utc::now(),
         }
     }
@@ -60,7 +69,9 @@ impl GameInfo {
 
     /// Deletes the current game info file.
     pub fn delete() -> Result<()> {
-        fs::remove_file(ALLIUM_GAME_INFO.as_path())?;
+        if ALLIUM_GAME_INFO.exists() {
+            fs::remove_file(ALLIUM_GAME_INFO.as_path())?;
+        }
         Ok(())
     }
 

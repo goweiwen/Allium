@@ -7,7 +7,7 @@ use common::command::Command;
 use common::display::color::Color;
 use common::view::View;
 use embedded_graphics::prelude::*;
-use tracing::{trace, warn};
+use tracing::{debug, warn};
 
 use common::database::Database;
 use common::display::Display;
@@ -101,16 +101,16 @@ impl AlliumLauncher<DefaultPlatform> {
     async fn handle_command(&mut self, command: Command) -> Result<()> {
         match command {
             Command::Exit => {
-                trace!("goodbye from allium launcher");
+                debug!("goodbye from allium launcher");
                 self.view.save()?;
                 self.display.clear(Color::new(0, 0, 0))?;
                 self.display.flush()?;
                 process::exit(0);
             }
             Command::Exec(mut cmd) => {
-                trace!("executing command: {:?}", cmd);
+                debug!("executing command: {:?}", cmd);
                 self.view.save()?;
-                self.display.load(self.display.bounding_box().into())?;
+                self.display.clear(Color::new(0, 0, 0))?;
                 self.display.flush()?;
                 #[cfg(unix)]
                 {
@@ -121,7 +121,7 @@ impl AlliumLauncher<DefaultPlatform> {
                 cmd.spawn()?;
             }
             Command::SaveStylesheet(styles) => {
-                trace!("saving stylesheet");
+                debug!("saving stylesheet");
                 styles.save()?;
                 self.display.clear(styles.background_color)?;
                 self.display.save()?;
@@ -129,12 +129,12 @@ impl AlliumLauncher<DefaultPlatform> {
                 self.view.set_should_draw();
             }
             Command::SaveDisplaySettings(settings) => {
-                trace!("saving display settings");
+                debug!("saving display settings");
                 settings.save()?;
                 self.platform.set_display_settings(&settings)?;
             }
             Command::Redraw => {
-                trace!("redrawing");
+                debug!("redrawing");
                 self.display.load(self.display.bounding_box().into())?;
                 self.view.set_should_draw();
             }
