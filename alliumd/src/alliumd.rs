@@ -84,9 +84,7 @@ impl AlliumD<DefaultPlatform> {
 
         #[cfg(unix)]
         {
-            let mut sighup = tokio::signal::unix::signal(SignalKind::hangup())?;
             let mut sigint = tokio::signal::unix::signal(SignalKind::interrupt())?;
-            let mut sigquit = tokio::signal::unix::signal(SignalKind::quit())?;
             let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())?;
 
             loop {
@@ -113,9 +111,7 @@ impl AlliumD<DefaultPlatform> {
                         #[cfg(unix)]
                         signal(&self.main, Signal::SIGCONT)?;
                     }
-                    _ = sighup.recv() => self.handle_quit()?,
                     _ = sigint.recv() => self.handle_quit()?,
-                    _ = sigquit.recv() => self.handle_quit()?,
                     _ = sigterm.recv() => self.handle_quit()?,
                 }
             }

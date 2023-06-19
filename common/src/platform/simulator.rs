@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::time::Duration;
 
 use anyhow::{bail, Result};
 use async_trait::async_trait;
@@ -59,6 +60,8 @@ impl Platform for SimulatorPlatform {
                     }
                     _ => {}
                 }
+            } else {
+                tokio::time::sleep(Duration::from_millis(10)).await;
             }
         }
     }
