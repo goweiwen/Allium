@@ -3,6 +3,7 @@ use std::process;
 
 use anyhow::Result;
 use common::command::Command;
+use common::database::Database;
 use common::display::color::Color;
 use common::display::Display;
 use common::game_info::GameInfo;
@@ -33,14 +34,15 @@ impl AlliumMenu<DefaultPlatform> {
         let battery = platform.battery()?;
         let rect = display.bounding_box().into();
 
-        let game_info = GameInfo::load()?;
-        let name = game_info.map_or_else(String::new, |game| game.name);
+        let database = Database::new()?;
+
+        let game_info = GameInfo::load()?.unwrap_or_default();
 
         Ok(AlliumMenu {
             platform,
             display,
             styles: Stylesheet::load()?,
-            view: IngameMenu::new(rect, name, battery),
+            view: IngameMenu::load_or_new(rect, game_info, battery, database)?,
         })
     }
 
@@ -97,6 +99,7 @@ impl AlliumMenu<DefaultPlatform> {
     fn handle_command(&mut self, command: Command) -> Result<()> {
         match command {
             Command::Exit => {
+                self.view.save()?;
                 self.display.clear(Color::new(0, 0, 0))?;
                 self.display.flush()?;
                 process::exit(0);

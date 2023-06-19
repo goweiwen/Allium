@@ -52,6 +52,10 @@ pub struct Stylesheet {
     pub ui_font: Font<'static>,
     #[serde(skip, default = "Stylesheet::font_size")]
     pub ui_font_size: u32,
+    #[serde(skip, default = "Stylesheet::mono_font")]
+    pub mono_font: Font<'static>,
+    #[serde(skip, default = "Stylesheet::mono_font_size")]
+    pub mono_font_size: u32,
 }
 
 impl Stylesheet {
@@ -111,6 +115,18 @@ rgui_particle_color = "0xFF{highlight:X}"
     fn font_size() -> u32 {
         32
     }
+
+    fn mono_font() -> Font<'static> {
+        trace!("loading mono font");
+        Font::try_from_bytes(include_bytes!(
+            "../../assets/font/Martian Mono/MartianMono_Condensed-Regular.ttf"
+        ))
+        .unwrap()
+    }
+
+    fn mono_font_size() -> u32 {
+        16
+    }
 }
 
 impl Default for Stylesheet {
@@ -127,6 +143,8 @@ impl Default for Stylesheet {
             button_y_color: Color::new(0, 141, 69),
             ui_font: Self::font(),
             ui_font_size: Self::font_size(),
+            mono_font: Self::mono_font(),
+            mono_font_size: Self::mono_font_size(),
         }
     }
 }
