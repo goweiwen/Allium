@@ -11,7 +11,6 @@ Allium only supports the Miyoo Mini Plus for now.
 
 1. Format the SD card to [FAT32](https://github.com/anzz1/DotUI-X/wiki/fat32format).
 2. Download the latest release and extract into your SD card. e.g. `E:/`.
-3. Add the `Roms`, `BIOS`, and optionally, `Saves`, folders to the root.
 
 The SD card layout should look like this:
 - .allium
@@ -19,7 +18,7 @@ The SD card layout should look like this:
 - BIOS
 - RetroArch
 - Roms
-- Saves
+- Saves (optional, if you have existing saves from OnionOS)
 
 ## Features
 - Supports stock/Onion/DotUI SD card layout
