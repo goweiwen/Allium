@@ -90,17 +90,16 @@ impl Recents {
     }
 
     async fn select_entry(&mut self, commands: Sender<Command>) -> Result<()> {
-        let entry = &mut self.entries[self.list.selected()];
-
-        if let Some(command) = self
-            .device_mapper
-            .as_ref()
-            .unwrap()
-            .launch_game(&self.database, entry)?
-        {
-            commands.send(command).await?;
+        if let Some(entry) = self.entries.get_mut(self.list.selected()) {
+            if let Some(command) = self
+                .device_mapper
+                .as_ref()
+                .unwrap()
+                .launch_game(&self.database, entry)?
+            {
+                commands.send(command).await?;
+            }
         }
-
         Ok(())
     }
 

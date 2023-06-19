@@ -115,24 +115,25 @@ impl Browser {
     }
 
     async fn select_entry(&mut self, commands: Sender<Command>) -> Result<()> {
-        let entry = &mut self.entries[self.list.selected()];
-        match entry {
-            Entry::Directory(dir) => {
-                let mut child = Browser::new(self.rect, dir.to_owned(), 0)?;
-                child.init(
-                    self.database.clone(),
-                    Rc::clone(self.device_mapper.as_ref().unwrap()),
-                );
-                self.child = Some(Box::new(child));
-            }
-            Entry::Game(game) => {
-                if let Some(command) = self
-                    .device_mapper
-                    .as_ref()
-                    .unwrap()
-                    .launch_game(&self.database, game)?
-                {
-                    commands.send(command).await?;
+        if let Some(entry) = self.entries.get_mut(self.list.selected()) {
+            match entry {
+                Entry::Directory(dir) => {
+                    let mut child = Browser::new(self.rect, dir.to_owned(), 0)?;
+                    child.init(
+                        self.database.clone(),
+                        Rc::clone(self.device_mapper.as_ref().unwrap()),
+                    );
+                    self.child = Some(Box::new(child));
+                }
+                Entry::Game(game) => {
+                    if let Some(command) = self
+                        .device_mapper
+                        .as_ref()
+                        .unwrap()
+                        .launch_game(&self.database, game)?
+                    {
+                        commands.send(command).await?;
+                    }
                 }
             }
         }
@@ -159,14 +160,15 @@ impl View for Browser {
 
         if styles.enable_box_art {
             // TODO: relayout list if box art is enabled/disabled
-            let entry = &mut self.entries[self.list.selected()];
-            if let Some(path) = entry.image() {
-                self.image.set_path(Some(path.to_path_buf()));
-            } else {
-                self.image.set_path(None);
-            }
-            if self.image.should_draw() && self.image.draw(display, styles)? {
-                drawn = true;
+            if let Some(entry) = self.entries.get_mut(self.list.selected()) {
+                if let Some(path) = entry.image() {
+                    self.image.set_path(Some(path.to_path_buf()));
+                } else {
+                    self.image.set_path(None);
+                }
+                if self.image.should_draw() && self.image.draw(display, styles)? {
+                    drawn = true;
+                }
             }
         }
 
