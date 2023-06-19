@@ -358,7 +358,7 @@ impl Entry {
 
         // Remove numbers
         lazy_static! {
-            static ref NUMBERS_RE: Regex = Regex::new(r"^\d+").unwrap();
+            static ref NUMBERS_RE: Regex = Regex::new(r"^\d+[.\)]").unwrap();
         }
         name = NUMBERS_RE.replace(&name, "").to_string();
 
