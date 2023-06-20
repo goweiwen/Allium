@@ -1,6 +1,7 @@
 mod battery_indicator;
 mod button_hint;
 mod button_icon;
+mod clock;
 mod image;
 mod input;
 mod label;
@@ -16,6 +17,7 @@ use std::fmt;
 pub use self::battery_indicator::BatteryIndicator;
 pub use self::button_hint::ButtonHint;
 pub use self::button_icon::ButtonIcon;
+pub use self::clock::Clock;
 pub use self::image::{Image, ImageMode};
 pub use self::input::button::Button;
 pub use self::input::color_picker::ColorPicker;
