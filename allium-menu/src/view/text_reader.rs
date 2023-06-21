@@ -38,10 +38,9 @@ pub struct TextReader {
 
 impl TextReader {
     pub fn new(rect: Rect, path: PathBuf, database: Database) -> Self {
-        let mut text = fs::read_to_string(&path)
+        let text = fs::read_to_string(&path)
             .map_err(|e| error!("failed to load guide file: {}", e))
             .unwrap_or_default();
-        text.push_str("\n\n\n\n\n");
         let lowercase_text = text.to_lowercase();
 
         let cursor = load_cursor(&database, path.as_path());
@@ -71,7 +70,7 @@ impl TextReader {
         }
     }
 
-    pub fn save_cursor(&mut self) {
+    pub fn save_cursor(&self) {
         self.database
             .update_guide_cursor(&self.path, self.cursor as u64)
             .map_err(|e| error!("failed to update guide cursor to database: {}", e))
@@ -84,7 +83,7 @@ impl TextReader {
         let mut end = 0;
         let line_count = self.rect.h / styles.mono_font_size;
         for _ in 0..line_count {
-            if end > text.len() {
+            if end >= text.len() {
                 break;
             }
             if let Some(pos) = text[end + 1..].find('\n') {
@@ -249,12 +248,14 @@ impl View for TextReader {
                     }
                 }
                 KeyEvent::Pressed(Key::Down) | KeyEvent::Autorepeat(Key::Down) => {
-                    self.cursor += self.text[self.cursor + 1..]
-                        .find('\n')
-                        .or_else(|| self.text[..self.cursor].rfind('\n'))
-                        .map(|i| i + 2)
-                        .unwrap_or_default();
-                    self.dirty = true;
+                    if self.cursor + 1 < self.text.len() {
+                        self.cursor += self.text[self.cursor + 1..]
+                            .find('\n')
+                            .or_else(|| self.text[..self.cursor].rfind('\n'))
+                            .map(|i| i + 2)
+                            .unwrap_or_default();
+                        self.dirty = true;
+                    }
                 }
                 KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
                     for _ in 0..10 {
@@ -267,11 +268,14 @@ impl View for TextReader {
                 }
                 KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
                     for _ in 0..10 {
+                        if self.cursor + 1 >= self.text.len() {
+                            break;
+                        }
                         self.cursor += self.text[self.cursor + 1..]
                             .find('\n')
                             .map(|i| i + 2)
                             .or_else(|| self.text[..self.cursor].rfind('\n'))
-                            .unwrap_or_default();
+                            .unwrap_or_default()
                     }
                     self.dirty = true;
                 }
