@@ -344,8 +344,8 @@ impl Entry {
             .unwrap_or_default()
             .to_owned();
 
-        // Don't add images
-        if file_name == "Imgs" {
+        // Exclude Imgs and Guide directories
+        if file_name == "Imgs" || file_name == "Guide" {
             return Ok(None);
         }
         if EXCLUDE_EXTENSIONS.contains(&extension.as_str()) {
