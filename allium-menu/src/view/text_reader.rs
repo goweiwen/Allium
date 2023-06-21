@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
-use std::fs;
 use std::path::{Path, PathBuf};
+use std::{fs, mem};
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -86,7 +86,7 @@ impl TextReader {
             if end >= text.len() {
                 break;
             }
-            if let Some(pos) = text[end + 1..].find('\n') {
+            if let Some(pos) = text[end..].find('\n') {
                 end += 1 + pos;
             } else {
                 return text;
@@ -96,7 +96,7 @@ impl TextReader {
         &text[..end]
     }
 
-    fn search(&mut self, needle: String) {
+    fn search_forward(&mut self, needle: String) {
         // Skip the current line
         self.cursor += self.text[self.cursor..].find('\n').unwrap_or_default();
 
@@ -109,7 +109,58 @@ impl TextReader {
             self.last_searched = needle;
         } else {
             self.cursor = 0;
-            self.search(needle);
+            self.search_forward(needle);
+        }
+
+        if self.button_hints.children().len() <= 2 {
+            self.button_hints.push(ButtonHint::new(
+                Point::zero(),
+                Key::L,
+                "Next",
+                Alignment::Right,
+            ));
+            self.button_hints.push(ButtonHint::new(
+                Point::zero(),
+                Key::R,
+                "Prev",
+                Alignment::Right,
+            ));
+        }
+    }
+
+    fn search_backward(&mut self, needle: String) {
+        if let Some(location) = self.lowercase_text[..self.cursor].rfind(&needle) {
+            self.cursor = location;
+
+            // Go back to the start of the line
+            self.cursor = self.text[..self.cursor].rfind('\n').unwrap_or_default() + 1;
+            self.cursor = self.cursor.clamp(0, self.text.len() - 1);
+            self.last_searched = needle;
+        } else {
+            self.cursor = self.text.len();
+            self.search_backward(needle);
+        }
+
+        if self.button_hints.children().len() <= 2 {
+            self.button_hints.push(ButtonHint::new(
+                Point::zero(),
+                Key::L,
+                "Next",
+                Alignment::Right,
+            ));
+            self.button_hints.push(ButtonHint::new(
+                Point::zero(),
+                Key::R,
+                "Prev",
+                Alignment::Right,
+            ));
+        }
+    }
+
+    fn advance_cursor(&mut self) {
+        self.cursor += 1;
+        while !self.text.is_char_boundary(self.cursor) {
+            self.cursor += 1;
         }
     }
 }
@@ -232,7 +283,7 @@ impl View for TextReader {
                             self.keyboard = None;
                         }
                         Command::ValueChanged(_, value) => {
-                            self.search(value.as_string().unwrap());
+                            self.search_forward(value.as_string().unwrap());
                         }
                         cmd => bubble.push_back(cmd),
                     }
@@ -245,20 +296,19 @@ impl View for TextReader {
             match event {
                 KeyEvent::Pressed(Key::Up) | KeyEvent::Autorepeat(Key::Up) => {
                     if self.cursor > 0 {
-                        self.cursor = self.text[..self.cursor - 1]
-                            .rfind('\n')
-                            .map(|i| i + 1)
-                            .unwrap_or_default();
+                        self.cursor = self.text[..self.cursor - 1].rfind('\n').unwrap_or_default();
+                        self.advance_cursor();
                         self.dirty = true;
                     }
                 }
                 KeyEvent::Pressed(Key::Down) | KeyEvent::Autorepeat(Key::Down) => {
                     if self.cursor != self.text.len() {
-                        self.cursor += self.text[self.cursor + 1..]
+                        self.advance_cursor();
+                        self.cursor += self.text[self.cursor..]
                             .find('\n')
                             .or_else(|| self.text[..self.cursor].rfind('\n'))
-                            .map(|i| i + 2)
                             .unwrap_or_default();
+                        self.advance_cursor();
                         self.dirty = true;
                         if self.cursor > self.text.len() {
                             self.cursor = self.text.rfind('\n').map(|i| i + 1).unwrap_or_default();
@@ -268,10 +318,9 @@ impl View for TextReader {
                 KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
                     for _ in 0..10 {
                         if self.cursor > 0 {
-                            self.cursor = self.text[..self.cursor - 1]
-                                .rfind('\n')
-                                .map(|i| i + 1)
-                                .unwrap_or_default();
+                            self.cursor =
+                                self.text[..self.cursor - 1].rfind('\n').unwrap_or_default();
+                            self.advance_cursor();
                         }
                     }
                     self.dirty = true;
@@ -283,13 +332,24 @@ impl View for TextReader {
                             break;
                         }
                         if self.cursor != self.text.len() {
-                            self.cursor += self.text[self.cursor + 1..]
+                            self.advance_cursor();
+                            self.cursor += self.text[self.cursor..]
                                 .find('\n')
-                                .map(|i| i + 2)
                                 .or_else(|| self.text[..self.cursor].rfind('\n'))
-                                .unwrap_or_default()
+                                .unwrap_or_default();
+                            self.advance_cursor();
                         }
                     }
+                    self.dirty = true;
+                }
+                KeyEvent::Pressed(Key::L) => {
+                    let last_searched = mem::take(&mut self.last_searched);
+                    self.search_backward(last_searched);
+                    self.dirty = true;
+                }
+                KeyEvent::Pressed(Key::R) => {
+                    let last_searched = mem::take(&mut self.last_searched);
+                    self.search_forward(last_searched);
                     self.dirty = true;
                 }
                 KeyEvent::Pressed(Key::B) => {
@@ -297,10 +357,7 @@ impl View for TextReader {
                     bubble.push_back(Command::CloseView);
                 }
                 KeyEvent::Pressed(Key::X) => {
-                    self.keyboard = Some(Keyboard::new(
-                        std::mem::take(&mut self.last_searched),
-                        false,
-                    ));
+                    self.keyboard = Some(Keyboard::new(mem::take(&mut self.last_searched), false));
                 }
                 _ => return Ok(false),
             }

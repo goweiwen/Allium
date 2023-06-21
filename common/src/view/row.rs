@@ -49,6 +49,12 @@ where
         self.children.get_mut(index)
     }
 
+    pub fn push(&mut self, view: V) {
+        self.children.push(view);
+        self.dirty = true;
+        self.has_layout = false;
+    }
+
     fn layout(&mut self, styles: &Stylesheet) {
         match self.alignment {
             Alignment::Left => self.layout_left(styles),
