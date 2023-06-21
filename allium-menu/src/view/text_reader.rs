@@ -158,10 +158,38 @@ impl TextReader {
     }
 
     fn advance_cursor(&mut self) {
-        self.cursor += 1;
+        self.cursor = (self.cursor + 1).min(self.text.len());
         while !self.text.is_char_boundary(self.cursor) {
             self.cursor += 1;
         }
+    }
+
+    fn move_back_lines(&mut self, lines: usize) {
+        for _ in 0..lines {
+            if self.cursor > 0 {
+                self.cursor = self.text[..self.cursor - 1].rfind('\n').unwrap_or_default();
+                self.advance_cursor();
+            }
+        }
+        self.dirty = true;
+    }
+
+    fn move_forward_lines(&mut self, lines: usize) {
+        for _ in 0..lines {
+            if self.cursor > self.text.len() {
+                self.cursor = self.text.rfind('\n').map(|i| i + 1).unwrap_or_default();
+                break;
+            }
+            if self.cursor != self.text.len() {
+                self.advance_cursor();
+                self.cursor += self.text[self.cursor..]
+                    .find('\n')
+                    .or_else(|| self.text[..self.cursor].rfind('\n'))
+                    .unwrap_or_default();
+                self.advance_cursor();
+            }
+        }
+        self.dirty = true;
     }
 }
 
@@ -294,53 +322,29 @@ impl View for TextReader {
             }
         } else {
             match event {
-                KeyEvent::Pressed(Key::Up) | KeyEvent::Autorepeat(Key::Up) => {
-                    if self.cursor > 0 {
-                        self.cursor = self.text[..self.cursor - 1].rfind('\n').unwrap_or_default();
-                        self.advance_cursor();
-                        self.dirty = true;
-                    }
+                KeyEvent::Pressed(Key::Up) => {
+                    self.move_back_lines(1);
                 }
-                KeyEvent::Pressed(Key::Down) | KeyEvent::Autorepeat(Key::Down) => {
-                    if self.cursor != self.text.len() {
-                        self.advance_cursor();
-                        self.cursor += self.text[self.cursor..]
-                            .find('\n')
-                            .or_else(|| self.text[..self.cursor].rfind('\n'))
-                            .unwrap_or_default();
-                        self.advance_cursor();
-                        self.dirty = true;
-                        if self.cursor > self.text.len() {
-                            self.cursor = self.text.rfind('\n').map(|i| i + 1).unwrap_or_default();
-                        }
-                    }
+                KeyEvent::Autorepeat(Key::Up) => {
+                    self.move_back_lines(3);
                 }
-                KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
-                    for _ in 0..10 {
-                        if self.cursor > 0 {
-                            self.cursor =
-                                self.text[..self.cursor - 1].rfind('\n').unwrap_or_default();
-                            self.advance_cursor();
-                        }
-                    }
-                    self.dirty = true;
+                KeyEvent::Pressed(Key::Down) => {
+                    self.move_forward_lines(1);
                 }
-                KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
-                    for _ in 0..10 {
-                        if self.cursor > self.text.len() {
-                            self.cursor = self.text.rfind('\n').map(|i| i + 1).unwrap_or_default();
-                            break;
-                        }
-                        if self.cursor != self.text.len() {
-                            self.advance_cursor();
-                            self.cursor += self.text[self.cursor..]
-                                .find('\n')
-                                .or_else(|| self.text[..self.cursor].rfind('\n'))
-                                .unwrap_or_default();
-                            self.advance_cursor();
-                        }
-                    }
-                    self.dirty = true;
+                KeyEvent::Autorepeat(Key::Down) => {
+                    self.move_forward_lines(3);
+                }
+                KeyEvent::Pressed(Key::Left) => {
+                    self.move_back_lines(10);
+                }
+                KeyEvent::Autorepeat(Key::Left) => {
+                    self.move_back_lines(30);
+                }
+                KeyEvent::Pressed(Key::Right) => {
+                    self.move_forward_lines(10);
+                }
+                KeyEvent::Autorepeat(Key::Right) => {
+                    self.move_forward_lines(30);
                 }
                 KeyEvent::Pressed(Key::L) => {
                     let last_searched = mem::take(&mut self.last_searched);
