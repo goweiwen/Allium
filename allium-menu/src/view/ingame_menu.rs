@@ -16,7 +16,7 @@ use common::retroarch::RetroArchCommand;
 use common::stylesheet::Stylesheet;
 use common::view::{BatteryIndicator, ButtonHint, Label, List, Row, View};
 use serde::{Deserialize, Serialize};
-use strum::{EnumCount, EnumIter, FromRepr, IntoEnumIterator};
+use strum::{EnumCount, EnumIter, IntoEnumIterator};
 use tokio::sync::mpsc::Sender;
 use tracing::warn;
 
@@ -148,8 +148,21 @@ where
     }
 
     async fn select_entry(&mut self, commands: Sender<Command>) -> Result<bool> {
-        let Some(selected) = MenuEntry::from_repr(self.menu.selected()) else {
-            unreachable!("Invalid menu entry selected");
+        let selected = match self.menu.selected() {
+            0 => MenuEntry::Continue,
+            1 => MenuEntry::Save,
+            2 => MenuEntry::Load,
+            3 => MenuEntry::Reset,
+            4 => MenuEntry::Advanced,
+            5 => {
+                if self.game_info.guide.is_some() {
+                    MenuEntry::Guide
+                } else {
+                    MenuEntry::Quit
+                }
+            }
+            6 => MenuEntry::Quit,
+            _ => unreachable!(),
         };
         match selected {
             MenuEntry::Continue => {
@@ -301,7 +314,7 @@ where
     }
 }
 
-#[derive(Debug, EnumIter, EnumCount, FromRepr, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, EnumIter, EnumCount, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MenuEntry {
     Continue,
     Save,
