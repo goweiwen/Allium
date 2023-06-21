@@ -15,6 +15,7 @@ use common::view::keyboard::Keyboard;
 use common::view::{ButtonHint, Row, View};
 use embedded_graphics::prelude::Size;
 use embedded_graphics::primitives::{Primitive, PrimitiveStyle, Rectangle, RoundedRectangle};
+use embedded_graphics::text::Text;
 use embedded_graphics::Drawable;
 use embedded_text::alignment::HorizontalAlignment;
 use embedded_text::style::{HeightMode, TextBoxStyleBuilder, VerticalOverdraw};
@@ -131,6 +132,7 @@ impl View for TextReader {
                 .font_size(styles.mono_font_size)
                 .background_color(styles.background_color)
                 .text_color(styles.foreground_color)
+                .draw_background()
                 .build();
 
             let text_box_style = TextBoxStyleBuilder::new()
@@ -141,14 +143,29 @@ impl View for TextReader {
             TextBox::with_textbox_style(
                 self.visible_text(styles),
                 Rect::new(
-                    self.rect.x + 16,
+                    self.rect.x + 12,
                     self.rect.y + 8,
-                    self.rect.w - 32,
+                    self.rect.w - 24,
                     self.rect.h - 48 - 8,
                 )
                 .into(),
-                text_style,
+                text_style.clone(),
                 text_box_style,
+            )
+            .draw(display)?;
+
+            Text::with_alignment(
+                &format!(
+                    "{:.0}%",
+                    self.cursor as f32 / self.text.len() as f32 * 100.0
+                ),
+                Point::new(
+                    self.rect.x + self.rect.w as i32 - 16,
+                    self.rect.y + self.rect.h as i32 - styles.mono_font_size as i32 - 48 - 8,
+                )
+                .into(),
+                text_style,
+                Alignment::Right.into(),
             )
             .draw(display)?;
 
