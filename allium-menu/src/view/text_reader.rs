@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
+use std::fs;
 use std::path::{Path, PathBuf};
-use std::{fs, mem};
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -285,7 +285,7 @@ impl View for TextReader {
                 }
                 KeyEvent::Pressed(Key::X) => {
                     self.keyboard = Some(Keyboard::new(
-                        mem::replace(&mut self.last_searched, String::new()),
+                        std::mem::take(&mut self.last_searched),
                         false,
                     ));
                 }

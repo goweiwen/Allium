@@ -114,15 +114,13 @@ impl View for Keyboard {
 
                 let selected =
                     self.cursor.x + self.cursor.y * KEYBOARD_COLUMNS as usize == i as usize;
-                if self.cursor.y < 4 {
-                    if selected {
-                        RoundedRectangle::with_equal_corners(
-                            Rect::new(x0 + x, y0 + y, key_size, key_size).into(),
-                            Size::new(12, 12),
-                        )
-                        .into_styled(selected_btn_style)
-                        .draw(display)?;
-                    }
+                if self.cursor.y < 4 && selected {
+                    RoundedRectangle::with_equal_corners(
+                        Rect::new(x0 + x, y0 + y, key_size, key_size).into(),
+                        Size::new(12, 12),
+                    )
+                    .into_styled(selected_btn_style)
+                    .draw(display)?;
                 }
 
                 Text::with_alignment(
@@ -163,7 +161,7 @@ impl View for Keyboard {
                     )
                     .into(),
                     if selected {
-                        selected_text_style.clone()
+                        selected_text_style
                     } else {
                         text_style.clone()
                     },
