@@ -46,7 +46,7 @@ impl Keyboard {
 
         Self {
             value,
-            cursor: rusttype::Point { x: 0, y: 0 },
+            cursor: rusttype::Point { x: 5, y: 2 },
             mode: KeyboardMode::Lowercase,
             is_password,
             button_hints,
