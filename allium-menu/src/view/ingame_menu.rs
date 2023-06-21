@@ -22,17 +22,9 @@ use tracing::warn;
 
 use crate::view::TextReader;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct IngameMenuState {
     is_text_reader_open: bool,
-}
-
-impl Default for IngameMenuState {
-    fn default() -> Self {
-        Self {
-            is_text_reader_open: false,
-        }
-    }
 }
 
 pub struct IngameMenu<B>
