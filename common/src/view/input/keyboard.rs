@@ -8,7 +8,7 @@ use embedded_graphics::{
     text::Text,
     Drawable,
 };
-use strum::{EnumIter, FromRepr, IntoEnumIterator};
+use strum::{EnumCount, EnumIter, FromRepr, IntoEnumIterator};
 use tokio::sync::mpsc::Sender;
 
 use crate::geom::{Alignment, Point, Rect};
@@ -107,17 +107,48 @@ impl View for Keyboard {
             .into_styled(fill_style)
             .draw(display)?;
 
-            for (i, key) in KeyboardKey::iter().enumerate() {
+            for (i, key) in KeyboardKey::iter().enumerate().take(KeyboardKey::COUNT - 1) {
                 let i = i as i32;
                 let x = i % KEYBOARD_COLUMNS * w / KEYBOARD_COLUMNS;
                 let y = i / KEYBOARD_COLUMNS * h / KEYBOARD_ROWS;
 
                 let selected =
                     self.cursor.x + self.cursor.y * KEYBOARD_COLUMNS as usize == i as usize;
+                if self.cursor.y < 4 {
+                    if selected {
+                        RoundedRectangle::with_equal_corners(
+                            Rect::new(x0 + x, y0 + y, key_size, key_size).into(),
+                            Size::new(12, 12),
+                        )
+                        .into_styled(selected_btn_style)
+                        .draw(display)?;
+                    }
+                }
 
+                Text::with_alignment(
+                    key.key(self.mode),
+                    Point::new(
+                        x0 + x + key_size as i32 / 2,
+                        y0 + y + key_size as i32 / 2 - styles.ui_font_size as i32 / 2,
+                    )
+                    .into(),
+                    if selected {
+                        selected_text_style.clone()
+                    } else {
+                        text_style.clone()
+                    },
+                    Alignment::Center.into(),
+                )
+                .draw(display)?;
+            }
+
+            // Spacebar
+            {
+                let y = 4 * h / KEYBOARD_ROWS;
+                let selected = self.cursor.y == 4;
                 if selected {
                     RoundedRectangle::with_equal_corners(
-                        Rect::new(x0 + x, y0 + y, key_size, key_size).into(),
+                        Rect::new(x0, y0 + y, w as u32, key_size).into(),
                         Size::new(12, 12),
                     )
                     .into_styled(selected_btn_style)
@@ -125,9 +156,9 @@ impl View for Keyboard {
                 }
 
                 Text::with_alignment(
-                    key.key(self.mode),
+                    "space",
                     Point::new(
-                        x0 + x + key_size as i32 / 2,
+                        x0 + w / 2,
                         y0 + y + key_size as i32 / 2 - styles.ui_font_size as i32 / 2,
                     )
                     .into(),
@@ -190,11 +221,15 @@ impl View for Keyboard {
                 self.cursor.x = (self.cursor.x + 1).rem_euclid(KEYBOARD_COLUMNS as usize);
             }
             KeyEvent::Pressed(Key::A) => {
-                self.value += KeyboardKey::from_repr(
-                    self.cursor.x + self.cursor.y * KEYBOARD_COLUMNS as usize,
-                )
-                .unwrap()
-                .key(self.mode)
+                if self.cursor.y == 4 {
+                    self.value.push(' ');
+                } else {
+                    self.value += KeyboardKey::from_repr(
+                        self.cursor.x + self.cursor.y * KEYBOARD_COLUMNS as usize,
+                    )
+                    .unwrap()
+                    .key(self.mode)
+                }
             }
             KeyEvent::Pressed(Key::R) => {
                 self.value.pop();
@@ -245,16 +280,17 @@ impl View for Keyboard {
 }
 
 #[rustfmt::skip]
-#[derive(Debug, EnumIter, FromRepr)]
+#[derive(Debug, EnumIter, EnumCount, FromRepr)]
 enum KeyboardKey {
     K1, K2, K3, K4, K5, K6, K7, K8,    K9,     K0,           Minus,
     Q,  W,  E,  R,  T,  Y,  U,  I,     O,      P,            Backslash,
     A,  S,  D,  F,  G,  H,  J,  K,     L,      Semicolon,    Quote,
-    Z,  X,  C,  V,  B,  N,  M,  Comma, Period, QuestionMark, ExclamationMark
+    Z,  X,  C,  V,  B,  N,  M,  Comma, Period, QuestionMark, ExclamationMark,
+    Space,
 }
 
 const KEYBOARD_COLUMNS: i32 = 11;
-const KEYBOARD_ROWS: i32 = 4;
+const KEYBOARD_ROWS: i32 = 5;
 
 impl KeyboardKey {
     fn lowercase(&self) -> &str {
@@ -304,6 +340,7 @@ impl KeyboardKey {
             Period => ".",
             QuestionMark => "?",
             ExclamationMark => "!",
+            Space => " ",
         }
     }
 
@@ -354,6 +391,7 @@ impl KeyboardKey {
             Period => ">",
             QuestionMark => "+",
             ExclamationMark => "=",
+            Space => " ",
         }
     }
 
@@ -404,6 +442,7 @@ impl KeyboardKey {
             Period => "?",
             QuestionMark => "/",
             ExclamationMark => "~",
+            Space => " ",
         }
     }
 
