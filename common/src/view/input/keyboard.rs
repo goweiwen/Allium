@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 use embedded_graphics::{
-    prelude::{OriginDimensions, Size},
+    prelude::{Dimensions, OriginDimensions, Size},
     primitives::{Primitive, PrimitiveStyleBuilder, Rectangle, RoundedRectangle},
     text::Text,
     Drawable,
@@ -11,7 +11,6 @@ use embedded_graphics::{
 use strum::{EnumCount, EnumIter, FromRepr, IntoEnumIterator};
 use tokio::sync::mpsc::Sender;
 
-use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use crate::stylesheet::Stylesheet;
 use crate::view::View;
@@ -20,6 +19,10 @@ use crate::{
     view::ButtonHint,
 };
 use crate::{display::font::FontTextStyleBuilder, view::Row};
+use crate::{
+    display::Display,
+    geom::{Alignment, Point, Rect},
+};
 
 #[derive(Debug, Clone)]
 pub struct Keyboard {
@@ -52,6 +55,10 @@ impl Keyboard {
             button_hints,
             dirty: true,
         }
+    }
+
+    pub fn value(&self) -> &str {
+        &self.value
     }
 }
 
@@ -182,10 +189,20 @@ impl View for Keyboard {
             )
             .draw(display)?;
 
+            self.dirty = false;
             drawn = true;
         }
 
-        drawn |= self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
+        if self.button_hints.should_draw() {
+            display.load(Rect::new(
+                display.bounding_box().top_left.x,
+                display.bounding_box().top_left.y + display.bounding_box().size.height as i32 - 48,
+                display.bounding_box().size.width,
+                48,
+            ))?;
+
+            drawn |= self.button_hints.draw(display, styles)?;
+        }
 
         Ok(drawn)
     }
@@ -208,15 +225,19 @@ impl View for Keyboard {
         match event {
             KeyEvent::Pressed(Key::Up) | KeyEvent::Autorepeat(Key::Up) => {
                 self.cursor.y = (self.cursor.y as i32 - 1).rem_euclid(KEYBOARD_ROWS) as usize;
+                self.dirty = true;
             }
             KeyEvent::Pressed(Key::Down) | KeyEvent::Autorepeat(Key::Down) => {
                 self.cursor.y = (self.cursor.y + 1).rem_euclid(KEYBOARD_ROWS as usize);
+                self.dirty = true;
             }
             KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
                 self.cursor.x = (self.cursor.x as i32 - 1).rem_euclid(KEYBOARD_COLUMNS) as usize;
+                self.dirty = true;
             }
             KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
                 self.cursor.x = (self.cursor.x + 1).rem_euclid(KEYBOARD_COLUMNS as usize);
+                self.dirty = true;
             }
             KeyEvent::Pressed(Key::A) => {
                 if self.cursor.y == 4 {
@@ -228,9 +249,11 @@ impl View for Keyboard {
                     .unwrap()
                     .key(self.mode)
                 }
+                self.dirty = true;
             }
             KeyEvent::Pressed(Key::R) => {
                 self.value.pop();
+                self.dirty = true;
             }
             KeyEvent::Pressed(Key::B) => {
                 bubble.push_back(Command::CloseView);
@@ -241,7 +264,8 @@ impl View for Keyboard {
                     KeyboardMode::Lowercase => KeyboardMode::Uppercase,
                     KeyboardMode::Uppercase => KeyboardMode::Symbols,
                     KeyboardMode::Symbols => KeyboardMode::Lowercase,
-                }
+                };
+                self.dirty = true;
             }
             KeyEvent::Pressed(Key::Start) => {
                 bubble.push_back(Command::ValueChanged(0, Value::String(self.value.clone())));
