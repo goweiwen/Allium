@@ -184,10 +184,10 @@ impl View for TextReader {
         if self.dirty {
             RoundedRectangle::with_equal_corners(
                 <Rect as Into<Rectangle>>::into(Rect::new(
-                    self.rect.x + 8,
-                    self.rect.y + 8,
-                    self.rect.w - 16,
-                    self.rect.h - 48 - 8,
+                    self.rect.x + 12,
+                    self.rect.y + 12,
+                    self.rect.w - 24,
+                    self.rect.h - 48 - 12,
                 )),
                 Size::new_equal(8),
             )
@@ -209,10 +209,10 @@ impl View for TextReader {
             TextBox::with_textbox_style(
                 self.visible_text(styles),
                 Rect::new(
-                    self.rect.x + 12,
-                    self.rect.y + 8,
-                    self.rect.w - 24,
-                    self.rect.h - 48 - 8,
+                    self.rect.x + 24,
+                    self.rect.y + 16,
+                    self.rect.w - 48,
+                    self.rect.h - 48 - 12 - 4,
                 )
                 .into(),
                 text_style.clone(),
