@@ -148,6 +148,9 @@ where
         let state = IngameMenuState {
             is_text_reader_open: self.child.is_some(),
         };
+        if let Some(child) = self.child.as_ref() {
+            child.save_cursor();
+        }
         serde_json::to_writer(file, &state)?;
         Ok(())
     }
