@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
-use std::fs;
 use std::path::{Path, PathBuf};
+use std::{fs, mem};
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -28,9 +28,11 @@ pub struct TextReader {
     path: PathBuf,
     database: Database,
     text: String,
+    lowercase_text: String,
     cursor: usize,
     button_hints: Row<ButtonHint<&'static str>>,
     keyboard: Option<Keyboard>,
+    last_searched: String,
     dirty: bool,
 }
 
@@ -40,6 +42,7 @@ impl TextReader {
             .map_err(|e| error!("failed to load guide file: {}", e))
             .unwrap_or_default();
         text.push_str("\n\n\n\n\n");
+        let lowercase_text = text.to_lowercase();
 
         let cursor = load_cursor(&database, path.as_path());
 
@@ -59,10 +62,12 @@ impl TextReader {
             path,
             database,
             text,
+            lowercase_text,
             cursor,
             button_hints,
             keyboard: None,
             dirty: true,
+            last_searched: String::new(),
         }
     }
 
@@ -93,9 +98,18 @@ impl TextReader {
     }
 
     fn search(&mut self, needle: String) {
-        if let Some(location) = self.text[self.cursor..].find(&needle) {
-            self.cursor = self.text[..location].rfind('\n').unwrap_or_default();
+        // Skip the current line
+        self.cursor += self.text[self.cursor..].find('\n').unwrap_or_default();
+
+        if let Some(location) = self.lowercase_text[self.cursor..].find(&needle) {
+            self.cursor += location;
+
+            // Go back to the start of the line
+            self.cursor = self.text[..self.cursor].rfind('\n').unwrap_or_default() + 1;
+            self.cursor = self.cursor.clamp(0, self.text.len() - 1);
         }
+
+        self.last_searched = needle;
     }
 }
 
@@ -266,7 +280,10 @@ impl View for TextReader {
                     bubble.push_back(Command::CloseView);
                 }
                 KeyEvent::Pressed(Key::X) => {
-                    self.keyboard = Some(Keyboard::new(String::new(), false));
+                    self.keyboard = Some(Keyboard::new(
+                        mem::replace(&mut self.last_searched, String::new()),
+                        false,
+                    ));
                 }
                 _ => return Ok(false),
             }
