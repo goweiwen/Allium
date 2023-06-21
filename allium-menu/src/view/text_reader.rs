@@ -43,7 +43,7 @@ impl TextReader {
             .unwrap_or_default();
         let lowercase_text = text.to_lowercase();
 
-        let cursor = load_cursor(&database, path.as_path());
+        let cursor = load_cursor(&database, path.as_path()).clamp(0, text.len());
 
         let Rect { x, y, w, h } = rect;
         let button_hints = Row::new(
@@ -170,7 +170,7 @@ impl View for TextReader {
             Text::with_alignment(
                 &format!(
                     "{:.0}%",
-                    self.cursor as f32 / self.text.len() as f32 * 100.0
+                    self.cursor as f32 / self.text.len().max(1) as f32 * 100.0
                 ),
                 Point::new(
                     self.rect.x + self.rect.w as i32 - 16,
@@ -243,39 +243,50 @@ impl View for TextReader {
             match event {
                 KeyEvent::Pressed(Key::Up) | KeyEvent::Autorepeat(Key::Up) => {
                     if self.cursor > 0 {
-                        self.cursor = self.text[..self.cursor - 1].rfind('\n').unwrap_or_default();
+                        self.cursor = self.text[..self.cursor - 1]
+                            .rfind('\n')
+                            .map(|i| i + 1)
+                            .unwrap_or_default();
                         self.dirty = true;
                     }
                 }
                 KeyEvent::Pressed(Key::Down) | KeyEvent::Autorepeat(Key::Down) => {
-                    if self.cursor + 1 < self.text.len() {
+                    if self.cursor != self.text.len() {
                         self.cursor += self.text[self.cursor + 1..]
                             .find('\n')
                             .or_else(|| self.text[..self.cursor].rfind('\n'))
                             .map(|i| i + 2)
                             .unwrap_or_default();
                         self.dirty = true;
+                        if self.cursor > self.text.len() {
+                            self.cursor = self.text.rfind('\n').map(|i| i + 1).unwrap_or_default();
+                        }
                     }
                 }
                 KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
                     for _ in 0..10 {
                         if self.cursor > 0 {
-                            self.cursor =
-                                self.text[..self.cursor - 1].rfind('\n').unwrap_or_default();
+                            self.cursor = self.text[..self.cursor - 1]
+                                .rfind('\n')
+                                .map(|i| i + 1)
+                                .unwrap_or_default();
                         }
                     }
                     self.dirty = true;
                 }
                 KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
                     for _ in 0..10 {
-                        if self.cursor + 1 >= self.text.len() {
+                        if self.cursor > self.text.len() {
+                            self.cursor = self.text.rfind('\n').map(|i| i + 1).unwrap_or_default();
                             break;
                         }
-                        self.cursor += self.text[self.cursor + 1..]
-                            .find('\n')
-                            .map(|i| i + 2)
-                            .or_else(|| self.text[..self.cursor].rfind('\n'))
-                            .unwrap_or_default()
+                        if self.cursor != self.text.len() {
+                            self.cursor += self.text[self.cursor + 1..]
+                                .find('\n')
+                                .map(|i| i + 2)
+                                .or_else(|| self.text[..self.cursor].rfind('\n'))
+                                .unwrap_or_default()
+                        }
                     }
                     self.dirty = true;
                 }
