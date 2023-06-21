@@ -106,9 +106,11 @@ impl TextReader {
             // Go back to the start of the line
             self.cursor = self.text[..self.cursor].rfind('\n').unwrap_or_default() + 1;
             self.cursor = self.cursor.clamp(0, self.text.len() - 1);
+            self.last_searched = needle;
+        } else {
+            self.cursor = 0;
+            self.search(needle);
         }
-
-        self.last_searched = needle;
     }
 }
 
