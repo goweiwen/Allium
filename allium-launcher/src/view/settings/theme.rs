@@ -7,7 +7,7 @@ use common::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
 use common::geom::{Alignment, Point, Rect};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, ColorPicker, Row, SettingsList, Toggle, View};
+use common::view::{ButtonHint, ColorPicker, Number, Row, SettingsList, Toggle, View};
 use tokio::sync::mpsc::Sender;
 
 pub struct Theme {
@@ -26,6 +26,7 @@ impl Theme {
             vec![
                 "Dark Mode".to_string(),
                 "Enable Box Art".to_string(),
+                "Guide Font Size".to_string(),
                 "Highlight Color".to_string(),
                 "Foreground Color".to_string(),
                 "Background Color".to_string(),
@@ -44,6 +45,13 @@ impl Theme {
                 Box::new(Toggle::new(
                     Point::zero(),
                     stylesheet.enable_box_art,
+                    Alignment::Right,
+                )),
+                Box::new(Number::new(
+                    Point::zero(),
+                    stylesheet.mono_font_size as i32,
+                    10,
+                    40,
                     Alignment::Right,
                 )),
                 Box::new(ColorPicker::new(
@@ -206,14 +214,15 @@ impl View for Theme {
                             }
                         },
                         1 => self.stylesheet.enable_box_art = val.as_bool().unwrap(),
-                        2 => self.stylesheet.highlight_color = val.as_color().unwrap(),
-                        3 => self.stylesheet.foreground_color = val.as_color().unwrap(),
-                        4 => self.stylesheet.background_color = val.as_color().unwrap(),
-                        5 => self.stylesheet.disabled_color = val.as_color().unwrap(),
-                        6 => self.stylesheet.button_a_color = val.as_color().unwrap(),
-                        7 => self.stylesheet.button_b_color = val.as_color().unwrap(),
-                        8 => self.stylesheet.button_x_color = val.as_color().unwrap(),
-                        9 => self.stylesheet.button_y_color = val.as_color().unwrap(),
+                        2 => self.stylesheet.mono_font_size = val.as_int().unwrap() as u32,
+                        3 => self.stylesheet.highlight_color = val.as_color().unwrap(),
+                        4 => self.stylesheet.foreground_color = val.as_color().unwrap(),
+                        5 => self.stylesheet.background_color = val.as_color().unwrap(),
+                        6 => self.stylesheet.disabled_color = val.as_color().unwrap(),
+                        7 => self.stylesheet.button_a_color = val.as_color().unwrap(),
+                        8 => self.stylesheet.button_b_color = val.as_color().unwrap(),
+                        9 => self.stylesheet.button_x_color = val.as_color().unwrap(),
+                        10 => self.stylesheet.button_y_color = val.as_color().unwrap(),
                         _ => unreachable!("Invalid index"),
                     }
 

@@ -11,7 +11,7 @@ use common::display::font::FontTextStyleBuilder;
 use common::geom::{Alignment, Point, Rect};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
-use common::view::keyboard::Keyboard;
+use common::view::Keyboard;
 use common::view::{ButtonHint, Row, View};
 use embedded_graphics::prelude::Size;
 use embedded_graphics::primitives::{Primitive, PrimitiveStyle, Rectangle, RoundedRectangle};
