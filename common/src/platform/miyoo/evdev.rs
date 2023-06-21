@@ -1,6 +1,7 @@
 use anyhow::Result;
 use evdev::{Device, EventStream, EventType};
 
+use crate::constants::MAXIMUM_FRAME_TIME;
 use crate::platform::{Key, KeyEvent};
 
 impl From<evdev::Key> for Key {
@@ -52,7 +53,12 @@ impl EvdevKeys {
                     return match event.value() {
                         0 => KeyEvent::Released(key),
                         1 => KeyEvent::Pressed(key),
-                        2 => KeyEvent::Autorepeat(key),
+                        2 => {
+                            if event.timestamp().elapsed().unwrap() > MAXIMUM_FRAME_TIME {
+                                continue;
+                            }
+                            KeyEvent::Autorepeat(key)
+                        }
                         _ => unreachable!(),
                     };
                 }
