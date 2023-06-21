@@ -124,7 +124,7 @@ rgui_particle_color = "0xFF{highlight:X}"
     }
 
     fn mono_font_size() -> u32 {
-        15
+        20
     }
 }
 
