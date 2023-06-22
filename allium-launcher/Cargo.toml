@@ -22,6 +22,7 @@ tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 strum = "0.24.1"
 async-trait = "0.1.68"
+sysinfo = "0.29.2"
 
 [dependencies.common]
 path = "../common"

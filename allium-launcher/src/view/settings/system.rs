@@ -8,7 +8,9 @@ use common::geom::{Alignment, Point, Rect};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 use common::view::{ButtonHint, Label, Row, SettingsList, View};
+use sysinfo::{DiskExt, SystemExt};
 use tokio::sync::mpsc::Sender;
+use tracing::debug;
 
 pub struct System {
     rect: Rect,
@@ -20,24 +22,55 @@ impl System {
     pub fn new(rect: Rect) -> Self {
         let firmware = DefaultPlatform::firmware();
 
+        let mut sys = sysinfo::System::new();
+        sys.refresh_disks_list();
+        let disk = &sys.disks()[1];
+
         let list = SettingsList::new(
             Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 8 - 46),
             vec![
-                "Version".to_string(),
-                "Firmware".to_string(),
-                "Device Model".to_string(),
+                "Allium Version".to_string(),
+                "Model Name".to_string(),
+                "Firmware Version".to_string(),
+                "Operating System".to_string(),
+                "Kernel Version".to_string(),
+                "Storage Used".to_string(),
             ],
             vec![
                 Box::new(Label::new(
                     Point::zero(),
-                    format!("Allium v{}", ALLIUM_VERSION),
+                    DefaultPlatform::device_model(),
+                    Alignment::Right,
+                    None,
+                )),
+                Box::new(Label::new(
+                    Point::zero(),
+                    format!("v{}", ALLIUM_VERSION),
                     Alignment::Right,
                     None,
                 )),
                 Box::new(Label::new(Point::zero(), firmware, Alignment::Right, None)),
                 Box::new(Label::new(
                     Point::zero(),
-                    DefaultPlatform::device_model(),
+                    sys.long_os_version()
+                        .map(|s| s.trim().to_owned())
+                        .unwrap_or_else(|| "Unknown".to_owned()),
+                    Alignment::Right,
+                    None,
+                )),
+                Box::new(Label::new(
+                    Point::zero(),
+                    sys.kernel_version().unwrap_or_else(|| "Unknown".to_owned()),
+                    Alignment::Right,
+                    None,
+                )),
+                Box::new(Label::new(
+                    Point::zero(),
+                    format!(
+                        "{}GB / {}GB",
+                        (disk.total_space() - disk.available_space()) / (1024 * 1024 * 1024),
+                        disk.total_space() / (1024 * 1024 * 1024)
+                    ),
                     Alignment::Right,
                     None,
                 )),
