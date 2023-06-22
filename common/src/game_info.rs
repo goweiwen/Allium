@@ -113,7 +113,7 @@ pub fn find_guide(path: &Path) -> Option<PathBuf> {
     let mut parent = path.to_path_buf();
     let mut guide = None;
     'image: while parent.pop() {
-        let mut guide_path = parent.join("Guide");
+        let mut guide_path = parent.join("Guides");
         if guide_path.is_dir() {
             guide_path.extend(path.strip_prefix(&parent).unwrap());
             const GUIDE_EXTENSIONS: [&str; 1] = ["txt"];

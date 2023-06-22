@@ -340,7 +340,7 @@ impl Entry {
             .to_owned();
 
         // Exclude Imgs and Guide directories
-        if file_name == "Imgs" || file_name == "Guide" {
+        if file_name == "Imgs" || file_name == "Guides" {
             return Ok(None);
         }
         if EXCLUDE_EXTENSIONS.contains(&extension.as_str()) {
