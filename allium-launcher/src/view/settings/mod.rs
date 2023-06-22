@@ -172,20 +172,15 @@ impl View for Settings {
         bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
         if let Some(ref mut child) = self.child {
-            let mut child_bubble = VecDeque::new();
-            if child
-                .handle_key_event(event, commands, &mut child_bubble)
-                .await?
-            {
-                while let Some(command) = child_bubble.pop_front() {
-                    match command {
-                        Command::CloseView => {
-                            self.dirty = true;
-                            self.child = None;
-                        }
-                        _ => bubble.push_front(command),
+            if child.handle_key_event(event, commands, bubble).await? {
+                bubble.retain(|cmd| match cmd {
+                    Command::CloseView => {
+                        self.dirty = true;
+                        self.child = None;
+                        true
                     }
-                }
+                    _ => false,
+                });
                 Ok(true)
             } else {
                 Ok(false)

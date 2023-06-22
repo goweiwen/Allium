@@ -84,27 +84,20 @@ impl View for TextBox {
         bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
         if let Some(keyboard) = self.keyboard.as_mut() {
-            let mut child_bubble = VecDeque::new();
-            if keyboard
-                .handle_key_event(event, command, &mut child_bubble)
-                .await?
-            {
-                println!("child_bubble: {:?}", child_bubble);
-                while let Some(cmd) = child_bubble.pop_front() {
-                    match cmd {
-                        Command::CloseView => {
-                            bubble.push_back(Command::Unfocus);
-                            self.keyboard = None;
-                        }
-                        Command::ValueChanged(i, value) => {
-                            bubble.push_back(Command::ValueChanged(i, value.clone()));
-                            self.value = value.as_string().unwrap();
-                            self.label
-                                .set_text(masked_value(&self.value, self.is_password));
-                        }
-                        cmd => bubble.push_back(cmd),
+            if keyboard.handle_key_event(event, command, bubble).await? {
+                bubble.retain(|cmd| match cmd {
+                    Command::CloseView => {
+                        self.keyboard = None;
+                        false
                     }
-                }
+                    Command::ValueChanged(_, value) => {
+                        self.value = value.clone().as_string().unwrap();
+                        self.label
+                            .set_text(masked_value(&self.value, self.is_password));
+                        true
+                    }
+                    _ => true,
+                });
                 Ok(true)
             } else {
                 Ok(false)

@@ -299,22 +299,18 @@ impl View for TextReader {
         bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
         if let Some(keyboard) = self.keyboard.as_mut() {
-            let mut child_bubble = VecDeque::new();
-            if keyboard
-                .handle_key_event(event, commands, &mut child_bubble)
-                .await?
-            {
-                while let Some(cmd) = child_bubble.pop_front() {
-                    match cmd {
-                        Command::CloseView => {
-                            self.keyboard = None;
-                        }
-                        Command::ValueChanged(_, value) => {
-                            self.search_forward(value.as_string().unwrap());
-                        }
-                        cmd => bubble.push_back(cmd),
+            if keyboard.handle_key_event(event, commands, bubble).await? {
+                bubble.retain_mut(|cmd| match cmd {
+                    Command::CloseView => {
+                        self.keyboard = None;
+                        false
                     }
-                }
+                    Command::ValueChanged(_, value) => {
+                        self.search_forward(std::mem::take(value).as_string().unwrap());
+                        false
+                    }
+                    _ => true,
+                });
                 Ok(true)
             } else {
                 Ok(false)

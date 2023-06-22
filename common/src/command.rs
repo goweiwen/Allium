@@ -51,3 +51,9 @@ impl Value {
         }
     }
 }
+
+impl Default for Value {
+    fn default() -> Self {
+        Self::Bool(false)
+    }
+}

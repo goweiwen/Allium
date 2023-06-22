@@ -204,20 +204,15 @@ impl View for Browser {
         bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
         if let Some(child) = self.child.as_deref_mut() {
-            let mut child_bubble = VecDeque::new();
-            if child
-                .handle_key_event(event, commands, &mut child_bubble)
-                .await?
-            {
-                while let Some(command) = child_bubble.pop_front() {
-                    match command {
-                        Command::CloseView => {
-                            self.child = None;
-                            self.set_should_draw();
-                        }
-                        _ => bubble.push_back(command),
+            if child.handle_key_event(event, commands, bubble).await? {
+                bubble.retain(|cmd| match cmd {
+                    Command::CloseView => {
+                        self.child = None;
+                        self.set_should_draw();
+                        false
                     }
-                }
+                    _ => true,
+                });
                 return Ok(true);
             }
             return Ok(false);

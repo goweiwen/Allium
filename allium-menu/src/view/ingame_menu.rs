@@ -262,20 +262,18 @@ where
         bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
         if let Some(child) = self.child.as_mut() {
-            let mut child_bubble = VecDeque::new();
             if child
-                .handle_key_event(event, commands.clone(), &mut child_bubble)
+                .handle_key_event(event, commands.clone(), bubble)
                 .await?
             {
-                for command in child_bubble {
-                    match command {
-                        Command::CloseView => {
-                            self.child = None;
-                            self.set_should_draw();
-                        }
-                        _ => bubble.push_back(command),
+                bubble.retain(|cmd| match cmd {
+                    Command::CloseView => {
+                        self.child = None;
+                        self.set_should_draw();
+                        false
                     }
-                }
+                    _ => true,
+                });
                 return Ok(true);
             }
         }

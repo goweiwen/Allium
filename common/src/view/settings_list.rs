@@ -223,24 +223,20 @@ impl View for SettingsList {
     ) -> Result<bool> {
         if self.focused {
             if let Some(selected) = self.right.get_mut(self.selected) {
-                let mut child_bubble = VecDeque::new();
-                if selected
-                    .handle_key_event(event, command, &mut child_bubble)
-                    .await?
-                {
-                    while let Some(cmd) = child_bubble.pop_front() {
-                        match cmd {
-                            Command::TrapFocus => (),
-                            Command::Unfocus => {
-                                self.focused = false;
-                                self.dirty = true;
-                            }
-                            Command::ValueChanged(_, val) => {
-                                bubble.push_back(Command::ValueChanged(self.selected, val))
-                            }
-                            cmd => bubble.push_back(cmd),
+                if selected.handle_key_event(event, command, bubble).await? {
+                    bubble.retain_mut(|cmd| match cmd {
+                        Command::TrapFocus => false,
+                        Command::Unfocus => {
+                            self.focused = false;
+                            self.dirty = true;
+                            false
                         }
-                    }
+                        Command::ValueChanged(i, _) => {
+                            *i = self.selected;
+                            true
+                        }
+                        _ => true,
+                    });
                     return Ok(true);
                 }
             }
@@ -274,23 +270,19 @@ impl View for SettingsList {
                 }
                 KeyEvent::Pressed(Key::A) => {
                     if let Some(selected) = self.right.get_mut(self.selected) {
-                        let mut child_bubble = VecDeque::new();
-                        if selected
-                            .handle_key_event(event, command, &mut child_bubble)
-                            .await?
-                        {
-                            while let Some(command) = child_bubble.pop_front() {
-                                match command {
-                                    Command::TrapFocus => {
-                                        self.focused = true;
-                                        self.dirty = true;
-                                    }
-                                    Command::ValueChanged(_, val) => {
-                                        bubble.push_back(Command::ValueChanged(self.selected, val))
-                                    }
-                                    command => bubble.push_back(command),
+                        if selected.handle_key_event(event, command, bubble).await? {
+                            bubble.retain_mut(|cmd| match cmd {
+                                Command::TrapFocus => {
+                                    self.focused = true;
+                                    self.dirty = true;
+                                    false
                                 }
-                            }
+                                Command::ValueChanged(i, _) => {
+                                    *i = self.selected;
+                                    true
+                                }
+                                _ => true,
+                            });
                             return Ok(true);
                         }
                     }

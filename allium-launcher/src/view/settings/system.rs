@@ -10,7 +10,6 @@ use common::stylesheet::Stylesheet;
 use common::view::{ButtonHint, Label, Row, SettingsList, View};
 use sysinfo::{DiskExt, SystemExt};
 use tokio::sync::mpsc::Sender;
-use tracing::debug;
 
 pub struct System {
     rect: Rect,
