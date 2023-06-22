@@ -21,6 +21,9 @@ lazy_static! {
     pub static ref ALLIUM_SCRIPTS_DIR: PathBuf = ALLIUM_CONFIG_DIR.join("scripts");
     pub static ref ALLIUM_TOOLS_DIR: PathBuf = ALLIUM_CONFIG_DIR.join("tools");
 
+    // Config
+    pub static ref ALLIUM_CONFIG_CONSOLES: PathBuf = ALLIUM_CONFIG_DIR.join("config/consoles.toml");
+
     // State
     pub static ref ALLIUMD_STATE: PathBuf = ALLIUM_CONFIG_DIR.join("state/alliumd.json");
     pub static ref ALLIUM_DATABASE: PathBuf = ALLIUM_CONFIG_DIR.join("state/allium.db");

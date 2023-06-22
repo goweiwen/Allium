@@ -7,13 +7,13 @@ use common::database::Database;
 use common::game_info::GameInfo;
 use serde::{Deserialize, Serialize};
 
-use common::constants::{ALLIUM_CONFIG_DIR, ALLIUM_GAMES_DIR, ALLIUM_RETROARCH};
+use common::constants::{ALLIUM_CONFIG_CONSOLES, ALLIUM_GAMES_DIR, ALLIUM_RETROARCH};
 use tracing::debug;
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
-pub struct Device {
+pub struct Console {
     #[serde(skip)]
-    /// The name of the device.
+    /// The name of the console.
     pub name: String,
     /// If present, takes priority over RetroArch cores.
     pub path: Option<PathBuf>,
@@ -109,38 +109,37 @@ impl PartialOrd for Game {
 }
 
 #[derive(Debug, Deserialize)]
-struct DeviceConfig(HashMap<String, Device>);
+struct ConsoleConfig(HashMap<String, Console>);
 
 #[derive(Debug, Clone)]
-pub struct DeviceMapper {
-    devices: Vec<Device>,
+pub struct ConsoleMapper {
+    consoles: Vec<Console>,
 }
 
-impl Default for DeviceMapper {
+impl Default for ConsoleMapper {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl DeviceMapper {
-    pub fn new() -> DeviceMapper {
-        DeviceMapper {
-            devices: Vec::new(),
+impl ConsoleMapper {
+    pub fn new() -> ConsoleMapper {
+        ConsoleMapper {
+            consoles: Vec::new(),
         }
     }
 
     pub fn load_config(&mut self) -> Result<()> {
-        let config =
-            std::fs::read_to_string(ALLIUM_CONFIG_DIR.join("devices.toml")).map_err(|e| {
-                anyhow!(
-                    "Failed to load devices config: {:?}, {}",
-                    &*ALLIUM_CONFIG_DIR.join("devices.toml"),
-                    e
-                )
-            })?;
-        let config: DeviceConfig =
-            toml::from_str(&config).context("Failed to parse devices.toml.")?;
-        self.devices = config
+        let config = std::fs::read_to_string(ALLIUM_CONFIG_CONSOLES.as_path()).map_err(|e| {
+            anyhow!(
+                "Failed to load consoles config: {:?}, {}",
+                &*ALLIUM_CONFIG_CONSOLES,
+                e
+            )
+        })?;
+        let config: ConsoleConfig =
+            toml::from_str(&config).context("Failed to parse consoles.toml.")?;
+        self.consoles = config
             .0
             .into_iter()
             .map(|(name, mut core)| {
@@ -152,31 +151,31 @@ impl DeviceMapper {
         Ok(())
     }
 
-    pub fn get_device(&self, mut path: &Path) -> Option<&Device> {
+    pub fn get_console(&self, mut path: &Path) -> Option<&Console> {
         let path_lowercase = path.as_os_str().to_ascii_lowercase();
 
         if let Some(extensions) = path_lowercase.to_str() {
             for ext in extensions.split('.').skip(1) {
-                let device = self
-                    .devices
+                let console = self
+                    .consoles
                     .iter()
                     .find(|core| core.extensions.iter().any(|s| s == ext));
-                if device.is_some() {
-                    return device;
+                if console.is_some() {
+                    return console;
                 }
             }
         }
 
         while let Some(parent) = path.parent() {
             if let Some(parent_filename) = parent.file_name().and_then(|parent| parent.to_str()) {
-                let device = self.devices.iter().find(|core| {
+                let console = self.consoles.iter().find(|core| {
                     core.folders.iter().any(|folder| {
                         parent_filename == folder
                             || parent_filename.contains(&format!("({})", folder))
                     })
                 });
-                if device.is_some() {
-                    return device;
+                if console.is_some() {
+                    return console;
                 }
             }
             path = parent;
@@ -189,9 +188,9 @@ impl DeviceMapper {
         game.image();
         database.increment_play_count(&game.name, game.path.as_path(), game.image_ref())?;
 
-        let core = self.get_device(game.path.as_path());
-        Ok(if let Some(device) = core {
-            let game_info = if let Some(ref path) = device.path {
+        let core = self.get_console(game.path.as_path());
+        Ok(if let Some(console) = core {
+            let game_info = if let Some(ref path) = console.path {
                 GameInfo::new(
                     game.name.clone(),
                     game.path.to_owned(),
@@ -199,7 +198,7 @@ impl DeviceMapper {
                     vec![game.path.display().to_string()],
                     false,
                 )
-            } else if let Some(retroarch_core) = device.cores.first() {
+            } else if let Some(retroarch_core) = console.cores.first() {
                 GameInfo::new(
                     game.name.clone(),
                     game.path.to_owned(),
@@ -208,7 +207,7 @@ impl DeviceMapper {
                     true,
                 )
             } else {
-                bail!("Device \"{}\" has no path or cores.", device.name);
+                bail!("Console \"{}\" has no path or cores.", console.name);
             };
             debug!("Saving game info: {:?}", game_info);
             game_info.save()?;
@@ -226,9 +225,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_core_mapper() {
-        let mut mapper = DeviceMapper::new();
-        mapper.devices = vec![Device {
+    fn test_console_mapper() {
+        let mut mapper = ConsoleMapper::new();
+        mapper.consoles = vec![Console {
             name: "Test".to_string(),
             folders: vec!["POKE".to_string(), "PKM".to_string()],
             extensions: vec!["gb".to_string(), "gbc".to_string()],
@@ -236,39 +235,39 @@ mod tests {
             path: None,
         }];
 
-        assert!(mapper.get_device(Path::new("Roms/POKE/rom.zip")).is_some());
-        assert!(mapper.get_device(Path::new("Roms/PKM/rom.zip")).is_some());
+        assert!(mapper.get_console(Path::new("Roms/POKE/rom.zip")).is_some());
+        assert!(mapper.get_console(Path::new("Roms/PKM/rom.zip")).is_some());
         assert!(mapper
-            .get_device(Path::new("Roms/Pokemon Mini (POKE)/rom.zip"))
+            .get_console(Path::new("Roms/Pokemon Mini (POKE)/rom.zip"))
             .is_some());
         assert!(mapper
-            .get_device(Path::new("Roms/POKE MINI/rom.zip"))
+            .get_console(Path::new("Roms/POKE MINI/rom.zip"))
             .is_none());
-        assert!(mapper.get_device(Path::new("Roms/rom.gb")).is_some());
-        assert!(mapper.get_device(Path::new("Roms/rom.gbc")).is_some());
-        assert!(mapper.get_device(Path::new("Roms/rom.gbc.zip")).is_some());
-        assert!(mapper.get_device(Path::new("Roms/rom.zip.gbc")).is_some());
-        assert!(mapper.get_device(Path::new("Roms/gbc")).is_some());
-        assert!(mapper.get_device(Path::new("Roms/rom.gba")).is_none());
+        assert!(mapper.get_console(Path::new("Roms/rom.gb")).is_some());
+        assert!(mapper.get_console(Path::new("Roms/rom.gbc")).is_some());
+        assert!(mapper.get_console(Path::new("Roms/rom.gbc.zip")).is_some());
+        assert!(mapper.get_console(Path::new("Roms/rom.zip.gbc")).is_some());
+        assert!(mapper.get_console(Path::new("Roms/gbc")).is_none());
+        assert!(mapper.get_console(Path::new("Roms/rom.gba")).is_none());
     }
 
     #[test]
     fn test_config() {
         env::set_var("ALLIUM_CONFIG_DIR", "../assets/root/.allium");
 
-        let mut mapper = DeviceMapper::new();
+        let mut mapper = ConsoleMapper::new();
         mapper.load_config().unwrap();
 
-        let eq = |rom: &str, device_name: &str, core: &str| -> bool {
-            let device = mapper.get_device(Path::new(rom)).unwrap();
-            if device.name == device_name && device.cores.first() == Some(&core.to_string()) {
+        let eq = |rom: &str, console_name: &str, core: &str| -> bool {
+            let console = mapper.get_console(Path::new(rom)).unwrap();
+            if console.name == console_name && console.cores.first() == Some(&core.to_string()) {
                 true
             } else {
                 println!(
-                    "Expected device: {} core: {:?}, got device: {} core: {}",
-                    device_name,
-                    device.cores.first(),
-                    device.name,
+                    "Expected console: {} core: {:?}, got console: {} core: {}",
+                    console_name,
+                    console.cores.first(),
+                    console.name,
                     core
                 );
                 false

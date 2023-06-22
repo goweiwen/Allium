@@ -9,20 +9,20 @@ from os.path import dirname, basename, join
 
 extensions = {}
 cores = {}
-devices = {}
+consoles = {}
 folders = {}
 
 BLACKLIST_EXTENSIONS = ["", "bin", "rom", "m3u", "cue", "iso", "img", "chd", "ccd", "zip", "7z", "dsk", "cas", "mx1", "mx2", "miyoocmd", "bs", "dmg", "fig", "tap"]
 
-def canonicalize_device_name(name):
-    CANONICAL_DEVICE_NAME = {
+def canonicalize_console_name(name):
+    CANONICAL_CONSOLE_NAME = {
         "Nintendo - GB": "Nintendo - Game Boy",
         "Nintendo - GBC": "Nintendo - Game Boy Color",
         "Nintendo - GBA": "Nintendo - Game Boy Advance",
         "Nintendo - Super Game Boy": "Nintendo - Game Boy Color",
         ".Java - J2ME": "Java - J2ME",
     }
-    return CANONICAL_DEVICE_NAME[name] if name in CANONICAL_DEVICE_NAME else name
+    return CANONICAL_CONSOLE_NAME[name] if name in CANONICAL_CONSOLE_NAME else name
 
 def extract_file(path):
     with open(path, 'r') as f:
@@ -38,13 +38,13 @@ def extract_file(path):
         core = match.group(1)
 
     name = basename(dirname(dirname(dirname(path))))
-    device = canonicalize_device_name(name.rsplit("(", 1)[0].strip())
+    console = canonicalize_console_name(name.rsplit("(", 1)[0].strip())
     folder = basename(dirname(path))
     extensions = [ext for ext in data["extlist"].split("|") if ext not in BLACKLIST_EXTENSIONS]
 
     return {
         "name": name,
-        "device": device,
+        "console": console,
         "core": core,
         "folder": folder,
         "extensions": extensions,
@@ -55,22 +55,22 @@ def extract_directory(directory, whitelist = None):
         for file in files:
             if file == "config.json":
                 path = os.path.join(root, file)
-                device = extract_file(path)
-                if whitelist is None or device['name'] in whitelist:
-                    print(device['device'])
-                    if device['device'] in devices:
-                        if device['core'] is not None:
-                            devices[device['device']]['cores'].append(device['core'])
-                        if device['folder'] not in devices[device['device']]['folders']:
-                            devices[device['device']]['folders'].append(device['folder'])
-                        for ext in device['extensions']:
-                            if ext not in devices[device['device']]['extensions']:
-                                devices[device['device']]['extensions'].append(ext)
+                console = extract_file(path)
+                if whitelist is None or console['name'] in whitelist:
+                    print(console['console'])
+                    if console['console'] in consoles:
+                        if console['core'] is not None:
+                            consoles[console['console']]['cores'].append(console['core'])
+                        if console['folder'] not in consoles[console['console']]['folders']:
+                            consoles[console['console']]['folders'].append(console['folder'])
+                        for ext in console['extensions']:
+                            if ext not in consoles[console['console']]['extensions']:
+                                consoles[console['console']]['extensions'].append(ext)
                     else:
-                        devices[device['device']] = {
-                            "cores": [device['core']],
-                            "folders": [device['folder']],
-                            "extensions": device['extensions'],
+                        consoles[console['console']] = {
+                            "cores": [console['core']],
+                            "folders": [console['folder']],
+                            "extensions": console['extensions'],
                         }
 
 def extract():
@@ -86,18 +86,18 @@ def extract():
         "NEC - PC-FX (Mednafen PC-FX)",
     ])
 
-    with open("devices.toml", "w") as f:
-        f.write(toml.dumps(devices))
+    with open("consoles.toml", "w") as f:
+        f.write(toml.dumps(consoles))
     
-    print("Written to devices.toml")
+    print("Written to consoles.toml")
 
 def check():
-    with open("devices.toml", "r") as f:
-        devices = toml.loads(f.read())
+    with open("consoles.toml", "r") as f:
+        consoles = toml.loads(f.read())
 
     # Check that extensions are not duplicated
-    for (name, device) in devices.items():
-        for extension in device['extensions']:
+    for (name, console) in consoles.items():
+        for extension in console['extensions']:
             if extension in extensions:
                 extensions[extension].append(name)
             else:
@@ -107,8 +107,8 @@ def check():
             print("Duplicate extension: " + extension + "\n- " + "\n- ".join(names) + "\n")
 
     # Check that folders are not duplicated
-    for (name, device) in devices.items():
-        for folder in device['folders']:
+    for (name, console) in consoles.items():
+        for folder in console['folders']:
             if folder in folders:
                 folders[folder].append(name)
             else:

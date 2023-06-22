@@ -17,7 +17,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
-use crate::devices::{DeviceMapper, Game};
+use crate::consoles::{ConsoleMapper, Game};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BrowserState {
@@ -38,7 +38,7 @@ pub struct Browser {
     #[serde(skip)]
     database: Database,
     #[serde(skip)]
-    device_mapper: Option<Rc<DeviceMapper>>,
+    console_mapper: Option<Rc<ConsoleMapper>>,
 }
 
 impl Browser {
@@ -86,7 +86,7 @@ impl Browser {
             button_hints,
             child: None,
             database: Default::default(),
-            device_mapper: None,
+            console_mapper: None,
         })
     }
 
@@ -106,12 +106,12 @@ impl Browser {
         }
     }
 
-    pub fn init(&mut self, database: Database, device_mapper: Rc<DeviceMapper>) {
+    pub fn init(&mut self, database: Database, console_mapper: Rc<ConsoleMapper>) {
         if let Some(child) = self.child.as_mut() {
-            child.init(database.clone(), Rc::clone(&device_mapper));
+            child.init(database.clone(), Rc::clone(&console_mapper));
         }
         self.database = database;
-        self.device_mapper = Some(device_mapper);
+        self.console_mapper = Some(console_mapper);
     }
 
     async fn select_entry(&mut self, commands: Sender<Command>) -> Result<()> {
@@ -121,13 +121,13 @@ impl Browser {
                     let mut child = Browser::new(self.rect, dir.to_owned(), 0)?;
                     child.init(
                         self.database.clone(),
-                        Rc::clone(self.device_mapper.as_ref().unwrap()),
+                        Rc::clone(self.console_mapper.as_ref().unwrap()),
                     );
                     self.child = Some(Box::new(child));
                 }
                 Entry::Game(game) => {
                     if let Some(command) = self
-                        .device_mapper
+                        .console_mapper
                         .as_ref()
                         .unwrap()
                         .launch_game(&self.database, game)?

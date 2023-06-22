@@ -14,7 +14,7 @@ use common::display::Display;
 use common::platform::{DefaultPlatform, Platform};
 use common::stylesheet::Stylesheet;
 
-use crate::devices::DeviceMapper;
+use crate::consoles::ConsoleMapper;
 use crate::view::App;
 
 #[derive(Debug)]
@@ -31,14 +31,14 @@ impl AlliumLauncher<DefaultPlatform> {
         let battery = platform.battery()?;
         let database = Database::new()?;
 
-        let mut device_mapper = DeviceMapper::new();
-        device_mapper.load_config()?;
-        let device_mapper = Rc::new(device_mapper);
+        let mut console_mapper = ConsoleMapper::new();
+        console_mapper.load_config()?;
+        let console_mapper = Rc::new(console_mapper);
 
         let view = App::load_or_new(
             display.bounding_box().into(),
             database,
-            device_mapper,
+            console_mapper,
             battery,
         )?;
 

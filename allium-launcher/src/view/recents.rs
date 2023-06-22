@@ -15,7 +15,7 @@ use embedded_graphics::prelude::OriginDimensions;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
-use crate::devices::{DeviceMapper, Game};
+use crate::consoles::{ConsoleMapper, Game};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Recents {
@@ -28,7 +28,7 @@ pub struct Recents {
     #[serde(skip)]
     database: Database,
     #[serde(skip)]
-    device_mapper: Option<Rc<DeviceMapper>>,
+    console_mapper: Option<Rc<ConsoleMapper>>,
 }
 
 impl Recents {
@@ -78,13 +78,13 @@ impl Recents {
             image,
             button_hints,
             database: Default::default(),
-            device_mapper: None,
+            console_mapper: None,
         })
     }
 
-    pub fn init(&mut self, database: Database, device_mapper: Rc<DeviceMapper>) -> Result<()> {
+    pub fn init(&mut self, database: Database, console_mapper: Rc<ConsoleMapper>) -> Result<()> {
         self.database = database;
-        self.device_mapper = Some(device_mapper);
+        self.console_mapper = Some(console_mapper);
         self.load_entries()?;
         Ok(())
     }
@@ -92,7 +92,7 @@ impl Recents {
     async fn select_entry(&mut self, commands: Sender<Command>) -> Result<()> {
         if let Some(entry) = self.entries.get_mut(self.list.selected()) {
             if let Some(command) = self
-                .device_mapper
+                .console_mapper
                 .as_ref()
                 .unwrap()
                 .launch_game(&self.database, entry)?

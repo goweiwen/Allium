@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 use tracing::{trace, warn};
 
-use crate::devices::DeviceMapper;
+use crate::consoles::ConsoleMapper;
 use crate::view::browser::BrowserState;
 use crate::view::Recents;
 use crate::view::{Browser, Settings};
@@ -50,13 +50,13 @@ where
         mut views: (Browser, Recents, Settings),
         selected: usize,
         database: Database,
-        device_mapper: Rc<DeviceMapper>,
+        console_mapper: Rc<ConsoleMapper>,
         battery: B,
     ) -> Result<Self> {
         let Rect { x, y, w, h: _h } = rect;
 
-        views.0.init(database.clone(), device_mapper.clone());
-        views.1.init(database, device_mapper)?;
+        views.0.init(database.clone(), console_mapper.clone());
+        views.1.init(database, console_mapper)?;
 
         let mut battery_indicator =
             BatteryIndicator::new(Point::new(w as i32 - 12, y + 8), Alignment::Right);
@@ -89,7 +89,7 @@ where
     pub fn load_or_new(
         rect: Rect,
         database: Database,
-        device_mapper: Rc<DeviceMapper>,
+        console_mapper: Rc<ConsoleMapper>,
         battery: B,
     ) -> Result<Self> {
         let tab_rect = Rect::new(rect.x, rect.y + 46, rect.w, rect.h - 46);
@@ -107,7 +107,7 @@ where
                     views,
                     state.selected,
                     database,
-                    device_mapper,
+                    console_mapper,
                     battery,
                 );
             }
@@ -121,7 +121,7 @@ where
             Settings::new(tab_rect)?,
         );
         let selected = 0;
-        Self::new(rect, views, selected, database, device_mapper, battery)
+        Self::new(rect, views, selected, database, console_mapper, battery)
     }
 
     pub fn save(&self) -> Result<()> {
