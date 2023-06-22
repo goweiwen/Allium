@@ -4,7 +4,9 @@ use std::path::Path;
 
 use anyhow::Result;
 use chrono::Utc;
-use common::constants::{ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU};
+use common::constants::{
+    ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU, AUTO_SLEEP_TIMEOUT,
+};
 use common::wifi::WiFiSettings;
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
@@ -93,6 +95,8 @@ impl AlliumD<DefaultPlatform> {
                     None => Fuse::terminated(),
                 };
 
+                let auto_sleep_timer = tokio::time::sleep(AUTO_SLEEP_TIMEOUT).fuse();
+
                 tokio::select! {
                     key_event = self.platform.poll() => {
                         self.handle_key_event(key_event).await?;
@@ -113,6 +117,7 @@ impl AlliumD<DefaultPlatform> {
                     }
                     _ = sigint.recv() => self.handle_quit()?,
                     _ = sigterm.recv() => self.handle_quit()?,
+                    _ = auto_sleep_timer => self.handle_quit()?,
                 }
             }
         }
