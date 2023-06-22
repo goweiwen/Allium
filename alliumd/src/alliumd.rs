@@ -4,13 +4,15 @@ use std::path::Path;
 
 use anyhow::Result;
 use chrono::Utc;
+use common::battery::Battery;
 use common::constants::{
     ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU, AUTO_SLEEP_TIMEOUT,
+    BATTERY_SHUTDOWN_THRESHOLD, BATTERY_UPDATE_INTERVAL,
 };
 use common::wifi::WiFiSettings;
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
-use tracing::{debug, info, trace, warn};
+use tracing::{debug, error, info, trace, warn};
 
 use common::database::Database;
 use common::game_info::GameInfo;
@@ -89,6 +91,23 @@ impl AlliumD<DefaultPlatform> {
             let mut sigint = tokio::signal::unix::signal(SignalKind::interrupt())?;
             let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())?;
 
+            let (battery_tx, mut battery_rx) = tokio::sync::mpsc::channel(1);
+            let mut battery = self.platform.battery()?;
+            tokio::task::spawn(async move {
+                loop {
+                    if let Err(e) = battery.update() {
+                        error!("failed to update battery: {}", e);
+                    }
+                    if battery.percentage() <= BATTERY_SHUTDOWN_THRESHOLD && !battery.charging() {
+                        warn!("battery is low, shutting down");
+                        if let Err(e) = battery_tx.send(()).await {
+                            error!("failed to send battery low signal: {}", e);
+                        }
+                    }
+                    tokio::time::sleep(BATTERY_UPDATE_INTERVAL).await;
+                }
+            });
+
             loop {
                 let menu_terminated = match self.menu.as_mut() {
                     Some(menu) => menu.wait().fuse(),
@@ -115,9 +134,16 @@ impl AlliumD<DefaultPlatform> {
                         #[cfg(unix)]
                         signal(&self.main, Signal::SIGCONT)?;
                     }
-                    _ = sigint.recv() => self.handle_quit()?,
-                    _ = sigterm.recv() => self.handle_quit()?,
-                    _ = auto_sleep_timer => self.handle_quit()?,
+                    _ = sigint.recv() => self.handle_quit().await?,
+                    _ = sigterm.recv() => self.handle_quit().await?,
+                    _ = auto_sleep_timer => {
+                        info!("auto sleep timer expired, shutting down");
+                        self.handle_quit().await?;
+                    }
+                    _ = battery_rx.recv() => {
+                        info!("battery low, shutting down");
+                        self.handle_quit().await?;
+                    }
                 }
             }
         }
@@ -162,22 +188,7 @@ impl AlliumD<DefaultPlatform> {
             }
             KeyEvent::Autorepeat(Key::Power) => {
                 self.is_terminating = true;
-                self.save()?;
-                if self.is_ingame() {
-                    if self.menu.is_some() {
-                        #[cfg(unix)]
-                        signal(&self.main, Signal::SIGCONT)?;
-                    }
-                    #[cfg(unix)]
-                    signal(&self.main, Signal::SIGTERM)?;
-                    self.main.wait().await?;
-                }
-                #[cfg(unix)]
-                {
-                    self.update_play_time()?;
-                    std::process::Command::new("sync").spawn()?;
-                    std::process::Command::new("poweroff").exec();
-                }
+                self.handle_quit().await?;
             }
             KeyEvent::Released(Key::Menu) => {
                 self.is_menu_pressed = false;
@@ -201,9 +212,27 @@ impl AlliumD<DefaultPlatform> {
     }
 
     #[cfg(unix)]
-    fn handle_quit(&mut self) -> Result<()> {
+    async fn handle_quit(&mut self) -> Result<()> {
         debug!("terminating, saving state");
+        if let Some(menu) = self.menu.as_mut() {
+            menu.kill().await?;
+        }
+        if self.is_ingame() {
+            if self.menu.is_some() {
+                #[cfg(unix)]
+                signal(&self.main, Signal::SIGCONT)?;
+            }
+            #[cfg(unix)]
+            signal(&self.main, Signal::SIGTERM)?;
+            self.main.wait().await?;
+        }
         self.save()?;
+        #[cfg(unix)]
+        {
+            self.update_play_time()?;
+            std::process::Command::new("sync").spawn()?;
+            std::process::Command::new("poweroff").exec();
+        }
         Ok(())
     }
 
