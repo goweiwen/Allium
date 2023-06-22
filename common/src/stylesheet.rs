@@ -54,6 +54,7 @@ pub struct Stylesheet {
     pub ui_font_size: u32,
     #[serde(skip, default = "Stylesheet::mono_font")]
     pub mono_font: Font<'static>,
+    #[serde(default = "Stylesheet::mono_font_size")]
     pub mono_font_size: u32,
 }
 
