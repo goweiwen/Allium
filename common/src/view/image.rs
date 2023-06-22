@@ -168,11 +168,11 @@ fn image(
     match mode {
         ImageMode::Raw => {}
         ImageMode::Cover => {
-            image = image.resize_to_fill(rect.w, rect.h, image::imageops::FilterType::Triangle);
+            image = image.resize_to_fill(rect.w, rect.h, image::imageops::FilterType::Nearest);
         }
         ImageMode::Contain => {
             let new_height = rect.h.min(rect.w * image.height() / image.width());
-            image = image.resize_to_fill(rect.w, new_height, image::imageops::FilterType::Triangle);
+            image = image.resize_to_fill(rect.w, new_height, image::imageops::FilterType::Nearest);
         }
     }
     let mut image = image.to_rgb8();
