@@ -104,6 +104,10 @@ impl Platform for SimulatorPlatform {
     fn device_model() -> String {
         "Simulator".to_string()
     }
+
+    fn firmware() -> String {
+        "00000000".to_string()
+    }
 }
 
 impl Default for SimulatorPlatform {

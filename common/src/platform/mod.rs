@@ -43,6 +43,8 @@ pub trait Platform {
     fn set_display_settings(&mut self, settings: &DisplaySettings) -> Result<()>;
 
     fn device_model() -> String;
+
+    fn firmware() -> String;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

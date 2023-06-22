@@ -18,9 +18,15 @@ pub struct System {
 
 impl System {
     pub fn new(rect: Rect) -> Self {
+        let firmware = DefaultPlatform::firmware();
+
         let list = SettingsList::new(
             Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 8 - 46),
-            vec!["Version".to_string(), "Device Model".to_string()],
+            vec![
+                "Version".to_string(),
+                "Firmware".to_string(),
+                "Device Model".to_string(),
+            ],
             vec![
                 Box::new(Label::new(
                     Point::zero(),
@@ -28,6 +34,7 @@ impl System {
                     Alignment::Right,
                     None,
                 )),
+                Box::new(Label::new(Point::zero(), firmware, Alignment::Right, None)),
                 Box::new(Label::new(
                     Point::zero(),
                     DefaultPlatform::device_model(),
