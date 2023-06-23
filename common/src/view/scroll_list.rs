@@ -86,7 +86,7 @@ impl ScrollList {
             .map(|c| c.set_background_color(StylesheetColor::Background));
 
         if index >= self.top + self.visible_count() {
-            self.top = index - self.visible_count() + 1;
+            self.top = (index - self.visible_count() + 1).min(self.items.len() - 1);
             self.update_children();
         } else if index < self.top {
             self.top = index;
