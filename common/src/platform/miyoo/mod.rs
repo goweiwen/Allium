@@ -68,6 +68,23 @@ impl Platform for MiyooPlatform {
         })
     }
 
+    fn shutdown(&self) -> Result<()> {
+        #[cfg(unix)]
+        {
+            self.update_play_time()?;
+            std::process::Command::new("sync").spawn()?;
+            match self.model {
+                MiyooDeviceModel::Miyoo283 => {
+                    std::process::Command::new("reboot").exec()?;
+                }
+                MiyooDeviceModel::Miyoo354 => {
+                    std::process::Command::new("poweroff").exec();
+                }
+            }
+        }
+        Ok(())
+    }
+
     fn set_volume(&mut self, volume: i32) -> Result<()> {
         match self.model {
             MiyooDeviceModel::Miyoo283 => Ok(()),

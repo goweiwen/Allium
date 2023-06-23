@@ -34,6 +34,8 @@ pub trait Platform {
 
     async fn poll(&mut self) -> KeyEvent;
 
+    fn shutdown(&self) -> Result<()>;
+
     fn set_volume(&mut self, volume: i32) -> Result<()>;
 
     fn get_brightness(&self) -> Result<u8>;

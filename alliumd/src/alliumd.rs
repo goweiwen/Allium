@@ -227,12 +227,7 @@ impl AlliumD<DefaultPlatform> {
             self.main.wait().await?;
         }
         self.save()?;
-        #[cfg(unix)]
-        {
-            self.update_play_time()?;
-            std::process::Command::new("sync").spawn()?;
-            std::process::Command::new("poweroff").exec();
-        }
+        self.platform.shutdown()?;
         Ok(())
     }
 

@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::process;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -83,6 +84,10 @@ impl Platform for SimulatorPlatform {
 
     fn battery(&self) -> Result<SimulatorBattery> {
         Ok(SimulatorBattery::new())
+    }
+
+    fn shutdown(&self) -> Result<()> {
+        process::exit(0);
     }
 
     fn set_volume(&mut self, _volume: i32) -> Result<()> {
