@@ -24,7 +24,6 @@ use {
     nix::sys::signal::kill,
     nix::sys::signal::Signal,
     nix::unistd::Pid,
-    std::os::unix::process::CommandExt,
     tokio::signal::unix::SignalKind,
 };
 
@@ -137,8 +136,12 @@ impl AlliumD<DefaultPlatform> {
                     _ = sigint.recv() => self.handle_quit().await?,
                     _ = sigterm.recv() => self.handle_quit().await?,
                     _ = auto_sleep_timer => {
-                        info!("auto sleep timer expired, shutting down");
-                        self.handle_quit().await?;
+                        let mut battery = self.platform.battery()?;
+                        battery.update()?;
+                        if !battery.charging() {
+                            info!("auto sleep timer expired, shutting down");
+                            self.handle_quit().await?;
+                        }
                     }
                     _ = battery_rx.recv() => {
                         info!("battery low, shutting down");
