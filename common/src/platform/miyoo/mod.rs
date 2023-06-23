@@ -5,6 +5,7 @@ mod screen;
 mod volume;
 
 use std::fmt;
+use std::os::unix::process::CommandExt;
 use std::process::Command;
 
 use anyhow::Result;
@@ -71,11 +72,10 @@ impl Platform for MiyooPlatform {
     fn shutdown(&self) -> Result<()> {
         #[cfg(unix)]
         {
-            self.update_play_time()?;
             std::process::Command::new("sync").spawn()?;
             match self.model {
                 MiyooDeviceModel::Miyoo283 => {
-                    std::process::Command::new("reboot").exec()?;
+                    std::process::Command::new("reboot").exec();
                 }
                 MiyooDeviceModel::Miyoo354 => {
                     std::process::Command::new("poweroff").exec();

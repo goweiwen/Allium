@@ -248,6 +248,7 @@ impl AlliumD<DefaultPlatform> {
             self.main.wait().await?;
         }
         self.save()?;
+        self.update_play_time()?;
         self.platform.shutdown()?;
         Ok(())
     }
