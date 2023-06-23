@@ -74,8 +74,8 @@ where
     }
 
     fn layout(&mut self, styles: &Stylesheet) {
-        let text_style = FontTextStyleBuilder::<Color>::new(styles.ui_font.clone())
-            .font_size(styles.ui_font_size)
+        let text_style = FontTextStyleBuilder::<Color>::new(styles.ui_font.font())
+            .font_size(styles.ui_font.size)
             .build();
 
         if self.truncated_text.is_none() {
@@ -128,10 +128,10 @@ where
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        let text_style = FontTextStyleBuilder::new(styles.ui_font.clone())
+        let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
             .text_color(self.color.to_color(styles))
             .background_color(self.background_color.to_color(styles))
-            .font_size(styles.ui_font_size)
+            .font_size(styles.ui_font.size)
             .build();
 
         if self.truncated_text.is_none() {
@@ -181,8 +181,8 @@ where
             self.layout(styles);
         }
 
-        let text_style = FontTextStyleBuilder::<Color>::new(styles.ui_font.clone())
-            .font_size(styles.ui_font_size)
+        let text_style = FontTextStyleBuilder::<Color>::new(styles.ui_font.font())
+            .font_size(styles.ui_font.size)
             .build();
 
         Text::with_alignment(

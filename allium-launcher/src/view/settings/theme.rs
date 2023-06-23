@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::path::PathBuf;
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -6,13 +7,14 @@ use common::command::Command;
 use common::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
 use common::geom::{Alignment, Point, Rect};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
-use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, ColorPicker, Number, Row, SettingsList, Toggle, View};
+use common::stylesheet::{Stylesheet, StylesheetFont};
+use common::view::{ButtonHint, ColorPicker, Number, Row, Select, SettingsList, Toggle, View};
 use tokio::sync::mpsc::Sender;
 
 pub struct Theme {
     rect: Rect,
     stylesheet: Stylesheet,
+    fonts: Vec<PathBuf>,
     list: SettingsList,
     button_hints: Row<ButtonHint<String>>,
 }
@@ -21,11 +23,25 @@ impl Theme {
     pub fn new(rect: Rect) -> Self {
         let stylesheet = Stylesheet::load().unwrap();
 
+        let fonts = StylesheetFont::available_fonts().unwrap_or_default();
+        let font_names: Vec<String> = fonts
+            .iter()
+            .map(|p| {
+                p.file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("Unknown")
+                    .replace('_', " ")
+                    .replace('-', " ")
+            })
+            .collect();
+
         let list = SettingsList::new(
             Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 8 - 46),
             vec![
                 "Dark Mode".to_string(),
-                "Enable Box Art".to_string(),
+                "UI Font".to_string(),
+                "UI Font Size".to_string(),
+                "Guide Font".to_string(),
                 "Guide Font Size".to_string(),
                 "Highlight Color".to_string(),
                 "Foreground Color".to_string(),
@@ -42,14 +58,34 @@ impl Theme {
                     stylesheet.background_color.is_dark(),
                     Alignment::Right,
                 )),
-                Box::new(Toggle::new(
+                Box::new(Select::new(
                     Point::zero(),
-                    stylesheet.enable_box_art,
+                    fonts
+                        .iter()
+                        .position(|p| *p == stylesheet.ui_font.path)
+                        .unwrap_or_default(),
+                    font_names.clone(),
                     Alignment::Right,
                 )),
                 Box::new(Number::new(
                     Point::zero(),
-                    stylesheet.mono_font_size as i32,
+                    stylesheet.ui_font.size as i32,
+                    10,
+                    40,
+                    Alignment::Right,
+                )),
+                Box::new(Select::new(
+                    Point::zero(),
+                    fonts
+                        .iter()
+                        .position(|p| *p == stylesheet.guide_font.path)
+                        .unwrap_or_default(),
+                    font_names,
+                    Alignment::Right,
+                )),
+                Box::new(Number::new(
+                    Point::zero(),
+                    stylesheet.guide_font.size as i32,
                     10,
                     40,
                     Alignment::Right,
@@ -114,6 +150,7 @@ impl Theme {
         Self {
             rect,
             stylesheet,
+            fonts,
             list,
             button_hints,
         }
@@ -213,16 +250,24 @@ impl View for Theme {
                                 }
                             }
                         },
-                        1 => self.stylesheet.enable_box_art = val.as_bool().unwrap(),
-                        2 => self.stylesheet.mono_font_size = val.as_int().unwrap() as u32,
-                        3 => self.stylesheet.highlight_color = val.as_color().unwrap(),
-                        4 => self.stylesheet.foreground_color = val.as_color().unwrap(),
-                        5 => self.stylesheet.background_color = val.as_color().unwrap(),
-                        6 => self.stylesheet.disabled_color = val.as_color().unwrap(),
-                        7 => self.stylesheet.button_a_color = val.as_color().unwrap(),
-                        8 => self.stylesheet.button_b_color = val.as_color().unwrap(),
-                        9 => self.stylesheet.button_x_color = val.as_color().unwrap(),
-                        10 => self.stylesheet.button_y_color = val.as_color().unwrap(),
+                        1 => {
+                            self.stylesheet.ui_font.path =
+                                self.fonts[val.as_int().unwrap() as usize].clone()
+                        }
+                        2 => self.stylesheet.ui_font.size = val.as_int().unwrap() as u32,
+                        3 => {
+                            self.stylesheet.guide_font.path =
+                                self.fonts[val.as_int().unwrap() as usize].clone()
+                        }
+                        4 => self.stylesheet.guide_font.size = val.as_int().unwrap() as u32,
+                        5 => self.stylesheet.highlight_color = val.as_color().unwrap(),
+                        6 => self.stylesheet.foreground_color = val.as_color().unwrap(),
+                        7 => self.stylesheet.background_color = val.as_color().unwrap(),
+                        8 => self.stylesheet.disabled_color = val.as_color().unwrap(),
+                        9 => self.stylesheet.button_a_color = val.as_color().unwrap(),
+                        10 => self.stylesheet.button_b_color = val.as_color().unwrap(),
+                        11 => self.stylesheet.button_x_color = val.as_color().unwrap(),
+                        12 => self.stylesheet.button_y_color = val.as_color().unwrap(),
                         _ => unreachable!("Invalid index"),
                     }
 

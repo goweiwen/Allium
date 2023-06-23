@@ -5,3 +5,4 @@ pub mod number;
 pub mod percentage;
 pub mod text_box;
 pub mod toggle;
+pub mod select;

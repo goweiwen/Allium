@@ -24,6 +24,7 @@ pub use self::input::color_picker::ColorPicker;
 pub use self::input::keyboard::Keyboard;
 pub use self::input::number::Number;
 pub use self::input::percentage::Percentage;
+pub use self::input::select::Select;
 pub use self::input::text_box::TextBox;
 pub use self::input::toggle::Toggle;
 pub use self::label::Label;

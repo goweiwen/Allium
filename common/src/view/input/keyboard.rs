@@ -71,14 +71,14 @@ impl View for Keyboard {
     ) -> Result<bool> {
         let mut drawn = false;
         if self.dirty {
-            let text_style = FontTextStyleBuilder::new(styles.ui_font.clone())
-                .font_size(styles.ui_font_size)
+            let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
+                .font_size(styles.ui_font.size)
                 .text_color(styles.foreground_color)
                 .background_color(styles.background_color)
                 .build();
 
-            let selected_text_style = FontTextStyleBuilder::new(styles.ui_font.clone())
-                .font_size(styles.ui_font_size)
+            let selected_text_style = FontTextStyleBuilder::new(styles.ui_font.font())
+                .font_size(styles.ui_font.size)
                 .text_color(styles.foreground_color)
                 .background_color(styles.highlight_color)
                 .build();
@@ -103,10 +103,10 @@ impl View for Keyboard {
 
             RoundedRectangle::with_equal_corners(
                 Rectangle::new(
-                    Point::new(8, y0 - styles.ui_font_size as i32 - 8).into(),
+                    Point::new(8, y0 - styles.ui_font.size as i32 - 8).into(),
                     Size::new(
                         display.size().width - 16,
-                        h as u32 + styles.ui_font_size + 8,
+                        h as u32 + styles.ui_font.size + 8,
                     ),
                 ),
                 Size::new_equal(8),
@@ -134,7 +134,7 @@ impl View for Keyboard {
                     key.key(self.mode),
                     Point::new(
                         x0 + x + key_size as i32 / 2,
-                        y0 + y + key_size as i32 / 2 - styles.ui_font_size as i32 / 2,
+                        y0 + y + key_size as i32 / 2 - styles.ui_font.size as i32 / 2,
                     )
                     .into(),
                     if selected {
@@ -164,7 +164,7 @@ impl View for Keyboard {
                     "space",
                     Point::new(
                         x0 + w / 2,
-                        y0 + y + key_size as i32 / 2 - styles.ui_font_size as i32 / 2,
+                        y0 + y + key_size as i32 / 2 - styles.ui_font.size as i32 / 2,
                     )
                     .into(),
                     if selected {
@@ -181,7 +181,7 @@ impl View for Keyboard {
                 &masked_value(&self.value, self.is_password),
                 Point::new(
                     display.size().width as i32 / 2,
-                    display.size().height as i32 - h - 48 - styles.ui_font_size as i32,
+                    display.size().height as i32 - h - 48 - styles.ui_font.size as i32,
                 )
                 .into(),
                 text_style,

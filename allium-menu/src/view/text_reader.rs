@@ -81,7 +81,7 @@ impl TextReader {
         let text = &self.text[self.cursor..];
 
         let mut end = 0;
-        let line_count = self.rect.h / styles.mono_font_size;
+        let line_count = self.rect.h / styles.guide_font.size;
         for _ in 0..line_count {
             if end >= text.len() {
                 break;
@@ -222,8 +222,8 @@ impl View for TextReader {
             .into_styled(PrimitiveStyle::with_fill(styles.background_color))
             .draw(display)?;
 
-            let text_style = FontTextStyleBuilder::new(styles.mono_font.clone())
-                .font_size(styles.mono_font_size)
+            let text_style = FontTextStyleBuilder::new(styles.guide_font.font())
+                .font_size(styles.guide_font.size)
                 .background_color(styles.background_color)
                 .text_color(styles.foreground_color)
                 .build();
@@ -254,7 +254,7 @@ impl View for TextReader {
                 ),
                 Point::new(
                     self.rect.x + self.rect.w as i32 - 16,
-                    self.rect.y + self.rect.h as i32 - styles.mono_font_size as i32 - 48,
+                    self.rect.y + self.rect.h as i32 - styles.guide_font.size as i32 - 48,
                 )
                 .into(),
                 text_style,

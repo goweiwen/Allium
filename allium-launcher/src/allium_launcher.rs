@@ -120,8 +120,9 @@ impl AlliumLauncher<DefaultPlatform> {
                 #[cfg(not(unix))]
                 cmd.spawn()?;
             }
-            Command::SaveStylesheet(styles) => {
+            Command::SaveStylesheet(mut styles) => {
                 debug!("saving stylesheet");
+                styles.load_fonts()?;
                 styles.save()?;
                 self.display.clear(styles.background_color)?;
                 self.display.save()?;

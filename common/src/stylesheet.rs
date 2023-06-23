@@ -1,14 +1,16 @@
-use std::{
-    fs::{self, File},
-    io::Write,
-};
+use std::fs::{self, File};
+use std::io::Write;
+use std::path::PathBuf;
 
 use anyhow::Result;
 use rusttype::Font;
 use serde::{Deserialize, Serialize};
-use tracing::{debug, trace, warn};
+use tracing::{debug, error, warn};
 
-use crate::{constants::ALLIUM_STYLESHEET, display::color::Color};
+use crate::{
+    constants::{ALLIUM_FONTS_DIR, ALLIUM_STYLESHEET},
+    display::color::Color,
+};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum StylesheetColor {
@@ -38,6 +40,68 @@ impl StylesheetColor {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StylesheetFont {
+    pub path: PathBuf,
+    pub size: u32,
+    #[serde(skip)]
+    pub font: Option<Font<'static>>,
+}
+
+impl StylesheetFont {
+    pub fn new(path: PathBuf, size: u32) -> Self {
+        Self {
+            path,
+            size,
+            font: None,
+        }
+    }
+
+    /// Returns an owned font. Panics if the font has not been loaded.
+    pub fn font(&self) -> Font<'static> {
+        self.font.as_ref().unwrap().clone()
+    }
+
+    /// Loads the font from disk if it has not already been loaded.
+    pub fn load(&mut self) -> Result<()> {
+        let bytes = fs::read(&self.path)?;
+        self.font = Font::try_from_vec(bytes);
+        if self.font.is_none() {
+            error!("failed to load font from {:?}", self.path);
+        }
+        Ok(())
+    }
+
+    pub fn available_fonts() -> Result<Vec<PathBuf>> {
+        Ok(fs::read_dir(ALLIUM_FONTS_DIR.as_path())?
+            .filter_map(|entry| {
+                if let Err(e) = entry {
+                    warn!("failed to read font directory: {}", e);
+                    return None;
+                }
+                let entry = entry.unwrap();
+                let path = entry.path();
+                if let Some(ext) = path.extension() {
+                    if ext == "ttf" || ext == "otf" {
+                        return Some(path);
+                    }
+                }
+                None
+            })
+            .collect())
+    }
+
+    /// Default UI font.
+    pub fn ui_font() -> Self {
+        Self::new(ALLIUM_FONTS_DIR.join("Nunito.ttf"), 32)
+    }
+
+    /// Default guide font.
+    pub fn guide_font() -> Self {
+        Self::new(ALLIUM_FONTS_DIR.join("Nunito.ttf"), 28)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Stylesheet {
     pub enable_box_art: bool,
     pub foreground_color: Color,
@@ -48,14 +112,10 @@ pub struct Stylesheet {
     pub button_b_color: Color,
     pub button_x_color: Color,
     pub button_y_color: Color,
-    #[serde(skip, default = "Stylesheet::font")]
-    pub ui_font: Font<'static>,
-    #[serde(skip, default = "Stylesheet::font_size")]
-    pub ui_font_size: u32,
-    #[serde(skip, default = "Stylesheet::mono_font")]
-    pub mono_font: Font<'static>,
-    #[serde(default = "Stylesheet::mono_font_size")]
-    pub mono_font_size: u32,
+    #[serde(default = "StylesheetFont::ui_font")]
+    pub ui_font: StylesheetFont,
+    #[serde(default = "StylesheetFont::guide_font")]
+    pub guide_font: StylesheetFont,
 }
 
 impl Stylesheet {
@@ -67,14 +127,40 @@ impl Stylesheet {
         if ALLIUM_STYLESHEET.exists() {
             debug!("found state, loading from file");
             if let Ok(json) = fs::read_to_string(ALLIUM_STYLESHEET.as_path()) {
-                if let Ok(json) = serde_json::from_str(&json) {
-                    return Ok(json);
+                if let Ok(mut styles) = serde_json::from_str::<Self>(&json) {
+                    styles.load_fonts()?;
+                    return Ok(styles);
                 }
             }
             warn!("failed to read state file, removing");
             fs::remove_file(ALLIUM_STYLESHEET.as_path())?;
         }
-        Ok(Self::new())
+
+        let mut styles = Self::default();
+        styles.load_fonts()?;
+        Ok(styles)
+    }
+
+    pub fn load_fonts(&mut self) -> Result<()> {
+        if let Err(e) = self.ui_font.load() {
+            error!(
+                "failed to load UI font: {}, {}",
+                self.ui_font.path.display(),
+                e
+            );
+            self.ui_font = StylesheetFont::ui_font();
+            self.ui_font.load()?;
+        }
+        if let Err(e) = self.guide_font.load() {
+            error!(
+                "failed to load guide font: {} ({})",
+                self.guide_font.path.display(),
+                e
+            );
+            self.guide_font = StylesheetFont::guide_font();
+            self.guide_font.load()?;
+        }
+        Ok(())
     }
 
     pub fn save(&self) -> Result<()> {
@@ -106,27 +192,6 @@ rgui_particle_color = "0xFF{highlight:X}"
         )?;
         Ok(())
     }
-
-    fn font() -> Font<'static> {
-        trace!("loading font");
-        Font::try_from_bytes(include_bytes!("../../assets/font/Nunito/Nunito-Bold.ttf")).unwrap()
-    }
-
-    fn font_size() -> u32 {
-        32
-    }
-
-    fn mono_font() -> Font<'static> {
-        trace!("loading mono font");
-        Font::try_from_bytes(include_bytes!(
-            "../../assets/font/Martian Mono/MartianMono_Condensed-Regular.ttf"
-        ))
-        .unwrap()
-    }
-
-    fn mono_font_size() -> u32 {
-        20
-    }
 }
 
 impl Default for Stylesheet {
@@ -141,10 +206,8 @@ impl Default for Stylesheet {
             button_b_color: Color::new(254, 206, 21),
             button_x_color: Color::new(7, 73, 180),
             button_y_color: Color::new(0, 141, 69),
-            ui_font: Self::font(),
-            ui_font_size: Self::font_size(),
-            mono_font: Self::mono_font(),
-            mono_font_size: Self::mono_font_size(),
+            ui_font: StylesheetFont::ui_font(),
+            guide_font: StylesheetFont::guide_font(),
         }
     }
 }
