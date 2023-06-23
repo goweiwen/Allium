@@ -6,8 +6,8 @@ use anyhow::Result;
 use chrono::Utc;
 use common::battery::Battery;
 use common::constants::{
-    ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU, AUTO_SLEEP_TIMEOUT,
-    BATTERY_SHUTDOWN_THRESHOLD, BATTERY_UPDATE_INTERVAL,
+    ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU, ALLIUM_VERSION,
+    AUTO_SLEEP_TIMEOUT, BATTERY_SHUTDOWN_THRESHOLD, BATTERY_UPDATE_INTERVAL,
 };
 use common::wifi::WiFiSettings;
 use serde::{Deserialize, Serialize};
@@ -80,7 +80,7 @@ impl AlliumD<DefaultPlatform> {
     }
 
     pub async fn run_event_loop(&mut self) -> Result<()> {
-        info!("running Alliumd");
+        info!("hello from Allium {}", ALLIUM_VERSION);
 
         self.platform.set_volume(self.volume)?;
         self.platform.set_brightness(self.brightness)?;
