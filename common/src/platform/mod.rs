@@ -5,6 +5,7 @@ mod simulator;
 
 use anyhow::Result;
 use async_trait::async_trait;
+use enum_map::Enum;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -56,7 +57,7 @@ pub enum KeyEvent {
     Autorepeat(Key),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
 pub enum Key {
     Up,
     Down,

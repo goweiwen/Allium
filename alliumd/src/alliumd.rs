@@ -10,6 +10,7 @@ use common::constants::{
     AUTO_SLEEP_TIMEOUT, BATTERY_SHUTDOWN_THRESHOLD, BATTERY_UPDATE_INTERVAL,
 };
 use common::wifi::WiFiSettings;
+use enum_map::EnumMap;
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
 use tracing::{debug, error, info, trace, warn};
@@ -36,9 +37,7 @@ pub struct AlliumD<P: Platform> {
     #[serde(skip)]
     menu: Option<Child>,
     #[serde(skip)]
-    is_menu_pressed: bool,
-    #[serde(skip)]
-    is_menu_pressed_alone: bool,
+    keys: EnumMap<Key, bool>,
     #[serde(skip)]
     is_terminating: bool,
     volume: i32,
@@ -70,8 +69,7 @@ impl AlliumD<DefaultPlatform> {
             platform,
             main: spawn_main(),
             menu: None,
-            is_menu_pressed: false,
-            is_menu_pressed_alone: false,
+            keys: EnumMap::default(),
             is_terminating: false,
             volume: 0,
             brightness: 50,
@@ -168,22 +166,39 @@ impl AlliumD<DefaultPlatform> {
             self.main.id(),
             self.is_ingame()
         );
-        if matches!(key_event, KeyEvent::Pressed(Key::Menu)) {
-            self.is_menu_pressed = true;
-            self.is_menu_pressed_alone = true;
-        } else if !matches!(key_event, KeyEvent::Released(Key::Menu)) {
-            self.is_menu_pressed_alone = false;
+        match key_event {
+            KeyEvent::Pressed(key) => {
+                self.keys[key] = true;
+            }
+            KeyEvent::Released(key) => {
+                self.keys[key] = false;
+            }
+            KeyEvent::Autorepeat(_) => {}
         }
         match key_event {
+            KeyEvent::Pressed(Key::L2) | KeyEvent::Autorepeat(Key::L2) => {
+                if self.keys[Key::Start] {
+                    self.add_brightness(-5)?;
+                } else if self.keys[Key::Select] {
+                    self.add_volume(-1)?
+                }
+            }
+            KeyEvent::Pressed(Key::R2) | KeyEvent::Autorepeat(Key::R2) => {
+                if self.keys[Key::Start] {
+                    self.add_brightness(5)?;
+                } else if self.keys[Key::Select] {
+                    self.add_volume(1)?
+                }
+            }
             KeyEvent::Pressed(Key::VolDown) | KeyEvent::Autorepeat(Key::VolDown) => {
-                if self.is_menu_pressed {
+                if self.keys[Key::Menu] {
                     self.add_brightness(-5)?;
                 } else {
                     self.add_volume(-1)?
                 }
             }
             KeyEvent::Pressed(Key::VolUp) | KeyEvent::Autorepeat(Key::VolUp) => {
-                if self.is_menu_pressed {
+                if self.keys[Key::Menu] {
                     self.add_brightness(5)?;
                 } else {
                     self.add_volume(1)?
@@ -194,8 +209,12 @@ impl AlliumD<DefaultPlatform> {
                 self.handle_quit().await?;
             }
             KeyEvent::Released(Key::Menu) => {
-                self.is_menu_pressed = false;
-                if self.is_ingame() && self.is_menu_pressed_alone {
+                if self.is_ingame()
+                    && self
+                        .keys
+                        .iter()
+                        .all(|(k, pressed)| k == Key::Menu || !pressed)
+                {
                     if let Some(game_info) = GameInfo::load()? {
                         if let Some(menu) = &mut self.menu {
                             terminate(menu).await?;
@@ -206,7 +225,6 @@ impl AlliumD<DefaultPlatform> {
                         }
                     }
                 }
-                self.is_menu_pressed_alone = false;
             }
             _ => {}
         }
@@ -274,12 +292,14 @@ impl AlliumD<DefaultPlatform> {
     }
 
     fn add_volume(&mut self, add: i32) -> Result<()> {
+        info!("adding volume: {}", add);
         self.volume = (self.volume + add).clamp(0, 20);
         self.platform.set_volume(self.volume)?;
         Ok(())
     }
 
     fn add_brightness(&mut self, add: i8) -> Result<()> {
+        info!("adding brightness: {}", add);
         self.brightness = (self.brightness as i8 + add).clamp(0, 100) as u8;
         self.platform.set_brightness(self.brightness)?;
         Ok(())

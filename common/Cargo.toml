@@ -14,6 +14,7 @@ anyhow = "1.0.70"
 async-trait = "0.1.68"
 chrono = { version = "0.4.26", features = ["serde"] }
 embedded-graphics = "0.8.0"
+enum-map = "2.5.0"
 image = "0.24.6"
 itertools = "0.10.5"
 jpeg-decoder = "0.3.0"
