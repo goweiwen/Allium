@@ -14,6 +14,7 @@ use embedded_graphics_simulator::{
 };
 use itertools::iproduct;
 use sdl2::keyboard::Keycode;
+use tracing::warn;
 
 use crate::battery::Battery;
 use crate::display::color::Color;
@@ -159,20 +160,19 @@ impl Display for SimulatorWindow {
         Ok(())
     }
 
-    fn load(&mut self, rect: Rect) -> Result<()> {
+    fn load(&mut self, mut rect: Rect) -> Result<()> {
         let Some(saved) = &self.saved else {
             bail!("No saved image");
         };
 
         let size = self.size();
         if rect.x as u32 + rect.w > size.width || rect.y as u32 + rect.h > size.height {
-            bail!(
+            warn!(
                 "Area exceeds display bounds: x: {}, y: {}, w: {}, h: {}",
-                rect.x,
-                rect.y,
-                rect.w,
-                rect.h,
+                rect.x, rect.y, rect.w, rect.h,
             );
+            rect.w = rect.w.clamp(0, size.width - rect.x as u32);
+            rect.h = rect.h.clamp(0, size.height - rect.h as u32);
         }
 
         let image: ImageRaw<_, BigEndian> = ImageRaw::new(&saved.0, saved.1);
