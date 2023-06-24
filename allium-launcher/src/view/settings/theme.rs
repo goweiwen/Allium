@@ -208,7 +208,7 @@ impl View for Theme {
                                     self.stylesheet.background_color =
                                         self.stylesheet.background_color.invert();
                                     self.list.set_child(
-                                        3,
+                                        6,
                                         Box::new(ColorPicker::new(
                                             Point::zero(),
                                             self.stylesheet.foreground_color,
@@ -216,7 +216,7 @@ impl View for Theme {
                                         )),
                                     );
                                     self.list.set_child(
-                                        4,
+                                        7,
                                         Box::new(ColorPicker::new(
                                             Point::zero(),
                                             self.stylesheet.background_color,
@@ -232,7 +232,7 @@ impl View for Theme {
                                     self.stylesheet.background_color =
                                         self.stylesheet.background_color.invert();
                                     self.list.set_child(
-                                        3,
+                                        6,
                                         Box::new(ColorPicker::new(
                                             Point::zero(),
                                             self.stylesheet.foreground_color,
@@ -240,7 +240,7 @@ impl View for Theme {
                                         )),
                                     );
                                     self.list.set_child(
-                                        4,
+                                        7,
                                         Box::new(ColorPicker::new(
                                             Point::zero(),
                                             self.stylesheet.background_color,
