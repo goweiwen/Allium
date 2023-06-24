@@ -5,35 +5,39 @@ use async_trait::async_trait;
 use common::command::Command;
 use common::constants::{ALLIUM_VERSION, BUTTON_DIAMETER, SELECTION_HEIGHT};
 use common::geom::{Alignment, Point, Rect};
+use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::{ButtonHint, Label, Row, SettingsList, View};
 use sysinfo::{DiskExt, SystemExt};
 use tokio::sync::mpsc::Sender;
 
-pub struct System {
+pub struct About {
     rect: Rect,
     list: SettingsList,
     button_hints: Row<ButtonHint<String>>,
 }
 
-impl System {
-    pub fn new(rect: Rect) -> Self {
+impl About {
+    pub fn new(rect: Rect, res: Resources) -> Self {
         let firmware = DefaultPlatform::firmware();
 
         let mut sys = sysinfo::System::new();
         sys.refresh_disks_list();
         let disk = &sys.disks()[1];
 
+        let locale = res.get::<Locale>();
+
         let list = SettingsList::new(
             Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 8 - 46),
             vec![
-                "Allium Version".to_string(),
-                "Model Name".to_string(),
-                "Firmware Version".to_string(),
-                "Operating System".to_string(),
-                "Kernel Version".to_string(),
-                "Storage Used".to_string(),
+                locale.t("settings-about-allium-version"),
+                locale.t("settings-about-model-name"),
+                locale.t("settings-about-firmware-version"),
+                locale.t("settings-about-operating-system-version"),
+                locale.t("settings-about-kernel-version"),
+                locale.t("settings-about-storage-used"),
             ],
             vec![
                 Box::new(Label::new(
@@ -53,13 +57,14 @@ impl System {
                     Point::zero(),
                     sys.long_os_version()
                         .map(|s| s.trim().to_owned())
-                        .unwrap_or_else(|| "Unknown".to_owned()),
+                        .unwrap_or_else(|| locale.t("settings-about-unknown-value")),
                     Alignment::Right,
                     None,
                 )),
                 Box::new(Label::new(
                     Point::zero(),
-                    sys.kernel_version().unwrap_or_else(|| "Unknown".to_owned()),
+                    sys.kernel_version()
+                        .unwrap_or_else(|| locale.t("settings-about-unknown-value")),
                     Alignment::Right,
                     None,
                 )),
@@ -85,7 +90,7 @@ impl System {
             vec![ButtonHint::new(
                 Point::zero(),
                 Key::B,
-                "Back".to_owned(),
+                locale.t("button-back"),
                 Alignment::Right,
             )],
             Alignment::Right,
@@ -101,7 +106,7 @@ impl System {
 }
 
 #[async_trait(?Send)]
-impl View for System {
+impl View for About {
     fn draw(
         &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,

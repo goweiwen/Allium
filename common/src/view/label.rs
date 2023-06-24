@@ -101,7 +101,11 @@ where
 
                 let mut truncated = false;
                 while text.bounding_box().size.width + ellipsis_width > width {
-                    text.text = &text.text[..text.text.len() - 1];
+                    let mut n = text.text.len() - 1;
+                    while !text.text.is_char_boundary(n) {
+                        n -= 1;
+                    }
+                    text.text = &text.text[..n];
                     truncated = true;
                 }
                 if truncated {

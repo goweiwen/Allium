@@ -6,7 +6,9 @@ use common::command::Command;
 use common::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
 use common::display::Display;
 use common::geom::{Alignment, Point, Rect};
+use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::{ButtonHint, Label, Row, SettingsList, TextBox, Toggle, View};
 use common::wifi::{self, WiFiSettings};
@@ -14,6 +16,7 @@ use tokio::sync::mpsc::Sender;
 
 pub struct Wifi {
     rect: Rect,
+    res: Resources,
     settings: WiFiSettings,
     list: SettingsList,
     has_ip_address: bool,
@@ -22,28 +25,32 @@ pub struct Wifi {
 }
 
 impl Wifi {
-    pub fn new(rect: Rect) -> Self {
+    pub fn new(rect: Rect, res: Resources) -> Self {
         let settings = WiFiSettings::load().unwrap();
+
+        let locale = res.get::<Locale>();
 
         let list = SettingsList::new(
             Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 8 - 46 - 34 - 12),
             vec![
-                "Wi-Fi Enabled".to_string(),
-                "Wi-Fi Network Name".to_string(),
-                "Wi-Fi Password".to_string(),
-                "Telnet Enabled".to_string(),
-                "FTP Enabled".to_string(),
+                locale.t("settings-wifi-wifi-enabled"),
+                locale.t("settings-wifi-wifi-network"),
+                locale.t("settings-wifi-wifi-password"),
+                locale.t("settings-wifi-telnet-enabled"),
+                locale.t("settings-wifi-ftp-enabled"),
             ],
             vec![
                 Box::new(Toggle::new(Point::zero(), settings.wifi, Alignment::Right)),
                 Box::new(TextBox::new(
                     Point::zero(),
+                    res.clone(),
                     settings.ssid.clone(),
                     Alignment::Right,
                     false,
                 )),
                 Box::new(TextBox::new(
                     Point::zero(),
+                    res.clone(),
                     settings.password.clone(),
                     Alignment::Right,
                     true,
@@ -74,15 +81,28 @@ impl Wifi {
                 rect.y + rect.h as i32 - BUTTON_DIAMETER as i32 - 8,
             ),
             vec![
-                ButtonHint::new(Point::zero(), Key::A, "Edit".to_owned(), Alignment::Right),
-                ButtonHint::new(Point::zero(), Key::B, "Back".to_owned(), Alignment::Right),
+                ButtonHint::new(
+                    Point::zero(),
+                    Key::A,
+                    locale.t("button-edit").to_owned(),
+                    Alignment::Right,
+                ),
+                ButtonHint::new(
+                    Point::zero(),
+                    Key::B,
+                    locale.t("button-back").to_owned(),
+                    Alignment::Right,
+                ),
             ],
             Alignment::Right,
             12,
         );
 
+        std::mem::drop(locale);
+
         Self {
             rect,
+            res,
             settings,
             list,
             has_ip_address: false,
@@ -101,6 +121,7 @@ impl View for Wifi {
     ) -> Result<bool> {
         let mut drawn = false;
 
+        let locale = self.res.get::<Locale>();
         if self.settings.wifi {
             if !self.has_ip_address {
                 // Try to get the IP address if we don't have it yet
@@ -110,7 +131,8 @@ impl View for Wifi {
                     self.ip_address_label.set_text(ip_address);
                 } else {
                     display.load(self.ip_address_label.bounding_box(styles))?;
-                    self.ip_address_label.set_text("Connecting...".to_owned());
+                    self.ip_address_label
+                        .set_text(locale.t("settings-wifi-connecting").to_owned());
                 }
             }
         } else if self.has_ip_address {

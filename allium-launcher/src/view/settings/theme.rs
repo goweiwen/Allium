@@ -6,7 +6,9 @@ use async_trait::async_trait;
 use common::command::Command;
 use common::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
 use common::geom::{Alignment, Point, Rect};
+use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::resources::Resources;
 use common::stylesheet::{Stylesheet, StylesheetFont};
 use common::view::{ButtonHint, ColorPicker, Number, Row, Select, SettingsList, Toggle, View};
 use tokio::sync::mpsc::Sender;
@@ -20,8 +22,10 @@ pub struct Theme {
 }
 
 impl Theme {
-    pub fn new(rect: Rect) -> Self {
+    pub fn new(rect: Rect, res: Resources) -> Self {
         let stylesheet = Stylesheet::load().unwrap();
+
+        let locale = res.get::<Locale>();
 
         let fonts = StylesheetFont::available_fonts().unwrap_or_default();
         let font_names: Vec<String> = fonts
@@ -38,19 +42,19 @@ impl Theme {
         let list = SettingsList::new(
             Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 8 - 46),
             vec![
-                "Dark Mode".to_string(),
-                "UI Font".to_string(),
-                "UI Font Size".to_string(),
-                "Guide Font".to_string(),
-                "Guide Font Size".to_string(),
-                "Highlight Color".to_string(),
-                "Foreground Color".to_string(),
-                "Background Color".to_string(),
-                "Disabled Color".to_string(),
-                "Button A Color".to_string(),
-                "Button B Color".to_string(),
-                "Button X Color".to_string(),
-                "Button Y Color".to_string(),
+                locale.t("settings-theme-dark-mode"),
+                locale.t("settings-theme-ui-font"),
+                locale.t("settings-theme-ui-font-size"),
+                locale.t("settings-theme-guide-font"),
+                locale.t("settings-theme-guide-font-size"),
+                locale.t("settings-theme-highlight-color"),
+                locale.t("settings-theme-foreground-color"),
+                locale.t("settings-theme-background-color"),
+                locale.t("settings-theme-disabled-color"),
+                locale.t("settings-theme-button-a-color"),
+                locale.t("settings-theme-button-b-color"),
+                locale.t("settings-theme-button-x-color"),
+                locale.t("settings-theme-button-y-color"),
             ],
             vec![
                 Box::new(Toggle::new(
@@ -140,8 +144,18 @@ impl Theme {
                 rect.y + rect.h as i32 - BUTTON_DIAMETER as i32 - 8,
             ),
             vec![
-                ButtonHint::new(Point::zero(), Key::A, "Edit".to_owned(), Alignment::Right),
-                ButtonHint::new(Point::zero(), Key::B, "Back".to_owned(), Alignment::Right),
+                ButtonHint::new(
+                    Point::zero(),
+                    Key::A,
+                    locale.t("button-edit"),
+                    Alignment::Right,
+                ),
+                ButtonHint::new(
+                    Point::zero(),
+                    Key::B,
+                    locale.t("button-back"),
+                    Alignment::Right,
+                ),
             ],
             Alignment::Right,
             12,

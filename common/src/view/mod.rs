@@ -45,11 +45,6 @@ use crate::stylesheet::{Stylesheet, StylesheetColor};
 
 #[async_trait(?Send)]
 pub trait View {
-    /// Update the view.
-    fn update(&mut self) -> Result<()> {
-        Ok(())
-    }
-
     /// Draw the view. Returns true if the view was drawn.
     fn draw(
         &mut self,
@@ -106,10 +101,6 @@ impl fmt::Debug for dyn View {
 
 #[async_trait(?Send)]
 impl View for Box<dyn View> {
-    fn update(&mut self) -> Result<()> {
-        (**self).update()
-    }
-
     fn draw(
         &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,

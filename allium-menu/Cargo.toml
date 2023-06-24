@@ -24,6 +24,8 @@ tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 strum = { version = "0.24.1", features = ["derive"] }
 async-trait = "0.1.68"
 embedded-text = "0.6.0"
+fluent-templates = "0.8.0"
+type-map = "0.5.0"
 
 [dependencies.common]
 path = "../common"

@@ -1,10 +1,11 @@
 use std::collections::VecDeque;
 use std::process;
-use std::rc::Rc;
 
 use anyhow::Result;
 use common::command::Command;
 use common::display::color::Color;
+use common::locale::{Locale, LocaleSettings};
+use common::resources::Resources;
 use common::view::View;
 use embedded_graphics::prelude::*;
 use tracing::{debug, warn};
@@ -13,6 +14,7 @@ use common::database::Database;
 use common::display::Display;
 use common::platform::{DefaultPlatform, Platform};
 use common::stylesheet::Stylesheet;
+use type_map::TypeMap;
 
 use crate::consoles::ConsoleMapper;
 use crate::view::App;
@@ -21,7 +23,7 @@ use crate::view::App;
 pub struct AlliumLauncher<P: Platform> {
     platform: P,
     display: P::Display,
-    styles: Stylesheet,
+    res: Resources,
     view: App<P::Battery>,
 }
 
@@ -29,29 +31,30 @@ impl AlliumLauncher<DefaultPlatform> {
     pub fn new(mut platform: DefaultPlatform) -> Result<Self> {
         let display = platform.display()?;
         let battery = platform.battery()?;
-        let database = Database::new()?;
 
         let mut console_mapper = ConsoleMapper::new();
         console_mapper.load_config()?;
-        let console_mapper = Rc::new(console_mapper);
 
-        let view = App::load_or_new(
-            display.bounding_box().into(),
-            database,
-            console_mapper,
-            battery,
-        )?;
+        let mut res = TypeMap::new();
+        res.insert(Database::new()?);
+        res.insert(console_mapper);
+        res.insert(Stylesheet::load()?);
+        res.insert(Locale::new(&LocaleSettings::load()?.lang));
+        let res = Resources::new(res);
+
+        let view = App::load_or_new(display.bounding_box().into(), res.clone(), battery)?;
 
         Ok(AlliumLauncher {
             platform,
             display,
-            styles: Stylesheet::load()?,
+            res,
             view,
         })
     }
 
     pub async fn run_event_loop(&mut self) -> Result<()> {
-        self.display.clear(self.styles.background_color)?;
+        self.display
+            .clear(self.res.get::<Stylesheet>().background_color)?;
         self.display.save()?;
 
         #[cfg(unix)]
@@ -62,9 +65,11 @@ impl AlliumLauncher<DefaultPlatform> {
         let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 
         loop {
-            self.view.update()?;
-
-            if self.view.should_draw() && self.view.draw(&mut self.display, &self.styles)? {
+            if self.view.should_draw()
+                && self
+                    .view
+                    .draw(&mut self.display, &self.res.get::<Stylesheet>())?
+            {
                 self.display.flush()?;
             }
 
@@ -126,7 +131,7 @@ impl AlliumLauncher<DefaultPlatform> {
                 styles.save()?;
                 self.display.clear(styles.background_color)?;
                 self.display.save()?;
-                self.styles = *styles;
+                self.res.set(*styles);
                 self.view.set_should_draw();
             }
             Command::SaveDisplaySettings(settings) => {

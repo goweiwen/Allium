@@ -11,7 +11,6 @@ use crate::constants::ALLIUM_DISPLAY_SETTINGS;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DisplaySettings {
-    pub brightness: u8,
     pub luminance: u8,
     pub hue: u8,
     pub saturation: u8,
@@ -47,7 +46,6 @@ impl DisplaySettings {
 impl Default for DisplaySettings {
     fn default() -> Self {
         Self {
-            brightness: 50,
             luminance: 50,
             hue: 50,
             saturation: 50,

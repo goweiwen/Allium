@@ -1,5 +1,4 @@
 use std::collections::VecDeque;
-use std::rc::Rc;
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -8,7 +7,9 @@ use common::constants::{BUTTON_DIAMETER, IMAGE_SIZE, RECENT_GAMES_LIMIT, SELECTI
 use common::database::Database;
 use common::display::Display;
 use common::geom::{Alignment, Point, Rect};
+use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::resources::Resources;
 use common::stylesheet::{Stylesheet, StylesheetColor};
 use common::view::{ButtonHint, Image, ImageMode, Row, ScrollList, View};
 use embedded_graphics::prelude::OriginDimensions;
@@ -17,22 +18,19 @@ use tokio::sync::mpsc::Sender;
 
 use crate::consoles::{ConsoleMapper, Game};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct Recents {
     rect: Rect,
+    res: Resources,
     entries: Vec<Game>,
     sort: Sort,
     list: ScrollList,
     image: Image,
     button_hints: Row<ButtonHint<String>>,
-    #[serde(skip)]
-    database: Database,
-    #[serde(skip)]
-    console_mapper: Option<Rc<ConsoleMapper>>,
 }
 
 impl Recents {
-    pub fn new(rect: Rect) -> Result<Self> {
+    pub fn new(rect: Rect, res: Resources) -> Result<Self> {
         let Rect { x, y, w, h } = rect;
 
         let list = ScrollList::new(
@@ -57,45 +55,48 @@ impl Recents {
 
         let button_hints = Row::new(
             Point::new(x + w as i32 - 12, y + h as i32 - BUTTON_DIAMETER as i32 - 8),
-            vec![
-                ButtonHint::new(Point::zero(), Key::A, "Select".to_owned(), Alignment::Right),
-                ButtonHint::new(
-                    Point::zero(),
-                    Key::Y,
-                    Sort::LastPlayed.button_hint().to_string(),
-                    Alignment::Right,
-                ),
-            ],
+            {
+                let locale = res.get::<Locale>();
+                vec![
+                    ButtonHint::new(
+                        Point::zero(),
+                        Key::A,
+                        locale.t("button-select"),
+                        Alignment::Right,
+                    ),
+                    ButtonHint::new(
+                        Point::zero(),
+                        Key::Y,
+                        Sort::LastPlayed.button_hint(&locale),
+                        Alignment::Right,
+                    ),
+                ]
+            },
             Alignment::Right,
             12,
         );
 
-        Ok(Self {
+        let mut this = Self {
             rect,
+            res,
             entries: Vec::new(),
             sort: Sort::LastPlayed,
             list,
             image,
             button_hints,
-            database: Default::default(),
-            console_mapper: None,
-        })
-    }
+        };
 
-    pub fn init(&mut self, database: Database, console_mapper: Rc<ConsoleMapper>) -> Result<()> {
-        self.database = database;
-        self.console_mapper = Some(console_mapper);
-        self.load_entries()?;
-        Ok(())
+        this.load_entries()?;
+
+        Ok(this)
     }
 
     async fn select_entry(&mut self, commands: Sender<Command>) -> Result<()> {
         if let Some(entry) = self.entries.get_mut(self.list.selected()) {
             if let Some(command) = self
-                .console_mapper
-                .as_ref()
-                .unwrap()
-                .launch_game(&self.database, entry)?
+                .res
+                .get::<ConsoleMapper>()
+                .launch_game(&self.res.get(), entry)?
             {
                 commands.send(command).await?;
             }
@@ -105,8 +106,14 @@ impl Recents {
 
     fn load_entries(&mut self) -> Result<()> {
         let games = match self.sort {
-            Sort::LastPlayed => self.database.select_last_played(RECENT_GAMES_LIMIT)?,
-            Sort::MostPlayed => self.database.select_most_played(RECENT_GAMES_LIMIT)?,
+            Sort::LastPlayed => self
+                .res
+                .get::<Database>()
+                .select_last_played(RECENT_GAMES_LIMIT)?,
+            Sort::MostPlayed => self
+                .res
+                .get::<Database>()
+                .select_most_played(RECENT_GAMES_LIMIT)?,
         };
 
         self.entries = games
@@ -194,7 +201,7 @@ impl View for Recents {
                 self.button_hints
                     .get_mut(1)
                     .unwrap()
-                    .set_text(self.sort.button_hint().to_owned());
+                    .set_text(self.sort.button_hint(&self.res.get::<Locale>()));
                 self.load_entries()?;
                 Ok(true)
             }
@@ -225,10 +232,10 @@ enum Sort {
 }
 
 impl Sort {
-    fn button_hint(&self) -> &'static str {
+    fn button_hint(&self, locale: &Locale) -> String {
         match self {
-            Sort::LastPlayed => "Sort: Last Played",
-            Sort::MostPlayed => "Sort: Most Played",
+            Sort::LastPlayed => locale.t("recents-sort-currently-last-played"),
+            Sort::MostPlayed => locale.t("recents-sort-currently-most-played"),
         }
     }
 

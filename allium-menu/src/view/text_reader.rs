@@ -9,7 +9,9 @@ use common::constants::BUTTON_DIAMETER;
 use common::database::Database;
 use common::display::font::FontTextStyleBuilder;
 use common::geom::{Alignment, Point, Rect};
+use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::Keyboard;
 use common::view::{ButtonHint, Row, View};
@@ -25,41 +27,55 @@ use tracing::{error, trace};
 
 pub struct TextReader {
     rect: Rect,
+    res: Resources,
     path: PathBuf,
-    database: Database,
     text: String,
     lowercase_text: String,
     cursor: usize,
-    button_hints: Row<ButtonHint<&'static str>>,
+    button_hints: Row<ButtonHint<String>>,
     keyboard: Option<Keyboard>,
     last_searched: String,
     dirty: bool,
 }
 
 impl TextReader {
-    pub fn new(rect: Rect, path: PathBuf, database: Database) -> Self {
+    pub fn new(rect: Rect, res: Resources, path: PathBuf) -> Self {
         let text = fs::read_to_string(&path)
             .map_err(|e| error!("failed to load guide file: {}", e))
             .unwrap_or_default();
         let lowercase_text = text.to_lowercase();
 
-        let cursor = load_cursor(&database, path.as_path()).clamp(0, text.len());
+        let cursor = load_cursor(&res.get::<Database>(), path.as_path()).clamp(0, text.len());
 
         let Rect { x, y, w, h } = rect;
+
         let button_hints = Row::new(
             Point::new(x + w as i32 - 12, y + h as i32 - BUTTON_DIAMETER as i32 - 8),
-            vec![
-                ButtonHint::new(Point::zero(), Key::X, "Search", Alignment::Right),
-                ButtonHint::new(Point::zero(), Key::B, "Back", Alignment::Right),
-            ],
+            {
+                let locale = res.get::<Locale>();
+                vec![
+                    ButtonHint::new(
+                        Point::zero(),
+                        Key::X,
+                        locale.t("guide-button-search"),
+                        Alignment::Right,
+                    ),
+                    ButtonHint::new(
+                        Point::zero(),
+                        Key::B,
+                        locale.t("button-back"),
+                        Alignment::Right,
+                    ),
+                ]
+            },
             Alignment::Right,
             12,
         );
 
         Self {
             rect,
+            res,
             path,
-            database,
             text,
             lowercase_text,
             cursor,
@@ -71,7 +87,8 @@ impl TextReader {
     }
 
     pub fn save_cursor(&self) {
-        self.database
+        self.res
+            .get::<Database>()
             .update_guide_cursor(&self.path, self.cursor as u64)
             .map_err(|e| error!("failed to update guide cursor to database: {}", e))
             .ok();
@@ -113,16 +130,17 @@ impl TextReader {
         }
 
         if self.button_hints.children().len() <= 2 {
+            let locale = self.res.get::<Locale>();
             self.button_hints.push(ButtonHint::new(
                 Point::zero(),
                 Key::L,
-                "Next",
+                locale.t("guide-next"),
                 Alignment::Right,
             ));
             self.button_hints.push(ButtonHint::new(
                 Point::zero(),
                 Key::R,
-                "Prev",
+                locale.t("guide-prev"),
                 Alignment::Right,
             ));
         }
@@ -142,16 +160,17 @@ impl TextReader {
         }
 
         if self.button_hints.children().len() <= 2 {
+            let locale = self.res.get::<Locale>();
             self.button_hints.push(ButtonHint::new(
                 Point::zero(),
                 Key::L,
-                "Next",
+                locale.t("guide-next"),
                 Alignment::Right,
             ));
             self.button_hints.push(ButtonHint::new(
                 Point::zero(),
                 Key::R,
-                "Prev",
+                locale.t("guide-prev"),
                 Alignment::Right,
             ));
         }
@@ -356,7 +375,11 @@ impl View for TextReader {
                     bubble.push_back(Command::CloseView);
                 }
                 KeyEvent::Pressed(Key::X) => {
-                    self.keyboard = Some(Keyboard::new(mem::take(&mut self.last_searched), false));
+                    self.keyboard = Some(Keyboard::new(
+                        self.res.clone(),
+                        mem::take(&mut self.last_searched),
+                        false,
+                    ));
                 }
                 _ => return Ok(false),
             }

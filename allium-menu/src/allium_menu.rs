@@ -7,11 +7,14 @@ use common::database::Database;
 use common::display::color::Color;
 use common::display::Display;
 use common::game_info::GameInfo;
+use common::locale::{Locale, LocaleSettings};
 use common::platform::{DefaultPlatform, Platform};
+use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::View;
 use embedded_graphics::prelude::*;
 use tracing::warn;
+use type_map::TypeMap;
 
 use crate::view::IngameMenu;
 
@@ -24,7 +27,7 @@ where
 {
     platform: P,
     display: P::Display,
-    styles: Stylesheet,
+    res: Resources,
     view: IngameMenu<P::Battery>,
 }
 
@@ -34,21 +37,28 @@ impl AlliumMenu<DefaultPlatform> {
         let battery = platform.battery()?;
         let rect = display.bounding_box().into();
 
-        let database = Database::new()?;
-
-        let game_info = GameInfo::load()?.unwrap_or_default();
+        let mut res = TypeMap::new();
+        res.insert(Database::new()?);
+        res.insert(GameInfo::load()?.unwrap_or_default());
+        res.insert(Stylesheet::load()?);
+        res.insert(Locale::new(&LocaleSettings::load()?.lang));
+        let res = Resources::new(res);
 
         Ok(AlliumMenu {
             platform,
             display,
-            styles: Stylesheet::load()?,
-            view: IngameMenu::load_or_new(rect, game_info, battery, database)?,
+            res: res.clone(),
+            view: IngameMenu::load_or_new(rect, res, battery)?,
         })
     }
 
     pub async fn run_event_loop(&mut self) -> Result<()> {
-        self.display
-            .map_pixels(|pixel| pixel.blend(self.styles.background_color.overlay(pixel), 192))?;
+        self.display.map_pixels(|pixel| {
+            pixel.blend(
+                self.res.get::<Stylesheet>().background_color.overlay(pixel),
+                192,
+            )
+        })?;
         self.display.save()?;
 
         #[cfg(unix)]
@@ -58,9 +68,7 @@ impl AlliumMenu<DefaultPlatform> {
         let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 
         loop {
-            self.view.update()?;
-
-            if self.view.should_draw() && self.view.draw(&mut self.display, &self.styles)? {
+            if self.view.should_draw() && self.view.draw(&mut self.display, &self.res.get())? {
                 self.display.flush()?;
             }
 

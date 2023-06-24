@@ -6,6 +6,7 @@ use tokio::sync::mpsc::Sender;
 
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, KeyEvent, Platform};
+use crate::resources::Resources;
 use crate::stylesheet::Stylesheet;
 use crate::view::input::keyboard::Keyboard;
 use crate::view::{Command, Label, View};
@@ -13,6 +14,7 @@ use crate::view::{Command, Label, View};
 #[derive(Debug, Clone)]
 pub struct TextBox {
     point: Point,
+    res: Resources,
     value: String,
     is_password: bool,
     label: Label<String>,
@@ -20,7 +22,13 @@ pub struct TextBox {
 }
 
 impl TextBox {
-    pub fn new(point: Point, value: String, alignment: Alignment, is_password: bool) -> Self {
+    pub fn new(
+        point: Point,
+        res: Resources,
+        value: String,
+        alignment: Alignment,
+        is_password: bool,
+    ) -> Self {
         let label = Label::new(
             Point::new(point.x, point.y),
             masked_value(&value, is_password),
@@ -30,6 +38,7 @@ impl TextBox {
 
         Self {
             point,
+            res,
             value,
             is_password,
             label,
@@ -103,7 +112,11 @@ impl View for TextBox {
                 Ok(false)
             }
         } else {
-            self.keyboard = Some(Keyboard::new(self.value.clone(), self.is_password));
+            self.keyboard = Some(Keyboard::new(
+                self.res.clone(),
+                self.value.clone(),
+                self.is_password,
+            ));
             bubble.push_back(Command::TrapFocus);
             Ok(true)
         }

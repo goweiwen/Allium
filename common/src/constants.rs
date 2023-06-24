@@ -23,6 +23,7 @@ lazy_static! {
     pub static ref ALLIUM_SCRIPTS_DIR: PathBuf = ALLIUM_BASE_DIR.join("scripts");
     pub static ref ALLIUM_TOOLS_DIR: PathBuf = ALLIUM_BASE_DIR.join("tools");
     pub static ref ALLIUM_FONTS_DIR: PathBuf = ALLIUM_BASE_DIR.join("fonts");
+    pub static ref ALLIUM_LOCALES_DIR: PathBuf = ALLIUM_BASE_DIR.join("locales");
 
     // Config
     pub static ref ALLIUM_CONFIG_CONSOLES: PathBuf = ALLIUM_BASE_DIR.join("config/consoles.toml");
@@ -37,6 +38,7 @@ lazy_static! {
     pub static ref ALLIUM_GAME_INFO: PathBuf = ALLIUM_BASE_DIR.join("state/current_game");
     pub static ref ALLIUM_STYLESHEET: PathBuf = ALLIUM_BASE_DIR.join("state/stylesheet.json");
     pub static ref ALLIUM_DISPLAY_SETTINGS: PathBuf = ALLIUM_BASE_DIR.join("state/display.json");
+    pub static ref ALLIUM_LOCALE_SETTINGS: PathBuf = ALLIUM_BASE_DIR.join("state/locale.json");
     pub static ref ALLIUM_WIFI_SETTINGS: PathBuf = ALLIUM_BASE_DIR.join("state/wifi.json");
 
     // Binaries & Scripts

@@ -11,17 +11,17 @@ use embedded_graphics::{
 use strum::{EnumCount, EnumIter, FromRepr, IntoEnumIterator};
 use tokio::sync::mpsc::Sender;
 
+use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use crate::stylesheet::Stylesheet;
-use crate::view::View;
+use crate::view::{ButtonHint, Row, View};
 use crate::{
     command::{Command, Value},
-    view::ButtonHint,
+    locale::Locale,
 };
-use crate::{display::font::FontTextStyleBuilder, view::Row};
 use crate::{
-    display::Display,
-    geom::{Alignment, Point, Rect},
+    display::{font::FontTextStyleBuilder, Display},
+    resources::Resources,
 };
 
 #[derive(Debug, Clone)]
@@ -30,19 +30,37 @@ pub struct Keyboard {
     cursor: rusttype::Point<usize>,
     mode: KeyboardMode,
     is_password: bool,
-    button_hints: Row<ButtonHint<&'static str>>,
+    button_hints: Row<ButtonHint<String>>,
     dirty: bool,
 }
 
 impl Keyboard {
-    pub fn new(value: String, is_password: bool) -> Self {
+    pub fn new(res: Resources, value: String, is_password: bool) -> Self {
         let button_hints = Row::new(
             Point::new(640 - 12, 480 - 8 - 30),
-            vec![
-                ButtonHint::new(Point::zero(), Key::Start, "Confirm", Alignment::Right),
-                ButtonHint::new(Point::zero(), Key::Select, "Shift", Alignment::Right),
-                ButtonHint::new(Point::zero(), Key::R, "Backspace", Alignment::Right),
-            ],
+            {
+                let locale = res.get::<Locale>();
+                vec![
+                    ButtonHint::new(
+                        Point::zero(),
+                        Key::Start,
+                        locale.t("button-confirm"),
+                        Alignment::Right,
+                    ),
+                    ButtonHint::new(
+                        Point::zero(),
+                        Key::Select,
+                        locale.t("keyboard-button-shift"),
+                        Alignment::Right,
+                    ),
+                    ButtonHint::new(
+                        Point::zero(),
+                        Key::R,
+                        locale.t("keyboard-button-backspace"),
+                        Alignment::Right,
+                    ),
+                ]
+            },
             Alignment::Right,
             12,
         );

@@ -1,23 +1,22 @@
 use std::collections::VecDeque;
 use std::fs::{self, File};
-use std::rc::Rc;
 
 use anyhow::Result;
 use async_trait::async_trait;
 use common::battery::Battery;
 use common::command::Command;
 use common::constants::ALLIUM_LAUNCHER_STATE;
-use common::database::Database;
 use common::display::Display;
 use common::geom::{Alignment, Point, Rect};
+use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::resources::Resources;
 use common::stylesheet::{Stylesheet, StylesheetColor};
 use common::view::{BatteryIndicator, Label, Row, View};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 use tracing::{trace, warn};
 
-use crate::consoles::ConsoleMapper;
 use crate::view::browser::BrowserState;
 use crate::view::Recents;
 use crate::view::{Browser, Settings};
@@ -37,7 +36,7 @@ where
     battery_indicator: BatteryIndicator<B>,
     views: (Browser, Recents, Settings),
     selected: usize,
-    tabs: Row<Label<&'static str>>,
+    tabs: Row<Label<String>>,
     dirty: bool,
 }
 
@@ -47,16 +46,12 @@ where
 {
     pub fn new(
         rect: Rect,
-        mut views: (Browser, Recents, Settings),
+        res: Resources,
+        views: (Browser, Recents, Settings),
         selected: usize,
-        database: Database,
-        console_mapper: Rc<ConsoleMapper>,
         battery: B,
     ) -> Result<Self> {
         let Rect { x, y, w, h: _h } = rect;
-
-        views.0.init(database.clone(), console_mapper.clone());
-        views.1.init(database, console_mapper)?;
 
         let mut battery_indicator =
             BatteryIndicator::new(Point::new(w as i32 - 12, y + 8), Alignment::Right);
@@ -64,11 +59,24 @@ where
 
         let mut tabs = Row::new(
             Point::new(x + 12, y + 8),
-            vec![
-                Label::new(Point::zero(), "Games", Alignment::Left, None),
-                Label::new(Point::zero(), "Recents", Alignment::Left, None),
-                Label::new(Point::zero(), "Settings", Alignment::Left, None),
-            ],
+            {
+                let locale = res.get::<Locale>();
+                vec![
+                    Label::new(Point::zero(), locale.t("tab-games"), Alignment::Left, None),
+                    Label::new(
+                        Point::zero(),
+                        locale.t("tab-recents"),
+                        Alignment::Left,
+                        None,
+                    ),
+                    Label::new(
+                        Point::zero(),
+                        locale.t("tab-settings"),
+                        Alignment::Left,
+                        None,
+                    ),
+                ]
+            },
             Alignment::Left,
             12,
         );
@@ -86,42 +94,30 @@ where
         })
     }
 
-    pub fn load_or_new(
-        rect: Rect,
-        database: Database,
-        console_mapper: Rc<ConsoleMapper>,
-        battery: B,
-    ) -> Result<Self> {
+    pub fn load_or_new(rect: Rect, res: Resources, battery: B) -> Result<Self> {
         let tab_rect = Rect::new(rect.x, rect.y + 46, rect.w, rect.h - 46);
 
         if ALLIUM_LAUNCHER_STATE.exists() {
             let file = File::open(ALLIUM_LAUNCHER_STATE.as_path())?;
             if let Ok(state) = serde_json::from_reader::<_, AppState>(file) {
                 let views = (
-                    Browser::load(tab_rect, state.browser)?,
-                    Recents::new(tab_rect)?,
-                    Settings::new(tab_rect)?,
+                    Browser::load(tab_rect, res.clone(), state.browser)?,
+                    Recents::new(tab_rect, res.clone())?,
+                    Settings::new(tab_rect, res.clone())?,
                 );
-                return Self::new(
-                    rect,
-                    views,
-                    state.selected,
-                    database,
-                    console_mapper,
-                    battery,
-                );
+                return Self::new(rect, res, views, state.selected, battery);
             }
             warn!("failed to deserialize state file, deleting");
             fs::remove_file(ALLIUM_LAUNCHER_STATE.as_path())?;
         }
 
         let views = (
-            Browser::new(tab_rect, Default::default(), 0)?,
-            Recents::new(tab_rect)?,
-            Settings::new(tab_rect)?,
+            Browser::new(tab_rect, res.clone(), Default::default(), 0)?,
+            Recents::new(tab_rect, res.clone())?,
+            Settings::new(tab_rect, res.clone())?,
         );
         let selected = 0;
-        Self::new(rect, views, selected, database, console_mapper, battery)
+        Self::new(rect, res, views, selected, battery)
     }
 
     pub fn save(&self) -> Result<()> {

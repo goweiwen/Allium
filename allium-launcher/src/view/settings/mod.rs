@@ -1,10 +1,10 @@
+mod about;
 mod display;
-mod system;
 mod theme;
 mod wifi;
 
+use self::about::About;
 use self::display::Display;
-use self::system::System;
 use self::theme::Theme;
 use self::wifi::Wifi;
 
@@ -16,57 +16,59 @@ use common::command::Command;
 use common::constants::{ALLIUM_TOOLS_DIR, BUTTON_DIAMETER};
 use common::display::Display as DisplayTrait;
 use common::geom::{Alignment, Point, Rect};
+use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::{ButtonHint, Label, List, Row, View};
-use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct Settings {
     rect: Rect,
+    res: Resources,
     list: List<Label<String>>,
-    #[serde(skip)]
     child: Option<Box<dyn View>>,
     button_hints: Row<ButtonHint<String>>,
-    #[serde(skip)]
     dirty: bool,
 }
 
 impl Settings {
-    pub fn new(rect: Rect) -> Result<Self> {
+    pub fn new(rect: Rect, res: Resources) -> Result<Self> {
         let Rect { x, y, w, h } = rect;
+
+        let locale = res.get::<Locale>();
 
         let list = List::new(
             Rect::new(x + 12, y + 8, 110 + 12 + 12 - 24, h - 8 - 48),
             vec![
                 Label::new(
                     Point::zero(),
-                    "Wi-Fi".to_owned(),
+                    locale.t("settings-wifi"),
                     Alignment::Left,
                     Some(110),
                 ),
                 Label::new(
                     Point::zero(),
-                    "Display".to_owned(),
+                    locale.t("settings-display"),
                     Alignment::Left,
                     Some(110),
                 ),
                 Label::new(
                     Point::zero(),
-                    "Theme".to_owned(),
+                    locale.t("settings-theme"),
                     Alignment::Left,
                     Some(110),
                 ),
                 Label::new(
                     Point::zero(),
-                    "Files".to_owned(),
+                    locale.t("settings-files"),
                     Alignment::Left,
                     Some(110),
                 ),
                 Label::new(
                     Point::zero(),
-                    "System".to_owned(),
+                    locale.t("settings-about"),
                     Alignment::Left,
                     Some(110),
                 ),
@@ -78,15 +80,28 @@ impl Settings {
         let button_hints = Row::new(
             Point::new(x + w as i32 - 12, y + h as i32 - BUTTON_DIAMETER as i32 - 8),
             vec![
-                ButtonHint::new(Point::zero(), Key::A, "Select".to_owned(), Alignment::Right),
-                ButtonHint::new(Point::zero(), Key::B, "Back".to_owned(), Alignment::Right),
+                ButtonHint::new(
+                    Point::zero(),
+                    Key::A,
+                    locale.t("button-select"),
+                    Alignment::Right,
+                ),
+                ButtonHint::new(
+                    Point::zero(),
+                    Key::B,
+                    locale.t("button-back"),
+                    Alignment::Right,
+                ),
             ],
             Alignment::Right,
             12,
         );
 
+        std::mem::drop(locale);
+
         Ok(Self {
             rect,
+            res,
             list,
             child: None,
             button_hints,
@@ -102,16 +117,16 @@ impl Settings {
             self.rect.h,
         );
         match self.list.selected() {
-            0 => self.child = Some(Box::new(Wifi::new(rect))),
-            1 => self.child = Some(Box::new(Display::new(rect))),
-            2 => self.child = Some(Box::new(Theme::new(rect))),
+            0 => self.child = Some(Box::new(Wifi::new(rect, self.res.clone()))),
+            1 => self.child = Some(Box::new(Display::new(rect, self.res.clone()))),
+            2 => self.child = Some(Box::new(Theme::new(rect, self.res.clone()))),
             3 => {
                 let path = ALLIUM_TOOLS_DIR.join("Files.pak");
                 let mut command = std::process::Command::new(path.join("launch.sh"));
                 command.current_dir(path);
                 commands.send(Command::Exec(command)).await?;
             }
-            4 => self.child = Some(Box::new(System::new(rect))),
+            4 => self.child = Some(Box::new(About::new(rect, self.res.clone()))),
             _ => unreachable!("Invalid index"),
         }
         self.dirty = true;

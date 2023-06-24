@@ -7,7 +7,9 @@ use common::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
 
 use common::display::settings::DisplaySettings;
 use common::geom::{Alignment, Point, Rect};
+use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::{ButtonHint, Label, Percentage, Row, SettingsList, View};
 
@@ -23,24 +25,20 @@ pub struct Display {
 }
 
 impl Display {
-    pub fn new(rect: Rect) -> Self {
+    pub fn new(rect: Rect, res: Resources) -> Self {
         let settings = DisplaySettings::load().unwrap();
+
+        let locale = res.get::<Locale>();
 
         let list = SettingsList::new(
             Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 8 - 46 - 34 - 12),
             vec![
-                "Brightness".to_string(),
-                "Luminance".to_string(),
-                "Hue".to_string(),
-                "Saturation".to_string(),
-                "Contrast".to_string(),
+                locale.t("settings-display-luminance"),
+                locale.t("settings-display-hue"),
+                locale.t("settings-display-saturation"),
+                locale.t("settings-display-contrast"),
             ],
             vec![
-                Box::new(Percentage::new(
-                    Point::zero(),
-                    settings.brightness as i32,
-                    Alignment::Right,
-                )),
                 Box::new(Percentage::new(
                     Point::zero(),
                     settings.luminance as i32,
@@ -70,7 +68,7 @@ impl Display {
                 rect.x + rect.w as i32 - 12,
                 rect.y + rect.h as i32 - 46 - 34,
             ),
-            "*Restart device to apply changes".to_owned(),
+            locale.t("settings-display-restart-to-apply-changes"),
             Alignment::Right,
             None,
         );
@@ -81,8 +79,18 @@ impl Display {
                 rect.y + rect.h as i32 - BUTTON_DIAMETER as i32 - 8,
             ),
             vec![
-                ButtonHint::new(Point::zero(), Key::A, "Edit".to_owned(), Alignment::Right),
-                ButtonHint::new(Point::zero(), Key::B, "Back".to_owned(), Alignment::Right),
+                ButtonHint::new(
+                    Point::zero(),
+                    Key::A,
+                    locale.t("button-edit"),
+                    Alignment::Right,
+                ),
+                ButtonHint::new(
+                    Point::zero(),
+                    Key::B,
+                    locale.t("button-back"),
+                    Alignment::Right,
+                ),
             ],
             Alignment::Right,
             12,
@@ -149,11 +157,10 @@ impl View for Display {
             while let Some(command) = bubble.pop_front() {
                 if let Command::ValueChanged(i, val) = command {
                     match i {
-                        0 => self.settings.brightness = val.as_int().unwrap() as u8,
-                        1 => self.settings.luminance = val.as_int().unwrap() as u8,
-                        2 => self.settings.hue = val.as_int().unwrap() as u8,
-                        3 => self.settings.saturation = val.as_int().unwrap() as u8,
-                        4 => self.settings.contrast = val.as_int().unwrap() as u8,
+                        0 => self.settings.luminance = val.as_int().unwrap() as u8,
+                        1 => self.settings.hue = val.as_int().unwrap() as u8,
+                        2 => self.settings.saturation = val.as_int().unwrap() as u8,
+                        3 => self.settings.contrast = val.as_int().unwrap() as u8,
                         _ => unreachable!("Invalid index"),
                     }
 

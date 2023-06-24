@@ -1,15 +1,15 @@
 use std::collections::VecDeque;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
-use std::rc::Rc;
 
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use common::command::Command;
 use common::constants::{ALLIUM_GAMES_DIR, BUTTON_DIAMETER, IMAGE_SIZE, SELECTION_HEIGHT};
-use common::database::Database;
 use common::geom::{Alignment, Point, Rect};
+use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::resources::Resources;
 use common::stylesheet::{Stylesheet, StylesheetColor};
 use common::view::{ButtonHint, Image, ImageMode, Row, ScrollList, View};
 use lazy_static::lazy_static;
@@ -26,23 +26,20 @@ pub struct BrowserState {
     pub child: Option<Box<BrowserState>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct Browser {
     rect: Rect,
+    res: Resources,
     directory: Directory,
     entries: Vec<Entry>,
     list: ScrollList,
     image: Image,
     button_hints: Row<ButtonHint<String>>,
     pub child: Option<Box<Browser>>,
-    #[serde(skip)]
-    database: Database,
-    #[serde(skip)]
-    console_mapper: Option<Rc<ConsoleMapper>>,
 }
 
 impl Browser {
-    pub fn new(rect: Rect, directory: Directory, selected: usize) -> Result<Self> {
+    pub fn new(rect: Rect, res: Resources, directory: Directory, selected: usize) -> Result<Self> {
         let Rect { x, y, w, h } = rect;
 
         let entries = entries(&directory)?;
@@ -69,31 +66,43 @@ impl Browser {
 
         let button_hints = Row::new(
             Point::new(x + w as i32 - 12, y + h as i32 - BUTTON_DIAMETER as i32 - 8),
-            vec![
-                ButtonHint::new(Point::zero(), Key::A, "Select".to_owned(), Alignment::Right),
-                ButtonHint::new(Point::zero(), Key::B, "Back".to_owned(), Alignment::Right),
-            ],
+            {
+                let locale = res.get::<Locale>();
+                vec![
+                    ButtonHint::new(
+                        Point::zero(),
+                        Key::A,
+                        locale.t("button-select"),
+                        Alignment::Right,
+                    ),
+                    ButtonHint::new(
+                        Point::zero(),
+                        Key::B,
+                        locale.t("button-back"),
+                        Alignment::Right,
+                    ),
+                ]
+            },
             Alignment::Right,
             12,
         );
 
         Ok(Self {
             rect,
+            res,
             directory,
             entries,
             list,
             image,
             button_hints,
             child: None,
-            database: Default::default(),
-            console_mapper: None,
         })
     }
 
-    pub fn load(rect: Rect, state: BrowserState) -> Result<Self> {
-        let mut browser = Self::new(rect, state.directory, state.selected)?;
+    pub fn load(rect: Rect, res: Resources, state: BrowserState) -> Result<Self> {
+        let mut browser = Self::new(rect, res.clone(), state.directory, state.selected)?;
         if let Some(child) = state.child {
-            browser.child = Some(Box::new(Self::load(rect, *child)?));
+            browser.child = Some(Box::new(Self::load(rect, res, *child)?));
         }
         Ok(browser)
     }
@@ -106,31 +115,18 @@ impl Browser {
         }
     }
 
-    pub fn init(&mut self, database: Database, console_mapper: Rc<ConsoleMapper>) {
-        if let Some(child) = self.child.as_mut() {
-            child.init(database.clone(), Rc::clone(&console_mapper));
-        }
-        self.database = database;
-        self.console_mapper = Some(console_mapper);
-    }
-
     async fn select_entry(&mut self, commands: Sender<Command>) -> Result<()> {
         if let Some(entry) = self.entries.get_mut(self.list.selected()) {
             match entry {
                 Entry::Directory(dir) => {
-                    let mut child = Browser::new(self.rect, dir.to_owned(), 0)?;
-                    child.init(
-                        self.database.clone(),
-                        Rc::clone(self.console_mapper.as_ref().unwrap()),
-                    );
+                    let child = Browser::new(self.rect, self.res.clone(), dir.to_owned(), 0)?;
                     self.child = Some(Box::new(child));
                 }
                 Entry::Game(game) => {
                     if let Some(command) = self
-                        .console_mapper
-                        .as_ref()
-                        .unwrap()
-                        .launch_game(&self.database, game)?
+                        .res
+                        .get::<ConsoleMapper>()
+                        .launch_game(&self.res.get(), game)?
                     {
                         commands.send(command).await?;
                     }

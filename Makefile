@@ -11,10 +11,10 @@ simulator-env:
 	rsync -ar assets/root/.allium assets/simulator/
 
 simulator-launcher: simulator-env
-	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_BASE_DIR=assets/simulator/Allium ALLIUM_ROMS_DIR=assets/simulator/Roms cargo run --bin allium-launcher
+	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_BASE_DIR=assets/simulator/.allium ALLIUM_GAMES_DIR=assets/simulator/Roms cargo run --bin allium-launcher
 
 simulator-menu: simulator-env
-	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_BASE_DIR=assets/simulator/Allium ALLIUM_ROMS_DIR=assets/simulator/Roms cargo run --bin allium-menu
+	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_BASE_DIR=assets/simulator/.allium ALLIUM_GAMES_DIR=assets/simulator/Roms cargo run --bin allium-menu
 
 clean:
 	rm -r $(DIST_DIR)

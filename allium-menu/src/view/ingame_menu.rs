@@ -1,17 +1,18 @@
 use std::collections::VecDeque;
-use std::fs;
 use std::fs::File;
+use std::{fs, mem};
 
 use anyhow::Result;
 use async_trait::async_trait;
 use common::battery::Battery;
 use common::command::Command;
 use common::constants::{ALLIUM_MENU_STATE, BUTTON_DIAMETER};
-use common::database::Database;
 use common::display::Display;
 use common::game_info::GameInfo;
 use common::geom::{Alignment, Point, Rect};
+use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use common::resources::Resources;
 use common::retroarch::RetroArchCommand;
 use common::stylesheet::Stylesheet;
 use common::view::{BatteryIndicator, ButtonHint, Label, List, Row, View};
@@ -32,13 +33,12 @@ where
     B: Battery,
 {
     rect: Rect,
-    game_info: GameInfo,
-    database: Database,
+    res: Resources,
     name: Label<String>,
     battery_indicator: BatteryIndicator<B>,
-    menu: List<Label<&'static str>>,
+    menu: List<Label<String>>,
     child: Option<TextReader>,
-    button_hints: Row<ButtonHint<&'static str>>,
+    button_hints: Row<ButtonHint<String>>,
     dirty: bool,
 }
 
@@ -46,14 +46,11 @@ impl<B> IngameMenu<B>
 where
     B: Battery,
 {
-    pub fn new(
-        rect: Rect,
-        state: IngameMenuState,
-        game_info: GameInfo,
-        battery: B,
-        database: Database,
-    ) -> Self {
+    pub fn new(rect: Rect, state: IngameMenuState, res: Resources, battery: B) -> Self {
         let Rect { x, y, w, h } = rect;
+
+        let game_info = res.get::<GameInfo>();
+        let locale = res.get::<Locale>();
 
         let mut name = Label::new(
             Point::new(x + 12, y + 8),
@@ -75,7 +72,14 @@ where
                     MenuEntry::Guide => game_info.guide.is_some(),
                     _ => true,
                 })
-                .map(|e| Label::new(Point::zero(), e.as_str(), Alignment::Left, Some(menu_w)))
+                .map(|e| {
+                    Label::new(
+                        Point::zero(),
+                        e.as_str(&locale),
+                        Alignment::Left,
+                        Some(menu_w),
+                    )
+                })
                 .collect(),
             Alignment::Left,
             6,
@@ -84,8 +88,18 @@ where
         let button_hints = Row::new(
             Point::new(x + w as i32 - 12, y + h as i32 - BUTTON_DIAMETER as i32 - 8),
             vec![
-                ButtonHint::new(Point::zero(), Key::A, "Select", Alignment::Right),
-                ButtonHint::new(Point::zero(), Key::B, "Back", Alignment::Right),
+                ButtonHint::new(
+                    Point::zero(),
+                    Key::A,
+                    locale.t("button-select"),
+                    Alignment::Right,
+                ),
+                ButtonHint::new(
+                    Point::zero(),
+                    Key::B,
+                    locale.t("button-back"),
+                    Alignment::Right,
+                ),
             ],
             Alignment::Right,
             12,
@@ -94,14 +108,16 @@ where
         let mut child = None;
         if state.is_text_reader_open {
             if let Some(guide) = game_info.guide.as_ref() {
-                child = Some(TextReader::new(rect, guide.to_path_buf(), database.clone()));
+                child = Some(TextReader::new(rect, res.clone(), guide.to_path_buf()));
             }
         }
 
+        mem::drop(game_info);
+        mem::drop(locale);
+
         Self {
             rect,
-            game_info,
-            database,
+            res,
             name,
             battery_indicator,
             menu,
@@ -111,28 +127,17 @@ where
         }
     }
 
-    pub fn load_or_new(
-        rect: Rect,
-        game_info: GameInfo,
-        battery: B,
-        database: Database,
-    ) -> Result<Self> {
+    pub fn load_or_new(rect: Rect, res: Resources, battery: B) -> Result<Self> {
         if ALLIUM_MENU_STATE.exists() {
             let file = File::open(ALLIUM_MENU_STATE.as_path())?;
             if let Ok(state) = serde_json::from_reader::<_, IngameMenuState>(file) {
-                return Ok(Self::new(rect, state, game_info, battery, database));
+                return Ok(Self::new(rect, state, res, battery));
             }
             warn!("failed to deserialize state file, deleting");
             fs::remove_file(ALLIUM_MENU_STATE.as_path())?;
         }
 
-        Ok(Self::new(
-            rect,
-            Default::default(),
-            game_info,
-            battery,
-            database,
-        ))
+        Ok(Self::new(rect, Default::default(), res, battery))
     }
 
     pub fn save(&self) -> Result<()> {
@@ -153,14 +158,14 @@ where
             1 => MenuEntry::Save,
             2 => MenuEntry::Load,
             3 => MenuEntry::Reset,
-            4 => MenuEntry::Advanced,
-            5 => {
-                if self.game_info.guide.is_some() {
+            4 => {
+                if self.res.get::<GameInfo>().guide.is_some() {
                     MenuEntry::Guide
                 } else {
                     MenuEntry::Quit
                 }
             }
+            5 => MenuEntry::Settings,
             6 => MenuEntry::Quit,
             _ => unreachable!(),
         };
@@ -180,18 +185,18 @@ where
                 RetroArchCommand::Reset.send().await?;
                 commands.send(Command::Exit).await?;
             }
-            MenuEntry::Advanced => {
-                RetroArchCommand::MenuToggle.send().await?;
-                commands.send(Command::Exit).await?;
-            }
             MenuEntry::Guide => {
-                if let Some(guide) = self.game_info.guide.as_ref() {
+                if let Some(guide) = self.res.get::<GameInfo>().guide.as_ref() {
                     self.child = Some(TextReader::new(
                         self.rect,
+                        self.res.clone(),
                         guide.to_path_buf(),
-                        self.database.clone(),
                     ));
                 }
+            }
+            MenuEntry::Settings => {
+                RetroArchCommand::MenuToggle.send().await?;
+                commands.send(Command::Exit).await?;
             }
             MenuEntry::Quit => {
                 RetroArchCommand::Quit.send().await?;
@@ -318,21 +323,21 @@ pub enum MenuEntry {
     Save,
     Load,
     Reset,
-    Advanced,
     Guide,
+    Settings,
     Quit,
 }
 
 impl MenuEntry {
-    fn as_str(&self) -> &'static str {
+    fn as_str(&self, locale: &Locale) -> String {
         match self {
-            MenuEntry::Continue => "Continue",
-            MenuEntry::Save => "Save",
-            MenuEntry::Load => "Load",
-            MenuEntry::Reset => "Reset",
-            MenuEntry::Advanced => "Advanced",
-            MenuEntry::Guide => "Guide",
-            MenuEntry::Quit => "Quit",
+            MenuEntry::Continue => locale.t("continue"),
+            MenuEntry::Save => locale.t("save"),
+            MenuEntry::Load => locale.t("load"),
+            MenuEntry::Reset => locale.t("reset"),
+            MenuEntry::Guide => locale.t("guide"),
+            MenuEntry::Settings => locale.t("settings"),
+            MenuEntry::Quit => locale.t("quit"),
         }
     }
 }
