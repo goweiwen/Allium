@@ -131,13 +131,29 @@ impl AlliumLauncher<DefaultPlatform> {
                 styles.save()?;
                 self.display.clear(styles.background_color)?;
                 self.display.save()?;
-                self.res.set(*styles);
-                self.view.set_should_draw();
+                self.res.insert(*styles);
+                self.view.save()?;
+                self.view = App::load_or_new(
+                    self.display.bounding_box().into(),
+                    self.res.clone(),
+                    self.platform.battery()?,
+                )?;
             }
             Command::SaveDisplaySettings(settings) => {
                 debug!("saving display settings");
                 settings.save()?;
                 self.platform.set_display_settings(&settings)?;
+            }
+            Command::SaveLocaleSettings(settings) => {
+                debug!("saving locale settings");
+                settings.save()?;
+                self.res.insert(Locale::new(&settings.lang));
+                self.view.save()?;
+                self.view = App::load_or_new(
+                    self.display.bounding_box().into(),
+                    self.res.clone(),
+                    self.platform.battery()?,
+                )?;
             }
             Command::Redraw => {
                 debug!("redrawing");

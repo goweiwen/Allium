@@ -1,4 +1,5 @@
 use crate::display::color::Color;
+use crate::locale::LocaleSettings;
 use crate::{display::settings::DisplaySettings, stylesheet::Stylesheet};
 
 #[derive(Debug)]
@@ -7,6 +8,7 @@ pub enum Command {
     Exec(std::process::Command),
     SaveStylesheet(Box<Stylesheet>),
     SaveDisplaySettings(Box<DisplaySettings>),
+    SaveLocaleSettings(LocaleSettings),
     CloseView,
     ValueChanged(usize, Value),
     TrapFocus,

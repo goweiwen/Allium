@@ -5,63 +5,44 @@ use async_trait::async_trait;
 use common::command::Command;
 use common::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
 
-use common::display::settings::DisplaySettings;
 use common::geom::{Alignment, Point, Rect};
-use common::locale::Locale;
+use common::locale::{Locale, LocaleSettings};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, Label, Percentage, Row, SettingsList, View};
+use common::view::{ButtonHint, Label, Row, Select, SettingsList, View};
 
 use tokio::sync::mpsc::Sender;
 
-pub struct Display {
+pub struct Language {
     rect: Rect,
-    settings: DisplaySettings,
+    langs: Vec<String>,
+    settings: LocaleSettings,
     list: SettingsList,
     restart_label: Label<String>,
     button_hints: Row<ButtonHint<String>>,
     has_changed: bool,
 }
 
-impl Display {
+impl Language {
     pub fn new(rect: Rect, res: Resources) -> Self {
         let Rect { x, y, w, h } = rect;
 
-        let settings = DisplaySettings::load().unwrap();
+        let settings = LocaleSettings::load().unwrap();
 
         let locale = res.get::<Locale>();
+        let langs = locale.languages();
+        let lang = langs.iter().position(|l| l == &settings.lang).unwrap();
 
         let list = SettingsList::new(
             Rect::new(x + 12, y + 8, w - 24, h - 8 - 48),
-            vec![
-                locale.t("settings-display-luminance"),
-                locale.t("settings-display-hue"),
-                locale.t("settings-display-saturation"),
-                locale.t("settings-display-contrast"),
-            ],
-            vec![
-                Box::new(Percentage::new(
-                    Point::zero(),
-                    settings.luminance as i32,
-                    Alignment::Right,
-                )),
-                Box::new(Percentage::new(
-                    Point::zero(),
-                    settings.hue as i32,
-                    Alignment::Right,
-                )),
-                Box::new(Percentage::new(
-                    Point::zero(),
-                    settings.saturation as i32,
-                    Alignment::Right,
-                )),
-                Box::new(Percentage::new(
-                    Point::zero(),
-                    settings.contrast as i32,
-                    Alignment::Right,
-                )),
-            ],
+            vec![locale.t("settings-language-language")],
+            vec![Box::new(Select::new(
+                Point::zero(),
+                lang,
+                langs.clone(),
+                Alignment::Right,
+            ))],
             SELECTION_HEIGHT,
         );
 
@@ -70,7 +51,7 @@ impl Display {
                 rect.x + rect.w as i32 - 12,
                 rect.y + rect.h as i32 - 46 - 34,
             ),
-            locale.t("settings-display-restart-to-apply-changes"),
+            locale.t("settings-language-restart-to-apply-changes"),
             Alignment::Right,
             None,
         );
@@ -100,6 +81,7 @@ impl Display {
 
         Self {
             rect,
+            langs,
             settings,
             list,
             restart_label,
@@ -110,7 +92,7 @@ impl Display {
 }
 
 #[async_trait(?Send)]
-impl View for Display {
+impl View for Language {
     fn draw(
         &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,
@@ -159,19 +141,16 @@ impl View for Display {
             while let Some(command) = bubble.pop_front() {
                 if let Command::ValueChanged(i, val) = command {
                     match i {
-                        0 => self.settings.luminance = val.as_int().unwrap() as u8,
-                        1 => self.settings.hue = val.as_int().unwrap() as u8,
-                        2 => self.settings.saturation = val.as_int().unwrap() as u8,
-                        3 => self.settings.contrast = val.as_int().unwrap() as u8,
+                        0 => {
+                            self.settings.lang = self.langs[val.as_int().unwrap() as usize].clone()
+                        }
                         _ => unreachable!("Invalid index"),
                     }
 
-                    self.has_changed |= i != 0;
+                    self.has_changed |= i == 0;
 
                     commands
-                        .send(Command::SaveDisplaySettings(Box::new(
-                            self.settings.clone(),
-                        )))
+                        .send(Command::SaveLocaleSettings(self.settings.clone()))
                         .await?;
                 }
             }

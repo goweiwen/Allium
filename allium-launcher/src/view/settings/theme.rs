@@ -23,6 +23,8 @@ pub struct Theme {
 
 impl Theme {
     pub fn new(rect: Rect, res: Resources) -> Self {
+        let Rect { x, y, w, h } = rect;
+
         let stylesheet = Stylesheet::load().unwrap();
 
         let locale = res.get::<Locale>();
@@ -40,7 +42,7 @@ impl Theme {
             .collect();
 
         let list = SettingsList::new(
-            Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 8 - 46),
+            Rect::new(x + 12, y + 8, w - 24, h - 8 - 48),
             vec![
                 locale.t("settings-theme-dark-mode"),
                 locale.t("settings-theme-ui-font"),

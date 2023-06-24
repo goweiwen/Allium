@@ -7,7 +7,7 @@ use tracing::{debug, warn};
 
 use crate::constants::{ALLIUM_LOCALES_DIR, ALLIUM_LOCALE_SETTINGS};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocaleSettings {
     pub lang: String,
 }
@@ -59,5 +59,13 @@ impl Locale {
             .with_context(|| format!("looking up key: {}", key))
             .unwrap()
             .to_string()
+    }
+
+    pub fn language(&self) -> String {
+        self.lang.to_string()
+    }
+
+    pub fn languages(&self) -> Vec<String> {
+        self.loader.locales().map(|i| i.to_string()).collect()
     }
 }

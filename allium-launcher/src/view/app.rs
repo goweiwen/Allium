@@ -18,6 +18,7 @@ use tokio::sync::mpsc::Sender;
 use tracing::{trace, warn};
 
 use crate::view::browser::BrowserState;
+use crate::view::settings::SettingsState;
 use crate::view::Recents;
 use crate::view::{Browser, Settings};
 
@@ -25,6 +26,7 @@ use crate::view::{Browser, Settings};
 struct AppState {
     selected: usize,
     browser: BrowserState,
+    settings: SettingsState,
 }
 
 #[derive(Debug)]
@@ -103,7 +105,7 @@ where
                 let views = (
                     Browser::load(tab_rect, res.clone(), state.browser)?,
                     Recents::new(tab_rect, res.clone())?,
-                    Settings::new(tab_rect, res.clone())?,
+                    Settings::new(tab_rect, res.clone(), state.settings)?,
                 );
                 return Self::new(rect, res, views, state.selected, battery);
             }
@@ -114,7 +116,7 @@ where
         let views = (
             Browser::new(tab_rect, res.clone(), Default::default(), 0)?,
             Recents::new(tab_rect, res.clone())?,
-            Settings::new(tab_rect, res.clone())?,
+            Settings::new(tab_rect, res.clone(), Default::default())?,
         );
         let selected = 0;
         Self::new(rect, res, views, selected, battery)
@@ -125,6 +127,7 @@ where
         let state = AppState {
             selected: self.selected,
             browser: self.views.0.save(),
+            settings: self.views.2.save(),
         };
         serde_json::to_writer(file, &state)?;
         Ok(())
@@ -155,7 +158,7 @@ where
             .color(StylesheetColor::Foreground);
         self.selected = selected;
         self.view_mut().set_should_draw();
-        self.dirty = true;
+        self.set_should_draw();
         self.tabs
             .get_mut(self.selected)
             .unwrap()
@@ -183,6 +186,11 @@ where
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
+        if self.dirty {
+            display.load(self.bounding_box(styles))?;
+            self.dirty = false;
+        }
+
         let mut drawn = false;
         if self.battery_indicator.should_draw() && self.battery_indicator.draw(display, styles)? {
             drawn = true;
@@ -190,11 +198,6 @@ where
 
         if self.tabs.should_draw() && self.tabs.draw(display, styles)? {
             drawn = true;
-        }
-
-        if self.dirty {
-            display.load(self.view_mut().bounding_box(styles))?;
-            self.dirty = false;
         }
 
         if self.view().should_draw() && self.view_mut().draw(display, styles)? {
@@ -208,6 +211,7 @@ where
     }
 
     fn set_should_draw(&mut self) {
+        self.dirty = true;
         self.battery_indicator.set_should_draw();
         self.view_mut().set_should_draw();
         self.tabs.set_should_draw();

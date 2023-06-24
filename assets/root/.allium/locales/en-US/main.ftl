@@ -36,6 +36,10 @@ settings-theme-button-b-color = Button B Color
 settings-theme-button-x-color = Button X Color
 settings-theme-button-y-color = Button Y Color
 
+settings-language = Language
+settings-language-language = Language
+settings-language-restart-to-apply-changes = *Restart device to apply changes
+
 settings-files = Files
 
 settings-about = About

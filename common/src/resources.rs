@@ -20,7 +20,7 @@ impl Resources {
     }
 
     /// Sets a resource in the resource map.
-    pub fn set<T: 'static>(&self, value: T) {
+    pub fn insert<T: 'static>(&self, value: T) {
         self.0.borrow_mut().insert(value);
     }
 }

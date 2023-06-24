@@ -26,12 +26,14 @@ pub struct Wifi {
 
 impl Wifi {
     pub fn new(rect: Rect, res: Resources) -> Self {
+        let Rect { x, y, w, h } = rect;
+
         let settings = WiFiSettings::load().unwrap();
 
         let locale = res.get::<Locale>();
 
         let list = SettingsList::new(
-            Rect::new(rect.x, rect.y + 8, rect.w - 12, rect.h - 8 - 46 - 34 - 12),
+            Rect::new(x + 12, y + 8, w - 24, h - 8 - 48),
             vec![
                 locale.t("settings-wifi-wifi-enabled"),
                 locale.t("settings-wifi-wifi-network"),

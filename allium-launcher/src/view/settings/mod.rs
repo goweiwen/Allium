@@ -1,10 +1,12 @@
 mod about;
 mod display;
+mod language;
 mod theme;
 mod wifi;
 
 use self::about::About;
 use self::display::Display;
+use self::language::Language;
 use self::theme::Theme;
 use self::wifi::Wifi;
 
@@ -21,7 +23,14 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::{ButtonHint, Label, List, Row, View};
+use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SettingsState {
+    selected: usize,
+    has_child: bool,
+}
 
 #[derive(Debug)]
 pub struct Settings {
@@ -34,48 +43,69 @@ pub struct Settings {
 }
 
 impl Settings {
-    pub fn new(rect: Rect, res: Resources) -> Result<Self> {
+    pub fn new(rect: Rect, res: Resources, state: SettingsState) -> Result<Self> {
         let Rect { x, y, w, h } = rect;
 
         let locale = res.get::<Locale>();
 
-        let list = List::new(
-            Rect::new(x + 12, y + 8, 110 + 12 + 12 - 24, h - 8 - 48),
+        let mut list = List::new(
+            Rect::new(x + 12, y + 8, w - 24, h - 8 - 48),
             vec![
                 Label::new(
                     Point::zero(),
                     locale.t("settings-wifi"),
                     Alignment::Left,
-                    Some(110),
+                    None,
                 ),
                 Label::new(
                     Point::zero(),
                     locale.t("settings-display"),
                     Alignment::Left,
-                    Some(110),
+                    None,
                 ),
                 Label::new(
                     Point::zero(),
                     locale.t("settings-theme"),
                     Alignment::Left,
-                    Some(110),
+                    None,
+                ),
+                Label::new(
+                    Point::zero(),
+                    locale.t("settings-language"),
+                    Alignment::Left,
+                    None,
                 ),
                 Label::new(
                     Point::zero(),
                     locale.t("settings-files"),
                     Alignment::Left,
-                    Some(110),
+                    None,
                 ),
                 Label::new(
                     Point::zero(),
                     locale.t("settings-about"),
                     Alignment::Left,
-                    Some(110),
+                    None,
                 ),
             ],
             Alignment::Left,
             6,
         );
+        list.select(state.selected);
+
+        let child: Option<Box<dyn View>> = if state.has_child {
+            match state.selected {
+                0 => Some(Box::new(Wifi::new(rect, res.clone()))),
+                1 => Some(Box::new(Display::new(rect, res.clone()))),
+                2 => Some(Box::new(Theme::new(rect, res.clone()))),
+                3 => Some(Box::new(Language::new(rect, res.clone()))),
+                4 => None,
+                5 => Some(Box::new(About::new(rect, res.clone()))),
+                _ => None,
+            }
+        } else {
+            None
+        };
 
         let button_hints = Row::new(
             Point::new(x + w as i32 - 12, y + h as i32 - BUTTON_DIAMETER as i32 - 8),
@@ -101,32 +131,34 @@ impl Settings {
 
         Ok(Self {
             rect,
-            res,
+            res: res.clone(),
             list,
-            child: None,
+            child,
             button_hints,
             dirty: true,
         })
     }
 
+    pub fn save(&self) -> SettingsState {
+        SettingsState {
+            selected: self.list.selected(),
+            has_child: self.child.is_some(),
+        }
+    }
+
     async fn select_entry(&mut self, commands: Sender<Command>) -> Result<()> {
-        let rect = Rect::new(
-            self.rect.x + 146,
-            self.rect.y,
-            self.rect.w - 146,
-            self.rect.h,
-        );
         match self.list.selected() {
-            0 => self.child = Some(Box::new(Wifi::new(rect, self.res.clone()))),
-            1 => self.child = Some(Box::new(Display::new(rect, self.res.clone()))),
-            2 => self.child = Some(Box::new(Theme::new(rect, self.res.clone()))),
-            3 => {
+            0 => self.child = Some(Box::new(Wifi::new(self.rect, self.res.clone()))),
+            1 => self.child = Some(Box::new(Display::new(self.rect, self.res.clone()))),
+            2 => self.child = Some(Box::new(Theme::new(self.rect, self.res.clone()))),
+            3 => self.child = Some(Box::new(Language::new(self.rect, self.res.clone()))),
+            4 => {
                 let path = ALLIUM_TOOLS_DIR.join("Files.pak");
                 let mut command = std::process::Command::new(path.join("launch.sh"));
                 command.current_dir(path);
                 commands.send(Command::Exec(command)).await?;
             }
-            4 => self.child = Some(Box::new(About::new(rect, self.res.clone()))),
+            5 => self.child = Some(Box::new(About::new(self.rect, self.res.clone()))),
             _ => unreachable!("Invalid index"),
         }
         self.dirty = true;
@@ -143,22 +175,17 @@ impl View for Settings {
     ) -> Result<bool> {
         let mut drawn = false;
 
+        if let Some(ref mut child) = self.child {
+            return child.draw(display, styles);
+        }
+
         if self.dirty {
             display.load(self.bounding_box(styles))?;
             self.dirty = false;
         }
 
-        if self.list.should_draw() && self.list.draw(display, styles)? {
-            drawn = true;
-        }
-
-        if let Some(ref mut child) = self.child {
-            if child.draw(display, styles)? {
-                drawn = true;
-            }
-        } else if self.button_hints.should_draw() && self.button_hints.draw(display, styles)? {
-            drawn = true;
-        }
+        drawn |= self.list.should_draw() && self.list.draw(display, styles)?;
+        drawn |= self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
 
         Ok(drawn)
     }

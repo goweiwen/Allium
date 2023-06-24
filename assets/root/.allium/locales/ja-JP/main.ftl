@@ -36,6 +36,10 @@ settings-theme-button-b-color = ボタンBの色
 settings-theme-button-x-color = ボタンXの色
 settings-theme-button-y-color = ボタンYの色
 
+settings-language = 言語
+settings-language-language = 言語
+settings-language-restart-to-apply-changes = *変更を適用するにはデバイスを再起動してください。
+
 settings-files = ファイル
 
 settings-about = 情報
