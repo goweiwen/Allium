@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::{BUTTON_DIAMETER, IMAGE_SIZE, RECENT_GAMES_LIMIT, SELECTION_HEIGHT};
+use common::constants::{BUTTON_DIAMETER, IMAGE_SIZE, RECENT_GAMES_LIMIT, SELECTION_MARGIN};
 use common::database::Database;
 use common::display::Display;
 use common::geom::{Alignment, Point, Rect};
@@ -34,10 +34,15 @@ impl Recents {
         let Rect { x, y, w, h } = rect;
 
         let list = ScrollList::new(
-            Rect::new(x + 12, y, w - IMAGE_SIZE.width - 12 - 12 - 24, h - 40),
+            Rect::new(
+                x + 12,
+                y + 8,
+                w - IMAGE_SIZE.width - 12 - 12 - 24,
+                h - 8 - 48,
+            ),
             Vec::new(),
             Alignment::Left,
-            SELECTION_HEIGHT,
+            res.get::<Stylesheet>().ui_font.size + SELECTION_MARGIN,
         );
 
         let mut image = Image::empty(

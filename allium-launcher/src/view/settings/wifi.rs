@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::{BUTTON_DIAMETER, SELECTION_HEIGHT};
+use common::constants::{BUTTON_DIAMETER, SELECTION_MARGIN};
 use common::display::Display;
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
@@ -64,7 +64,7 @@ impl Wifi {
                 )),
                 Box::new(Toggle::new(Point::zero(), settings.ftp, Alignment::Right)),
             ],
-            SELECTION_HEIGHT,
+            res.get::<Stylesheet>().ui_font.size + SELECTION_MARGIN,
         );
 
         let ip_address_label = Label::new(

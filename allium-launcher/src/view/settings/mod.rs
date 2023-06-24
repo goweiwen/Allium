@@ -15,14 +15,14 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::{ALLIUM_TOOLS_DIR, BUTTON_DIAMETER};
+use common::constants::{ALLIUM_TOOLS_DIR, BUTTON_DIAMETER, SELECTION_MARGIN};
 use common::display::Display as DisplayTrait;
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, Label, List, Row, View};
+use common::view::{ButtonHint, Row, ScrollList, View};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
@@ -36,7 +36,7 @@ pub struct SettingsState {
 pub struct Settings {
     rect: Rect,
     res: Resources,
-    list: List<Label<String>>,
+    list: ScrollList,
     child: Option<Box<dyn View>>,
     button_hints: Row<ButtonHint<String>>,
     dirty: bool,
@@ -48,48 +48,18 @@ impl Settings {
 
         let locale = res.get::<Locale>();
 
-        let mut list = List::new(
+        let mut list = ScrollList::new(
             Rect::new(x + 12, y + 8, w - 24, h - 8 - 48),
             vec![
-                Label::new(
-                    Point::zero(),
-                    locale.t("settings-wifi"),
-                    Alignment::Left,
-                    None,
-                ),
-                Label::new(
-                    Point::zero(),
-                    locale.t("settings-display"),
-                    Alignment::Left,
-                    None,
-                ),
-                Label::new(
-                    Point::zero(),
-                    locale.t("settings-theme"),
-                    Alignment::Left,
-                    None,
-                ),
-                Label::new(
-                    Point::zero(),
-                    locale.t("settings-language"),
-                    Alignment::Left,
-                    None,
-                ),
-                Label::new(
-                    Point::zero(),
-                    locale.t("settings-files"),
-                    Alignment::Left,
-                    None,
-                ),
-                Label::new(
-                    Point::zero(),
-                    locale.t("settings-about"),
-                    Alignment::Left,
-                    None,
-                ),
+                locale.t("settings-wifi"),
+                locale.t("settings-display"),
+                locale.t("settings-theme"),
+                locale.t("settings-language"),
+                locale.t("settings-files"),
+                locale.t("settings-about"),
             ],
             Alignment::Left,
-            6,
+            res.get::<Stylesheet>().ui_font.size + SELECTION_MARGIN,
         );
         list.select(state.selected);
 

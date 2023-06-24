@@ -64,4 +64,4 @@ pub const LISTING_SIZE: i32 = 10;
 pub const MAXIMUM_FRAME_TIME: Duration = Duration::from_millis(100);
 pub const RECENT_GAMES_LIMIT: i64 = 100;
 pub const RETROARCH_UDP_SOCKET: &str = "127.0.0.1:55355";
-pub const SELECTION_HEIGHT: u32 = 42;
+pub const SELECTION_MARGIN: u32 = 8;

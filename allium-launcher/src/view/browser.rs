@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::{ALLIUM_GAMES_DIR, BUTTON_DIAMETER, IMAGE_SIZE, SELECTION_HEIGHT};
+use common::constants::{ALLIUM_GAMES_DIR, BUTTON_DIAMETER, IMAGE_SIZE, SELECTION_MARGIN};
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
@@ -44,10 +44,15 @@ impl Browser {
 
         let entries = entries(&directory)?;
         let mut list = ScrollList::new(
-            Rect::new(x + 12, y, w - IMAGE_SIZE.width - 12 - 12 - 24, h),
+            Rect::new(
+                x + 12,
+                y + 8,
+                w - IMAGE_SIZE.width - 12 - 12 - 24,
+                h - 8 - 48,
+            ),
             entries.iter().map(|e| e.name().to_string()).collect(),
             Alignment::Left,
-            SELECTION_HEIGHT,
+            res.get::<Stylesheet>().ui_font.size + SELECTION_MARGIN,
         );
         list.select(selected);
 
