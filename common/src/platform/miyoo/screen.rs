@@ -39,14 +39,9 @@ struct SystemConfig {
 }
 
 pub fn set_display_settings(settings: &DisplaySettings) -> Result<()> {
-    set_brightness(settings.brightness)?;
-
     let json = fs::read_to_string("/appconfigs/system.json")?;
 
     let mut config: SystemConfig = serde_json::from_str(&json)?;
-
-    // Expects 10 as maximum, but we use 100 as maximum.
-    config.brightness = settings.brightness / 10;
 
     // Expects 20 as maximum, but we use 100 as maximum.
     config.lumination = settings.luminance / 5;
