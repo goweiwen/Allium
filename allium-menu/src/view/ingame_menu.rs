@@ -162,10 +162,16 @@ where
                 if self.res.get::<GameInfo>().guide.is_some() {
                     MenuEntry::Guide
                 } else {
+                    MenuEntry::Settings
+                }
+            }
+            5 => {
+                if self.res.get::<GameInfo>().guide.is_some() {
+                    MenuEntry::Settings
+                } else {
                     MenuEntry::Quit
                 }
             }
-            5 => MenuEntry::Settings,
             6 => MenuEntry::Quit,
             _ => unreachable!(),
         };
