@@ -81,7 +81,7 @@ impl StylesheetFont {
                 let entry = entry.unwrap();
                 let path = entry.path();
                 if let Some(ext) = path.extension() {
-                    if ext == "ttf" || ext == "otf" {
+                    if ext == "ttf" || ext == "otf" || ext == "ttc" {
                         return Some(path);
                     }
                 }
@@ -102,7 +102,7 @@ impl StylesheetFont {
 
     /// Default CJK font.
     pub fn cjk_font() -> Self {
-        Self::new(ALLIUM_FONTS_DIR.join("MPLUSRounded1c.ttf"), 32)
+        Self::new(PathBuf::from("/customer/app/wqy-microhei.ttc"), 32)
     }
 }
 
