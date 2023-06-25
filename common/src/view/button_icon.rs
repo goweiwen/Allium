@@ -127,6 +127,7 @@ impl View for ButtonIcon {
         }
 
         let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
+            .font_fallback(styles.cjk_font.font())
             .font_size(28)
             .text_color(styles.foreground_color)
             .background_color(color)

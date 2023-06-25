@@ -90,12 +90,14 @@ impl View for Keyboard {
         let mut drawn = false;
         if self.dirty {
             let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
+                .font_fallback(styles.cjk_font.font())
                 .font_size(styles.ui_font.size)
                 .text_color(styles.foreground_color)
                 .background_color(styles.background_color)
                 .build();
 
             let selected_text_style = FontTextStyleBuilder::new(styles.ui_font.font())
+                .font_fallback(styles.cjk_font.font())
                 .font_size(styles.ui_font.size)
                 .text_color(styles.foreground_color)
                 .background_color(styles.highlight_color)

@@ -242,6 +242,7 @@ impl View for TextReader {
             .draw(display)?;
 
             let text_style = FontTextStyleBuilder::new(styles.guide_font.font())
+                .font_fallback(styles.cjk_font.font())
                 .font_size(styles.guide_font.size)
                 .background_color(styles.background_color)
                 .text_color(styles.foreground_color)

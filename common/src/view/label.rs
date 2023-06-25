@@ -75,6 +75,7 @@ where
 
     fn layout(&mut self, styles: &Stylesheet) {
         let text_style = FontTextStyleBuilder::<Color>::new(styles.ui_font.font())
+            .font_fallback(styles.cjk_font.font())
             .font_size(styles.ui_font.size)
             .build();
 
@@ -133,6 +134,7 @@ where
         styles: &Stylesheet,
     ) -> Result<bool> {
         let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
+            .font_fallback(styles.cjk_font.font())
             .text_color(self.color.to_color(styles))
             .background_color(self.background_color.to_color(styles))
             .font_size(styles.ui_font.size)
@@ -186,6 +188,7 @@ where
         }
 
         let text_style = FontTextStyleBuilder::<Color>::new(styles.ui_font.font())
+            .font_fallback(styles.cjk_font.font())
             .font_size(styles.ui_font.size)
             .build();
 

@@ -15,7 +15,9 @@ use embedded_graphics::{
     },
 };
 
+use rusttype::vector;
 use rusttype::Font;
+use rusttype::GlyphId;
 
 /// Style properties for text using a ttf and otf font.
 ///
@@ -43,12 +45,29 @@ pub struct FontTextStyle<C: PixelColor> {
 
     /// Font.
     font: Font<'static>,
+
+    /// Font fallback.
+    font_fallback: Option<Font<'static>>,
 }
 
 impl<C: PixelColor> FontTextStyle<C> {
     // Creates a text style with transparent background.
     pub fn new(font: Font<'static>, text_color: C, font_size: u32) -> Self {
         FontTextStyleBuilder::new(font)
+            .text_color(text_color)
+            .font_size(font_size)
+            .build()
+    }
+
+    // Creates a text style with a fallback font and transparent background.
+    pub fn with_fallback(
+        font: Font<'static>,
+        text_color: C,
+        font_size: u32,
+        font_fallback: Font<'static>,
+    ) -> Self {
+        FontTextStyleBuilder::new(font)
+            .font_fallback(font_fallback)
             .text_color(text_color)
             .font_size(font_size)
             .build()
@@ -159,10 +178,31 @@ where
         let scale = rusttype::Scale::uniform(self.font_size as f32);
 
         let v_metrics = self.font.v_metrics(scale);
-        let offset = rusttype::point(0.0, v_metrics.ascent);
+        let start = rusttype::point(0.0, v_metrics.ascent);
 
-        let glyphs: Vec<rusttype::PositionedGlyph> =
-            self.font.layout(text, scale, offset).collect();
+        let glyphs: Vec<rusttype::PositionedGlyph> = text
+            .chars()
+            .map(|c| {
+                let mut g = self.font.glyph(c);
+                if g.id() == GlyphId(0) {
+                    if let Some(font_fallback) = self.font_fallback.as_ref() {
+                        g = font_fallback.glyph(c);
+                    }
+                }
+                g
+            })
+            .scan((None, 0.0), |(last, x), g| {
+                let g = g.scaled(scale);
+                if let Some(last) = last {
+                    *x += self.font.pair_kerning(scale, *last, g.id());
+                }
+                let w = g.h_metrics().advance_width;
+                let next = g.positioned(start + vector(*x, 0.0));
+                *last = Some(next.id());
+                *x += w;
+                Some(next)
+            })
+            .collect();
 
         let width = glyphs
             .iter()
@@ -244,10 +284,31 @@ where
     fn measure_string(&self, text: &str, position: Point, _baseline: Baseline) -> TextMetrics {
         let scale = rusttype::Scale::uniform(self.font_size as f32);
         let v_metrics = self.font.v_metrics(scale);
-        let offset = rusttype::point(0.0, v_metrics.ascent);
+        let start = rusttype::point(0.0, v_metrics.ascent);
 
-        let glyphs: Vec<rusttype::PositionedGlyph> =
-            self.font.layout(text, scale, offset).collect();
+        let glyphs: Vec<rusttype::PositionedGlyph> = text
+            .chars()
+            .map(|c| {
+                let mut g = self.font.glyph(c);
+                if g.id() == GlyphId(0) {
+                    if let Some(font_fallback) = self.font_fallback.as_ref() {
+                        g = font_fallback.glyph(c);
+                    }
+                }
+                g
+            })
+            .scan((None, 0.0), |(last, x), g| {
+                let g = g.scaled(scale);
+                if let Some(last) = last {
+                    *x += self.font.pair_kerning(scale, *last, g.id());
+                }
+                let w = g.h_metrics().advance_width;
+                let next = g.positioned(start + vector(*x, 0.0));
+                *last = Some(next.id());
+                *x += w;
+                Some(next)
+            })
+            .collect();
 
         let width = glyphs
             .iter()
@@ -283,6 +344,7 @@ impl<C: PixelColor> FontTextStyleBuilder<C> {
         Self {
             style: FontTextStyle {
                 font,
+                font_fallback: None,
                 background_color: None,
                 font_size: 12,
                 text_color: None,
@@ -296,6 +358,12 @@ impl<C: PixelColor> FontTextStyleBuilder<C> {
     /// Builder method used to set the font size of the style.
     pub fn font_size(mut self, font_size: u32) -> Self {
         self.style.font_size = font_size;
+        self
+    }
+
+    /// Builder method used to set the font fallback of the style.
+    pub fn font_fallback(mut self, font_fallback: Font<'static>) -> Self {
+        self.style.font_fallback = Some(font_fallback);
         self
     }
 

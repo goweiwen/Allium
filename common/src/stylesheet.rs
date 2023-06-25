@@ -99,6 +99,11 @@ impl StylesheetFont {
     pub fn guide_font() -> Self {
         Self::new(ALLIUM_FONTS_DIR.join("Nunito.ttf"), 28)
     }
+
+    /// Default CJK font.
+    pub fn cjk_font() -> Self {
+        Self::new(ALLIUM_FONTS_DIR.join("MPLUSRounded1c.ttf"), 32)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -116,6 +121,8 @@ pub struct Stylesheet {
     pub ui_font: StylesheetFont,
     #[serde(default = "StylesheetFont::guide_font")]
     pub guide_font: StylesheetFont,
+    #[serde(skip, default = "StylesheetFont::cjk_font")]
+    pub cjk_font: StylesheetFont,
 }
 
 impl Stylesheet {
@@ -159,6 +166,15 @@ impl Stylesheet {
             );
             self.guide_font = StylesheetFont::guide_font();
             self.guide_font.load()?;
+        }
+        if let Err(e) = self.cjk_font.load() {
+            error!(
+                "failed to load CJK font: {} ({})",
+                self.cjk_font.path.display(),
+                e
+            );
+            self.cjk_font = StylesheetFont::guide_font();
+            self.cjk_font.load()?;
         }
         Ok(())
     }
@@ -208,6 +224,7 @@ impl Default for Stylesheet {
             button_y_color: Color::new(0, 141, 69),
             ui_font: StylesheetFont::ui_font(),
             guide_font: StylesheetFont::guide_font(),
+            cjk_font: StylesheetFont::cjk_font(),
         }
     }
 }

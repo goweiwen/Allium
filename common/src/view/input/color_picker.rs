@@ -93,6 +93,7 @@ impl View for ColorPicker {
         .draw(display)?;
 
         let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
+            .font_fallback(styles.cjk_font.font())
             .font_size(styles.ui_font.size)
             .text_color(styles.foreground_color)
             .background_color(self.background_color.to_color(styles))
@@ -272,6 +273,7 @@ impl View for ColorPicker {
 
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
         let text_style: FontTextStyle<Color> = FontTextStyleBuilder::new(styles.ui_font.font())
+            .font_fallback(styles.cjk_font.font())
             .font_size(styles.ui_font.size)
             .draw_background()
             .build();
