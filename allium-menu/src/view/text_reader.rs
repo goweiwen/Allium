@@ -45,7 +45,10 @@ impl TextReader {
             .unwrap_or_default();
         let lowercase_text = text.to_lowercase();
 
-        let cursor = load_cursor(&res.get::<Database>(), path.as_path()).clamp(0, text.len());
+        let mut cursor = load_cursor(&res.get::<Database>(), path.as_path()).clamp(0, text.len());
+        while !text.is_char_boundary(cursor) && cursor > 0 {
+            cursor -= 1;
+        }
 
         let Rect { x, y, w, h } = rect;
 
