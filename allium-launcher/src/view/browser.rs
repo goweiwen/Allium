@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 use std::ffi::OsStr;
+
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
@@ -128,12 +129,12 @@ impl Browser {
                     self.child = Some(Box::new(child));
                 }
                 Entry::Game(game) => {
-                    if let Some(command) = self
+                    let command = self
                         .res
                         .get::<ConsoleMapper>()
-                        .launch_game(&self.res.get(), game)?
-                    {
-                        commands.send(command).await?;
+                        .launch_game(&self.res.get(), game)?;
+                    if let Some(cmd) = command {
+                        commands.send(cmd).await?;
                     }
                 }
             }

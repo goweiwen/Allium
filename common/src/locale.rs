@@ -12,11 +12,15 @@ pub struct LocaleSettings {
     pub lang: String,
 }
 
+impl Default for LocaleSettings {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LocaleSettings {
     pub fn new() -> Self {
-        Self {
-            lang: "en-US".to_owned(),
-        }
+        Default::default()
     }
 
     pub fn load() -> Result<Self> {
@@ -58,7 +62,6 @@ impl Locale {
             .lookup(&self.lang, key)
             .with_context(|| format!("looking up key: {}", key))
             .unwrap()
-            .to_string()
     }
 
     pub fn language(&self) -> String {

@@ -172,7 +172,7 @@ impl Display for SimulatorWindow {
                 rect.x, rect.y, rect.w, rect.h,
             );
             rect.w = rect.w.clamp(0, size.width - rect.x as u32);
-            rect.h = rect.h.clamp(0, size.height - rect.h as u32);
+            rect.h = rect.h.clamp(0, size.height - rect.h);
         }
 
         let image: ImageRaw<_, BigEndian> = ImageRaw::new(&saved.0, saved.1);

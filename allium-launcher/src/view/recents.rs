@@ -98,11 +98,11 @@ impl Recents {
 
     async fn select_entry(&mut self, commands: Sender<Command>) -> Result<()> {
         if let Some(entry) = self.entries.get_mut(self.list.selected()) {
-            if let Some(command) = self
+            let command = self
                 .res
                 .get::<ConsoleMapper>()
-                .launch_game(&self.res.get(), entry)?
-            {
+                .launch_game(&self.res.get(), entry)?;
+            if let Some(command) = command {
                 commands.send(command).await?;
             }
         }

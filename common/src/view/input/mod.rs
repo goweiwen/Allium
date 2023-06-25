@@ -3,6 +3,6 @@ pub mod color_picker;
 pub mod keyboard;
 pub mod number;
 pub mod percentage;
+pub mod select;
 pub mod text_box;
 pub mod toggle;
-pub mod select;

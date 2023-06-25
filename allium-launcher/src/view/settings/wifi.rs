@@ -86,13 +86,13 @@ impl Wifi {
                 ButtonHint::new(
                     Point::zero(),
                     Key::A,
-                    locale.t("button-edit").to_owned(),
+                    locale.t("button-edit"),
                     Alignment::Right,
                 ),
                 ButtonHint::new(
                     Point::zero(),
                     Key::B,
-                    locale.t("button-back").to_owned(),
+                    locale.t("button-back"),
                     Alignment::Right,
                 ),
             ],
@@ -134,7 +134,7 @@ impl View for Wifi {
                 } else {
                     display.load(self.ip_address_label.bounding_box(styles))?;
                     self.ip_address_label
-                        .set_text(locale.t("settings-wifi-connecting").to_owned());
+                        .set_text(locale.t("settings-wifi-connecting"));
                 }
             }
         } else if self.has_ip_address {
