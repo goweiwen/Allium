@@ -145,13 +145,13 @@ impl View for Settings {
     ) -> Result<bool> {
         let mut drawn = false;
 
-        if let Some(ref mut child) = self.child {
-            return child.draw(display, styles);
-        }
-
         if self.dirty {
             display.load(self.bounding_box(styles))?;
             self.dirty = false;
+        }
+
+        if let Some(ref mut child) = self.child {
+            return child.draw(display, styles);
         }
 
         drawn |= self.list.should_draw() && self.list.draw(display, styles)?;
