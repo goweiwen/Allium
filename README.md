@@ -2,8 +2,14 @@
 
 Allium is a custom launcher for the Miyoo Mini and Miyoo Mini Plus handheld devices, similar to [OnionOS](https://github.com/OnionUI/Onion) and [MiniUI](https://github.com/shauninman/MiniUI).
 
-![Allium's main menu](assets/screenshots/main-menu.png)
-![Allium's ingame menu](assets/screenshots/ingame-menu.png)
+<div>
+    <img alt="Main menu" src="assets/screenshots/main-menu.png" width="49%">
+    <img alt="Ingame menu" src="assets/screenshots/ingame-menu.png" width="49%">
+    <img alt="Guide" src="assets/screenshots/guide.png" width="49%">
+    <img alt="Settings" src="assets/screenshots/settings.png" width="49%">
+    <img alt="Themes" src="assets/screenshots/themes.png" width="49%">
+    <img alt="Localization" src="assets/screenshots/localization.png" width="49%">
+</div>
 
 ## Installation
 
