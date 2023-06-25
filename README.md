@@ -2,6 +2,17 @@
 
 Allium is a custom launcher for the Miyoo Mini and Miyoo Mini Plus handheld devices, similar to [OnionOS](https://github.com/OnionUI/Onion) and [MiniUI](https://github.com/shauninman/MiniUI).
 
+## Project Goals
+
+The goal of Allium is to replace MainUI (stock UI) with a faster and more user-friendly UI.
+- Fast
+- Clean, user-friendly UI
+- RetroArch (with Netplay, achievements)
+- Box art
+- Support running on both Miyoo Mini and Miyoo Mini Plus without changes
+
+# Screenshots
+
 <div>
     <img alt="Main menu" src="assets/screenshots/main-menu.png" width="49%">
     <img alt="Ingame menu" src="assets/screenshots/ingame-menu.png" width="49%">
@@ -31,20 +42,21 @@ The SD card layout should look like this:
 - Works without configuration
 - Box art (PNG, JPG, GIF, TGA, BMP)
 - Recents list (sort by last played or playtime)
-- RetroArch for all supported cores
+- [RetroArch for all supported cores](https://github.com/goweiwen/Allium/wiki/Console-Mapper)
 - Battery indicator
 - Volume & Brightness (menu + vol up/down) control
 - In-game menu (save, load, reset, access RetroArch menu, quit)
+- [In-game guide reader](https://github.com/goweiwen/Allium/wiki/In-game-Guide-Walkthrough-Reader)
 - Automatic resume when powering off/on
 - Settings page
     - WiFi (IP Address, Telnet, FTP)
     - Change LCD settings
     - Customize theme colours
+    - Change system language
 
-## Todo
+## Planned Features
 (roughly in order of priority)
 - Ingame menu disk changer
-- Ingame guide reader
 - Clock adjustment
 - WiFi stuff:
     - NTP
@@ -64,9 +76,6 @@ The SD card layout should look like this:
     - Save current theme to file
 - File-system database to cache folder structure
 
-## Known bugs
-- Brightness in settings is not linked to menu+vol hotkey adjustments
-
 ## Development
 
 Allium comes with a simulator that can be used for development. The simulator requires SDL2 to be installed.
@@ -76,7 +85,16 @@ Allium comes with a simulator that can be used for development. The simulator re
 2. [SDL2](https://github.com/Rust-SDL2/rust-sdl2#sdl20-development-libraries) (optional, if simulator is not used)
 3. [cross](https://github.com/cross-rs/cross): `cargo install cross --git https://github.com/cross-rs/cross` (optional, for cross-compilation)
 
+### Architecture
+Allium is split into 3 binaries:
+- `alliumd` (daemon that handles launcher/game/menu launching, vol/brightness hotkeys, poweroff)
+- `allium-launcher` (main menu, including games, recents, settings)
+- `allium-menu` (ingame menu, including guide reader)
+
+Shared code is located in the `common` crate.
+
 ### Simulator
+There is no simulator for `alliumd` (no UI, only logic).
 ```
 # Run main menu (allium-launcher)
 make simulator-launcher
