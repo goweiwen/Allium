@@ -39,6 +39,8 @@ pub struct AlliumD<P: Platform> {
     #[serde(skip)]
     keys: EnumMap<Key, bool>,
     #[serde(skip)]
+    is_menu_pressed_alone: bool,
+    #[serde(skip)]
     is_terminating: bool,
     volume: i32,
     brightness: u8,
@@ -70,6 +72,7 @@ impl AlliumD<DefaultPlatform> {
             main: spawn_main(),
             menu: None,
             keys: EnumMap::default(),
+            is_menu_pressed_alone: false,
             is_terminating: false,
             volume: 0,
             brightness: 50,
@@ -167,6 +170,15 @@ impl AlliumD<DefaultPlatform> {
             self.is_ingame()
         );
         match key_event {
+            KeyEvent::Pressed(Key::Menu) => {
+                self.is_menu_pressed_alone = true;
+            }
+            KeyEvent::Pressed(_) => {
+                self.is_menu_pressed_alone = false;
+            }
+            KeyEvent::Released(_) | KeyEvent::Autorepeat(_) => {}
+        }
+        match key_event {
             KeyEvent::Pressed(key) => {
                 self.keys[key] = true;
             }
@@ -209,19 +221,21 @@ impl AlliumD<DefaultPlatform> {
                 self.handle_quit().await?;
             }
             KeyEvent::Released(Key::Menu) => {
-                if self.is_ingame()
-                    && self
-                        .keys
-                        .iter()
-                        .all(|(k, pressed)| k == Key::Menu || !pressed)
-                {
-                    if let Some(game_info) = GameInfo::load()? {
-                        if let Some(menu) = &mut self.menu {
-                            terminate(menu).await?;
-                        } else if game_info.has_menu {
-                            #[cfg(unix)]
-                            signal(&self.main, Signal::SIGSTOP)?;
-                            self.menu = Some(Command::new(ALLIUM_MENU.as_path()).spawn()?);
+                if self.is_menu_pressed_alone {
+                    if self.is_ingame()
+                        && self
+                            .keys
+                            .iter()
+                            .all(|(k, pressed)| k == Key::Menu || !pressed)
+                    {
+                        if let Some(game_info) = GameInfo::load()? {
+                            if let Some(menu) = &mut self.menu {
+                                terminate(menu).await?;
+                            } else if game_info.has_menu {
+                                #[cfg(unix)]
+                                signal(&self.main, Signal::SIGSTOP)?;
+                                self.menu = Some(Command::new(ALLIUM_MENU.as_path()).spawn()?);
+                            }
                         }
                     }
                 }
