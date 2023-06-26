@@ -220,6 +220,9 @@ impl AlliumD<DefaultPlatform> {
                 self.is_terminating = true;
                 self.handle_quit().await?;
             }
+            KeyEvent::Pressed(Key::Menu) => {
+                self.is_menu_pressed_alone = true;
+            }
             KeyEvent::Released(Key::Menu) => {
                 if self.is_menu_pressed_alone {
                     if self.is_ingame()
@@ -238,6 +241,7 @@ impl AlliumD<DefaultPlatform> {
                             }
                         }
                     }
+                    self.is_menu_pressed_alone = false;
                 }
             }
             _ => {}
