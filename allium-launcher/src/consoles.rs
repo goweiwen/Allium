@@ -12,19 +12,27 @@ use tracing::debug;
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct Console {
-    #[serde(skip)]
     /// The name of the console.
+    #[serde(skip)]
     pub name: String,
     /// If present, takes priority over RetroArch cores.
+    #[serde(default)]
     pub path: Option<PathBuf>,
     /// List of RetroArch cores to use. First is default.
+    #[serde(default)]
     pub cores: Vec<String>,
-    /// Folder names to match against. If the folder matches exactly OR contains a parenthesized string that matches exactly, this core will be used.
+    /// Folder/file names to match against. If the folder/file matches exactly OR contains a parenthesized string that matches exactly, this core will be used.
     /// e.g. "GBA" matches "GBA", "Game Boy Advance (GBA)"
-    pub folders: Vec<String>,
+    #[serde(default)]
+    pub patterns: Vec<String>,
     /// File extensions to match against. This matches against all extensions, if there are multiple.
     /// e.g. "gba" matches "Game.gba", "Game.GBA", "Game.gba.zip"
+    #[serde(default)]
     pub extensions: Vec<String>,
+    /// File names to match against. This matches against the entire file name, including extension.
+    /// e.g. "Doukutsu.exe" for NXEngine
+    #[serde(default)]
+    pub file_name: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -151,8 +159,18 @@ impl ConsoleMapper {
         Ok(())
     }
 
-    pub fn get_console(&self, mut path: &Path) -> Option<&Console> {
+    pub fn get_console(&self, path: &Path) -> Option<&Console> {
         let path_lowercase = path.as_os_str().to_ascii_lowercase();
+
+        if let Some(name) = path.file_name().and_then(|name| name.to_str()) {
+            let console = self
+                .consoles
+                .iter()
+                .find(|core| core.file_name.iter().any(|s| name == s));
+            if console.is_some() {
+                return console;
+            }
+        }
 
         if let Some(extensions) = path_lowercase.to_str() {
             for ext in extensions.split('.').skip(1) {
@@ -166,19 +184,20 @@ impl ConsoleMapper {
             }
         }
 
-        while let Some(parent) = path.parent() {
-            if let Some(parent_filename) = parent.file_name().and_then(|parent| parent.to_str()) {
+        let mut parent = Some(path);
+        while let Some(path) = parent {
+            println!("path: {:?}", path);
+            if let Some(filename) = path.file_name().and_then(|path| path.to_str()) {
                 let console = self.consoles.iter().find(|core| {
-                    core.folders.iter().any(|folder| {
-                        parent_filename == folder
-                            || parent_filename.contains(&format!("({})", folder))
+                    core.patterns.iter().any(|pattern| {
+                        filename == pattern || filename.contains(&format!("({})", pattern))
                     })
                 });
                 if console.is_some() {
                     return console;
                 }
             }
-            path = parent;
+            parent = path.parent();
         }
 
         None
@@ -229,10 +248,11 @@ mod tests {
         let mut mapper = ConsoleMapper::new();
         mapper.consoles = vec![Console {
             name: "Test".to_string(),
-            folders: vec!["POKE".to_string(), "PKM".to_string()],
+            patterns: vec!["POKE".to_string(), "PKM".to_string()],
             extensions: vec!["gb".to_string(), "gbc".to_string()],
             cores: vec![],
             path: None,
+            file_name: vec![],
         }];
 
         assert!(mapper.get_console(Path::new("Roms/POKE/rom.zip")).is_some());
@@ -253,13 +273,18 @@ mod tests {
 
     #[test]
     fn test_config() {
-        env::set_var("ALLIUM_CONFIG_DIR", "../assets/root/.allium");
+        env::set_var("ALLIUM_BASE_DIR", "../assets/root/.allium");
 
         let mut mapper = ConsoleMapper::new();
         mapper.load_config().unwrap();
 
         let eq = |rom: &str, console_name: &str, core: &str| -> bool {
-            let console = mapper.get_console(Path::new(rom)).unwrap();
+            let console = mapper.get_console(Path::new(rom));
+            if console.is_none() {
+                println!("No console found for {}", rom);
+                return false;
+            }
+            let console = console.unwrap();
             if console.name == console_name && console.cores.first() == Some(&core.to_string()) {
                 true
             } else {
@@ -301,6 +326,7 @@ mod tests {
         assert!(eq("PSX/rom.zip", "Sony - PlayStation", "pcsx_rearmed"));
         assert!(eq("PS1/rom.zip", "Sony - PlayStation", "pcsx_rearmed"));
         assert!(eq("PS/rom.zip", "Sony - PlayStation", "pcsx_rearmed"));
+        assert!(eq("PS/playlist.m3u", "Sony - PlayStation", "pcsx_rearmed"));
         assert!(eq("rom.pbp", "Sony - PlayStation", "pcsx_rearmed"));
 
         // Neo Geo Pocket
@@ -312,5 +338,9 @@ mod tests {
         // Sega - Game Gear
         assert!(eq("GG/rom", "Sega - Game Gear", "picodrive"));
         assert!(eq("rom.gg", "Sega - Game Gear", "picodrive"));
+
+        // NXEngine
+        assert!(eq("Cave Story/Doukutsu.exe", "NXEngine", "nxengine"));
+        assert!(eq("Cave Story (NXENGINE).m3u", "NXEngine", "nxengine"));
     }
 }

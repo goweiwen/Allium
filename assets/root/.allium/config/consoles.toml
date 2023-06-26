@@ -1,77 +1,77 @@
 ["Native"]
 cores = []
 path = "/mnt/SDCARD/.allium/cores/pak/launch.sh"
-folders = ["PORTS", "SH"]
+patterns = ["PORTS", "SH"]
 extensions = ["pak"]
 
 ["Amstrad - CPC"]
 cores = ["crocods"]
-folders = ["CPC"]
+patterns = ["CPC"]
 extensions = ["sna", "kcr"]
 
 [Arcade]
 cores = ["mame2003_plus"]
-folders = ["ARCADE"]
+patterns = ["ARCADE"]
 extensions = []
 
 ["Atari - 800"]
 cores = ["atari800"]
-folders = ["EIGHTHUNDRED"]
+patterns = ["EIGHTHUNDRED"]
 extensions = ["xex"]
 
 ["Atari - 2600"]
 cores = ["stella2014"]
-folders = ["ATARI"]
+patterns = ["ATARI"]
 extensions = ["a26"]
 
 ["Atari - 5200"]
 cores = ["a5200"]
-folders = ["FIFTYTWOHUNDRED"]
+patterns = ["FIFTYTWOHUNDRED"]
 extensions = ["a52"]
 
 ["Atari - 7800"]
 cores = ["prosystem"]
-folders = ["SEVENTYEIGHTHUNDRED"]
+patterns = ["SEVENTYEIGHTHUNDRED"]
 extensions = ["a78"]
 
 ["Atari - Lynx"]
 cores = ["handy"]
-folders = ["LYNX"]
+patterns = ["LYNX"]
 extensions = ["lnx"]
 
 ["Bandai - Sufami Turbo"]
 cores = ["snes9x"]
-folders = ["SUFAMI"]
+patterns = ["SUFAMI"]
 extensions = []
 
 ["Bandai - WonderSwanColor"]
 cores = ["mednafen_wswan"]
-folders = ["WS"]
+patterns = ["WS"]
 extensions = ["ws", "pc2"]
 
 ["Capcom - CPS1"]
 cores = ["fbalpha2012_cps1"]
-folders = ["CPS1"]
+patterns = ["CPS1"]
 extensions = []
 
 ["Capcom - CPS2"]
 cores = ["fbalpha2012_cps2"]
-folders = ["CPS2"]
+patterns = ["CPS2"]
 extensions = []
 
 ["Capcom - CPS3"]
 cores = ["fbalpha2012_cps3"]
-folders = ["CPS3"]
+patterns = ["CPS3"]
 extensions = []
 
 ["Coleco - ColecoVision"]
 cores = ["bluemsx"]
-folders = ["COLECO"]
+patterns = ["COLECO"]
 extensions = ["ri", "col", "sc"]
 
 ["Commodore - Amiga"]
 cores = ["puae2021"]
-folders = ["AMIGA"]
+patterns = ["AMIGA"]
 extensions = [
     "adf",
     "adz",
@@ -91,12 +91,12 @@ extensions = [
 
 ["Commodore - C64"]
 cores = ["vice_x64"]
-folders = ["COMMODORE"]
+patterns = ["COMMODORE"]
 extensions = []
 
 ["Commodore - VIC-20"]
 cores = ["vice_xvic"]
-folders = ["VIC20"]
+patterns = ["VIC20"]
 extensions = [
     "d64",
     "d6z",
@@ -134,32 +134,32 @@ extensions = [
 
 ["Fairchild - ChannelF"]
 cores = ["freechaf"]
-folders = ["FAIRCHILD"]
+patterns = ["FAIRCHILD"]
 extensions = ["chf"]
 
 ["GCE - Vectrex"]
 cores = ["vecx"]
-folders = ["VECTREX"]
+patterns = ["VECTREX"]
 extensions = ["vec"]
 
 ["Magnavox - Odyssey2"]
 cores = ["o2em"]
-folders = ["ODYSSEY"]
+patterns = ["ODYSSEY"]
 extensions = []
 
 ["Mattel - Intellivision"]
 cores = ["freeintv"]
-folders = ["INTELLIVISION"]
+patterns = ["INTELLIVISION"]
 extensions = ["int"]
 
 ["Mega Duck"]
 cores = ["sameduck"]
-folders = ["MEGADUCK"]
+patterns = ["MEGADUCK"]
 extensions = []
 
 ["Microsoft - DOS"]
 cores = ["dosbox_pure"]
-folders = ["DOS"]
+patterns = ["DOS"]
 extensions = [
     "dosz",
     "exe",
@@ -176,170 +176,179 @@ extensions = [
 
 ["Microsoft - MSX"]
 cores = ["bluemsx"]
-folders = ["MSX"]
+patterns = ["MSX"]
 extensions = []
 
 ["NEC - SuperGrafx"]
 cores = ["mednafen_supergrafx"]
-folders = ["SGFX"]
+patterns = ["SGFX"]
 extensions = ["sgx"]
 
 ["NEC - TurboGrafx CD"]
 cores = ["mednafen_pce_fast"]
-folders = ["PCECD"]
+patterns = ["PCECD"]
 extensions = []
 
 ["NEC - TurboGrafx-16"]
 cores = ["mednafen_pce_fast"]
-folders = ["PCE"]
+patterns = ["PCE"]
 extensions = ["pce"]
 
 ["Nintendo - Famicom Disk Syst."]
 cores = ["fceumm"]
-folders = ["FDS"]
+patterns = ["FDS"]
 extensions = ["fds"]
 
 ["Nintendo - Game & Watch"]
 cores = ["gw"]
-folders = ["GW"]
+patterns = ["GW"]
 extensions = ["mgw"]
 
 ["Nintendo - Game Boy"]
 cores = ["gambatte", "tgbdual"]
-folders = ["GB", "TGB_Dual"]
+patterns = ["GB", "TGB_Dual"]
 extensions = ["gb"]
 
 ["Nintendo - Game Boy Color"]
 cores = ["gambatte", "mgba"]
-folders = ["GBC", "SGB"]
+patterns = ["GBC", "SGB"]
 extensions = ["gbc"]
 
 ["Nintendo - Game Boy Advance"]
 cores = ["gpsp", "mgba"]
-folders = ["GBA"]
+patterns = ["GBA"]
 extensions = ["gba"]
 
 ["Nintendo - NES"]
 cores = ["fceumm", "nestopia"]
-folders = ["FC", "NES"]
+patterns = ["FC", "NES"]
 extensions = ["nes", "unif", "unf"]
 
 ["Nintendo - Pokemon Mini"]
 cores = ["pokemini"]
-folders = ["POKE", "PKM"]
+patterns = ["POKE", "PKM"]
 extensions = ["min"]
 
 ["Nintendo - Satellaview"]
 cores = ["snes9x"]
-folders = ["SATELLAVIEW"]
+patterns = ["SATELLAVIEW"]
 extensions = ["st"]
 
 ["Nintendo - SNES"]
 cores = ["mednafen_supafaust", "snes9x"]
-folders = ["SFC", "SNES"]
+patterns = ["SFC", "SNES"]
 extensions = ["sfc", "smc", "swc", "fig"]
 
 ["Nintendo - Virtual Boy"]
 cores = ["mednafen_vb"]
-folders = ["VB"]
+patterns = ["VB"]
 extensions = ["vb", "vboy"]
 
 ["Phillips - Videopac+"]
 cores = ["o2em"]
-folders = ["VIDEOPAC"]
+patterns = ["VIDEOPAC"]
 extensions = []
 
 [PICO-8]
 cores = ["fake08"]
-folders = ["PICO"]
+patterns = ["PICO"]
 extensions = ["p8", "png"]
 
 ["Ports Collection"]
 cores = ["None"]
-folders = ["PORTS"]
+patterns = ["PORTS"]
 extensions = ["port"]
 
 [SCUMM]
 cores = ["scummvm"]
-folders = ["SCUMMVM"]
+patterns = ["SCUMMVM"]
 extensions = ["scummvm", "target"]
 
 ["Sega - 32X"]
 cores = ["picodrive"]
-folders = ["THIRTYTWOX"]
+patterns = ["THIRTYTWOX"]
 extensions = ["32x"]
 
 ["Sega - CD"]
 cores = ["picodrive"]
-folders = ["SEGACD"]
+patterns = ["SEGACD"]
 extensions = []
 
 ["Sega - Game Gear"]
 cores = ["picodrive"]
-folders = ["GG"]
+patterns = ["GG"]
 extensions = ["gg"]
 
 ["Sega - Genesis"]
 cores = ["picodrive"]
-folders = ["MD"]
+patterns = ["MD"]
 extensions = ["gen", "smd", "md"]
 
 ["Sega - Master System"]
 cores = ["picodrive"]
-folders = ["MS"]
+patterns = ["MS"]
 extensions = ["sms"]
 
 ["Sega - SG-1000"]
 cores = ["gearsystem"]
-folders = ["SEGASGONE"]
+patterns = ["SEGASGONE"]
 extensions = ["sg"]
 
 ["Sinclair - ZX Spectrum"]
 cores = ["fuse"]
-folders = ["ZXS"]
+patterns = ["ZXS"]
 extensions = ["tzx", "z80", "rzx", "scl", "trd"]
 
 ["SNK - Neo Geo"]
 cores = ["fbalpha2012_neogeo"]
-folders = ["NEOGEO"]
+patterns = ["NEOGEO"]
 extensions = []
 
 ["SNK - Neo Geo CD"]
 cores = ["neocd"]
-folders = ["NEOCD"]
+patterns = ["NEOCD"]
 extensions = []
 
 ["SNK - Neo Geo Pocket Color"]
 cores = ["mednafen_ngp"]
-folders = ["NGP", "NGC"]
+patterns = ["NGP", "NGC"]
 extensions = ["ngp", "ngc"]
 
 ["Sony - PlayStation"]
 cores = ["pcsx_rearmed"]
-folders = ["PSX", "PS", "PS1"]
+patterns = ["PSX", "PS", "PS1"]
 extensions = ["mdf", "pbp", "toc", "cbn"]
 
 [TIC-80]
 cores = ["tic80"]
-folders = ["TIC"]
+patterns = ["TIC"]
 extensions = ["tic", "fd", "sap", "k7", "m7"]
 
 ["Watara - Supervision"]
 cores = ["potator"]
-folders = ["SUPERVISION"]
+patterns = ["SUPERVISION"]
 extensions = ["sv"]
 
 ["Java - J2ME"]
 cores = ["squirreljme"]
-folders = ["J2ME"]
+patterns = ["J2ME"]
 extensions = []
 
 ["NEC - PC-98"]
 cores = ["np2kai"]
-folders = ["PC98", "PCNINETYEIGHT", "NINETYEIGHT"]
+patterns = ["PC98", "PCNINETYEIGHT", "NINETYEIGHT"]
 extensions = []
 
 ["NEC - PC-FX"]
 cores = ["mednafen_pcfx"]
-folders = ["PCFX"]
+patterns = ["PCFX"]
 extensions = []
+
+["NXEngine"]
+cores = ["nxengine"]
+patterns = ["NXENGINE"]
+file_name = ["Doukutsu.exe"]
+
+["SH Launcher"]
+cores = ["sh_launcher"]
+extensions = ["sh"]
