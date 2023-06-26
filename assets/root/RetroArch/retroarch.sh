@@ -1,7 +1,8 @@
 #!/bin/sh
+DIR=$(dirname $0)
 
 if [ -f /customer/app/axp_test ]; then
-    exec "$PWD/retroarch_miyoo354" "$@"
+    exec "$DIR/retroarch_miyoo354" "$@"
 else
-    exec "$PWD/retroarch_miyoo283" "$@"
+    exec "$DIR/retroarch_miyoo283" "$@"
 fi

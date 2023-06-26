@@ -1,3 +1,3 @@
 #!/bin/sh
-cd /mnt/SDCARD/RetroArch/
-HOME=/mnt/SDCARD/RetroArch/ exec ./retroarch.sh -v -L ".retroarch/cores/$1_libretro.so" "$2"
+DIR=/mnt/SDCARD/RetroArch/
+HOME=/mnt/SDCARD/RetroArch/ exec "$DIR/retroarch.sh" -v -L "$DIR/.retroarch/cores/$1_libretro.so" "$2"
