@@ -14,6 +14,11 @@ cores = ["mame2003_plus"]
 folders = ["ARCADE"]
 extensions = []
 
+["Atari - 800"]
+cores = ["atari800"]
+folders = ["EIGHTHUNDRED"]
+extensions = ["xex"]
+
 ["Atari - 2600"]
 cores = ["stella2014"]
 folders = ["ATARI"]
