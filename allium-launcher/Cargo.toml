@@ -10,7 +10,6 @@ include = ["/src"]
 anyhow = "1.0.70"
 embedded-graphics = "0.8.0"
 lazy_static = "1.4.0"
-image = "0.24.6"
 regex = "1.8.3"
 rusttype = "0.9.3"
 serde = { version = "1.0.163", features = ["derive"] }
@@ -20,9 +19,10 @@ toml = "0.7.4"
 strum = "0.24.1"
 async-trait = "0.1.68"
 sysinfo = "0.29.2"
-type-map = "0.5.0"
+type-map = "0.4.0"
 simple_logger = { version = "4.2.0", default-features = false }
 log = "0.4.19"
+image = { version = "0.23", default-features = false, features = ["gif", "jpeg", "png"] }
 
 [dependencies.common]
 path = "../common"

@@ -15,13 +15,12 @@ async-trait = "0.1.68"
 chrono = { version = "0.4.26", features = ["serde"] }
 embedded-graphics = "0.8.0"
 enum-map = "2.5.0"
-fluent-templates = "0.8.0"
-image = "0.24.6"
+fluent-templates = { git = "https://github.com/goweiwen/fluent-templates", branch = "ignore", version = "0.8.0", features = ["walkdir"], default-features = false }
+image = { version = "0.23", default-features = false, features = ["gif", "jpeg", "png"] }
 itertools = "0.10.5"
-jpeg-decoder = "0.3.0"
 lazy_static = "1.4.0"
-nix = "0.26.2"
 log = "0.4.19"
+nix = "0.23"
 rusqlite = { version = "0.29.0", features = ["bundled"] }
 rusqlite_migration = "1.0.2"
 rusttype = "0.9.3"
@@ -29,7 +28,7 @@ serde = { version = "1.0.163", features = ["derive"] }
 serde_json = "1.0.96"
 strum = { version = "0.24.1", features = ["derive"] }
 tokio = { version = "1.28.2", features = ["full"] }
-type-map = "0.5.0"
+type-map = "0.4.0"
 
 [target.'cfg(target_arch = "arm")'.dependencies]
 evdev = { version = "0.12.1", features = ["tokio"] }

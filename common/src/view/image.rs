@@ -5,7 +5,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use embedded_graphics::image::ImageRaw;
 use embedded_graphics::Drawable;
-use image::RgbImage;
+use image::{GenericImageView, RgbImage};
 use log::{error, trace};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
