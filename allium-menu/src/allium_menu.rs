@@ -62,7 +62,6 @@ impl AlliumMenu<DefaultPlatform> {
         self.display.save()?;
 
         #[cfg(unix)]
-        let mut sigint = tokio::signal::unix::signal(SignalKind::interrupt())?;
         let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())?;
 
         let (tx, mut rx) = tokio::sync::mpsc::channel(100);
@@ -75,9 +74,6 @@ impl AlliumMenu<DefaultPlatform> {
             #[cfg(unix)]
             tokio::select! {
                 _ = sigterm.recv() => {
-                    self.handle_command(Command::Exit)?;
-                }
-                _ = sigint.recv() => {
                     self.handle_command(Command::Exit)?;
                 }
                 Some(command) = rx.recv() => {

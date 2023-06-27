@@ -60,7 +60,6 @@ impl AlliumLauncher<DefaultPlatform> {
         #[cfg(unix)]
         let mut sigterm =
             tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
-        let mut sigint = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())?;
 
         let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 
@@ -75,9 +74,6 @@ impl AlliumLauncher<DefaultPlatform> {
 
             #[cfg(unix)]
             tokio::select! {
-                _ = sigint.recv() => {
-                    self.handle_command(Command::Exit).await?;
-                }
                 _ = sigterm.recv() => {
                     self.handle_command(Command::Exit).await?;
                 }
