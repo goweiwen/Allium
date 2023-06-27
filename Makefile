@@ -54,3 +54,10 @@ bump-version: lint
 	sed -i "s/^version = \".*\"/version = \"$(version)\"/" alliumd/Cargo.toml
 	sed -i "s/^version = \".*\"/version = \"$(version)\"/" common/Cargo.toml
 	cargo check
+	git add allium-launcher/Cargo.toml
+	git add allium-menu/Cargo.toml
+	git add alliumd/Cargo.toml
+	git add common/Cargo.toml
+	git add Cargo.lock
+	git commit -m "chore: bump version to v$(version)"
+	git tag "v$(version)" -a
