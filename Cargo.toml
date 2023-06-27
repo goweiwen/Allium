@@ -5,6 +5,11 @@ resolver = "2"
 # Following: https://github.com/johnthagen/min-sized-rust
 [profile.release]
 strip = true
-opt-level = "z"
+opt-level = "s"
 lto = true
 codegen-units = 1
+
+# allium-launcher will not be running at the same time as games,
+# so size is not as important as speed.
+[profile.release.package.allium-launcher]
+opt-level = 3
