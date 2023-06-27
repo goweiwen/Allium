@@ -55,7 +55,7 @@ lazy_static! {
 
 pub const AUTO_SLEEP_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 pub const BATTERY_SHUTDOWN_THRESHOLD: i32 = 5;
-pub const BATTERY_UPDATE_INTERVAL: Duration = Duration::from_secs(5);
+pub const BATTERY_UPDATE_INTERVAL: Duration = Duration::from_secs(10);
 pub const BUTTON_DIAMETER: u32 = 31;
 pub const CLOCK_UPDATE_INTERVAL: Duration = Duration::from_secs(1);
 pub const IMAGE_SIZE: Size = Size::new(250, 376);
