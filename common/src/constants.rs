@@ -30,7 +30,7 @@ lazy_static! {
 
     // State
     pub static ref ALLIUMD_STATE: PathBuf = ALLIUM_BASE_DIR.join("state/alliumd.json");
-    pub static ref ALLIUM_DATABASE: PathBuf = ALLIUM_BASE_DIR.join("state/allium.db");
+    pub static ref ALLIUM_DATABASE: PathBuf = ALLIUM_SD_ROOT.join("Saves/CurrentProfile/allium.db");
     pub static ref ALLIUM_LAUNCHER_STATE: PathBuf =
         ALLIUM_BASE_DIR.join("state/allium-launcher.json");
     pub static ref ALLIUM_MENU_STATE: PathBuf =
