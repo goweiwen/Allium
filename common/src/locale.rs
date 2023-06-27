@@ -14,7 +14,9 @@ pub struct LocaleSettings {
 
 impl Default for LocaleSettings {
     fn default() -> Self {
-        Self::new()
+        Self {
+            lang: "en-US".to_string(),
+        }
     }
 }
 
