@@ -1,5 +1,12 @@
 {
     "rust-analyzer.imports.prefix": "crate",
     "rust-analyzer.cargoRunner": "cross-rust-analyzer",
-    "cross-rust-analyzer.target": "arm-unknown-linux-gnueabihf"
+    "cross-rust-analyzer.target": "arm-unknown-linux-gnueabihf",
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "third-party": true,
+        "target": true,
+        "dist": true,
+    }
 }
