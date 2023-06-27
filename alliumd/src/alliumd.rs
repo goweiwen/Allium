@@ -100,9 +100,7 @@ impl AlliumD<DefaultPlatform> {
                     }
                     if battery.percentage() <= BATTERY_SHUTDOWN_THRESHOLD && !battery.charging() {
                         warn!("battery is low, shutting down");
-                        if let Err(e) = battery_tx.send(()).await {
-                            error!("failed to send battery low signal: {}", e);
-                        }
+                        battery_tx.try_send(()).ok();
                     }
                     tokio::time::sleep(BATTERY_UPDATE_INTERVAL).await;
                 }
