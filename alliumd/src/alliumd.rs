@@ -11,9 +11,9 @@ use common::constants::{
 };
 use common::wifi::WiFiSettings;
 use enum_map::EnumMap;
+use log::{debug, error, info, trace, warn};
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
-use tracing::{debug, error, info, trace, warn};
 
 use common::database::Database;
 use common::game_info::GameInfo;

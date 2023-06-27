@@ -16,10 +16,10 @@ use common::resources::Resources;
 use common::retroarch::RetroArchCommand;
 use common::stylesheet::Stylesheet;
 use common::view::{BatteryIndicator, ButtonHint, Label, List, Row, View};
+use log::warn;
 use serde::{Deserialize, Serialize};
 use strum::{EnumCount, EnumIter, IntoEnumIterator};
 use tokio::sync::mpsc::Sender;
-use tracing::warn;
 
 use crate::view::TextReader;
 

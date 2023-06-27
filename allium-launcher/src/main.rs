@@ -6,13 +6,11 @@ use anyhow::Result;
 
 use allium_launcher::AlliumLauncher;
 use common::platform::{DefaultPlatform, Platform};
+use simple_logger::SimpleLogger;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let subscriber = tracing_subscriber::fmt::Subscriber::builder()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
-        .finish();
-    tracing::subscriber::set_global_default(subscriber)?;
+    SimpleLogger::new().init().unwrap();
 
     let platform = DefaultPlatform::new()?;
     let mut app = AlliumLauncher::new(platform)?;

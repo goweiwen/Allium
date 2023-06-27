@@ -6,8 +6,8 @@ use std::os::fd::AsRawFd;
 use std::{ffi::c_int, fs::File};
 
 use anyhow::Result;
+use log::debug;
 use nix::{ioctl_readwrite, ioctl_write_ptr};
-use tracing::debug;
 
 const MAX_VOLUME: i32 = 20;
 const MIN_RAW_VALUE: i32 = -60;
@@ -92,12 +92,12 @@ fn set_volume_raw(mut volume: i32, add: i32) -> Result<()> {
         offset: &mi_ao_vol as *const _ as c_ulong,
     };
     // TODO: figure out why these traces are needed... something to do IO on stdout or some delay?
-    tracing::debug!(
+    log::debug!(
         "miao_vol (size: {}): {:?}",
         size_of::<MiAoVol>(),
         &mi_ao_vol
     );
-    tracing::debug!(
+    log::debug!(
         "miao_prm_vol (size: {}): {:?}",
         size_of::<MiPrm>(),
         &mi_prm_vol
@@ -106,7 +106,7 @@ fn set_volume_raw(mut volume: i32, add: i32) -> Result<()> {
         mi_ao_getvolume(mi_ao_fd, &mut mi_prm_vol)?;
     }
     let prev_volume = mi_ao_vol.volume;
-    tracing::debug!("prev volume: {:?}", mi_ao_vol);
+    log::debug!("prev volume: {:?}", mi_ao_vol);
 
     volume = if add != 0 {
         prev_volume + add
@@ -124,7 +124,7 @@ fn set_volume_raw(mut volume: i32, add: i32) -> Result<()> {
     unsafe {
         mi_ao_setvolume(mi_ao_fd, &mi_prm_vol as *const _)?;
     }
-    tracing::debug!("set raw volume: {}", mi_ao_vol.volume);
+    log::debug!("set raw volume: {}", mi_ao_vol.volume);
 
     if prev_volume <= MIN_RAW_VALUE && volume > MIN_RAW_VALUE {
         let mi_ao_mute = MiAoMute { dev: 0, enable: 0 };

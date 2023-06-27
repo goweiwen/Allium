@@ -13,8 +13,8 @@ use embedded_graphics_simulator::{
     OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
 };
 use itertools::iproduct;
+use log::warn;
 use sdl2::keyboard::Keycode;
-use tracing::warn;
 
 use crate::battery::Battery;
 use crate::display::color::Color;

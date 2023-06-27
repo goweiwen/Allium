@@ -8,7 +8,7 @@ use common::game_info::GameInfo;
 use serde::{Deserialize, Serialize};
 
 use common::constants::{ALLIUM_CONFIG_CONSOLES, ALLIUM_GAMES_DIR, ALLIUM_RETROARCH};
-use tracing::debug;
+use log::debug;
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct Console {

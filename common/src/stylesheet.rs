@@ -3,9 +3,9 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use anyhow::Result;
+use log::{debug, error, warn};
 use rusttype::Font;
 use serde::{Deserialize, Serialize};
-use tracing::{debug, error, warn};
 
 use crate::{
     constants::{ALLIUM_FONTS_DIR, ALLIUM_STYLESHEET},

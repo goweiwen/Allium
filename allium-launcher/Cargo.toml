@@ -17,12 +17,12 @@ serde = { version = "1.0.163", features = ["derive"] }
 serde_json = "1.0.96"
 tokio = { version = "1.28.2", features = ["full"] }
 toml = "0.7.4"
-tracing = "0.1.37"
-tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 strum = "0.24.1"
 async-trait = "0.1.68"
 sysinfo = "0.29.2"
 type-map = "0.5.0"
+simple_logger = { version = "4.2.0", default-features = false }
+log = "0.4.19"
 
 [dependencies.common]
 path = "../common"

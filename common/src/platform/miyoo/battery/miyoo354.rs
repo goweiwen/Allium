@@ -1,8 +1,8 @@
 use std::process::Command;
 
 use anyhow::Result;
+use log::debug;
 use serde::Deserialize;
-use tracing::debug;
 
 use crate::battery::Battery;
 

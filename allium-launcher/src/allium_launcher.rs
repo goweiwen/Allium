@@ -8,7 +8,7 @@ use common::locale::{Locale, LocaleSettings};
 use common::resources::Resources;
 use common::view::View;
 use embedded_graphics::prelude::*;
-use tracing::{debug, warn};
+use log::{debug, warn};
 
 use common::database::Database;
 use common::display::Display;

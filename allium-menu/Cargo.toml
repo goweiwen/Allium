@@ -15,13 +15,13 @@ rusttype = "0.9.3"
 serde = { version = "1.0.163", features = ["derive"] }
 serde_json = "1.0.96"
 tokio = { version = "1.28.2", features = ["full"] }
-tracing = "0.1.37"
-tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 strum = { version = "0.24.1", features = ["derive"] }
 async-trait = "0.1.68"
 embedded-text = "0.6.0"
 fluent-templates = "0.8.0"
 type-map = "0.5.0"
+simple_logger = { version = "4.2.0", default-features = false }
+log = "0.4.19"
 
 [dependencies.common]
 path = "../common"

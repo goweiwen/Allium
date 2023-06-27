@@ -12,12 +12,12 @@ enum-map = "2.5.0"
 futures = "0.3.28"
 lazy_static = "1.4.0"
 nix = "0.26.2"
+log = "0.4.19"
 rusttype = "0.9.3"
 serde = { version = "1.0.163", features = ["derive"] }
 serde_json = "1.0.96"
+simple_logger = { version = "4.2.0", default-features = false }
 tokio = { version = "1.28.2", features = ["full"] }
-tracing = "0.1.37"
-tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 
 [dependencies.common]
 path = "../common"

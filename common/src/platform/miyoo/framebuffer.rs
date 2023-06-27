@@ -3,7 +3,7 @@ use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::Pixel;
 use framebuffer::Framebuffer;
-use tracing::trace;
+use log::trace;
 
 use crate::display::color::Color;
 use crate::display::Display;

@@ -3,9 +3,9 @@ use std::time::Instant;
 
 use anyhow::Result;
 use async_trait::async_trait;
+use log::error;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
-use tracing::error;
 
 use crate::battery::Battery;
 use crate::constants::BATTERY_UPDATE_INTERVAL;

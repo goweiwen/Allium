@@ -4,8 +4,8 @@ use std::{
 };
 
 use anyhow::Result;
+use log::{debug, warn};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, warn};
 
 use crate::constants::ALLIUM_DISPLAY_SETTINGS;
 

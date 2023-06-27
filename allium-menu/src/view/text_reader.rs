@@ -22,8 +22,8 @@ use embedded_graphics::Drawable;
 use embedded_text::alignment::HorizontalAlignment;
 use embedded_text::style::{HeightMode, TextBoxStyleBuilder, VerticalOverdraw};
 use embedded_text::TextBox;
+use log::{error, trace};
 use tokio::sync::mpsc::Sender;
-use tracing::{error, trace};
 
 pub struct TextReader {
     rect: Rect,

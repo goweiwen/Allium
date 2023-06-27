@@ -1,6 +1,6 @@
 use anyhow::Result;
+use log::{debug, trace};
 use tokio::net::UdpSocket;
-use tracing::{debug, trace};
 
 use crate::constants::RETROARCH_UDP_SOCKET;
 

@@ -13,7 +13,7 @@ use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::View;
 use embedded_graphics::prelude::*;
-use tracing::warn;
+use log::warn;
 use type_map::TypeMap;
 
 use crate::view::IngameMenu;

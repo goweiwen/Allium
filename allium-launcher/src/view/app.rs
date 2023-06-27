@@ -13,9 +13,9 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::{Stylesheet, StylesheetColor};
 use common::view::{BatteryIndicator, Label, Row, View};
+use log::{trace, warn};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
-use tracing::{trace, warn};
 
 use crate::view::browser::BrowserState;
 use crate::view::settings::SettingsState;

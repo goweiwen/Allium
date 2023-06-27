@@ -2,8 +2,8 @@ use std::fs::{self, File};
 
 use anyhow::{Context, Result};
 use fluent_templates::{loader::langid, ArcLoader, LanguageIdentifier, Loader};
+use log::{debug, warn};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, warn};
 
 use crate::constants::{ALLIUM_LOCALES_DIR, ALLIUM_LOCALE_SETTINGS};
 
