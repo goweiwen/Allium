@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::Path;
 
 use anyhow::Result;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use common::battery::Battery;
 use common::constants::{
     ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU, ALLIUM_VERSION,
@@ -42,6 +42,8 @@ pub struct AlliumD<P: Platform> {
     is_menu_pressed_alone: bool,
     #[serde(skip)]
     is_terminating: bool,
+    #[serde(default = "Utc::now")]
+    time: DateTime<Utc>,
     volume: i32,
     brightness: u8,
 }
@@ -74,6 +76,7 @@ impl AlliumD<DefaultPlatform> {
             keys: EnumMap::default(),
             is_menu_pressed_alone: false,
             is_terminating: false,
+            time: Utc::now(),
             volume: 0,
             brightness: 50,
         })
@@ -263,6 +266,7 @@ impl AlliumD<DefaultPlatform> {
             signal(&self.main, Signal::SIGTERM)?;
             self.main.wait().await?;
         }
+        self.time = Utc::now();
         self.save()?;
         self.update_play_time()?;
         self.platform.shutdown()?;
@@ -273,8 +277,18 @@ impl AlliumD<DefaultPlatform> {
         if ALLIUMD_STATE.exists() {
             debug!("found state, loading from file");
             if let Ok(json) = fs::read_to_string(ALLIUMD_STATE.as_path()) {
-                if let Ok(json) = serde_json::from_str(&json) {
-                    return Ok(json);
+                if let Ok(this) = serde_json::from_str::<AlliumD<_>>(&json) {
+                    if Utc::now() < this.time {
+                        info!(
+                            "RTC is not working, advancing time to {}",
+                            this.time.format("%F %T")
+                        );
+                        Command::new("date")
+                            .arg("-s")
+                            .arg(this.time.format("%F %T").to_string())
+                            .spawn()?;
+                    }
+                    return Ok(this);
                 }
             }
             warn!("failed to read state file, removing");
