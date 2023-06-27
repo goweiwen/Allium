@@ -11,10 +11,10 @@ simulator-env:
 	rsync -ar assets/root/.allium assets/simulator/
 
 simulator-launcher: simulator-env
-	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_BASE_DIR=assets/simulator/.allium ALLIUM_GAMES_DIR=assets/simulator/Roms cargo run --bin allium-launcher --features=simulator
+	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_DATABASE=assets/simulator/allium.db ALLIUM_BASE_DIR=assets/simulator/.allium ALLIUM_GAMES_DIR=assets/simulator/Roms cargo run --bin allium-launcher --features=simulator
 
 simulator-menu: simulator-env
-	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_BASE_DIR=assets/simulator/.allium ALLIUM_GAMES_DIR=assets/simulator/Roms cargo run --bin allium-menu --features=simulator
+	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_DATABASE=assets/simulator/allium.db ALLIUM_BASE_DIR=assets/simulator/.allium ALLIUM_GAMES_DIR=assets/simulator/Roms cargo run --bin allium-menu --features=simulator
 
 clean:
 	rm -r $(DIST_DIR)
@@ -24,12 +24,13 @@ static:
 	rsync -a --exclude='.gitkeep' assets/root/. $(DIST_DIR)
 
 build:
-	cross build --release
+	cross build --release --features=miyoo
 
 package-build:
-	rsync -a $(BUILD_DIR)/alliumd $(DIST_DIR)/.allium
-	rsync -a $(BUILD_DIR)/allium-launcher $(DIST_DIR)/.allium
-	rsync -a $(BUILD_DIR)/allium-menu $(DIST_DIR)/.allium
+	mkdir -p $(DIST_DIR)/.allium/bin
+	rsync -a $(BUILD_DIR)/alliumd $(DIST_DIR)/.allium/bin/
+	rsync -a $(BUILD_DIR)/allium-launcher $(DIST_DIR)/.allium/bin/
+	rsync -a $(BUILD_DIR)/allium-menu $(DIST_DIR)/.allium/bin/
 
 retroarch: $(RETROARCH)/retroarch_miyoo283 $(RETROARCH)/retroarch_miyoo354
 

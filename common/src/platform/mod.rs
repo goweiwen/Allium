@@ -1,7 +1,8 @@
-#[cfg(target_arch = "arm")]
-mod miyoo;
-#[cfg(not(any(target_arch = "arm", feature = "simulator")))]
+#[cfg(not(any(feature = "miyoo", feature = "simulator")))]
 mod mock;
+
+#[cfg(feature = "miyoo")]
+mod miyoo;
 #[cfg(feature = "simulator")]
 mod simulator;
 
@@ -15,13 +16,13 @@ use crate::{
     display::{settings::DisplaySettings, Display},
 };
 
-#[cfg(target_arch = "arm")]
+#[cfg(feature = "miyoo")]
 pub type DefaultPlatform = miyoo::MiyooPlatform;
 
 #[cfg(feature = "simulator")]
 pub type DefaultPlatform = simulator::SimulatorPlatform;
 
-#[cfg(not(any(target_arch = "arm", feature = "simulator")))]
+#[cfg(not(any(feature = "miyoo", feature = "simulator")))]
 pub type DefaultPlatform = mock::MockPlatform;
 
 // Platform is not threadsafe because it is ?Send

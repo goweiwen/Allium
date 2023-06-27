@@ -30,7 +30,6 @@ lazy_static! {
 
     // State
     pub static ref ALLIUMD_STATE: PathBuf = ALLIUM_BASE_DIR.join("state/alliumd.json");
-    pub static ref ALLIUM_DATABASE: PathBuf = ALLIUM_SD_ROOT.join("Saves/CurrentProfile/allium.db");
     pub static ref ALLIUM_LAUNCHER_STATE: PathBuf =
         ALLIUM_BASE_DIR.join("state/allium-launcher.json");
     pub static ref ALLIUM_MENU_STATE: PathBuf =
@@ -41,16 +40,15 @@ lazy_static! {
     pub static ref ALLIUM_LOCALE_SETTINGS: PathBuf = ALLIUM_BASE_DIR.join("state/locale.json");
     pub static ref ALLIUM_WIFI_SETTINGS: PathBuf = ALLIUM_BASE_DIR.join("state/wifi.json");
 
+    // Database
+    pub static ref ALLIUM_DATABASE: PathBuf = env::var("ALLIUM_DATABASE")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| ALLIUM_SD_ROOT.join("Saves/CurrentProfile/allium.db"));
+
     // Binaries & Scripts
-    pub static ref ALLIUM_LAUNCHER: PathBuf = env::var("ALLIUM_LAUNCHER")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| ALLIUM_BASE_DIR.join("allium-launcher"));
-    pub static ref ALLIUM_MENU: PathBuf = env::var("ALLIUM_MENU")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| ALLIUM_BASE_DIR.join("allium-menu"));
-    pub static ref ALLIUM_RETROARCH: PathBuf = env::var("ALLIUM_RETROARCH")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| ALLIUM_BASE_DIR.join("cores/retroarch/launch.sh"));
+    pub static ref ALLIUM_LAUNCHER: PathBuf = ALLIUM_BASE_DIR.join("bin/allium-launcher");
+    pub static ref ALLIUM_MENU: PathBuf = ALLIUM_BASE_DIR.join("bin/allium-menu");
+    pub static ref ALLIUM_RETROARCH: PathBuf = ALLIUM_BASE_DIR.join("cores/retroarch/launch.sh");
 }
 
 pub const AUTO_SLEEP_TIMEOUT: Duration = Duration::from_secs(5 * 60);

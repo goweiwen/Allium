@@ -31,9 +31,9 @@ echo ondemand > "$CPU_PATH"
 rm -f "$SDCARD_PATH/update.log"
 
 # run Allium
-export DIR="/mnt/SDCARD/.allium"
+export DIR="/mnt/SDCARD/"
 cd "$DIR"
-RUST_LOG=debug RUST_BACKTRACE=1 ./alliumd > "./alliumd.log" 2>&1
+RUST_LOG=debug RUST_BACKTRACE=1 .allium/bin/alliumd > ".allium/alliumd.log" 2>&1
 
 while true; do
 	reboot # under no circumstances should stock be allowed to touch this card
