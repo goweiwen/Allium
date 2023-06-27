@@ -5,10 +5,11 @@ use std::{
 
 use anyhow::{Context, Result};
 use chrono::Duration;
+use log::info;
 use rusqlite::{params, Connection, OptionalExtension};
 use rusqlite_migration::{Migrations, M};
 
-use crate::constants::ALLIUM_DATABASE;
+use crate::constants::{ALLIUM_BASE_DIR, ALLIUM_DATABASE};
 
 #[derive(Debug, Clone, Default)]
 pub struct Database {
@@ -27,6 +28,14 @@ pub struct Game {
 
 impl Database {
     pub fn new() -> Result<Self> {
+        if !ALLIUM_DATABASE.exists() {
+            let path = ALLIUM_BASE_DIR.join("state/allium.db");
+            if path.exists() {
+                info!("migrating database to new location");
+                std::fs::copy(path, ALLIUM_DATABASE.as_path())?;
+            }
+        }
+
         let mut conn = Connection::open(ALLIUM_DATABASE.as_path())
             .with_context(|| format!("{}", ALLIUM_DATABASE.display()))?;
         Self::migrations().to_latest(&mut conn)?;
