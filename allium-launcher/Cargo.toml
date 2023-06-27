@@ -6,6 +6,9 @@ include = ["/src"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+simulator = ["common/simulator"]
+
 [dependencies]
 anyhow = "1.0.70"
 embedded-graphics = "0.8.0"

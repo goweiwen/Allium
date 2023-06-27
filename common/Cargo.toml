@@ -9,6 +9,9 @@ path = "src/lib.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+simulator = ["embedded-graphics-simulator", "sdl2"]
+
 [dependencies]
 anyhow = "1.0.70"
 async-trait = "0.1.68"
@@ -29,11 +32,10 @@ serde_json = "1.0.96"
 strum = { version = "0.24.1", features = ["derive"] }
 tokio = { version = "1.28.2", features = ["full"] }
 type-map = "0.4.0"
+embedded-graphics-simulator = { version = "0.5.0", optional = true }
+sdl2 = { version = "0.35.2", optional = true }
 
 [target.'cfg(target_arch = "arm")'.dependencies]
 evdev = { version = "0.12.1", features = ["tokio"] }
 framebuffer = { version = "0.3.1" }
 
-[target.'cfg(not(target_arch = "arm"))'.dependencies]
-embedded-graphics-simulator = { version = "0.5.0" }
-sdl2 = { version = "0.35.2" }

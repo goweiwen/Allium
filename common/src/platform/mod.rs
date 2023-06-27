@@ -1,6 +1,8 @@
 #[cfg(target_arch = "arm")]
 mod miyoo;
-#[cfg(not(target_arch = "arm"))]
+#[cfg(not(any(target_arch = "arm", feature = "simulator")))]
+mod mock;
+#[cfg(feature = "simulator")]
 mod simulator;
 
 use anyhow::Result;
@@ -16,8 +18,11 @@ use crate::{
 #[cfg(target_arch = "arm")]
 pub type DefaultPlatform = miyoo::MiyooPlatform;
 
-#[cfg(not(target_arch = "arm"))]
+#[cfg(feature = "simulator")]
 pub type DefaultPlatform = simulator::SimulatorPlatform;
+
+#[cfg(not(any(target_arch = "arm", feature = "simulator")))]
+pub type DefaultPlatform = mock::MockPlatform;
 
 // Platform is not threadsafe because it is ?Send
 #[async_trait(?Send)]

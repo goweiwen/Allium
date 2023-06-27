@@ -555,7 +555,7 @@ dependencies = [
 [[package]]
 name = "fluent-templates"
 version = "0.8.0"
-source = "git+https://github.com/goweiwen/fluent-templates?branch=ignore#e015771348024fedc9479880f973b5277412128f"
+source = "git+https://github.com/goweiwen/fluent-templates?branch=ignore#9ecfcbafabf58883a355c353c0d35e9f666cb875"
 dependencies = [
  "arc-swap",
  "fluent",
