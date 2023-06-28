@@ -6,7 +6,7 @@ use std::os::fd::AsRawFd;
 use std::{ffi::c_int, fs::File};
 
 use anyhow::Result;
-use log::debug;
+use log::info;
 use nix::{ioctl_readwrite, ioctl_write_ptr};
 
 const MAX_VOLUME: i32 = 20;
@@ -92,12 +92,12 @@ fn set_volume_raw(mut volume: i32, add: i32) -> Result<()> {
         offset: &mi_ao_vol as *const _ as c_ulong,
     };
     // TODO: figure out why these traces are needed... something to do IO on stdout or some delay?
-    log::debug!(
+    info!(
         "miao_vol (size: {}): {:?}",
         size_of::<MiAoVol>(),
         &mi_ao_vol
     );
-    log::debug!(
+    info!(
         "miao_prm_vol (size: {}): {:?}",
         size_of::<MiPrm>(),
         &mi_prm_vol
@@ -106,7 +106,7 @@ fn set_volume_raw(mut volume: i32, add: i32) -> Result<()> {
         mi_ao_getvolume(mi_ao_fd, &mut mi_prm_vol)?;
     }
     let prev_volume = mi_ao_vol.volume;
-    log::debug!("prev volume: {:?}", mi_ao_vol);
+    info!("prev volume: {:?}", mi_ao_vol);
 
     volume = if add != 0 {
         prev_volume + add
@@ -124,29 +124,29 @@ fn set_volume_raw(mut volume: i32, add: i32) -> Result<()> {
     unsafe {
         mi_ao_setvolume(mi_ao_fd, &mi_prm_vol as *const _)?;
     }
-    log::debug!("set raw volume: {}", mi_ao_vol.volume);
+    info!("set raw volume: {}", mi_ao_vol.volume);
 
-    if prev_volume <= MIN_RAW_VALUE && volume > MIN_RAW_VALUE {
-        let mi_ao_mute = MiAoMute { dev: 0, enable: 0 };
-        let mi_prm_mute = MiPrm {
-            size: size_of::<MiAoMute>() as c_ulong,
-            offset: &mi_ao_mute as *const _ as c_ulong,
-        };
-        unsafe {
-            mi_ao_setmute(mi_ao_fd, &mi_prm_mute)?;
-        }
-        debug!("mute: OFF");
-    } else if prev_volume > MIN_RAW_VALUE && volume <= MIN_RAW_VALUE {
-        let mi_ao_mute = MiAoMute { dev: 0, enable: 1 };
-        let mi_prm_mute = MiPrm {
-            size: size_of::<MiAoMute>() as c_ulong,
-            offset: &mi_ao_mute as *const _ as c_ulong,
-        };
-        unsafe {
-            mi_ao_setmute(mi_ao_fd, &mi_prm_mute)?;
-        }
-        debug!("mute: ON");
-    }
+    // if prev_volume <= MIN_RAW_VALUE && volume > MIN_RAW_VALUE {
+    //     let mi_ao_mute = MiAoMute { dev: 0, enable: 0 };
+    //     let mi_prm_mute = MiPrm {
+    //         size: size_of::<MiAoMute>() as c_ulong,
+    //         offset: &mi_ao_mute as *const _ as c_ulong,
+    //     };
+    //     unsafe {
+    //         mi_ao_setmute(mi_ao_fd, &mi_prm_mute)?;
+    //     }
+    //     info!("mute: OFF");
+    // } else if prev_volume > MIN_RAW_VALUE && volume <= MIN_RAW_VALUE {
+    //     let mi_ao_mute = MiAoMute { dev: 0, enable: 1 };
+    //     let mi_prm_mute = MiPrm {
+    //         size: size_of::<MiAoMute>() as c_ulong,
+    //         offset: &mi_ao_mute as *const _ as c_ulong,
+    //     };
+    //     unsafe {
+    //         mi_ao_setmute(mi_ao_fd, &mi_prm_mute)?;
+    //     }
+    //     info!("mute: ON");
+    // }
 
     Ok(())
 }
@@ -157,7 +157,7 @@ pub fn set_volume(volume: i32) -> Result<()> {
     if volume != 0 {
         volume_raw = (48.0 * (1.0 + volume as f32).log10()).round() as i32; // see volume curve below
     }
-    debug!("set volume: {}", volume_raw);
+    info!("set volume: {}", volume_raw);
     set_volume_raw(volume_raw, 0)?;
     Ok(())
 }
