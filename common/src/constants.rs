@@ -3,8 +3,9 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use embedded_graphics::prelude::Size;
 use lazy_static::lazy_static;
+
+use crate::geom::Size;
 
 pub const ALLIUM_VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -51,15 +52,30 @@ lazy_static! {
     pub static ref ALLIUM_RETROARCH: PathBuf = ALLIUM_BASE_DIR.join("cores/retroarch/launch.sh");
 }
 
-pub const AUTO_SLEEP_TIMEOUT: Duration = Duration::from_secs(5 * 60);
-pub const BATTERY_SHUTDOWN_THRESHOLD: i32 = 5;
-pub const BATTERY_UPDATE_INTERVAL: Duration = Duration::from_secs(10);
+// Styles
 pub const BUTTON_DIAMETER: u32 = 31;
-pub const CLOCK_UPDATE_INTERVAL: Duration = Duration::from_secs(60);
 pub const IMAGE_SIZE: Size = Size::new(250, 376);
-pub const LISTING_JUMP_SIZE: i32 = 5;
-pub const LISTING_SIZE: i32 = 10;
-pub const MAXIMUM_FRAME_TIME: Duration = Duration::from_millis(100);
-pub const RECENT_GAMES_LIMIT: i64 = 100;
-pub const RETROARCH_UDP_SOCKET: &str = "127.0.0.1:55355";
 pub const SELECTION_MARGIN: u32 = 8;
+
+/// After the battery level drops below this threshold, the device will shut down.
+pub const BATTERY_SHUTDOWN_THRESHOLD: i32 = 5;
+
+/// The interval at which the battery level is updated.
+pub const BATTERY_UPDATE_INTERVAL: Duration = Duration::from_secs(10);
+
+/// After this duration of inactivity, the device will shut down.
+pub const AUTO_SLEEP_TIMEOUT: Duration = Duration::from_secs(5 * 60);
+
+/// The interval at which the clock is updated.
+pub const CLOCK_UPDATE_INTERVAL: Duration = Duration::from_secs(60);
+
+/// The number of items to jump when pressing left/right in a listing.
+pub const LISTING_JUMP_SIZE: i32 = 5;
+/// If a key autorepeat is received after this duration, it will be ignored.
+pub const MAXIMUM_FRAME_TIME: Duration = Duration::from_millis(100);
+
+/// Maximum number of recent games to retrieve from the database.
+pub const RECENT_GAMES_LIMIT: i64 = 100;
+
+/// RetroArch network command interface.
+pub const RETROARCH_UDP_SOCKET: &str = "127.0.0.1:55355";

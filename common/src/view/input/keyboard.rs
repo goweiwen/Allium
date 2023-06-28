@@ -36,8 +36,9 @@ pub struct Keyboard {
 
 impl Keyboard {
     pub fn new(res: Resources, value: String, is_password: bool) -> Self {
+        let rect = res.get::<Rect>().to_owned();
         let button_hints = Row::new(
-            Point::new(640 - 12, 480 - 8 - 30),
+            Point::new(rect.x + rect.w as i32 - 12, rect.y + rect.h as i32 - 8 - 30),
             {
                 let locale = res.get::<Locale>();
                 vec![
