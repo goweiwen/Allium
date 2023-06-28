@@ -33,7 +33,12 @@ impl Wifi {
         let locale = res.get::<Locale>();
 
         let list = SettingsList::new(
-            Rect::new(x + 12, y + 8, w - 24, h - 8 - 48),
+            Rect::new(
+                x + 12,
+                y + 8,
+                w - 24,
+                h - 8 - 48 - 12 - res.get::<Stylesheet>().ui_font.size - 12,
+            ),
             vec![
                 locale.t("settings-wifi-wifi-enabled"),
                 locale.t("settings-wifi-wifi-network"),
@@ -132,14 +137,13 @@ impl View for Wifi {
                     display.load(self.ip_address_label.bounding_box(styles))?;
                     self.ip_address_label.set_text(ip_address);
                 } else {
-                    display.load(self.ip_address_label.bounding_box(styles))?;
                     self.ip_address_label
                         .set_text(locale.t("settings-wifi-connecting"));
                 }
             }
         } else if self.has_ip_address {
             display.load(self.ip_address_label.bounding_box(styles))?;
-            self.ip_address_label.set_text("".to_owned());
+            self.ip_address_label.set_text(String::new());
         }
 
         drawn |=

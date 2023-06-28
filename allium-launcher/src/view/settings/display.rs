@@ -33,7 +33,12 @@ impl Display {
         let locale = res.get::<Locale>();
 
         let list = SettingsList::new(
-            Rect::new(x + 12, y + 8, w - 24, h - 8 - 48),
+            Rect::new(
+                x + 12,
+                y + 8,
+                w - 24,
+                h - 8 - 48 - 12 - res.get::<Stylesheet>().ui_font.size - 12,
+            ),
             vec![
                 locale.t("settings-display-luminance"),
                 locale.t("settings-display-hue"),
