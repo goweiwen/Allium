@@ -1,5 +1,6 @@
 use std::fs::{self, File};
 use std::io::Write;
+use std::ops::Add;
 use std::path::Path;
 
 use anyhow::Result;
@@ -18,6 +19,7 @@ use tokio::process::{Child, Command};
 use common::database::Database;
 use common::game_info::GameInfo;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use tokio::time::Instant;
 
 #[cfg(unix)]
 use {
@@ -94,20 +96,11 @@ impl AlliumD<DefaultPlatform> {
             let mut sigint = tokio::signal::unix::signal(SignalKind::interrupt())?;
             let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())?;
 
-            let (battery_tx, mut battery_rx) = tokio::sync::mpsc::channel(1);
+            let mut battery_interval = tokio::time::interval(BATTERY_UPDATE_INTERVAL);
             let mut battery = self.platform.battery()?;
-            tokio::task::spawn(async move {
-                loop {
-                    if let Err(e) = battery.update() {
-                        error!("failed to update battery: {}", e);
-                    }
-                    if battery.percentage() <= BATTERY_SHUTDOWN_THRESHOLD && !battery.charging() {
-                        warn!("battery is low, shutting down");
-                        battery_tx.try_send(()).ok();
-                    }
-                    tokio::time::sleep(BATTERY_UPDATE_INTERVAL).await;
-                }
-            });
+
+            let auto_sleep_timer = tokio::time::sleep(AUTO_SLEEP_TIMEOUT);
+            tokio::pin!(auto_sleep_timer);
 
             loop {
                 let menu_terminated = match self.menu.as_mut() {
@@ -115,10 +108,9 @@ impl AlliumD<DefaultPlatform> {
                     None => Fuse::terminated(),
                 };
 
-                let auto_sleep_timer = tokio::time::sleep(AUTO_SLEEP_TIMEOUT).fuse();
-
                 tokio::select! {
                     key_event = self.platform.poll() => {
+                        auto_sleep_timer.as_mut().reset(Instant::now().add(AUTO_SLEEP_TIMEOUT));
                         self.handle_key_event(key_event).await?;
                     }
                     _ = self.main.wait() => {
@@ -137,7 +129,7 @@ impl AlliumD<DefaultPlatform> {
                     }
                     _ = sigint.recv() => self.handle_quit().await?,
                     _ = sigterm.recv() => self.handle_quit().await?,
-                    _ = auto_sleep_timer => {
+                    _ = &mut auto_sleep_timer => {
                         let mut battery = self.platform.battery()?;
                         battery.update()?;
                         if !battery.charging() {
@@ -145,9 +137,14 @@ impl AlliumD<DefaultPlatform> {
                             self.handle_quit().await?;
                         }
                     }
-                    _ = battery_rx.recv() => {
-                        info!("battery low, shutting down");
-                        self.handle_quit().await?;
+                    _ = battery_interval.tick() => {
+                        if let Err(e) = battery.update() {
+                            error!("failed to update battery: {}", e);
+                        }
+                        if battery.percentage() <= BATTERY_SHUTDOWN_THRESHOLD && !battery.charging() {
+                            warn!("battery is low, shutting down");
+                            self.handle_quit().await?;
+                        }
                     }
                 }
             }
