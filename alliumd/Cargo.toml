@@ -15,7 +15,7 @@ chrono = "0.4.26"
 enum-map = "2.5.0"
 futures = "0.3.28"
 lazy_static = "1.4.0"
-log = "0.4.19"
+log = { version = "0.4.19", features = ["release_max_level_info"] }
 nix = "0.23"
 rusttype = "0.9.3"
 serde = { version = "1.0.163", features = ["derive"] }

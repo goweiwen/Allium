@@ -23,7 +23,7 @@ fluent-templates = { git = "https://github.com/goweiwen/fluent-templates", branc
 image = { version = "0.23", default-features = false, features = ["gif", "jpeg", "png"] }
 itertools = "0.10.5"
 lazy_static = "1.4.0"
-log = "0.4.19"
+log = { version = "0.4.19", features = ["release_max_level_info"] }
 nix = "0.23"
 rusqlite = { version = "0.29.0", features = ["bundled"] }
 rusqlite_migration = "1.0.2"
