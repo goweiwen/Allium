@@ -7,11 +7,11 @@ pub struct Point {
 }
 
 impl Point {
-    pub fn new(x: i32, y: i32) -> Self {
+    pub const fn new(x: i32, y: i32) -> Self {
         Self { x, y }
     }
 
-    pub fn zero() -> Self {
+    pub const fn zero() -> Self {
         Self::new(0, 0)
     }
 }
@@ -34,17 +34,18 @@ impl From<Point> for embedded_graphics::prelude::Point {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Size {
     pub w: u32,
     pub h: u32,
 }
 
 impl Size {
-    pub fn new(w: u32, h: u32) -> Self {
+    pub const fn new(w: u32, h: u32) -> Self {
         Self { w, h }
     }
 
-    pub fn zero() -> Self {
+    pub const fn zero() -> Self {
         Self::new(0, 0)
     }
 }
@@ -75,27 +76,27 @@ pub struct Rect {
 }
 
 impl Rect {
-    pub fn new(x: i32, y: i32, w: u32, h: u32) -> Self {
+    pub const fn new(x: i32, y: i32, w: u32, h: u32) -> Self {
         Self { x, y, w, h }
     }
 
-    pub fn zero() -> Self {
+    pub const fn zero() -> Self {
         Self::new(0, 0, 0, 0)
     }
 
-    pub fn top_left(&self) -> Point {
+    pub const fn top_left(&self) -> Point {
         Point::new(self.x, self.y)
     }
 
-    pub fn size(&self) -> Size {
+    pub const fn size(&self) -> Size {
         Size::new(self.w, self.h)
     }
 
-    pub fn right(&self) -> i32 {
+    pub const fn right(&self) -> i32 {
         self.x + self.w as i32
     }
 
-    pub fn bottom(&self) -> i32 {
+    pub const fn bottom(&self) -> i32 {
         self.y + self.h as i32
     }
 
@@ -142,7 +143,7 @@ pub enum Alignment {
 }
 
 impl Alignment {
-    pub fn sign(&self) -> i32 {
+    pub const fn sign(&self) -> i32 {
         match self {
             Self::Left => 1,
             Self::Center => 0,

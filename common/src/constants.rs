@@ -25,6 +25,7 @@ lazy_static! {
     pub static ref ALLIUM_TOOLS_DIR: PathBuf = ALLIUM_BASE_DIR.join("tools");
     pub static ref ALLIUM_FONTS_DIR: PathBuf = ALLIUM_BASE_DIR.join("fonts");
     pub static ref ALLIUM_LOCALES_DIR: PathBuf = ALLIUM_BASE_DIR.join("locales");
+    pub static ref ALLIUM_IMAGES_DIR: PathBuf = ALLIUM_BASE_DIR.join("images");
 
     // Config
     pub static ref ALLIUM_CONFIG_CONSOLES: PathBuf = ALLIUM_BASE_DIR.join("config/consoles.toml");
@@ -54,6 +55,7 @@ lazy_static! {
 
 // Styles
 pub const BUTTON_DIAMETER: u32 = 31;
+pub const BATTERY_SIZE: Size = Size::new(62, 40);
 pub const IMAGE_SIZE: Size = Size::new(250, 376);
 pub const SELECTION_MARGIN: u32 = 8;
 
@@ -71,6 +73,7 @@ pub const CLOCK_UPDATE_INTERVAL: Duration = Duration::from_secs(60);
 
 /// The number of items to jump when pressing left/right in a listing.
 pub const LISTING_JUMP_SIZE: i32 = 5;
+
 /// If a key autorepeat is received after this duration, it will be ignored.
 pub const MAXIMUM_FRAME_TIME: Duration = Duration::from_millis(100);
 

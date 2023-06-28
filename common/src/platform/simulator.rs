@@ -13,7 +13,7 @@ use embedded_graphics_simulator::{
     OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
 };
 use itertools::iproduct;
-use log::warn;
+use log::{trace, warn};
 use sdl2::keyboard::Keycode;
 
 use crate::battery::Battery;
@@ -260,7 +260,7 @@ impl SimulatorBattery {
     pub fn new() -> SimulatorBattery {
         SimulatorBattery {
             percentage: 100,
-            charging: false,
+            charging: true,
         }
     }
 }
@@ -273,6 +273,11 @@ impl Default for SimulatorBattery {
 
 impl Battery for SimulatorBattery {
     fn update(&mut self) -> Result<()> {
+        trace!("Updating battery");
+        if self.percentage > 0 {
+            self.percentage -= 10;
+        }
+        self.charging = !self.charging;
         Ok(())
     }
 

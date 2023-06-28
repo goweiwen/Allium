@@ -30,7 +30,7 @@ pub struct IngameMenuState {
 
 pub struct IngameMenu<B>
 where
-    B: Battery,
+    B: Battery + 'static,
 {
     rect: Rect,
     res: Resources,
@@ -44,7 +44,7 @@ where
 
 impl<B> IngameMenu<B>
 where
-    B: Battery,
+    B: Battery + 'static,
 {
     pub fn new(rect: Rect, state: IngameMenuState, res: Resources, battery: B) -> Self {
         let Rect { x, y, w, h } = rect;
@@ -60,9 +60,7 @@ where
         );
         name.color(common::stylesheet::StylesheetColor::Highlight);
 
-        let mut battery_indicator =
-            BatteryIndicator::new(Point::new(w as i32 - 12, y + 8), Alignment::Right);
-        battery_indicator.init(battery);
+        let battery_indicator = BatteryIndicator::new(Point::new(w as i32 - 12, y + 4), battery);
 
         let menu_w = 336;
         let menu = List::new(

@@ -32,7 +32,7 @@ struct AppState {
 #[derive(Debug)]
 pub struct App<B>
 where
-    B: Battery,
+    B: Battery + 'static,
 {
     rect: Rect,
     battery_indicator: BatteryIndicator<B>,
@@ -44,7 +44,7 @@ where
 
 impl<B> App<B>
 where
-    B: Battery,
+    B: Battery + 'static,
 {
     pub fn new(
         rect: Rect,
@@ -55,9 +55,7 @@ where
     ) -> Result<Self> {
         let Rect { x, y, w, h: _h } = rect;
 
-        let mut battery_indicator =
-            BatteryIndicator::new(Point::new(w as i32 - 12, y + 8), Alignment::Right);
-        battery_indicator.init(battery);
+        let battery_indicator = BatteryIndicator::new(Point::new(w as i32 - 12, y + 4), battery);
 
         let mut tabs = Row::new(
             Point::new(x + 12, y + 8),

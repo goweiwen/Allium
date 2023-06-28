@@ -34,12 +34,7 @@ impl Recents {
         let Rect { x, y, w, h } = rect;
 
         let list = ScrollList::new(
-            Rect::new(
-                x + 12,
-                y + 8,
-                w - IMAGE_SIZE.width - 12 - 12 - 24,
-                h - 8 - 48,
-            ),
+            Rect::new(x + 12, y + 8, w - IMAGE_SIZE.w - 12 - 12 - 24, h - 8 - 48),
             Vec::new(),
             Alignment::Left,
             res.get::<Stylesheet>().ui_font.size + SELECTION_MARGIN,
@@ -47,10 +42,10 @@ impl Recents {
 
         let mut image = Image::empty(
             Rect::new(
-                x + w as i32 - IMAGE_SIZE.width as i32 - 24,
+                x + w as i32 - IMAGE_SIZE.w as i32 - 24,
                 y + 8,
-                IMAGE_SIZE.width,
-                IMAGE_SIZE.height,
+                IMAGE_SIZE.w,
+                IMAGE_SIZE.h,
             ),
             ImageMode::Contain,
         );

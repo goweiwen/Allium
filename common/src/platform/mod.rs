@@ -29,7 +29,7 @@ pub type DefaultPlatform = mock::MockPlatform;
 #[async_trait(?Send)]
 pub trait Platform {
     type Display: Display;
-    type Battery: Battery;
+    type Battery: Battery + 'static;
 
     fn new() -> Result<Self>
     where

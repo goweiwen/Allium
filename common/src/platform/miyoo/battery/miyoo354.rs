@@ -23,7 +23,7 @@ impl Miyoo354Battery {
     pub fn new() -> Miyoo354Battery {
         Miyoo354Battery {
             charging: false,
-            percentage: 0,
+            percentage: 100,
         }
     }
 }
