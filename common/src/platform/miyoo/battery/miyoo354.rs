@@ -1,7 +1,7 @@
 use std::process::Command;
 
 use anyhow::Result;
-use log::debug;
+use log::trace;
 use serde::Deserialize;
 
 use crate::battery::Battery;
@@ -36,7 +36,7 @@ impl Battery for Miyoo354Battery {
         self.percentage = output.battery;
         self.charging = output.charging == 3;
 
-        debug!("battery: {}%", self.percentage);
+        trace!("battery: {}%", self.percentage);
         Ok(())
     }
 
