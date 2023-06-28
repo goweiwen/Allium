@@ -7,7 +7,11 @@ echo 6 > /sys/class/pwm/pwmchip0/pwm0/duty_cycle
 echo 1 > /sys/class/pwm/pwmchip0/pwm0/enable
 
 # init lcd
-cat /proc/ls
+if [ -f /customer/app/axp_test ]; then
+	/mnt/SDCARD/.tmp_update/bin/l_283 > /dev/null &2>1 &
+else
+	/mnt/SDCARD/.tmp_update/bin/l_354 > /dev/null &2>1 &
+fi
 sleep 0.5
 
 # init charger detection

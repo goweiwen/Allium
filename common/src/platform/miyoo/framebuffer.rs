@@ -97,13 +97,12 @@ impl Display for FramebufferDisplay {
              bail!("No saved image");
         };
 
-        let x = self.framebuffer.size.width - rect.x as u32;
-        let y = self.framebuffer.size.height - rect.y as u32;
+        let Rect { x, y, w, h } = rect;
 
-        for y in (y - rect.h)..y {
-            let to = (y * self.framebuffer.size.width + x) as usize
+        for y in (y as u32)..(y as u32 + h) {
+            let from = (y as u32 * self.framebuffer.size.width + x as u32) as usize
                 * self.framebuffer.bytes_per_pixel as usize;
-            let from = to - rect.w as usize * self.framebuffer.bytes_per_pixel as usize;
+            let to = from + w as usize * self.framebuffer.bytes_per_pixel as usize;
             self.framebuffer.buffer[from..to].copy_from_slice(&saved[from..to]);
         }
 
@@ -165,9 +164,7 @@ impl DrawTarget for Buffer {
         let bytespp = self.bytes_per_pixel;
 
         for Pixel(coord, color) in pixels.into_iter() {
-            // rotate 180 degrees
-            let x: i32 = width - coord.x - 1;
-            let y: i32 = height - coord.y - 1;
+            let Point { x, y } = coord;
             if 0 <= x && x < width && 0 <= y && y < height {
                 let index: u32 = (x as u32 + y as u32 * width as u32) * bytespp;
                 self.buffer[index as usize] = color.b();
