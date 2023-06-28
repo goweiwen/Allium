@@ -6,7 +6,7 @@ use anyhow::Result;
 use log::{debug, warn};
 use serde::{Deserialize, Serialize};
 
-use crate::constants::{ALLIUM_SCRIPTS_DIR, ALLIUM_SD_ROOT, ALLIUM_WIFI_SETTINGS};
+use crate::constants::ALLIUM_WIFI_SETTINGS;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WiFiSettings {
@@ -148,18 +148,21 @@ impl Default for WiFiSettings {
 }
 
 pub fn enable_wifi() -> Result<()> {
-    Command::new(ALLIUM_SCRIPTS_DIR.join("wifi-on.sh")).spawn()?;
+    #[cfg(feature = "miyoo")]
+    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("wifi-on.sh")).spawn()?;
     Ok(())
 }
 
 pub fn disable_wifi() -> Result<()> {
-    Command::new(ALLIUM_SCRIPTS_DIR.join("wifi-off.sh")).spawn()?;
+    #[cfg(feature = "miyoo")]
+    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("wifi-off.sh")).spawn()?;
     Ok(())
 }
 
 pub fn enable_telnet() -> Result<()> {
+    #[cfg(feature = "miyoo")]
     Command::new("telnetd")
-        .current_dir(ALLIUM_SD_ROOT.as_path())
+        .current_dir(crate::constants::ALLIUM_SD_ROOT.as_path())
         .args(["-l", "sh"])
         .stdout(Stdio::null())
         .spawn()?;
@@ -167,6 +170,7 @@ pub fn enable_telnet() -> Result<()> {
 }
 
 pub fn disable_telnet() -> Result<()> {
+    #[cfg(feature = "miyoo")]
     Command::new("killall")
         .arg("telnetd")
         .stdout(Stdio::null())
@@ -175,8 +179,9 @@ pub fn disable_telnet() -> Result<()> {
 }
 
 pub fn enable_ftp() -> Result<()> {
+    #[cfg(feature = "miyoo")]
     Command::new("tcpsvd")
-        .current_dir(ALLIUM_SD_ROOT.as_path())
+        .current_dir(crate::constants::ALLIUM_SD_ROOT.as_path())
         .args(["-E", "0.0.0.0", "21", "ftpd", "-w", "/mnt/SDCARD"])
         .stdout(Stdio::null())
         .spawn()?;
@@ -184,6 +189,7 @@ pub fn enable_ftp() -> Result<()> {
 }
 
 pub fn disable_ftp() -> Result<()> {
+    #[cfg(feature = "miyoo")]
     Command::new("killall")
         .arg("ftpd")
         .stdout(Stdio::null())
