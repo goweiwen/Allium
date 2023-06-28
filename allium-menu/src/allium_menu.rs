@@ -53,13 +53,12 @@ impl AlliumMenu<DefaultPlatform> {
     }
 
     pub async fn run_event_loop(&mut self) -> Result<()> {
-        self.display.map_pixels(|pixel| {
-            pixel.blend(
-                self.res.get::<Stylesheet>().background_color.overlay(pixel),
-                192,
-            )
-        })?;
-        self.display.save()?;
+        {
+            let styles = self.res.get::<Stylesheet>();
+            self.display
+                .map_pixels(|pixel| pixel.blend(styles.background_color.overlay(pixel), 192))?;
+            self.display.save()?;
+        }
 
         #[cfg(unix)]
         let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())?;
