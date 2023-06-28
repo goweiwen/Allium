@@ -130,6 +130,7 @@ impl AlliumD<DefaultPlatform> {
                     _ = sigint.recv() => self.handle_quit().await?,
                     _ = sigterm.recv() => self.handle_quit().await?,
                     _ = &mut auto_sleep_timer => {
+                        auto_sleep_timer.as_mut().reset(Instant::now().add(AUTO_SLEEP_TIMEOUT));
                         let mut battery = self.platform.battery()?;
                         battery.update()?;
                         if !battery.charging() {
