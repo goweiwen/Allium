@@ -19,6 +19,7 @@ settings-display-luminance = 輝度
 settings-display-hue = 色相
 settings-display-contrast = コントラスト
 settings-display-saturation = 彩度
+settings-display-screen-resolution = 画面解像度
 settings-display-restart-to-apply-changes = *変更を適用するにはデバイスを再起動してください。
 
 settings-theme = テーマ

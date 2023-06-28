@@ -4,6 +4,7 @@ use std::process;
 use anyhow::Result;
 use common::command::Command;
 use common::display::color::Color;
+use common::geom;
 use common::locale::{Locale, LocaleSettings};
 use common::resources::Resources;
 use common::view::View;
@@ -40,6 +41,7 @@ impl AlliumLauncher<DefaultPlatform> {
         res.insert(console_mapper);
         res.insert(Stylesheet::load()?);
         res.insert(Locale::new(&LocaleSettings::load()?.lang));
+        res.insert(Into::<geom::Size>::into(display.size()));
         let res = Resources::new(res);
 
         let view = App::load_or_new(display.bounding_box().into(), res.clone(), battery)?;

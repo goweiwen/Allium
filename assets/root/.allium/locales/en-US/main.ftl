@@ -19,6 +19,7 @@ settings-display-luminance = Luminance
 settings-display-hue = Hue
 settings-display-contrast = Contrast
 settings-display-saturation = Saturation
+settings-display-screen-resolution = Screen Resolution
 settings-display-restart-to-apply-changes = *Restart device to apply changes
 
 settings-theme = Theme

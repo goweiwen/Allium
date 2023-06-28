@@ -55,6 +55,29 @@ where
         self.has_layout = false;
     }
 
+    pub fn pop(&mut self) -> Option<V> {
+        let view = self.children.pop();
+        self.dirty = true;
+        self.has_layout = false;
+        view
+    }
+
+    pub fn remove(&mut self, index: usize) -> Option<V> {
+        if index >= self.children.len() {
+            return None;
+        }
+        let view = self.children.remove(index);
+        self.dirty = true;
+        self.has_layout = false;
+        Some(view)
+    }
+
+    pub fn insert(&mut self, index: usize, view: V) {
+        self.children.insert(index, view);
+        self.dirty = true;
+        self.has_layout = false;
+    }
+
     fn layout(&mut self, styles: &Stylesheet) {
         match self.alignment {
             Alignment::Left => self.layout_left(styles),

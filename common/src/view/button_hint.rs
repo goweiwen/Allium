@@ -104,7 +104,7 @@ where
     }
 
     fn should_draw(&self) -> bool {
-        self.has_layout || self.button.should_draw() || self.label.should_draw()
+        self.dirty || self.button.should_draw() || self.label.should_draw()
     }
 
     fn set_should_draw(&mut self) {

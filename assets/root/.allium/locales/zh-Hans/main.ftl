@@ -19,6 +19,7 @@ settings-display-luminance = 亮度
 settings-display-hue = 色调
 settings-display-contrast = 对比度
 settings-display-saturation = 饱和度
+settings-display-screen-resolution = 屏幕分辨率
 settings-display-restart-to-apply-changes = *重新启动设备以应用更改
 
 settings-theme = 主题

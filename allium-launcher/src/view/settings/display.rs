@@ -6,7 +6,8 @@ use common::command::Command;
 use common::constants::{BUTTON_DIAMETER, SELECTION_MARGIN};
 
 use common::display::settings::DisplaySettings;
-use common::geom::{Alignment, Point, Rect};
+use common::display::Display as DisplayTrait;
+use common::geom::{Alignment, Point, Rect, Size};
 use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
@@ -21,6 +22,7 @@ pub struct Display {
     list: SettingsList,
     restart_label: Label<String>,
     button_hints: Row<ButtonHint<String>>,
+    edit_button: Option<ButtonHint<String>>,
     has_changed: bool,
 }
 
@@ -44,6 +46,7 @@ impl Display {
                 locale.t("settings-display-hue"),
                 locale.t("settings-display-saturation"),
                 locale.t("settings-display-contrast"),
+                locale.t("settings-display-screen-resolution"),
             ],
             vec![
                 Box::new(Percentage::new(
@@ -65,6 +68,15 @@ impl Display {
                     Point::zero(),
                     settings.contrast as i32,
                     Alignment::Right,
+                )),
+                Box::new(Label::new(
+                    Point::zero(),
+                    {
+                        let size = res.get::<Size>();
+                        format!("{}x{}", size.w, size.h)
+                    },
+                    Alignment::Right,
+                    None,
                 )),
             ],
             res.get::<Stylesheet>().ui_font.size + SELECTION_MARGIN,
@@ -109,6 +121,7 @@ impl Display {
             list,
             restart_label,
             button_hints,
+            edit_button: None,
             has_changed: false,
         }
     }
@@ -123,16 +136,17 @@ impl View for Display {
     ) -> Result<bool> {
         let mut drawn = false;
 
-        if self.list.should_draw() && self.list.draw(display, styles)? {
-            drawn = true;
-        }
+        drawn |= self.list.should_draw() && self.list.draw(display, styles)?;
+        drawn |= self.has_changed && self.restart_label.draw(display, styles)?;
 
-        if self.has_changed && self.restart_label.draw(display, styles)? {
-            drawn = true;
-        }
-
-        if self.button_hints.should_draw() && self.button_hints.draw(display, styles)? {
-            drawn = true;
+        if self.button_hints.should_draw() {
+            display.load(Rect::new(
+                self.rect.x,
+                self.rect.y + self.rect.h as i32 - BUTTON_DIAMETER as i32 - 8,
+                self.rect.w,
+                BUTTON_DIAMETER,
+            ))?;
+            drawn |= self.button_hints.draw(display, styles)?;
         }
 
         Ok(drawn)
@@ -161,6 +175,11 @@ impl View for Display {
             .handle_key_event(event, commands.clone(), bubble)
             .await?
         {
+            if self.list.selected() == 4 {
+                self.edit_button = self.button_hints.remove(0);
+            } else if let Some(button) = self.edit_button.take() {
+                self.button_hints.insert(0, button);
+            }
             while let Some(command) = bubble.pop_front() {
                 if let Command::ValueChanged(i, val) = command {
                     match i {

@@ -34,6 +34,38 @@ impl From<Point> for embedded_graphics::prelude::Point {
     }
 }
 
+pub struct Size {
+    pub w: u32,
+    pub h: u32,
+}
+
+impl Size {
+    pub fn new(w: u32, h: u32) -> Self {
+        Self { w, h }
+    }
+
+    pub fn zero() -> Self {
+        Self::new(0, 0)
+    }
+}
+
+impl Default for Size {
+    fn default() -> Self {
+        Self::zero()
+    }
+}
+
+impl From<embedded_graphics::prelude::Size> for Size {
+    fn from(size: embedded_graphics::prelude::Size) -> Self {
+        Self::new(size.width, size.height)
+    }
+}
+
+impl From<Size> for embedded_graphics::prelude::Size {
+    fn from(val: Size) -> Self {
+        embedded_graphics::prelude::Size::new(val.w, val.h)
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Rect {
     pub x: i32,
@@ -53,6 +85,10 @@ impl Rect {
 
     pub fn top_left(&self) -> Point {
         Point::new(self.x, self.y)
+    }
+
+    pub fn size(&self) -> Size {
+        Size::new(self.w, self.h)
     }
 
     pub fn right(&self) -> i32 {

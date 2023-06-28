@@ -103,6 +103,10 @@ impl SettingsList {
         self.dirty = true;
     }
 
+    pub fn selected(&self) -> usize {
+        self.selected
+    }
+
     pub fn visible_count(&self) -> usize {
         ((self.rect.h as usize - 16) / self.entry_height as usize)
             .min(self.labels.len())
