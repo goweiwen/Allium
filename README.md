@@ -56,6 +56,8 @@ The SD card layout should look like this:
 
 ## Planned Features
 (roughly in order of priority)
+- Recents list organizer (remove, resync path)
+- Favorites organizer?
 - Ingame menu disk changer
 - Clock adjustment
 - WiFi stuff:
@@ -66,7 +68,6 @@ The SD card layout should look like this:
     - Seamless netplay from ingame menu
 - UI improvements:
     - Folder icon
-    - Battery icon
     - Volume indicator
     - Brightness indicator
     - Error toast (e.g. no core found for game)
