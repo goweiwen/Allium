@@ -1,0 +1,13 @@
+[package]
+name = "myctl"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.71"
+clap = "4.3.8"
+ffi = { version = "0.1.0", path = "../ffi" }
+log = "0.4.19"
+simple_logger = { version = "4.2.0", default-features = false }

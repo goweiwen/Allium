@@ -23,11 +23,16 @@ static:
 	mkdir -p $(DIST_DIR)
 	rsync -a --exclude='.gitkeep' assets/root/. $(DIST_DIR)
 
-build:
-	cross build --release --features=miyoo
+third-party/my283:
+	wget -O third-party/my283.tar.xz https://github.com/shauninman/miyoomini-toolchain-buildroot/raw/main/support/my283.tar.xz
+	cd third-party/ && tar xf my283.tar.xz
+	rm third-party/my283.tar.xz
 
-build-with-console:
-	cross build --release --features=miyoo,console
+build: third-party/my283
+	cross build --release --features=miyoo --bin=alliumd --bin=allium-launcher --bin=allium-menu
+
+build-with-console: third-party/my283
+	cross build --release --features=miyoo,console --bin=alliumd --bin=allium-launcher --bin=allium-menu
 
 package-build:
 	mkdir -p $(DIST_DIR)/.allium/bin
