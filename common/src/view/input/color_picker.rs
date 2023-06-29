@@ -81,13 +81,14 @@ impl View for ColorPicker {
             .stroke_width(1)
             .build();
 
+        let w = styles.ui_font.size;
         Rectangle::new(
             Point::new(
-                self.point.x - (30 * (1 - self.alignment.sign()) / 2),
-                self.point.y + 2,
+                self.point.x - (w as i32 * (1 - self.alignment.sign()) / 2),
+                self.point.y,
             )
             .into(),
-            Size::new_equal(30),
+            Size::new_equal(w),
         )
         .into_styled(fill_style)
         .draw(display)?;
@@ -116,7 +117,7 @@ impl View for ColorPicker {
 
         match self.alignment {
             Alignment::Right => {
-                let mut x = self.point.x - 30 - 12;
+                let mut x = self.point.x - w as i32 - 12;
                 for i in (0..6).rev() {
                     let c = color.char(i);
                     let text = Text::with_alignment(

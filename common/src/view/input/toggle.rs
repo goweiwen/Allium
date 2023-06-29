@@ -49,15 +49,19 @@ impl View for Toggle {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
+        let h = styles.ui_font.size;
+        let w = h * 3 / 2;
+        let margin = h as i32 / 6;
+
         RoundedRectangle::with_equal_corners(
             Rect::new(
-                self.point.x - (44 * (1 - self.alignment.sign()) / 2),
-                self.point.y + 2,
-                44,
-                28,
+                self.point.x - (w as i32 * (1 - self.alignment.sign()) / 2),
+                self.point.y,
+                w,
+                h,
             )
             .into(),
-            Size::new_equal(14),
+            Size::new_equal(h),
         )
         .into_styled(PrimitiveStyle::with_fill(match self.value {
             true => styles.highlight_color,
@@ -67,15 +71,15 @@ impl View for Toggle {
 
         Circle::new(
             Point::new(
-                self.point.x - (44 * (1 - self.alignment.sign()) / 2)
+                self.point.x - (w as i32 * (1 - self.alignment.sign()) / 2)
                     + match self.value {
-                        true => 20,
-                        false => 4,
+                        true => w as i32 - h as i32 + margin,
+                        false => margin,
                     },
-                self.point.y + 6,
+                self.point.y + margin,
             )
             .into(),
-            20,
+            h - margin as u32 - margin as u32,
         )
         .into_styled(PrimitiveStyle::with_fill(styles.foreground_color))
         .draw(display)?;
