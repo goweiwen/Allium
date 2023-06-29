@@ -26,6 +26,9 @@ static:
 build:
 	cross build --release --features=miyoo
 
+build-with-console:
+	cross build --release --features=miyoo,console
+
 package-build:
 	mkdir -p $(DIST_DIR)/.allium/bin
 	rsync -a $(BUILD_DIR)/alliumd $(DIST_DIR)/.allium/bin/
