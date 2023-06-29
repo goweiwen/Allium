@@ -64,9 +64,6 @@ pub const BATTERY_SHUTDOWN_THRESHOLD: i32 = 5;
 /// The interval at which the battery level is updated.
 pub const BATTERY_UPDATE_INTERVAL: Duration = Duration::from_secs(10);
 
-/// After this duration of inactivity, the device will shut down.
-pub const AUTO_SLEEP_TIMEOUT: Duration = Duration::from_secs(5 * 60);
-
 /// The interval at which the clock is updated.
 pub const CLOCK_UPDATE_INTERVAL: Duration = Duration::from_secs(60);
 

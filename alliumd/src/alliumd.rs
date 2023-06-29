@@ -1,14 +1,13 @@
 use std::fs::{self, File};
 use std::io::Write;
-use std::ops::Add;
 use std::path::Path;
 
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use common::battery::Battery;
 use common::constants::{
-    ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_MENU, ALLIUM_VERSION, AUTO_SLEEP_TIMEOUT,
-    BATTERY_SHUTDOWN_THRESHOLD, BATTERY_UPDATE_INTERVAL,
+    ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_MENU, ALLIUM_VERSION, BATTERY_SHUTDOWN_THRESHOLD,
+    BATTERY_UPDATE_INTERVAL,
 };
 use common::wifi::WiFiSettings;
 use enum_map::EnumMap;
@@ -19,7 +18,6 @@ use tokio::process::{Child, Command};
 use common::database::Database;
 use common::game_info::GameInfo;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
-use tokio::time::Instant;
 
 #[cfg(unix)]
 use {
@@ -146,9 +144,6 @@ impl AlliumD<DefaultPlatform> {
             let mut battery_interval = tokio::time::interval(BATTERY_UPDATE_INTERVAL);
             let mut battery = self.platform.battery()?;
 
-            let auto_sleep_timer = tokio::time::sleep(AUTO_SLEEP_TIMEOUT);
-            tokio::pin!(auto_sleep_timer);
-
             loop {
                 let menu_terminated = match self.menu.as_mut() {
                     Some(menu) => menu.wait().fuse(),
@@ -157,7 +152,6 @@ impl AlliumD<DefaultPlatform> {
 
                 tokio::select! {
                     key_event = self.platform.poll() => {
-                        auto_sleep_timer.as_mut().reset(Instant::now().add(AUTO_SLEEP_TIMEOUT));
                         self.handle_key_event(key_event).await?;
                     }
                     _ = self.main.wait() => {
@@ -176,15 +170,6 @@ impl AlliumD<DefaultPlatform> {
                     }
                     _ = sigint.recv() => self.handle_quit().await?,
                     _ = sigterm.recv() => self.handle_quit().await?,
-                    _ = &mut auto_sleep_timer => {
-                        auto_sleep_timer.as_mut().reset(Instant::now().add(AUTO_SLEEP_TIMEOUT));
-                        let mut battery = self.platform.battery()?;
-                        battery.update()?;
-                        if !battery.charging() {
-                            info!("auto sleep timer expired, shutting down");
-                            self.handle_quit().await?;
-                        }
-                    }
                     _ = battery_interval.tick() => {
                         if let Err(e) = battery.update() {
                             error!("failed to update battery: {}", e);
