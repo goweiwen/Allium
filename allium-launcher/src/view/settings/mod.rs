@@ -39,6 +39,7 @@ pub struct Settings {
     list: ScrollList,
     child: Option<Box<dyn View>>,
     button_hints: Row<ButtonHint<String>>,
+    has_wifi: bool,
     dirty: bool,
 }
 
@@ -49,23 +50,31 @@ impl Settings {
         let locale = res.get::<Locale>();
         let styles = res.get::<Stylesheet>();
 
+        let has_wifi = DefaultPlatform::has_wifi();
+        let mut labels = Vec::with_capacity(7);
+        if has_wifi {
+            labels.push(locale.t("settings-wifi"));
+        }
+        labels.push(locale.t("settings-display"));
+        labels.push(locale.t("settings-theme"));
+        labels.push(locale.t("settings-language"));
+        labels.push(locale.t("settings-files"));
+        labels.push(locale.t("settings-about"));
+
         let mut list = ScrollList::new(
             Rect::new(x + 12, y + 8, w - 24, h - 8 - styles.ui_font.size - 8),
-            vec![
-                locale.t("settings-wifi"),
-                locale.t("settings-display"),
-                locale.t("settings-theme"),
-                locale.t("settings-language"),
-                locale.t("settings-files"),
-                locale.t("settings-about"),
-            ],
+            labels,
             Alignment::Left,
             styles.ui_font.size + SELECTION_MARGIN,
         );
         list.select(state.selected);
 
         let child: Option<Box<dyn View>> = if state.has_child {
-            match state.selected {
+            let mut selected = state.selected;
+            if !has_wifi {
+                selected += 1;
+            };
+            match selected {
                 0 => Some(Box::new(Wifi::new(rect, res.clone()))),
                 1 => Some(Box::new(Display::new(rect, res.clone()))),
                 2 => Some(Box::new(Theme::new(rect, res.clone()))),
@@ -109,6 +118,7 @@ impl Settings {
             list,
             child,
             button_hints,
+            has_wifi,
             dirty: true,
         })
     }
@@ -121,7 +131,11 @@ impl Settings {
     }
 
     async fn select_entry(&mut self, commands: Sender<Command>) -> Result<()> {
-        match self.list.selected() {
+        let mut selected = self.list.selected();
+        if !self.has_wifi {
+            selected += 1
+        };
+        match selected {
             0 => self.child = Some(Box::new(Wifi::new(self.rect, self.res.clone()))),
             1 => self.child = Some(Box::new(Display::new(self.rect, self.res.clone()))),
             2 => self.child = Some(Box::new(Theme::new(self.rect, self.res.clone()))),

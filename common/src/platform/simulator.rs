@@ -70,7 +70,7 @@ impl Platform for SimulatorPlatform {
 
     fn display(&mut self) -> Result<SimulatorWindow> {
         let display =
-            SimulatorDisplay::load_png("assets/simulator/ingame.png").unwrap_or_else(|_| {
+            SimulatorDisplay::load_png("assets/simulator/ingame-mm.png").unwrap_or_else(|_| {
                 SimulatorDisplay::with_default_color(
                     Size::new(SCREEN_WIDTH, SCREEN_HEIGHT),
                     Color::new(0, 0, 0),
@@ -113,6 +113,10 @@ impl Platform for SimulatorPlatform {
 
     fn firmware() -> String {
         "00000000".to_string()
+    }
+
+    fn has_wifi() -> bool {
+        true
     }
 }
 

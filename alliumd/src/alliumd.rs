@@ -133,7 +133,10 @@ impl AlliumD<DefaultPlatform> {
 
         self.platform.set_volume(self.state.volume)?;
         self.platform.set_brightness(self.state.brightness)?;
-        WiFiSettings::load()?.init()?;
+
+        if DefaultPlatform::has_wifi() {
+            WiFiSettings::load()?.init()?;
+        }
 
         #[cfg(unix)]
         {

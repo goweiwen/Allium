@@ -54,6 +54,8 @@ pub trait Platform {
     fn device_model() -> String;
 
     fn firmware() -> String;
+
+    fn has_wifi() -> bool;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -62,6 +62,10 @@ impl Platform for MockPlatform {
     fn firmware() -> String {
         "00000000".to_string()
     }
+
+    fn has_wifi() -> bool {
+        false
+    }
 }
 
 impl Default for MockPlatform {

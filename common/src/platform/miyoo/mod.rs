@@ -111,6 +111,13 @@ impl Platform for MiyooPlatform {
     fn firmware() -> String {
         detect_firmware()
     }
+
+    fn has_wifi() -> bool {
+        match detect_model() {
+            MiyooDeviceModel::Miyoo283 => false,
+            MiyooDeviceModel::Miyoo354 => true,
+        }
+    }
 }
 
 impl Default for MiyooPlatform {
