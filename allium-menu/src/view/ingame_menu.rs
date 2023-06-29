@@ -67,9 +67,9 @@ where
         let menu = List::new(
             Rect::new(
                 x + 24,
-                y + styles.ui_font.size as i32 + 8,
+                y + 8 + styles.ui_font.size as i32 + 8,
                 menu_w,
-                h - styles.ui_font.size - 8,
+                h - 8 - styles.ui_font.size - 8,
             ),
             MenuEntry::iter()
                 .filter(|e| match e {
