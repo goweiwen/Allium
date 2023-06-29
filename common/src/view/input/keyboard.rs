@@ -11,21 +11,14 @@ use embedded_graphics::{
 use strum::{EnumCount, EnumIter, FromRepr, IntoEnumIterator};
 use tokio::sync::mpsc::Sender;
 
+use crate::command::{Command, Value};
+use crate::display::{font::FontTextStyleBuilder, Display};
+use crate::geom::{self, Alignment, Point, Rect};
+use crate::locale::Locale;
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use crate::resources::Resources;
 use crate::stylesheet::Stylesheet;
-use crate::view::{ButtonHint, Row, View};
-use crate::{
-    command::{Command, Value},
-    locale::Locale,
-};
-use crate::{
-    display::{font::FontTextStyleBuilder, Display},
-    resources::Resources,
-};
-use crate::{
-    geom::{Alignment, Point, Rect},
-    view::ButtonIcon,
-};
+use crate::view::{ButtonHint, ButtonIcon, Row, View};
 
 #[derive(Debug, Clone)]
 pub struct Keyboard {
@@ -39,15 +32,15 @@ pub struct Keyboard {
 
 impl Keyboard {
     pub fn new(res: Resources, value: String, is_password: bool) -> Self {
-        let rect = res.get::<Rect>().to_owned();
+        let geom::Size { w, h } = res.get::<geom::Size>().to_owned();
 
         let locale = res.get::<Locale>();
         let styles = res.get::<Stylesheet>();
 
         let button_hints = Row::new(
             Point::new(
-                rect.x + rect.w as i32 - 12,
-                rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+                w as i32 - 12,
+                h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
             ),
             vec![
                 ButtonHint::new(

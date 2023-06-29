@@ -7,6 +7,7 @@ use common::database::Database;
 use common::display::color::Color;
 use common::display::Display;
 use common::game_info::GameInfo;
+use common::geom;
 use common::locale::{Locale, LocaleSettings};
 use common::platform::{DefaultPlatform, Platform};
 use common::resources::Resources;
@@ -42,6 +43,7 @@ impl AlliumMenu<DefaultPlatform> {
         res.insert(GameInfo::load()?.unwrap_or_default());
         res.insert(Stylesheet::load()?);
         res.insert(Locale::new(&LocaleSettings::load()?.lang));
+        res.insert(Into::<geom::Size>::into(display.size()));
         let res = Resources::new(res);
 
         Ok(AlliumMenu {
