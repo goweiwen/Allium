@@ -1,9 +1,3 @@
-["Native"]
-cores = []
-path = "/mnt/SDCARD/.allium/cores/pak/launch.sh"
-patterns = ["PORTS", "SH"]
-extensions = ["pak"]
-
 ["Amstrad - CPC"]
 cores = ["crocods"]
 patterns = ["CPC"]
@@ -255,8 +249,8 @@ patterns = ["PICO"]
 extensions = ["p8", "png"]
 
 ["Ports Collection"]
-cores = ["None"]
-patterns = ["PORTS"]
+path = "/mnt/SDCARD/.allium/cores/pak/launch.sh"
+patterns = ["PORTS", "SH", "NATIVE"]
 extensions = ["port"]
 
 [SCUMM]

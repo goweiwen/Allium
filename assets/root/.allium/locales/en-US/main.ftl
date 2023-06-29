@@ -1,6 +1,7 @@
 # Launcher
 tab-games = Games
 tab-recents = Recents
+tab-apps = Apps
 tab-settings = Settings
 
 recents-sort-currently-last-played = Sort: Last Played

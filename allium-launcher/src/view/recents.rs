@@ -16,7 +16,8 @@ use embedded_graphics::prelude::OriginDimensions;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
-use crate::consoles::{ConsoleMapper, Game};
+use crate::consoles::ConsoleMapper;
+use crate::entry::game::Game;
 
 #[derive(Debug)]
 pub struct Recents {
@@ -128,10 +129,7 @@ impl Recents {
                 .select_most_played(RECENT_GAMES_LIMIT)?,
         };
 
-        self.entries = games
-            .into_iter()
-            .map(|game| Game::new(game.name, game.path))
-            .collect();
+        self.entries = games.into_iter().map(|game| Game::new(game.path)).collect();
 
         self.list.set_items(
             self.entries.iter().map(|e| e.name.to_string()).collect(),

@@ -1,24 +1,21 @@
 use std::collections::VecDeque;
-use std::ffi::OsStr;
-
-use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::{ALLIUM_GAMES_DIR, IMAGE_SIZE, SELECTION_MARGIN};
+use common::constants::{IMAGE_SIZE, SELECTION_MARGIN};
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::{Stylesheet, StylesheetColor};
 use common::view::{ButtonHint, ButtonIcon, Image, ImageMode, Row, ScrollList, View};
-use lazy_static::lazy_static;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
-use crate::consoles::{ConsoleMapper, Game};
+use crate::consoles::ConsoleMapper;
+use crate::entry::directory::Directory;
+use crate::entry::Entry;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BrowserState {
@@ -143,6 +140,9 @@ impl Browser {
                     if let Some(cmd) = command {
                         commands.send(cmd).await?;
                     }
+                }
+                Entry::App(app) => {
+                    commands.send(app.command()).await?;
                 }
             }
         }
@@ -276,116 +276,4 @@ pub fn entries(directory: &Directory) -> Result<Vec<Entry>> {
         .collect();
     entries.sort_unstable();
     Ok(entries)
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Entry {
-    Directory(Directory),
-    Game(Game),
-}
-
-impl Entry {
-    pub fn name(&self) -> &str {
-        match self {
-            Entry::Game(game) => &game.name,
-            Entry::Directory(directory) => &directory.name,
-        }
-    }
-
-    pub fn image(&mut self) -> Option<&Path> {
-        match self {
-            Entry::Game(game) => game.image(),
-            Entry::Directory(_) => None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct Directory {
-    pub name: String,
-    pub full_name: String,
-    pub path: PathBuf,
-}
-
-impl Ord for Directory {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.full_name.cmp(&other.full_name)
-    }
-}
-
-impl PartialOrd for Directory {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Default for Directory {
-    fn default() -> Self {
-        Directory {
-            name: "Games".to_string(),
-            full_name: "Games".to_string(),
-            path: ALLIUM_GAMES_DIR.to_owned(),
-        }
-    }
-}
-
-const EXCLUDE_EXTENSIONS: [&str; 1] = ["db"];
-
-impl Entry {
-    fn new(path: PathBuf) -> Result<Option<Entry>> {
-        // Don't add hidden files starting with .
-        let file_name = match path.file_name().and_then(OsStr::to_str) {
-            Some(file_name) => file_name,
-            None => return Ok(None),
-        };
-        if file_name.starts_with('.') {
-            return Ok(None);
-        }
-
-        let extension = path
-            .extension()
-            .and_then(OsStr::to_str)
-            .unwrap_or_default()
-            .to_owned();
-
-        // Exclude Imgs and Guide directories
-        if file_name == "Imgs" || file_name == "Guides" {
-            return Ok(None);
-        }
-        if EXCLUDE_EXTENSIONS.contains(&extension.as_str()) {
-            return Ok(None);
-        }
-
-        let full_name = match path.file_stem().and_then(OsStr::to_str) {
-            Some(name) => name.to_owned(),
-            None => return Ok(None),
-        };
-        let mut name = full_name.clone();
-
-        // Remove numbers
-        lazy_static! {
-            static ref NUMBERS_RE: Regex = Regex::new(r"^\d+[.\)]").unwrap();
-        }
-        name = NUMBERS_RE.replace(&name, "").to_string();
-
-        // Remove trailing parenthesis
-        lazy_static! {
-            static ref PARENTHESIS_RE: Regex = Regex::new(r"[\(\[].+[\)\]]$").unwrap();
-        }
-        name = PARENTHESIS_RE.replace(&name, "").to_string();
-
-        // Trim whitespaces
-        name = name.trim().to_owned();
-
-        // Directories without extensions can be navigated into
-        if extension.is_empty() && path.is_dir() {
-            return Ok(Some(Entry::Directory(Directory {
-                name,
-                full_name,
-                path,
-            })));
-        }
-
-        Ok(Some(Entry::Game(Game::new(name, path))))
-    }
 }

@@ -1,6 +1,7 @@
 # Launcher
 tab-games = 游戏
 tab-recents = 最近
+tabs-apps = 应用
 tab-settings = 设置
 
 recents-sort-currently-last-played = 最后播放

@@ -1,5 +1,6 @@
 mod allium_launcher;
 mod consoles;
+mod entry;
 mod view;
 
 use anyhow::Result;

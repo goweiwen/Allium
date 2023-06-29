@@ -5,7 +5,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use common::battery::Battery;
 use common::command::Command;
-use common::constants::ALLIUM_LAUNCHER_STATE;
+use common::constants::{ALLIUM_LAUNCHER_STATE, ALLIUM_SD_ROOT};
 use common::display::Display;
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
@@ -25,7 +25,8 @@ use crate::view::{Browser, Settings};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct AppState {
     selected: usize,
-    browser: BrowserState,
+    games: BrowserState,
+    apps: BrowserState,
     settings: SettingsState,
 }
 
@@ -36,7 +37,7 @@ where
 {
     rect: Rect,
     battery_indicator: BatteryIndicator<B>,
-    views: (Browser, Recents, Settings),
+    views: (Browser, Recents, Browser, Settings),
     selected: usize,
     tabs: Row<Label<String>>,
     dirty: bool,
@@ -49,7 +50,7 @@ where
     pub fn new(
         rect: Rect,
         res: Resources,
-        views: (Browser, Recents, Settings),
+        views: (Browser, Recents, Browser, Settings),
         selected: usize,
         battery: B,
     ) -> Result<Self> {
@@ -69,6 +70,7 @@ where
                         Alignment::Left,
                         None,
                     ),
+                    Label::new(Point::zero(), locale.t("tab-apps"), Alignment::Left, None),
                     Label::new(
                         Point::zero(),
                         locale.t("tab-settings"),
@@ -109,8 +111,9 @@ where
             let file = File::open(ALLIUM_LAUNCHER_STATE.as_path())?;
             if let Ok(state) = serde_json::from_reader::<_, AppState>(file) {
                 let views = (
-                    Browser::load(tab_rect, res.clone(), state.browser)?,
+                    Browser::load(tab_rect, res.clone(), state.games)?,
                     Recents::new(tab_rect, res.clone())?,
+                    Browser::load(tab_rect, res.clone(), state.apps)?,
                     Settings::new(tab_rect, res.clone(), state.settings)?,
                 );
                 return Self::new(rect, res, views, state.selected, battery);
@@ -120,8 +123,19 @@ where
         }
 
         let views = (
-            Browser::new(tab_rect, res.clone(), Default::default(), 0)?,
+            Browser::new(
+                tab_rect,
+                res.clone(),
+                ALLIUM_SD_ROOT.join("Roms").as_path().into(),
+                0,
+            )?,
             Recents::new(tab_rect, res.clone())?,
+            Browser::new(
+                tab_rect,
+                res.clone(),
+                ALLIUM_SD_ROOT.join("Apps").as_path().into(),
+                0,
+            )?,
             Settings::new(tab_rect, res.clone(), Default::default())?,
         );
         let selected = 0;
@@ -132,8 +146,9 @@ where
         let file = File::create(ALLIUM_LAUNCHER_STATE.as_path())?;
         let state = AppState {
             selected: self.selected,
-            browser: self.views.0.save(),
-            settings: self.views.2.save(),
+            games: self.views.0.save(),
+            apps: self.views.2.save(),
+            settings: self.views.3.save(),
         };
         serde_json::to_writer(file, &state)?;
         Ok(())
@@ -144,6 +159,7 @@ where
             0 => &self.views.0,
             1 => &self.views.1,
             2 => &self.views.2,
+            3 => &self.views.3,
             _ => unreachable!(),
         }
     }
@@ -153,6 +169,7 @@ where
             0 => &mut self.views.0,
             1 => &mut self.views.1,
             2 => &mut self.views.2,
+            3 => &mut self.views.3,
             _ => unreachable!(),
         }
     }
@@ -172,12 +189,12 @@ where
     }
 
     fn next(&mut self) {
-        let selected = (self.selected + 1).rem_euclid(3);
+        let selected = (self.selected + 1).rem_euclid(4);
         self.tab_change(selected)
     }
 
     fn prev(&mut self) {
-        let selected = (self.selected as isize - 1).rem_euclid(3);
+        let selected = (self.selected as isize - 1).rem_euclid(4);
         self.tab_change(selected as usize)
     }
 }
@@ -261,6 +278,7 @@ where
             0 => &mut self.views.0,
             1 => &mut self.views.1,
             2 => &mut self.views.2,
+            3 => &mut self.views.3,
             _ => unreachable!(),
         };
         vec![&mut self.battery_indicator, view, &mut self.tabs]
