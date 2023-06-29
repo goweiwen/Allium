@@ -30,6 +30,8 @@ fi
 echo ondemand > "$CPU_PATH"
 rm -f "$SDCARD_PATH/update.log"
 
+export SDL_HIDE_BATTERY=1
+
 # run Allium
 export DIR="/mnt/SDCARD/"
 cd "$DIR"
