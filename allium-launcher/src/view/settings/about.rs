@@ -13,6 +13,8 @@ use common::view::{ButtonHint, ButtonIcon, Label, Row, SettingsList, View};
 use sysinfo::{DiskExt, SystemExt};
 use tokio::sync::mpsc::Sender;
 
+use crate::view::settings::{ChildState, SettingsChild};
+
 pub struct About {
     rect: Rect,
     list: SettingsList,
@@ -20,7 +22,7 @@ pub struct About {
 }
 
 impl About {
-    pub fn new(rect: Rect, res: Resources) -> Self {
+    pub fn new(rect: Rect, res: Resources, state: Option<ChildState>) -> Self {
         let Rect { x, y, w, h } = rect;
 
         let firmware = DefaultPlatform::firmware();
@@ -32,7 +34,7 @@ impl About {
         let locale = res.get::<Locale>();
         let styles = res.get::<Stylesheet>();
 
-        let list = SettingsList::new(
+        let mut list = SettingsList::new(
             Rect::new(
                 x + 12,
                 y + 8,
@@ -89,6 +91,9 @@ impl About {
             ],
             styles.ui_font.size + SELECTION_MARGIN,
         );
+        if let Some(state) = state {
+            list.select(state.selected);
+        }
 
         let button_hints = Row::new(
             Point::new(
@@ -174,5 +179,13 @@ impl View for About {
 
     fn set_position(&mut self, _point: Point) {
         unimplemented!()
+    }
+}
+
+impl SettingsChild for About {
+    fn save(&self) -> ChildState {
+        ChildState {
+            selected: self.list.selected(),
+        }
     }
 }

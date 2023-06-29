@@ -16,6 +16,8 @@ use common::view::{ButtonHint, ButtonIcon, Label, Percentage, Row, SettingsList,
 
 use tokio::sync::mpsc::Sender;
 
+use crate::view::settings::{ChildState, SettingsChild};
+
 pub struct Display {
     rect: Rect,
     settings: DisplaySettings,
@@ -27,7 +29,7 @@ pub struct Display {
 }
 
 impl Display {
-    pub fn new(rect: Rect, res: Resources) -> Self {
+    pub fn new(rect: Rect, res: Resources, state: Option<ChildState>) -> Self {
         let Rect { x, y, w, h } = rect;
 
         let settings = DisplaySettings::load().unwrap();
@@ -35,7 +37,7 @@ impl Display {
         let locale = res.get::<Locale>();
         let styles = res.get::<Stylesheet>();
 
-        let list = SettingsList::new(
+        let mut list = SettingsList::new(
             Rect::new(
                 x + 12,
                 y + 8,
@@ -82,6 +84,9 @@ impl Display {
             ],
             styles.ui_font.size + SELECTION_MARGIN,
         );
+        if let Some(state) = state {
+            list.select(state.selected);
+        }
 
         let restart_label = Label::new(
             Point::new(
@@ -230,5 +235,13 @@ impl View for Display {
 
     fn set_position(&mut self, _point: Point) {
         unimplemented!()
+    }
+}
+
+impl SettingsChild for Display {
+    fn save(&self) -> ChildState {
+        ChildState {
+            selected: self.list.selected(),
+        }
     }
 }

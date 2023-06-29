@@ -11,6 +11,7 @@ use self::theme::Theme;
 use self::wifi::Wifi;
 
 use std::collections::VecDeque;
+use std::fmt::Debug;
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -29,7 +30,22 @@ use tokio::sync::mpsc::Sender;
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SettingsState {
     selected: usize,
-    has_child: bool,
+    child: Option<ChildState>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ChildState {
+    selected: usize,
+}
+
+trait SettingsChild: View {
+    fn save(&self) -> ChildState;
+}
+
+impl Debug for dyn SettingsChild {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("dyn SettingsChild").finish()
+    }
 }
 
 #[derive(Debug)]
@@ -37,7 +53,7 @@ pub struct Settings {
     rect: Rect,
     res: Resources,
     list: ScrollList,
-    child: Option<Box<dyn View>>,
+    child: Option<Box<dyn SettingsChild>>,
     button_hints: Row<ButtonHint<String>>,
     has_wifi: bool,
     dirty: bool,
@@ -69,18 +85,18 @@ impl Settings {
         );
         list.select(state.selected);
 
-        let child: Option<Box<dyn View>> = if state.has_child {
+        let child: Option<Box<dyn SettingsChild>> = if let Some(child) = state.child {
             let mut selected = state.selected;
             if !has_wifi {
                 selected += 1;
             };
             match selected {
-                0 => Some(Box::new(Wifi::new(rect, res.clone()))),
-                1 => Some(Box::new(Display::new(rect, res.clone()))),
-                2 => Some(Box::new(Theme::new(rect, res.clone()))),
-                3 => Some(Box::new(Language::new(rect, res.clone()))),
+                0 => Some(Box::new(Wifi::new(rect, res.clone(), Some(child)))),
+                1 => Some(Box::new(Display::new(rect, res.clone(), Some(child)))),
+                2 => Some(Box::new(Theme::new(rect, res.clone(), Some(child)))),
+                3 => Some(Box::new(Language::new(rect, res.clone(), Some(child)))),
                 4 => None,
-                5 => Some(Box::new(About::new(rect, res.clone()))),
+                5 => Some(Box::new(About::new(rect, res.clone(), Some(child)))),
                 _ => None,
             }
         } else {
@@ -126,7 +142,7 @@ impl Settings {
     pub fn save(&self) -> SettingsState {
         SettingsState {
             selected: self.list.selected(),
-            has_child: self.child.is_some(),
+            child: self.child.as_ref().map(|c| c.save()),
         }
     }
 
@@ -136,17 +152,17 @@ impl Settings {
             selected += 1
         };
         match selected {
-            0 => self.child = Some(Box::new(Wifi::new(self.rect, self.res.clone()))),
-            1 => self.child = Some(Box::new(Display::new(self.rect, self.res.clone()))),
-            2 => self.child = Some(Box::new(Theme::new(self.rect, self.res.clone()))),
-            3 => self.child = Some(Box::new(Language::new(self.rect, self.res.clone()))),
+            0 => self.child = Some(Box::new(Wifi::new(self.rect, self.res.clone(), None))),
+            1 => self.child = Some(Box::new(Display::new(self.rect, self.res.clone(), None))),
+            2 => self.child = Some(Box::new(Theme::new(self.rect, self.res.clone(), None))),
+            3 => self.child = Some(Box::new(Language::new(self.rect, self.res.clone(), None))),
             4 => {
                 let path = ALLIUM_TOOLS_DIR.join("Files.pak");
                 let mut command = std::process::Command::new(path.join("launch.sh"));
                 command.current_dir(path);
                 commands.send(Command::Exec(command)).await?;
             }
-            5 => self.child = Some(Box::new(About::new(self.rect, self.res.clone()))),
+            5 => self.child = Some(Box::new(About::new(self.rect, self.res.clone(), None))),
             _ => unreachable!("Invalid index"),
         }
         self.dirty = true;

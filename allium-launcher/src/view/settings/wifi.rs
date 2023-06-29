@@ -14,6 +14,8 @@ use common::view::{ButtonHint, ButtonIcon, Label, Row, SettingsList, TextBox, To
 use common::wifi::{self, WiFiSettings};
 use tokio::sync::mpsc::Sender;
 
+use crate::view::settings::{ChildState, SettingsChild};
+
 pub struct Wifi {
     rect: Rect,
     res: Resources,
@@ -25,7 +27,7 @@ pub struct Wifi {
 }
 
 impl Wifi {
-    pub fn new(rect: Rect, res: Resources) -> Self {
+    pub fn new(rect: Rect, res: Resources, state: Option<ChildState>) -> Self {
         let Rect { x, y, w, h } = rect;
 
         let settings = WiFiSettings::load().unwrap();
@@ -33,7 +35,7 @@ impl Wifi {
         let locale = res.get::<Locale>();
         let styles = res.get::<Stylesheet>();
 
-        let list = SettingsList::new(
+        let mut list = SettingsList::new(
             Rect::new(
                 x + 12,
                 y + 8,
@@ -76,6 +78,9 @@ impl Wifi {
             ],
             res.get::<Stylesheet>().ui_font.size + SELECTION_MARGIN,
         );
+        if let Some(state) = state {
+            list.select(state.selected);
+        }
 
         let ip_address_label = Label::new(
             Point::new(
@@ -222,5 +227,13 @@ impl View for Wifi {
 
     fn set_position(&mut self, _point: Point) {
         unimplemented!()
+    }
+}
+
+impl SettingsChild for Wifi {
+    fn save(&self) -> ChildState {
+        ChildState {
+            selected: self.list.selected(),
+        }
     }
 }

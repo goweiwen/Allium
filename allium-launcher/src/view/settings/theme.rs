@@ -15,6 +15,8 @@ use common::view::{
 };
 use tokio::sync::mpsc::Sender;
 
+use crate::view::settings::{ChildState, SettingsChild};
+
 pub struct Theme {
     rect: Rect,
     stylesheet: Stylesheet,
@@ -24,7 +26,7 @@ pub struct Theme {
 }
 
 impl Theme {
-    pub fn new(rect: Rect, res: Resources) -> Self {
+    pub fn new(rect: Rect, res: Resources, state: Option<ChildState>) -> Self {
         let Rect { x, y, w, h } = rect;
 
         let stylesheet = Stylesheet::load().unwrap();
@@ -43,7 +45,7 @@ impl Theme {
             })
             .collect();
 
-        let list = SettingsList::new(
+        let mut list = SettingsList::new(
             Rect::new(
                 x + 12,
                 y + 8,
@@ -146,6 +148,9 @@ impl Theme {
             ],
             res.get::<Stylesheet>().ui_font.size + SELECTION_MARGIN,
         );
+        if let Some(state) = state {
+            list.select(state.selected);
+        }
 
         let button_hints = Row::new(
             Point::new(
@@ -325,5 +330,13 @@ impl View for Theme {
 
     fn set_position(&mut self, _point: Point) {
         unimplemented!()
+    }
+}
+
+impl SettingsChild for Theme {
+    fn save(&self) -> ChildState {
+        ChildState {
+            selected: self.list.selected(),
+        }
     }
 }

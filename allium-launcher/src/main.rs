@@ -1,3 +1,5 @@
+#![feature(trait_upcasting)]
+
 mod allium_launcher;
 mod consoles;
 mod entry;
