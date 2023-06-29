@@ -7,8 +7,8 @@ use anyhow::Result;
 use chrono::{DateTime, Utc};
 use common::battery::Battery;
 use common::constants::{
-    ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_MENU, ALLIUM_VERSION,
-    AUTO_SLEEP_TIMEOUT, BATTERY_SHUTDOWN_THRESHOLD, BATTERY_UPDATE_INTERVAL,
+    ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_MENU, ALLIUM_VERSION, AUTO_SLEEP_TIMEOUT,
+    BATTERY_SHUTDOWN_THRESHOLD, BATTERY_UPDATE_INTERVAL,
 };
 use common::wifi::WiFiSettings;
 use enum_map::EnumMap;
@@ -51,7 +51,8 @@ pub struct AlliumD<P: Platform> {
 }
 
 fn spawn_main() -> Child {
-    match GameInfo::load().unwrap() {
+    #[cfg(feature = "miyoo")]
+    return match GameInfo::load().unwrap() {
         Some(mut game_info) => {
             debug!("found game info, resuming game");
             game_info.start_time = Utc::now();
@@ -60,11 +61,19 @@ fn spawn_main() -> Child {
         }
         None => {
             debug!("no game info found, launching launcher");
+            use common::constants::ALLIUM_LAUNCHER;
             Command::new(ALLIUM_LAUNCHER.as_path())
         }
     }
     .spawn()
-    .unwrap()
+    .unwrap();
+
+    #[cfg(not(feature = "miyoo"))]
+    return Command::new("/bin/sh")
+        .arg("-c")
+        .arg("make simulator-launcher")
+        .spawn()
+        .unwrap();
 }
 
 impl AlliumD<DefaultPlatform> {

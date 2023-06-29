@@ -110,18 +110,29 @@ impl AlliumLauncher<DefaultPlatform> {
                 self.display.flush()?;
                 process::exit(0);
             }
+            #[allow(unused_mut)]
             Command::Exec(mut cmd) => {
                 debug!("executing command: {:?}", cmd);
                 self.view.save()?;
                 self.display.clear(Color::new(0, 0, 0))?;
                 self.display.flush()?;
-                #[cfg(unix)]
+                #[cfg(feature = "miyoo")]
                 {
                     use std::os::unix::process::CommandExt;
                     cmd.exec();
                 }
-                #[cfg(not(unix))]
-                cmd.spawn()?;
+                #[cfg(not(feature = "miyoo"))]
+                {
+                    #[cfg(unix)]
+                    use std::os::unix::process::CommandExt;
+                    process::Command::new("/bin/sh")
+                        .arg("-c")
+                        .arg("make simulator-menu")
+                        .exec();
+
+                    #[cfg(not(unix))]
+                    process::exit();
+                }
             }
             Command::SaveStylesheet(mut styles) => {
                 debug!("saving stylesheet");
