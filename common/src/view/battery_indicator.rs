@@ -88,12 +88,12 @@ where
 
             // Inner battery
             let percentage = self.battery.percentage();
-            if percentage > 0 {
+            if percentage > 5 {
                 RoundedRectangle::new(
                     Rect::new(
                         offset + self.point.x + -34,
                         self.point.y + 16,
-                        23 * percentage as u32 / 100,
+                        23 * (percentage - 5).clamp(0, 90) as u32 / 90,
                         9,
                     )
                     .into(),
@@ -121,31 +121,10 @@ where
 
             // Charging indicator
             if self.battery.charging() {
-                let bg_style = PrimitiveStyleBuilder::new()
-                    .fill_color(styles.background_color)
-                    .build();
-
                 let fill_style = PrimitiveStyleBuilder::new()
                     .fill_color(styles.foreground_color)
                     .build();
 
-                // Background
-                Triangle::new(
-                    Point::new(self.point.x + -3, self.point.y - 1).into(),
-                    Point::new(self.point.x + -18, self.point.y + 23).into(),
-                    Point::new(self.point.x + -7, self.point.y + 23).into(),
-                )
-                .into_styled(bg_style)
-                .draw(display)?;
-                Triangle::new(
-                    Point::new(self.point.x + -15, self.point.y + 41).into(),
-                    Point::new(self.point.x, self.point.y + 17).into(),
-                    Point::new(self.point.x + -11, self.point.y + 17).into(),
-                )
-                .into_styled(bg_style)
-                .draw(display)?;
-
-                // Foreground
                 Triangle::new(
                     Point::new(self.point.x + -6, self.point.y + 8).into(),
                     Point::new(self.point.x + -15, self.point.y + 21).into(),
