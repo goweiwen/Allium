@@ -1,12 +1,12 @@
 use std::collections::VecDeque;
+use std::fs;
 use std::fs::File;
-use std::{fs, mem};
 
 use anyhow::Result;
 use async_trait::async_trait;
 use common::battery::Battery;
 use common::command::Command;
-use common::constants::{ALLIUM_MENU_STATE, BUTTON_DIAMETER};
+use common::constants::ALLIUM_MENU_STATE;
 use common::display::Display;
 use common::game_info::GameInfo;
 use common::geom::{Alignment, Point, Rect};
@@ -15,7 +15,7 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::retroarch::RetroArchCommand;
 use common::stylesheet::Stylesheet;
-use common::view::{BatteryIndicator, ButtonHint, Label, List, Row, View};
+use common::view::{BatteryIndicator, ButtonHint, ButtonIcon, Label, List, Row, View};
 use log::warn;
 use serde::{Deserialize, Serialize};
 use strum::{EnumCount, EnumIter, IntoEnumIterator};
@@ -51,6 +51,7 @@ where
 
         let game_info = res.get::<GameInfo>();
         let locale = res.get::<Locale>();
+        let styles = res.get::<Stylesheet>();
 
         let mut name = Label::new(
             Point::new(x + 12, y + 8),
@@ -64,7 +65,12 @@ where
 
         let menu_w = 336;
         let menu = List::new(
-            Rect::new(x + 24, y + 58, menu_w, h - 58),
+            Rect::new(
+                x + 24,
+                y + styles.ui_font.size as i32 + 8,
+                menu_w,
+                h - styles.ui_font.size - 8,
+            ),
             MenuEntry::iter()
                 .filter(|e| match e {
                     MenuEntry::Guide => game_info.guide.is_some(),
@@ -84,7 +90,10 @@ where
         );
 
         let button_hints = Row::new(
-            Point::new(x + w as i32 - 12, y + h as i32 - BUTTON_DIAMETER as i32 - 8),
+            Point::new(
+                x + w as i32 - 12,
+                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+            ),
             vec![
                 ButtonHint::new(
                     Point::zero(),
@@ -110,8 +119,9 @@ where
             }
         }
 
-        mem::drop(game_info);
-        mem::drop(locale);
+        drop(game_info);
+        drop(locale);
+        drop(styles);
 
         Self {
             rect,

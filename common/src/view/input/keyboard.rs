@@ -11,7 +11,6 @@ use embedded_graphics::{
 use strum::{EnumCount, EnumIter, FromRepr, IntoEnumIterator};
 use tokio::sync::mpsc::Sender;
 
-use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use crate::stylesheet::Stylesheet;
 use crate::view::{ButtonHint, Row, View};
@@ -22,6 +21,10 @@ use crate::{
 use crate::{
     display::{font::FontTextStyleBuilder, Display},
     resources::Resources,
+};
+use crate::{
+    geom::{Alignment, Point, Rect},
+    view::ButtonIcon,
 };
 
 #[derive(Debug, Clone)]
@@ -37,31 +40,35 @@ pub struct Keyboard {
 impl Keyboard {
     pub fn new(res: Resources, value: String, is_password: bool) -> Self {
         let rect = res.get::<Rect>().to_owned();
+
+        let locale = res.get::<Locale>();
+        let styles = res.get::<Stylesheet>();
+
         let button_hints = Row::new(
-            Point::new(rect.x + rect.w as i32 - 12, rect.y + rect.h as i32 - 8 - 30),
-            {
-                let locale = res.get::<Locale>();
-                vec![
-                    ButtonHint::new(
-                        Point::zero(),
-                        Key::Start,
-                        locale.t("button-confirm"),
-                        Alignment::Right,
-                    ),
-                    ButtonHint::new(
-                        Point::zero(),
-                        Key::Select,
-                        locale.t("keyboard-button-shift"),
-                        Alignment::Right,
-                    ),
-                    ButtonHint::new(
-                        Point::zero(),
-                        Key::R,
-                        locale.t("keyboard-button-backspace"),
-                        Alignment::Right,
-                    ),
-                ]
-            },
+            Point::new(
+                rect.x + rect.w as i32 - 12,
+                rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+            ),
+            vec![
+                ButtonHint::new(
+                    Point::zero(),
+                    Key::Start,
+                    locale.t("button-confirm"),
+                    Alignment::Right,
+                ),
+                ButtonHint::new(
+                    Point::zero(),
+                    Key::Select,
+                    locale.t("keyboard-button-shift"),
+                    Alignment::Right,
+                ),
+                ButtonHint::new(
+                    Point::zero(),
+                    Key::R,
+                    locale.t("keyboard-button-backspace"),
+                    Alignment::Right,
+                ),
+            ],
             Alignment::Right,
             12,
         );
@@ -120,7 +127,7 @@ impl View for Keyboard {
             let w = key_size as i32 * KEYBOARD_COLUMNS + key_padding * 14;
             let h = key_size as i32 * KEYBOARD_ROWS + key_padding * 5;
             let x0 = (display.size().width as i32 - w) / 2;
-            let y0 = display.size().height as i32 - h - 47;
+            let y0 = display.size().height as i32 - h - ButtonIcon::diameter(styles) as i32 - 8;
 
             RoundedRectangle::with_equal_corners(
                 Rectangle::new(

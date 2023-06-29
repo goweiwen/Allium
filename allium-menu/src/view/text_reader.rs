@@ -5,7 +5,6 @@ use std::{fs, mem};
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::BUTTON_DIAMETER;
 use common::database::Database;
 use common::display::font::FontTextStyleBuilder;
 use common::geom::{Alignment, Point, Rect};
@@ -13,8 +12,8 @@ use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::Keyboard;
 use common::view::{ButtonHint, Row, View};
+use common::view::{ButtonIcon, Keyboard};
 use embedded_graphics::prelude::Size;
 use embedded_graphics::primitives::{Primitive, PrimitiveStyle, Rectangle, RoundedRectangle};
 use embedded_graphics::text::Text;
@@ -52,28 +51,34 @@ impl TextReader {
 
         let Rect { x, y, w, h } = rect;
 
+        let locale = res.get::<Locale>();
+        let styles = res.get::<Stylesheet>();
+
         let button_hints = Row::new(
-            Point::new(x + w as i32 - 12, y + h as i32 - BUTTON_DIAMETER as i32 - 8),
-            {
-                let locale = res.get::<Locale>();
-                vec![
-                    ButtonHint::new(
-                        Point::zero(),
-                        Key::X,
-                        locale.t("guide-button-search"),
-                        Alignment::Right,
-                    ),
-                    ButtonHint::new(
-                        Point::zero(),
-                        Key::B,
-                        locale.t("button-back"),
-                        Alignment::Right,
-                    ),
-                ]
-            },
+            Point::new(
+                x + w as i32 - 12,
+                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+            ),
+            vec![
+                ButtonHint::new(
+                    Point::zero(),
+                    Key::X,
+                    locale.t("guide-button-search"),
+                    Alignment::Right,
+                ),
+                ButtonHint::new(
+                    Point::zero(),
+                    Key::B,
+                    locale.t("button-back"),
+                    Alignment::Right,
+                ),
+            ],
             Alignment::Right,
             12,
         );
+
+        drop(locale);
+        drop(styles);
 
         Self {
             rect,
@@ -237,7 +242,7 @@ impl View for TextReader {
                     self.rect.x,
                     self.rect.y,
                     self.rect.w,
-                    self.rect.h - 48,
+                    self.rect.h - 8 - ButtonIcon::diameter(styles) - 8,
                 )),
                 Size::new_equal(8),
             )
@@ -262,7 +267,7 @@ impl View for TextReader {
                     self.rect.x + 12,
                     self.rect.y,
                     self.rect.w - 24,
-                    self.rect.h - 48,
+                    self.rect.h - 8 - ButtonIcon::diameter(styles) - 8,
                 )
                 .into(),
                 text_style.clone(),
@@ -277,7 +282,11 @@ impl View for TextReader {
                 ),
                 Point::new(
                     self.rect.x + self.rect.w as i32 - 16,
-                    self.rect.y + self.rect.h as i32 - styles.guide_font.size as i32 - 48,
+                    self.rect.y + self.rect.h as i32
+                        - styles.guide_font.size as i32
+                        - 8
+                        - ButtonIcon::diameter(styles) as i32
+                        - 8,
                 )
                 .into(),
                 text_style,

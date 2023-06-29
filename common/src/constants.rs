@@ -54,7 +54,6 @@ lazy_static! {
 }
 
 // Styles
-pub const BUTTON_DIAMETER: u32 = 31;
 pub const BATTERY_SIZE: Size = Size::new(62, 40);
 pub const IMAGE_SIZE: Size = Size::new(250, 376);
 pub const SELECTION_MARGIN: u32 = 8;

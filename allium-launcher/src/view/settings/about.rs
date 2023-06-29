@@ -3,13 +3,13 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::{ALLIUM_VERSION, BUTTON_DIAMETER, SELECTION_MARGIN};
+use common::constants::{ALLIUM_VERSION, SELECTION_MARGIN};
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, Label, Row, SettingsList, View};
+use common::view::{ButtonHint, ButtonIcon, Label, Row, SettingsList, View};
 use sysinfo::{DiskExt, SystemExt};
 use tokio::sync::mpsc::Sender;
 
@@ -30,9 +30,15 @@ impl About {
         let disk = &sys.disks()[1];
 
         let locale = res.get::<Locale>();
+        let styles = res.get::<Stylesheet>();
 
         let list = SettingsList::new(
-            Rect::new(x + 12, y + 8, w - 24, h - 8 - 48),
+            Rect::new(
+                x + 12,
+                y + 8,
+                w - 24,
+                h - 8 - ButtonIcon::diameter(&styles) - 8,
+            ),
             vec![
                 locale.t("settings-about-allium-version"),
                 locale.t("settings-about-model-name"),
@@ -81,13 +87,13 @@ impl About {
                     None,
                 )),
             ],
-            res.get::<Stylesheet>().ui_font.size + SELECTION_MARGIN,
+            styles.ui_font.size + SELECTION_MARGIN,
         );
 
         let button_hints = Row::new(
             Point::new(
                 rect.x + rect.w as i32 - 12,
-                rect.y + rect.h as i32 - BUTTON_DIAMETER as i32 - 8,
+                rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
             ),
             vec![ButtonHint::new(
                 Point::zero(),

@@ -5,7 +5,6 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
-use crate::constants::BUTTON_DIAMETER;
 use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
@@ -58,10 +57,10 @@ where
         self.has_layout = true;
     }
 
-    fn layout_left(&mut self, _styles: &Stylesheet) {
+    fn layout_left(&mut self, styles: &Stylesheet) {
         self.button.set_position(self.point);
         self.label.set_position(Point::new(
-            self.point.x + BUTTON_DIAMETER as i32 + 8,
+            self.point.x + ButtonIcon::diameter(styles) as i32 + 8,
             self.point.y + 2,
         ));
     }

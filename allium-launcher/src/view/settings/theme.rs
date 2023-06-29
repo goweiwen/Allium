@@ -4,13 +4,15 @@ use std::path::PathBuf;
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::{BUTTON_DIAMETER, SELECTION_MARGIN};
+use common::constants::SELECTION_MARGIN;
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::{Stylesheet, StylesheetFont};
-use common::view::{ButtonHint, ColorPicker, Number, Row, Select, SettingsList, Toggle, View};
+use common::view::{
+    ButtonHint, ButtonIcon, ColorPicker, Number, Row, Select, SettingsList, Toggle, View,
+};
 use tokio::sync::mpsc::Sender;
 
 pub struct Theme {
@@ -28,6 +30,7 @@ impl Theme {
         let stylesheet = Stylesheet::load().unwrap();
 
         let locale = res.get::<Locale>();
+        let styles = res.get::<Stylesheet>();
 
         let fonts = StylesheetFont::available_fonts().unwrap_or_default();
         let font_names: Vec<String> = fonts
@@ -41,7 +44,12 @@ impl Theme {
             .collect();
 
         let list = SettingsList::new(
-            Rect::new(x + 12, y + 8, w - 24, h - 8 - 48),
+            Rect::new(
+                x + 12,
+                y + 8,
+                w - 24,
+                h - 8 - ButtonIcon::diameter(&styles) - 8,
+            ),
             vec![
                 locale.t("settings-theme-dark-mode"),
                 locale.t("settings-theme-ui-font"),
@@ -142,7 +150,7 @@ impl Theme {
         let button_hints = Row::new(
             Point::new(
                 rect.x + rect.w as i32 - 12,
-                rect.y + rect.h as i32 - BUTTON_DIAMETER as i32 - 8,
+                rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
             ),
             vec![
                 ButtonHint::new(

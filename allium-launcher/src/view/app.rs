@@ -95,7 +95,15 @@ where
     }
 
     pub fn load_or_new(rect: Rect, res: Resources, battery: B) -> Result<Self> {
-        let tab_rect = Rect::new(rect.x, rect.y + 46, rect.w, rect.h - 46);
+        let tab_rect = {
+            let styles = res.get::<Stylesheet>();
+            Rect::new(
+                rect.x,
+                rect.y + styles.ui_font.size as i32 + 8,
+                rect.w,
+                rect.h - styles.ui_font.size - 8,
+            )
+        };
 
         if ALLIUM_LAUNCHER_STATE.exists() {
             let file = File::open(ALLIUM_LAUNCHER_STATE.as_path())?;

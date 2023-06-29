@@ -15,14 +15,14 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::{ALLIUM_TOOLS_DIR, BUTTON_DIAMETER, SELECTION_MARGIN};
+use common::constants::{ALLIUM_TOOLS_DIR, SELECTION_MARGIN};
 use common::display::Display as DisplayTrait;
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, Row, ScrollList, View};
+use common::view::{ButtonHint, ButtonIcon, Row, ScrollList, View};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
@@ -47,9 +47,10 @@ impl Settings {
         let Rect { x, y, w, h } = rect;
 
         let locale = res.get::<Locale>();
+        let styles = res.get::<Stylesheet>();
 
         let mut list = ScrollList::new(
-            Rect::new(x + 12, y + 8, w - 24, h - 8 - 48),
+            Rect::new(x + 12, y + 8, w - 24, h - 8 - styles.ui_font.size - 8),
             vec![
                 locale.t("settings-wifi"),
                 locale.t("settings-display"),
@@ -59,7 +60,7 @@ impl Settings {
                 locale.t("settings-about"),
             ],
             Alignment::Left,
-            res.get::<Stylesheet>().ui_font.size + SELECTION_MARGIN,
+            styles.ui_font.size + SELECTION_MARGIN,
         );
         list.select(state.selected);
 
@@ -78,7 +79,10 @@ impl Settings {
         };
 
         let button_hints = Row::new(
-            Point::new(x + w as i32 - 12, y + h as i32 - BUTTON_DIAMETER as i32 - 8),
+            Point::new(
+                x + w as i32 - 12,
+                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+            ),
             vec![
                 ButtonHint::new(
                     Point::zero(),

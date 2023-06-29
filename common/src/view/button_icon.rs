@@ -11,7 +11,6 @@ use embedded_graphics::Drawable;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
-use crate::constants::BUTTON_DIAMETER;
 use crate::display::font::FontTextStyleBuilder;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
@@ -34,6 +33,10 @@ impl ButtonIcon {
             alignment,
             dirty: true,
         }
+    }
+
+    pub fn diameter(styles: &Stylesheet) -> u32 {
+        styles.ui_font.size
     }
 }
 
@@ -66,29 +69,30 @@ impl View for ButtonIcon {
             Key::Unknown => unimplemented!("unknown button"),
         };
 
+        let diameter = Self::diameter(styles);
+
         let point = match self.alignment {
             Alignment::Left => self.point.into(),
             Alignment::Center => embedded_graphics::prelude::Point::new(
-                self.point.x - (BUTTON_DIAMETER / 2) as i32,
+                self.point.x - (diameter / 2) as i32,
                 self.point.y,
             ),
-            Alignment::Right => embedded_graphics::prelude::Point::new(
-                self.point.x - BUTTON_DIAMETER as i32,
-                self.point.y,
-            ),
+            Alignment::Right => {
+                embedded_graphics::prelude::Point::new(self.point.x - diameter as i32, self.point.y)
+            }
         };
 
         match self.button {
             Key::A | Key::B | Key::X | Key::Y | Key::Menu => {
-                Circle::new(point, BUTTON_DIAMETER)
+                Circle::new(point, diameter)
                     .into_styled(PrimitiveStyle::with_fill(color))
                     .draw(display)?;
             }
             Key::Start | Key::Select => {
                 RoundedRectangle::with_equal_corners(
                     Rectangle::new(
-                        Point::new(point.x, point.y + BUTTON_DIAMETER as i32 / 5 + 1).into(),
-                        Size::new(BUTTON_DIAMETER, BUTTON_DIAMETER * 3 / 5),
+                        Point::new(point.x, point.y + diameter as i32 / 5 + 1).into(),
+                        Size::new(diameter, diameter * 3 / 5),
                     ),
                     Size::new_equal(8),
                 )
@@ -98,8 +102,8 @@ impl View for ButtonIcon {
             Key::L | Key::L2 => {
                 RoundedRectangle::new(
                     Rectangle::new(
-                        Point::new(point.x, point.y + BUTTON_DIAMETER as i32 / 8).into(),
-                        Size::new(BUTTON_DIAMETER, BUTTON_DIAMETER * 3 / 4),
+                        Point::new(point.x, point.y + diameter as i32 / 8).into(),
+                        Size::new(diameter, diameter * 3 / 4),
                     ),
                     CornerRadiiBuilder::new()
                         .all(Size::new_equal(8))
@@ -112,8 +116,8 @@ impl View for ButtonIcon {
             Key::R | Key::R2 => {
                 RoundedRectangle::new(
                     Rectangle::new(
-                        Point::new(point.x, point.y + BUTTON_DIAMETER as i32 / 8).into(),
-                        Size::new(BUTTON_DIAMETER, BUTTON_DIAMETER * 3 / 4),
+                        Point::new(point.x, point.y + diameter as i32 / 8).into(),
+                        Size::new(diameter, diameter * 3 / 4),
                     ),
                     CornerRadiiBuilder::new()
                         .all(Size::new_equal(8))
@@ -128,15 +132,15 @@ impl View for ButtonIcon {
 
         let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
             .font_fallback(styles.cjk_font.font())
-            .font_size(28)
+            .font_size(diameter * 3 / 4)
             .text_color(styles.foreground_color)
             .background_color(color)
             .build();
         Text::with_text_style(
             text,
             embedded_graphics::prelude::Point::new(
-                point.x + (BUTTON_DIAMETER / 2) as i32,
-                point.y + 2,
+                point.x + diameter as i32 / 2,
+                point.y + diameter as i32 / 8,
             ),
             text_style,
             TextStyleBuilder::new()
@@ -175,15 +179,16 @@ impl View for ButtonIcon {
         Vec::new()
     }
 
-    fn bounding_box(&mut self, _styles: &Stylesheet) -> Rect {
+    fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
+        let diameter = Self::diameter(styles);
         let x = match self.alignment {
             Alignment::Left => self.point.x,
-            Alignment::Center => self.point.x - (BUTTON_DIAMETER / 2) as i32,
+            Alignment::Center => self.point.x - (diameter / 2) as i32,
 
-            Alignment::Right => self.point.x - BUTTON_DIAMETER as i32,
+            Alignment::Right => self.point.x - diameter as i32,
         };
 
-        Rect::new(x, self.point.y - 1, BUTTON_DIAMETER, BUTTON_DIAMETER)
+        Rect::new(x, self.point.y - 1, diameter, diameter)
     }
 
     fn set_position(&mut self, point: Point) {
