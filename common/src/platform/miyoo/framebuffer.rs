@@ -97,7 +97,16 @@ impl Display for FramebufferDisplay {
              bail!("No saved image");
         };
 
-        let Rect { x, y, w, h } = rect;
+        let Rect {
+            mut x,
+            mut y,
+            mut w,
+            mut h,
+        } = rect;
+        x = x.max(0);
+        y = y.max(0);
+        w = w.min(self.framebuffer.size.width - x as u32);
+        h = h.min(self.framebuffer.size.height - y as u32);
 
         for y in (y as u32)..(y as u32 + h) {
             let from = (y as u32 * self.framebuffer.size.width + x as u32) as usize
