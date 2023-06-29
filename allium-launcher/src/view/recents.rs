@@ -40,7 +40,7 @@ impl Recents {
                 x + 12,
                 y + 8,
                 w - IMAGE_SIZE.w - 12 - 12 - 24,
-                h - 8 - ButtonIcon::diameter(&styles),
+                h - 8 - ButtonIcon::diameter(&styles) - 8,
             ),
             Vec::new(),
             Alignment::Left,
