@@ -8,7 +8,7 @@ use common::game_info::GameInfo;
 use serde::{Deserialize, Serialize};
 
 use common::constants::{ALLIUM_CONFIG_CONSOLES, ALLIUM_GAMES_DIR, ALLIUM_RETROARCH};
-use log::debug;
+use log::{debug, trace};
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct Console {
@@ -186,7 +186,7 @@ impl ConsoleMapper {
 
         let mut parent = Some(path);
         while let Some(path) = parent {
-            println!("path: {:?}", path);
+            trace!("path: {:?}", path);
             if let Some(filename) = path.file_name().and_then(|path| path.to_str()) {
                 let console = self.consoles.iter().find(|core| {
                     core.patterns.iter().any(|pattern| {

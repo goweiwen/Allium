@@ -6,6 +6,7 @@ use embedded_graphics::prelude::{Dimensions, Size};
 use embedded_graphics::primitives::{Primitive, PrimitiveStyleBuilder, Rectangle, StrokeAlignment};
 use embedded_graphics::text::Text;
 use embedded_graphics::Drawable;
+use log::trace;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
@@ -169,9 +170,10 @@ impl View for ColorPicker {
         _command: Sender<Command>,
         bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
-        println!(
+        trace!(
             "color picker key event: {:?}, state: {:?}",
-            event, self.edit_state
+            event,
+            self.edit_state
         );
         if let Some(state) = &mut self.edit_state {
             match event {
