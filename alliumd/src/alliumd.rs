@@ -263,7 +263,6 @@ impl AlliumD<DefaultPlatform> {
                 }
             }
             KeyEvent::Autorepeat(Key::Power) => {
-                self.is_terminating = true;
                 self.handle_quit().await?;
             }
             KeyEvent::Pressed(Key::Menu) => {
@@ -298,6 +297,10 @@ impl AlliumD<DefaultPlatform> {
 
     #[cfg(unix)]
     async fn handle_quit(&mut self) -> Result<()> {
+        if self.is_terminating {
+            return Ok(());
+        }
+
         debug!("terminating, saving state");
 
         self.state.time = Utc::now();
@@ -316,7 +319,10 @@ impl AlliumD<DefaultPlatform> {
             signal(&self.main, Signal::SIGTERM)?;
             self.main.wait().await?;
         }
+
+        self.is_terminating = true;
         self.platform.shutdown()?;
+
         Ok(())
     }
 
