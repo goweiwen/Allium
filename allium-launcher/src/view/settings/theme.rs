@@ -83,8 +83,8 @@ impl Theme {
                 Box::new(Number::new(
                     Point::zero(),
                     stylesheet.ui_font.size as i32,
-                    10,
-                    40,
+                    20,
+                    60,
                     Alignment::Right,
                 )),
                 Box::new(Select::new(
@@ -99,8 +99,8 @@ impl Theme {
                 Box::new(Number::new(
                     Point::zero(),
                     stylesheet.guide_font.size as i32,
-                    10,
-                    40,
+                    20,
+                    60,
                     Alignment::Right,
                 )),
                 Box::new(ColorPicker::new(
