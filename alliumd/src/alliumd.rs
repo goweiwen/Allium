@@ -30,33 +30,72 @@ use {
     tokio::signal::unix::SignalKind,
 };
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AlliumD<P: Platform> {
-    #[serde(skip)]
-    platform: P,
-    #[serde(skip, default = "spawn_main")]
-    main: Child,
-    #[serde(skip)]
-    menu: Option<Child>,
-    #[serde(skip)]
-    keys: EnumMap<Key, bool>,
-    #[serde(skip)]
-    is_menu_pressed_alone: bool,
-    #[serde(skip)]
-    is_terminating: bool,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AlliumDState {
     #[serde(default = "Utc::now")]
     time: DateTime<Utc>,
     volume: i32,
     brightness: u8,
 }
 
-fn spawn_main() -> Child {
+#[derive(Debug)]
+pub struct AlliumD<P: Platform> {
+    platform: P,
+    main: Child,
+    menu: Option<Child>,
+    keys: EnumMap<Key, bool>,
+    is_menu_pressed_alone: bool,
+    is_terminating: bool,
+    state: AlliumDState,
+}
+
+impl AlliumDState {
+    pub fn new() -> Self {
+        Self {
+            time: Utc::now(),
+            volume: 0,
+            brightness: 50,
+        }
+    }
+
+    pub fn load() -> Result<AlliumDState> {
+        if ALLIUMD_STATE.exists() {
+            debug!("found state, loading from file");
+            if let Ok(json) = fs::read_to_string(ALLIUMD_STATE.as_path()) {
+                if let Ok(this) = serde_json::from_str::<AlliumDState>(&json) {
+                    if Utc::now() < this.time {
+                        info!(
+                            "RTC is not working, advancing time to {}",
+                            this.time.format("%F %T")
+                        );
+                        Command::new("date")
+                            .arg("-s")
+                            .arg(this.time.format("%F %T").to_string())
+                            .spawn()?;
+                    }
+                    return Ok(this);
+                }
+            }
+            warn!("failed to read state file, removing");
+            fs::remove_file(ALLIUMD_STATE.as_path())?;
+        }
+        Ok(Self::new())
+    }
+
+    fn save(&self) -> Result<()> {
+        let json = serde_json::to_string(self).unwrap();
+        File::create(ALLIUMD_STATE.as_path())?.write_all(json.as_bytes())?;
+        Ok(())
+    }
+}
+
+fn spawn_main() -> Result<Child> {
     #[cfg(feature = "miyoo")]
-    return match GameInfo::load().unwrap() {
+    return Ok(match GameInfo::load()? {
         Some(mut game_info) => {
             debug!("found game info, resuming game");
             game_info.start_time = Utc::now();
-            game_info.save().unwrap();
+            game_info.save()?;
             game_info.command().into()
         }
         None => {
@@ -65,15 +104,13 @@ fn spawn_main() -> Child {
             Command::new(ALLIUM_LAUNCHER.as_path())
         }
     }
-    .spawn()
-    .unwrap();
+    .spawn()?);
 
     #[cfg(not(feature = "miyoo"))]
-    return Command::new("/bin/sh")
+    return Ok(Command::new("/bin/sh")
         .arg("-c")
         .arg("make simulator-launcher")
-        .spawn()
-        .unwrap();
+        .spawn()?);
 }
 
 impl AlliumD<DefaultPlatform> {
@@ -82,22 +119,20 @@ impl AlliumD<DefaultPlatform> {
 
         Ok(AlliumD {
             platform,
-            main: spawn_main(),
+            main: spawn_main()?,
             menu: None,
             keys: EnumMap::default(),
             is_menu_pressed_alone: false,
             is_terminating: false,
-            time: Utc::now(),
-            volume: 0,
-            brightness: 50,
+            state: AlliumDState::load()?,
         })
     }
 
     pub async fn run_event_loop(&mut self) -> Result<()> {
         info!("hello from Allium {}", ALLIUM_VERSION);
 
-        self.platform.set_volume(self.volume)?;
-        self.platform.set_brightness(self.brightness)?;
+        self.platform.set_volume(self.state.volume)?;
+        self.platform.set_brightness(self.state.brightness)?;
         WiFiSettings::load()?.init()?;
 
         #[cfg(unix)]
@@ -127,7 +162,7 @@ impl AlliumD<DefaultPlatform> {
                             info!("main process terminated, recording play time");
                             self.update_play_time()?;
                             GameInfo::delete()?;
-                            self.main = spawn_main();
+                            self.main = spawn_main()?;
                         }
                     }
                     _ = menu_terminated => {
@@ -261,6 +296,11 @@ impl AlliumD<DefaultPlatform> {
     #[cfg(unix)]
     async fn handle_quit(&mut self) -> Result<()> {
         debug!("terminating, saving state");
+
+        self.state.time = Utc::now();
+        self.state.save()?;
+        self.update_play_time()?;
+
         if let Some(menu) = self.menu.as_mut() {
             menu.kill().await?;
         }
@@ -273,40 +313,7 @@ impl AlliumD<DefaultPlatform> {
             signal(&self.main, Signal::SIGTERM)?;
             self.main.wait().await?;
         }
-        self.time = Utc::now();
-        self.save()?;
-        self.update_play_time()?;
         self.platform.shutdown()?;
-        Ok(())
-    }
-
-    pub fn load() -> Result<AlliumD<DefaultPlatform>> {
-        if ALLIUMD_STATE.exists() {
-            debug!("found state, loading from file");
-            if let Ok(json) = fs::read_to_string(ALLIUMD_STATE.as_path()) {
-                if let Ok(this) = serde_json::from_str::<AlliumD<_>>(&json) {
-                    if Utc::now() < this.time {
-                        info!(
-                            "RTC is not working, advancing time to {}",
-                            this.time.format("%F %T")
-                        );
-                        Command::new("date")
-                            .arg("-s")
-                            .arg(this.time.format("%F %T").to_string())
-                            .spawn()?;
-                    }
-                    return Ok(this);
-                }
-            }
-            warn!("failed to read state file, removing");
-            fs::remove_file(ALLIUMD_STATE.as_path())?;
-        }
-        Self::new()
-    }
-
-    fn save(&self) -> Result<()> {
-        let json = serde_json::to_string(self).unwrap();
-        File::create(ALLIUMD_STATE.as_path())?.write_all(json.as_bytes())?;
         Ok(())
     }
 
@@ -331,15 +338,15 @@ impl AlliumD<DefaultPlatform> {
 
     fn add_volume(&mut self, add: i32) -> Result<()> {
         info!("adding volume: {}", add);
-        self.volume = (self.volume + add).clamp(0, 20);
-        self.platform.set_volume(self.volume)?;
+        self.state.volume = (self.state.volume + add).clamp(0, 20);
+        self.platform.set_volume(self.state.volume)?;
         Ok(())
     }
 
     fn add_brightness(&mut self, add: i8) -> Result<()> {
         info!("adding brightness: {}", add);
-        self.brightness = (self.brightness as i8 + add).clamp(0, 100) as u8;
-        self.platform.set_brightness(self.brightness)?;
+        self.state.brightness = (self.state.brightness as i8 + add).clamp(0, 100) as u8;
+        self.platform.set_brightness(self.state.brightness)?;
         Ok(())
     }
 }

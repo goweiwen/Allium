@@ -15,7 +15,7 @@ async fn main() -> Result<()> {
         console_subscriber::init();
     }
 
-    let mut app = AlliumD::load()?;
+    let mut app = AlliumD::new()?;
     app.run_event_loop().await?;
     Ok(())
 }
