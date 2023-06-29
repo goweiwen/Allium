@@ -1,0 +1,5 @@
+{
+  "label":"Terminal",
+  "launch":"launch.sh",
+  "description":"st - Simple Terminal"
+}
