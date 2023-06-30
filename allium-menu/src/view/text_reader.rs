@@ -162,7 +162,13 @@ impl TextReader {
         let offset_without_word_wrap = offset;
 
         // If not linebreak, we try to break at the start of the word
-        if offset > 0 {
+        if offset > 0
+            && self.text[cursor + offset..]
+                .chars()
+                .next()
+                .unwrap_or_default()
+                .is_alphanumeric()
+        {
             offset -= 1;
             while !self.text.is_char_boundary(cursor + offset) {
                 offset -= 1;
