@@ -165,7 +165,7 @@ where
                     .fill_color(styles.foreground_color)
                     .build();
 
-                let size = styles.ui_font.size as u32;
+                let size = styles.ui_font.size;
                 Triangle::new(
                     Point::new(
                         self.point.x + -6 * size as i32 / 40,

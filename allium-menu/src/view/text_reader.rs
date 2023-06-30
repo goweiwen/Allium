@@ -279,7 +279,7 @@ impl TextReader {
                 break;
             }
             if self.cursor != self.text.len() {
-                let text = self.get_line(&styles, self.cursor);
+                let text = self.get_line(styles, self.cursor);
                 self.cursor += text.len();
                 if self.text.is_char_boundary(self.cursor)
                     && self.text[self.cursor..]
