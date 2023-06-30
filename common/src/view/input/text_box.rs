@@ -94,10 +94,11 @@ impl View for TextBox {
     ) -> Result<bool> {
         if let Some(keyboard) = self.keyboard.as_mut() {
             if keyboard.handle_key_event(event, command, bubble).await? {
-                bubble.retain(|cmd| match cmd {
+                bubble.retain_mut(|cmd| match cmd {
                     Command::CloseView => {
                         self.keyboard = None;
-                        false
+                        *cmd = Command::Unfocus;
+                        true
                     }
                     Command::ValueChanged(_, value) => {
                         self.value = value.clone().as_string().unwrap();

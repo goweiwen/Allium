@@ -114,8 +114,8 @@ impl View for Keyboard {
                 .stroke_width(1)
                 .build();
 
-            let key_size = 32_u32;
-            let key_padding = 4;
+            let key_size = styles.ui_font.size;
+            let key_padding = 0;
 
             let w = key_size as i32 * KEYBOARD_COLUMNS + key_padding * 14;
             let h = key_size as i32 * KEYBOARD_ROWS + key_padding * 5;

@@ -25,6 +25,7 @@ pub struct SettingsList {
     selected: usize,
     focused: bool,
     dirty: bool,
+    has_layout: bool,
 }
 
 impl SettingsList {
@@ -44,6 +45,7 @@ impl SettingsList {
             selected: 0,
             focused: false,
             dirty: true,
+            has_layout: false,
         };
 
         this.set_items(left, right);
@@ -132,14 +134,7 @@ impl View for SettingsList {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        if self.dirty
-            || (self.focused
-                && self
-                    .right
-                    .get(self.selected - self.top)
-                    .map(|s| s.should_draw())
-                    .unwrap_or(false))
-        {
+        if self.dirty {
             display.load(self.bounding_box(styles))?;
 
             let rect = if self.focused {
@@ -175,34 +170,42 @@ impl View for SettingsList {
             .into_styled(PrimitiveStyle::with_fill(styles.highlight_color))
             .draw(display)?;
 
-            for child in self.left.iter_mut() {
-                child.draw(display, styles)?;
+            if !self.has_layout {
+                for i in 0..self.visible_count() {
+                    let child = &mut self.right[self.top + i];
+                    child.set_position(Point::new(
+                        self.rect.x + self.rect.w as i32 - 13,
+                        self.rect.y + 8 + i as i32 * self.entry_height as i32,
+                    ));
+                    self.has_layout = true;
+                }
             }
 
-            for i in 0..self.visible_count() {
-                self.right[self.top + i].set_position(Point::new(
-                    self.rect.x + self.rect.w as i32 - 13,
-                    self.rect.y + 8 + i as i32 * self.entry_height as i32,
-                ));
-                self.right[self.top + i].draw(display, styles)?;
+            for (i, left) in self.left.iter_mut().enumerate() {
+                left.set_should_draw();
+                let right = &mut self.right[self.top + i];
+                right.set_should_draw();
             }
-
-            self.dirty = false;
-
-            return Ok(true);
         }
 
         let mut drawn = false;
-        for child in self.left.iter_mut() {
-            if child.should_draw() && child.draw(display, styles)? {
+        for (i, left) in self.left.iter_mut().enumerate() {
+            let mut drawn_left = false;
+            if left.should_draw() && left.draw(display, styles)? {
+                drawn = true;
+                drawn_left = true;
+            }
+            let right = &mut self.right[self.top + i];
+            if (drawn_left || right.should_draw()) && right.draw(display, styles)? {
                 drawn = true;
             }
         }
-        for i in 0..self.visible_count() {
-            let child = &mut self.right[self.top + i];
-            if child.should_draw() && child.draw(display, styles)? {
-                drawn = true;
-            }
+
+        if self.focused {
+            let right = &mut self.right[self.selected];
+            right.set_should_draw();
+            right.draw(display, styles)?;
+            drawn = true
         }
 
         Ok(drawn)
