@@ -14,13 +14,10 @@ use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::{ButtonHint, Row, View};
 use common::view::{ButtonIcon, Keyboard};
-use embedded_graphics::prelude::Size;
+use embedded_graphics::prelude::{Dimensions, Size};
 use embedded_graphics::primitives::{Primitive, PrimitiveStyle, Rectangle, RoundedRectangle};
 use embedded_graphics::text::Text;
 use embedded_graphics::Drawable;
-use embedded_text::alignment::HorizontalAlignment;
-use embedded_text::style::{HeightMode, TextBoxStyleBuilder, VerticalOverdraw};
-use embedded_text::TextBox;
 use log::{error, trace};
 use tokio::sync::mpsc::Sender;
 
@@ -44,7 +41,11 @@ impl TextReader {
             .unwrap_or_default();
         let lowercase_text = text.to_lowercase();
 
-        let mut cursor = load_cursor(&res.get::<Database>(), path.as_path()).clamp(0, text.len());
+        let mut cursor = if text.is_empty() {
+            0
+        } else {
+            load_cursor(&res.get::<Database>(), path.as_path()).clamp(0, text.len() - 1)
+        };
         while !text.is_char_boundary(cursor) && cursor > 0 {
             cursor -= 1;
         }
@@ -102,23 +103,63 @@ impl TextReader {
             .ok();
     }
 
-    fn visible_text(&self, styles: &Stylesheet) -> &str {
-        let text = &self.text[self.cursor..];
-
-        let mut end = 0;
-        let line_count = self.rect.h / styles.guide_font.size;
+    fn visible_text(&self, styles: &Stylesheet) -> Vec<&str> {
+        let line_count =
+            (self.rect.h - 12 - 8 - ButtonIcon::diameter(styles) - 8) / styles.guide_font.size;
+        let mut lines = Vec::with_capacity(line_count as usize);
+        let mut cursor = self.cursor;
         for _ in 0..line_count {
-            if end >= text.len() {
-                break;
-            }
-            if let Some(pos) = text[end..].find('\n') {
-                end += 1 + pos;
-            } else {
-                return text;
+            let line = self.get_line(styles, cursor);
+            lines.push(line);
+            cursor += line.len();
+            if self.text.is_char_boundary(cursor)
+                && self.text[cursor..]
+                    .chars()
+                    .next()
+                    .map(|c| c == '\n')
+                    .unwrap_or_default()
+            {
+                cursor += 1;
             }
         }
 
-        &text[..end]
+        lines
+    }
+
+    fn get_line(&self, styles: &Stylesheet, cursor: usize) -> &str {
+        let line_width = self.rect.w - 24 - 24;
+        let text_style = FontTextStyleBuilder::new(styles.guide_font.font())
+            .font_fallback(styles.cjk_font.font())
+            .font_size(styles.guide_font.size)
+            .background_color(styles.background_color)
+            .text_color(styles.foreground_color)
+            .build();
+        let mut offset = self.text[cursor..]
+            .find('\n')
+            .or_else(|| self.text[..cursor].rfind('\n'))
+            .unwrap_or_default();
+
+        if cursor + offset >= self.text.len() {
+            return &self.text[cursor..];
+        }
+
+        let mut text = Text::new(
+            &self.text[cursor..cursor + offset],
+            Point::zero().into(),
+            text_style,
+        );
+
+        while text.bounding_box().size.width > line_width
+            || text.bounding_box().size.height > styles.guide_font.size
+        {
+            offset -= 1;
+            while !self.text.is_char_boundary(cursor + offset) {
+                offset -= 1;
+            }
+            text.text = &self.text[cursor..cursor + offset];
+        }
+
+        text.text
     }
 
     fn search_forward(&mut self, needle: String) {
@@ -184,36 +225,71 @@ impl TextReader {
         }
     }
 
-    fn advance_cursor(&mut self) {
-        self.cursor = (self.cursor + 1).min(self.text.len());
-        while !self.text.is_char_boundary(self.cursor) {
-            self.cursor += 1;
-        }
-    }
-
     fn move_back_lines(&mut self, lines: usize) {
-        for _ in 0..lines {
-            if self.cursor > 0 {
-                self.cursor = self.text[..self.cursor - 1].rfind('\n').unwrap_or_default();
-                self.advance_cursor();
+        let styles = self.res.get::<Stylesheet>();
+
+        // Keep moving back until we've moved back the requested number of lines
+        let mut cursor;
+        let mut lines = lines as isize;
+        while lines > 0 {
+            if self.cursor == 0 {
+                lines = 0;
+                break;
             }
+
+            // Move to the start of the previous line
+            self.cursor -= 1;
+            while !self.text.is_char_boundary(self.cursor) {
+                self.cursor -= 1;
+            }
+
+            cursor = self.cursor;
+            self.cursor = self.text[..cursor]
+                .rfind('\n')
+                .map(|i| i + 1)
+                .unwrap_or_default();
+
+            // Count the number of lines we moved back
+            let mut line = self.get_line(&styles, self.cursor);
+            if line.is_empty() {
+                lines -= 1;
+                continue;
+            }
+            let mut mid = self.cursor;
+            while mid < cursor {
+                mid += line.len();
+                line = self.get_line(&styles, mid);
+                lines -= 1;
+            }
+        }
+        drop(styles);
+
+        // If we overshot, move forward as many times as necessary
+        if lines < 0 {
+            self.move_forward_lines(-lines as usize);
         }
         self.dirty = true;
     }
 
     fn move_forward_lines(&mut self, lines: usize) {
+        let styles = &self.res.get::<Stylesheet>();
         for _ in 0..lines {
             if self.cursor > self.text.len() {
                 self.cursor = self.text.rfind('\n').map(|i| i + 1).unwrap_or_default();
                 break;
             }
             if self.cursor != self.text.len() {
-                self.advance_cursor();
-                self.cursor += self.text[self.cursor..]
-                    .find('\n')
-                    .or_else(|| self.text[..self.cursor].rfind('\n'))
-                    .unwrap_or_default();
-                self.advance_cursor();
+                let text = self.get_line(&styles, self.cursor);
+                self.cursor += text.len();
+                if self.text.is_char_boundary(self.cursor)
+                    && self.text[self.cursor..]
+                        .chars()
+                        .next()
+                        .map(|c| c == '\n')
+                        .unwrap_or_default()
+                {
+                    self.cursor += 1;
+                }
             }
         }
         self.dirty = true;
@@ -239,10 +315,10 @@ impl View for TextReader {
         if self.dirty {
             RoundedRectangle::with_equal_corners(
                 <Rect as Into<Rectangle>>::into(Rect::new(
-                    self.rect.x,
-                    self.rect.y,
-                    self.rect.w,
-                    self.rect.h - 8 - ButtonIcon::diameter(styles) - 8,
+                    self.rect.x + 12,
+                    self.rect.y + 12,
+                    self.rect.w - 24,
+                    self.rect.h - 12 - 8 - ButtonIcon::diameter(styles) - 8,
                 )),
                 Size::new_equal(8),
             )
@@ -256,24 +332,16 @@ impl View for TextReader {
                 .text_color(styles.foreground_color)
                 .build();
 
-            let text_box_style = TextBoxStyleBuilder::new()
-                .height_mode(HeightMode::Exact(VerticalOverdraw::Hidden))
-                .alignment(HorizontalAlignment::Left)
-                .build();
-
-            TextBox::with_textbox_style(
-                self.visible_text(styles),
-                Rect::new(
-                    self.rect.x + 12,
-                    self.rect.y,
-                    self.rect.w - 24,
-                    self.rect.h - 8 - ButtonIcon::diameter(styles) - 8,
-                )
-                .into(),
-                text_style.clone(),
-                text_box_style,
-            )
-            .draw(display)?;
+            let mut y = self.rect.y + 12 + 8;
+            for line in self.visible_text(styles) {
+                let text = Text::new(
+                    line,
+                    Point::new(self.rect.x + 12 + 12, y).into(),
+                    text_style.clone(),
+                );
+                text.draw(display)?;
+                y += styles.guide_font.size as i32;
+            }
 
             Text::with_alignment(
                 &format!(
