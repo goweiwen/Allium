@@ -322,6 +322,7 @@ dependencies = [
  "evdev",
  "fluent-templates",
  "framebuffer",
+ "gpio",
  "image",
  "itertools",
  "lazy_static",
@@ -334,6 +335,7 @@ dependencies = [
  "serde",
  "serde_json",
  "strum",
+ "sysfs_gpio",
  "tokio",
  "type-map",
 ]
@@ -801,6 +803,12 @@ dependencies = [
  "color_quant",
  "weezl",
 ]
+
+[[package]]
+name = "gpio"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fe6783270536547ac473c9d2ae5a7e0e715ea43f29004ced47fbd1c1372d2c7"
 
 [[package]]
 name = "h2"
@@ -1869,6 +1877,15 @@ name = "sync_wrapper"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2047c6ded9c721764247e62cd3b03c09ffc529b2ba5b10ec482ae507a4a70160"
+
+[[package]]
+name = "sysfs_gpio"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ef9c9bcbfeb596ce4da59b2c59736235f35dcd516f03958ea10834473224157"
+dependencies = [
+ "nix",
+]
 
 [[package]]
 name = "sysinfo"
