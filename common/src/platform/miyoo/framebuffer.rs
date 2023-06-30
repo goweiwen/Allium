@@ -3,7 +3,7 @@ use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::Pixel;
 use framebuffer::Framebuffer;
-use log::trace;
+use log::{trace, warn};
 
 use crate::display::color::Color;
 use crate::display::Display;
@@ -92,10 +92,26 @@ impl Display for FramebufferDisplay {
         Ok(())
     }
 
-    fn load(&mut self, rect: Rect) -> Result<()> {
+    fn load(&mut self, mut rect: Rect) -> Result<()> {
         let Some(ref saved) = self.saved else {
              bail!("No saved image");
         };
+
+        let size = self.size();
+        if rect.x < 0
+            || rect.y < 0
+            || rect.x as u32 + rect.w > size.width
+            || rect.y as u32 + rect.h > size.height
+        {
+            warn!(
+                "Area exceeds display bounds: x: {}, y: {}, w: {}, h: {}",
+                rect.x, rect.y, rect.w, rect.h,
+            );
+            rect.x = rect.x.max(0);
+            rect.y = rect.y.max(0);
+            rect.w = rect.w.min(size.width - rect.x as u32);
+            rect.h = rect.h.min(size.height - rect.h);
+        }
 
         let x = self.framebuffer.size.width - rect.x as u32;
         let y = self.framebuffer.size.height - rect.y as u32;

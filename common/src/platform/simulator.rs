@@ -170,13 +170,19 @@ impl Display for SimulatorWindow {
         };
 
         let size = self.size();
-        if rect.x as u32 + rect.w > size.width || rect.y as u32 + rect.h > size.height {
+        if rect.x < 0
+            || rect.y < 0
+            || rect.x as u32 + rect.w > size.width
+            || rect.y as u32 + rect.h > size.height
+        {
             warn!(
                 "Area exceeds display bounds: x: {}, y: {}, w: {}, h: {}",
                 rect.x, rect.y, rect.w, rect.h,
             );
-            rect.w = rect.w.clamp(0, size.width - rect.x as u32);
-            rect.h = rect.h.clamp(0, size.height - rect.h);
+            rect.x = rect.x.max(0);
+            rect.y = rect.y.max(0);
+            rect.w = rect.w.min(size.width - rect.x as u32);
+            rect.h = rect.h.min(size.height - rect.h);
         }
 
         let image: ImageRaw<_, BigEndian> = ImageRaw::new(&saved.0, saved.1);
