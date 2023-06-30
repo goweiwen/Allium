@@ -92,7 +92,7 @@ impl StylesheetFont {
 
     /// Default UI font.
     pub fn ui_font() -> Self {
-        Self::new(ALLIUM_FONTS_DIR.join("Nunito.ttf"), 32)
+        Self::new(ALLIUM_FONTS_DIR.join("Nunito.ttf"), 36)
     }
 
     /// Default guide font.
