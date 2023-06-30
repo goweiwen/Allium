@@ -11,7 +11,7 @@ use embedded_graphics::Drawable;
 use tokio::sync::mpsc::Sender;
 
 use crate::battery::Battery;
-use crate::constants::{BATTERY_SIZE, BATTERY_UPDATE_INTERVAL};
+use crate::constants::BATTERY_UPDATE_INTERVAL;
 use crate::display::Display;
 use crate::geom::{Point, Rect};
 use crate::platform::{DefaultPlatform, KeyEvent, Platform};
@@ -70,34 +70,68 @@ where
         if self.dirty {
             display.load(self.bounding_box(styles))?;
 
-            let offset = if self.battery.charging() { -22 } else { 0 };
+            let w = styles.ui_font.size;
+            let h = styles.ui_font.size * 3 / 5;
+            let y = styles.ui_font.size as i32 / 6;
+            let margin = styles.ui_font.size as i32 * 2 / 28;
+            let stroke = styles.ui_font.size as i32 * 3 / 28;
+            let x = if self.battery.charging() {
+                -(styles.ui_font.size as i32) * 5 / 7
+            } else {
+                -margin
+            };
 
             // Outer battery
             RoundedRectangle::new(
-                Rect::new(offset + self.point.x + -38, self.point.y + 12, 31, 17).into(),
-                CornerRadii::new(Size::new_equal(4)),
+                Rect::new(
+                    x + self.point.x - w as i32 - margin - margin,
+                    y + self.point.y,
+                    w,
+                    h,
+                )
+                .into(),
+                CornerRadii::new(Size::new_equal(stroke as u32)),
             )
             .into_styled(
                 PrimitiveStyleBuilder::new()
-                    .fill_color(styles.background_color)
-                    .stroke_color(styles.foreground_color)
-                    .stroke_width(3)
+                    .fill_color(styles.foreground_color)
                     .build(),
             )
             .draw(display)?;
+
+            // Inner battery outline
+            let percentage = self.battery.percentage();
+            if percentage > 5 {
+                RoundedRectangle::new(
+                    Rect::new(
+                        x + self.point.x - w as i32 + stroke - margin - margin,
+                        y + self.point.y + stroke,
+                        w - 2 * stroke as u32,
+                        h - 2 * stroke as u32,
+                    )
+                    .into(),
+                    CornerRadii::new(Size::new_equal(stroke as u32)),
+                )
+                .into_styled(
+                    PrimitiveStyleBuilder::new()
+                        .fill_color(styles.background_color)
+                        .build(),
+                )
+                .draw(display)?;
+            }
 
             // Inner battery
             let percentage = self.battery.percentage();
             if percentage > 5 {
                 RoundedRectangle::new(
                     Rect::new(
-                        offset + self.point.x + -34,
-                        self.point.y + 16,
-                        23 * (percentage - 5).clamp(0, 90) as u32 / 90,
-                        9,
+                        x + self.point.x - w as i32 + stroke - margin,
+                        y + self.point.y + stroke + margin,
+                        w - 2 * (stroke + margin) as u32,
+                        h - 2 * (stroke + margin) as u32,
                     )
                     .into(),
-                    CornerRadii::new(Size::new_equal(2)),
+                    CornerRadii::new(Size::new_equal(stroke as u32)),
                 )
                 .into_styled(
                     PrimitiveStyleBuilder::new()
@@ -109,8 +143,14 @@ where
 
             // Battery cap
             RoundedRectangle::new(
-                Rect::new(offset + self.point.x + -4, self.point.y + 16, 4, 9).into(),
-                CornerRadii::new(Size::new_equal(2)),
+                Rect::new(
+                    x + self.point.x - margin,
+                    y + self.point.y + stroke + margin,
+                    stroke as u32,
+                    h - 2 * (stroke + margin) as u32,
+                )
+                .into(),
+                CornerRadii::new(Size::new_equal(stroke as u32)),
             )
             .into_styled(
                 PrimitiveStyleBuilder::new()
@@ -125,17 +165,42 @@ where
                     .fill_color(styles.foreground_color)
                     .build();
 
+                let size = styles.ui_font.size as u32;
                 Triangle::new(
-                    Point::new(self.point.x + -6, self.point.y + 8).into(),
-                    Point::new(self.point.x + -15, self.point.y + 21).into(),
-                    Point::new(self.point.x + -9, self.point.y + 21).into(),
+                    Point::new(
+                        self.point.x + -6 * size as i32 / 40,
+                        self.point.y + 6 * size as i32 / 40,
+                    )
+                    .into(),
+                    Point::new(
+                        self.point.x + -15 * size as i32 / 40,
+                        self.point.y + 19 * size as i32 / 40,
+                    )
+                    .into(),
+                    Point::new(
+                        self.point.x + -9 * size as i32 / 40,
+                        self.point.y + 19 * size as i32 / 40,
+                    )
+                    .into(),
                 )
                 .into_styled(fill_style)
                 .draw(display)?;
                 Triangle::new(
-                    Point::new(self.point.x + -12, self.point.y + 32).into(),
-                    Point::new(self.point.x + -3, self.point.y + 19).into(),
-                    Point::new(self.point.x + -9, self.point.y + 19).into(),
+                    Point::new(
+                        self.point.x + -12 * size as i32 / 40,
+                        self.point.y + 30 * size as i32 / 40,
+                    )
+                    .into(),
+                    Point::new(
+                        self.point.x + -3 * size as i32 / 40,
+                        self.point.y + 17 * size as i32 / 40,
+                    )
+                    .into(),
+                    Point::new(
+                        self.point.x + -9 * size as i32 / 40,
+                        self.point.y + 17 * size as i32 / 40,
+                    )
+                    .into(),
                 )
                 .into_styled(fill_style)
                 .draw(display)?;
@@ -173,12 +238,14 @@ where
         vec![]
     }
 
-    fn bounding_box(&mut self, _styles: &Stylesheet) -> Rect {
+    fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
+        let w = styles.ui_font.size * 2;
+        let h = w * 3 / 5;
         Rect::new(
-            self.point.x - BATTERY_SIZE.w as i32,
-            self.point.y,
-            BATTERY_SIZE.w,
-            BATTERY_SIZE.h,
+            self.point.x - w as i32,
+            styles.ui_font.size as i32 / 6,
+            w,
+            h,
         )
     }
 
