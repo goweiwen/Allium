@@ -169,17 +169,17 @@ where
                 Triangle::new(
                     Point::new(
                         self.point.x + -6 * size as i32 / 40,
-                        self.point.y + 6 * size as i32 / 40,
+                        self.point.y + 7 * size as i32 / 40,
                     )
                     .into(),
                     Point::new(
                         self.point.x + -15 * size as i32 / 40,
-                        self.point.y + 19 * size as i32 / 40,
+                        self.point.y + 20 * size as i32 / 40,
                     )
                     .into(),
                     Point::new(
                         self.point.x + -9 * size as i32 / 40,
-                        self.point.y + 19 * size as i32 / 40,
+                        self.point.y + 20 * size as i32 / 40,
                     )
                     .into(),
                 )
@@ -188,17 +188,17 @@ where
                 Triangle::new(
                     Point::new(
                         self.point.x + -12 * size as i32 / 40,
-                        self.point.y + 30 * size as i32 / 40,
+                        self.point.y + 31 * size as i32 / 40,
                     )
                     .into(),
                     Point::new(
                         self.point.x + -3 * size as i32 / 40,
-                        self.point.y + 17 * size as i32 / 40,
+                        self.point.y + 18 * size as i32 / 40,
                     )
                     .into(),
                     Point::new(
                         self.point.x + -9 * size as i32 / 40,
-                        self.point.y + 17 * size as i32 / 40,
+                        self.point.y + 18 * size as i32 / 40,
                     )
                     .into(),
                 )
