@@ -192,14 +192,13 @@ where
             .font_size(styles.ui_font.size)
             .build();
 
-        Text::with_alignment(
-            self.truncated_text.as_ref().unwrap(),
-            self.point.into(),
-            text_style,
-            self.alignment.into(),
-        )
-        .bounding_box()
-        .into()
+        let mut text = self.truncated_text.as_deref().unwrap();
+        if text.is_empty() {
+            text = " ";
+        }
+        Text::with_alignment(text, self.point.into(), text_style, self.alignment.into())
+            .bounding_box()
+            .into()
     }
 
     fn set_position(&mut self, point: Point) {
