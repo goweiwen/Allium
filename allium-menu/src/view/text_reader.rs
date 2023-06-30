@@ -159,7 +159,39 @@ impl TextReader {
             text.text = &self.text[cursor..cursor + offset];
         }
 
-        text.text
+        let offset_without_word_wrap = offset;
+
+        // If not linebreak, we try to break at the start of the word
+        if offset > 0 {
+            offset -= 1;
+            while !self.text.is_char_boundary(cursor + offset) {
+                offset -= 1;
+            }
+            if &self.text[cursor + offset..cursor + offset] != "\n" {
+                while self.text[cursor + offset..]
+                    .chars()
+                    .next()
+                    .unwrap_or_default()
+                    .is_alphanumeric()
+                {
+                    offset -= 1;
+                    while !self.text.is_char_boundary(cursor + offset) {
+                        offset -= 1;
+                    }
+
+                    if offset == 0 {
+                        offset = offset_without_word_wrap;
+                        break;
+                    }
+                }
+                offset += 1;
+                while !self.text.is_char_boundary(cursor + offset) {
+                    offset += 1;
+                }
+            }
+        }
+
+        &self.text[cursor..cursor + offset]
     }
 
     fn search_forward(&mut self, needle: String) {
