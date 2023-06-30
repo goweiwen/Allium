@@ -417,29 +417,17 @@ impl View for TextReader {
             }
         } else {
             match event {
-                KeyEvent::Pressed(Key::Up) => {
+                KeyEvent::Pressed(Key::Up) | KeyEvent::Autorepeat(Key::Up) => {
                     self.move_back_lines(1);
                 }
-                KeyEvent::Autorepeat(Key::Up) => {
-                    self.move_back_lines(3);
-                }
-                KeyEvent::Pressed(Key::Down) => {
+                KeyEvent::Pressed(Key::Down) | KeyEvent::Autorepeat(Key::Down) => {
                     self.move_forward_lines(1);
                 }
-                KeyEvent::Autorepeat(Key::Down) => {
-                    self.move_forward_lines(3);
-                }
-                KeyEvent::Pressed(Key::Left) => {
+                KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
                     self.move_back_lines(10);
                 }
-                KeyEvent::Autorepeat(Key::Left) => {
-                    self.move_back_lines(30);
-                }
-                KeyEvent::Pressed(Key::Right) => {
+                KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
                     self.move_forward_lines(10);
-                }
-                KeyEvent::Autorepeat(Key::Right) => {
-                    self.move_forward_lines(30);
                 }
                 KeyEvent::Pressed(Key::L) => {
                     let last_searched = mem::take(&mut self.last_searched);
