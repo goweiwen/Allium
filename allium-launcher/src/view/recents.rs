@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::{IMAGE_SIZE, RECENT_GAMES_LIMIT, SELECTION_MARGIN};
+use common::constants::{IMAGE_WIDTH, RECENT_GAMES_LIMIT, SELECTION_MARGIN};
 use common::database::Database;
 use common::display::Display;
 use common::geom::{Alignment, Point, Rect};
@@ -40,7 +40,7 @@ impl Recents {
             Rect::new(
                 x + 12,
                 y + 8,
-                w - IMAGE_SIZE.w - 12 - 12 - 24,
+                w - IMAGE_WIDTH - 12 - 12 - 24,
                 h - 8 - ButtonIcon::diameter(&styles) - 8,
             ),
             Vec::new(),
@@ -50,10 +50,10 @@ impl Recents {
 
         let mut image = Image::empty(
             Rect::new(
-                x + w as i32 - IMAGE_SIZE.w as i32 - 24,
+                x + w as i32 - IMAGE_WIDTH as i32 - 24,
                 y + 8,
-                IMAGE_SIZE.w,
-                IMAGE_SIZE.h,
+                IMAGE_WIDTH,
+                h - 8 - ButtonIcon::diameter(&styles) - 8,
             ),
             ImageMode::Contain,
         );

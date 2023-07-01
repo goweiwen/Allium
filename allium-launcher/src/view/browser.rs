@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::{IMAGE_SIZE, SELECTION_MARGIN};
+use common::constants::{IMAGE_WIDTH, SELECTION_MARGIN};
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
@@ -47,7 +47,7 @@ impl Browser {
             Rect::new(
                 x + 12,
                 y + 8,
-                w - IMAGE_SIZE.w - 12 - 12 - 24,
+                w - IMAGE_WIDTH - 12 - 12 - 24,
                 h - 8 - ButtonIcon::diameter(&styles) - 8,
             ),
             entries.iter().map(|e| e.name().to_string()).collect(),
@@ -58,10 +58,10 @@ impl Browser {
 
         let mut image = Image::empty(
             Rect::new(
-                x + w as i32 - IMAGE_SIZE.w as i32 - 24,
+                x + w as i32 - IMAGE_WIDTH as i32 - 24,
                 y + 8,
-                IMAGE_SIZE.w,
-                IMAGE_SIZE.h,
+                IMAGE_WIDTH,
+                h - 8 - ButtonIcon::diameter(&styles) - 8,
             ),
             ImageMode::Contain,
         );

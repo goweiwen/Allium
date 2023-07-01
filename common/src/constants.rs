@@ -54,7 +54,7 @@ lazy_static! {
 }
 
 // Styles
-pub const IMAGE_SIZE: Size = Size::new(250, 376);
+pub const IMAGE_WIDTH: u32 = 250;
 pub const SELECTION_MARGIN: u32 = 8;
 
 /// After the battery level drops below this threshold, the device will shut down.
