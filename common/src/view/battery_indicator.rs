@@ -127,7 +127,7 @@ where
                     Rect::new(
                         x + self.point.x - w as i32 + stroke - margin,
                         y + self.point.y + stroke + margin,
-                        w - 2 * (stroke + margin) as u32,
+                        (w - 2 * (stroke + margin) as u32) * (percentage - 5).max(0) as u32 / 90,
                         h - 2 * (stroke + margin) as u32,
                     )
                     .into(),
