@@ -97,9 +97,11 @@ impl SettingsList {
         if index >= self.top + self.visible_count() {
             self.top = index - self.visible_count() + 1;
             self.update_children();
+            self.has_layout = false;
         } else if index < self.top {
             self.top = index;
             self.update_children();
+            self.has_layout = false;
         }
 
         self.selected = index;
