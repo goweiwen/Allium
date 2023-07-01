@@ -91,15 +91,15 @@ impl WiFiSettings {
         let mut file = File::create("/appconfigs/wpa_supplicant.conf")?;
         write!(
             file,
-            r#"ctrl_interface=/var/run/wpa_supplicant.conf
+            r#"ctrl_interface=/var/run/wpa_supplicant
 update_config=1
 
 network={{
 	ssid="{ssid}"
 	psk="{password}"
 }}"#,
-            ssid = self.ssid,
-            password = self.password
+            ssid = self.ssid.replace('"', "\\\""),
+            password = self.password.replace('"', "\\\""),
         )?;
         Ok(())
     }
