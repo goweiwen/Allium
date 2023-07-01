@@ -35,6 +35,7 @@ The SD card layout should look like this:
 - BIOS
 - RetroArch
 - Roms
+- Apps
 - Saves (optional, if you have existing saves from OnionOS)
 
 ## Features
@@ -49,9 +50,9 @@ The SD card layout should look like this:
 - [In-game guide reader](https://github.com/goweiwen/Allium/wiki/In-game-Guide-Walkthrough-Reader)
 - Automatic resume when powering off/on
 - Settings page
-    - WiFi (IP Address, Telnet, FTP)
+    - WiFi (IP Address, NTP, Telnet, FTP)
     - Change LCD settings
-    - Customize theme colours
+    - Customize theme colours, font
     - Change system language
 
 ## Planned Features
@@ -61,7 +62,6 @@ The SD card layout should look like this:
 - Ingame menu disk changer
 - Clock adjustment
 - WiFi stuff:
-    - NTP
     - OTA update
     - Metadata/box art scraper
     - Cloud save sync
