@@ -9,8 +9,10 @@ recents-sort-currently-most-played = 最も順
 
 settings-wifi = Wi-Fi
 settings-wifi-wifi-enabled = Wi-Fi有効
+settings-wifi-ip-address = IPアドレス
 settings-wifi-wifi-network = Wi-Fiネットワーク
 settings-wifi-wifi-password = Wi-Fiパスワード
+settings-wifi-ntp-enabled = NTP有効
 settings-wifi-telnet-enabled = Telnet有効
 settings-wifi-ftp-enabled = FTP有効
 settings-wifi-connecting= 接続中...

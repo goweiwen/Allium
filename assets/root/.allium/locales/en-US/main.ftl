@@ -9,8 +9,10 @@ recents-sort-currently-most-played = Sort: Most Played
 
 settings-wifi = Wi-Fi
 settings-wifi-wifi-enabled = Wi-Fi Enabled
+settings-wifi-ip-address = IP Address
 settings-wifi-wifi-network = Wi-Fi Network Name
 settings-wifi-wifi-password = Wi-Fi Password
+settings-wifi-ntp-enabled = NTP Enabled
 settings-wifi-telnet-enabled = Telnet Enabled
 settings-wifi-ftp-enabled = FTP Enabled
 settings-wifi-connecting= Connecting...

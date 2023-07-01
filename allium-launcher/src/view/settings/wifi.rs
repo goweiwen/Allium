@@ -4,7 +4,6 @@ use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
 use common::constants::SELECTION_MARGIN;
-use common::display::Display;
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
@@ -22,7 +21,6 @@ pub struct Wifi {
     settings: WiFiSettings,
     list: SettingsList,
     has_ip_address: bool,
-    ip_address_label: Label<String>,
     button_hints: Row<ButtonHint<String>>,
 }
 
@@ -40,21 +38,25 @@ impl Wifi {
                 x + 12,
                 y + 8,
                 w - 24,
-                h - 8
-                    - ButtonIcon::diameter(&styles)
-                    - 8
-                    - res.get::<Stylesheet>().ui_font.size
-                    - 8,
+                h - 8 - ButtonIcon::diameter(&styles) - 8,
             ),
             vec![
                 locale.t("settings-wifi-wifi-enabled"),
+                locale.t("settings-wifi-ip-address"),
                 locale.t("settings-wifi-wifi-network"),
                 locale.t("settings-wifi-wifi-password"),
+                locale.t("settings-wifi-ntp-enabled"),
                 locale.t("settings-wifi-telnet-enabled"),
                 locale.t("settings-wifi-ftp-enabled"),
             ],
             vec![
                 Box::new(Toggle::new(Point::zero(), settings.wifi, Alignment::Right)),
+                Box::new(Label::new(
+                    Point::zero(),
+                    String::new(),
+                    Alignment::Right,
+                    None,
+                )),
                 Box::new(TextBox::new(
                     Point::zero(),
                     res.clone(),
@@ -69,6 +71,7 @@ impl Wifi {
                     Alignment::Right,
                     true,
                 )),
+                Box::new(Toggle::new(Point::zero(), settings.ntp, Alignment::Right)),
                 Box::new(Toggle::new(
                     Point::zero(),
                     settings.telnet,
@@ -81,16 +84,6 @@ impl Wifi {
         if let Some(state) = state {
             list.select(state.selected);
         }
-
-        let ip_address_label = Label::new(
-            Point::new(
-                rect.x + rect.w as i32 - 12,
-                rect.y + rect.h as i32 - 46 - 34,
-            ),
-            String::new(),
-            Alignment::Right,
-            None,
-        );
 
         let button_hints = Row::new(
             Point::new(
@@ -124,7 +117,6 @@ impl Wifi {
             settings,
             list,
             has_ip_address: false,
-            ip_address_label,
             button_hints,
         }
     }
@@ -145,20 +137,40 @@ impl View for Wifi {
                 // Try to get the IP address if we don't have it yet
                 if let Some(ip_address) = wifi::ip_address() {
                     self.has_ip_address = true;
-                    display.load(self.ip_address_label.bounding_box(styles))?;
-                    self.ip_address_label.set_text(ip_address);
+                    self.list.set_right(
+                        1,
+                        Box::new(Label::new(
+                            Point::zero(),
+                            ip_address,
+                            Alignment::Right,
+                            None,
+                        )),
+                    );
                 } else {
-                    self.ip_address_label
-                        .set_text(locale.t("settings-wifi-connecting"));
+                    self.list.set_right(
+                        1,
+                        Box::new(Label::new(
+                            Point::zero(),
+                            locale.t("settings-wifi-connecting"),
+                            Alignment::Right,
+                            None,
+                        )),
+                    );
                 }
             }
         } else if self.has_ip_address {
-            display.load(self.ip_address_label.bounding_box(styles))?;
-            self.ip_address_label.set_text(String::new());
+            self.has_ip_address = false;
+            self.list.set_right(
+                1,
+                Box::new(Label::new(
+                    Point::zero(),
+                    String::new(),
+                    Alignment::Right,
+                    None,
+                )),
+            );
         }
 
-        drawn |=
-            self.ip_address_label.should_draw() && self.ip_address_label.draw(display, styles)?;
         drawn |= self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
         drawn |= self.list.should_draw() && self.list.draw(display, styles)?;
 
@@ -166,14 +178,11 @@ impl View for Wifi {
     }
 
     fn should_draw(&self) -> bool {
-        self.list.should_draw()
-            || self.ip_address_label.should_draw()
-            || self.button_hints.should_draw()
+        self.list.should_draw() || self.button_hints.should_draw()
     }
 
     fn set_should_draw(&mut self) {
         self.list.set_should_draw();
-        self.ip_address_label.set_should_draw();
         self.button_hints.set_should_draw();
     }
 
@@ -188,10 +197,12 @@ impl View for Wifi {
                 if let Command::ValueChanged(i, val) = command {
                     match i {
                         0 => self.settings.toggle_wifi(val.as_bool().unwrap())?,
-                        1 => self.settings.ssid = val.as_string().unwrap().to_string(),
-                        2 => self.settings.password = val.as_string().unwrap().to_string(),
-                        3 => self.settings.toggle_telnet(val.as_bool().unwrap())?,
-                        4 => self.settings.toggle_ftp(val.as_bool().unwrap())?,
+                        1 => {} // ip address
+                        2 => self.settings.ssid = val.as_string().unwrap().to_string(),
+                        3 => self.settings.password = val.as_string().unwrap().to_string(),
+                        4 => self.settings.toggle_ntp(val.as_bool().unwrap())?,
+                        5 => self.settings.toggle_telnet(val.as_bool().unwrap())?,
+                        6 => self.settings.toggle_ftp(val.as_bool().unwrap())?,
                         _ => unreachable!("Invalid index"),
                     }
                 }
@@ -210,15 +221,11 @@ impl View for Wifi {
     }
 
     fn children(&self) -> Vec<&dyn View> {
-        vec![&self.list, &self.ip_address_label, &self.button_hints]
+        vec![&self.list, &self.button_hints]
     }
 
     fn children_mut(&mut self) -> Vec<&mut dyn View> {
-        vec![
-            &mut self.list,
-            &mut self.ip_address_label,
-            &mut self.button_hints,
-        ]
+        vec![&mut self.list, &mut self.button_hints]
     }
 
     fn bounding_box(&mut self, _styles: &Stylesheet) -> Rect {

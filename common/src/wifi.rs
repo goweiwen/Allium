@@ -1,6 +1,6 @@
 use std::fs::{self, File};
 use std::io::Write;
-use std::process::{Command, Stdio};
+use std::process::Command;
 
 use anyhow::Result;
 use log::{debug, warn};
@@ -13,6 +13,7 @@ pub struct WiFiSettings {
     pub wifi: bool,
     pub ssid: String,
     pub password: String,
+    pub ntp: bool,
     pub telnet: bool,
     pub ftp: bool,
 }
@@ -23,6 +24,7 @@ impl WiFiSettings {
             wifi: false,
             ssid: String::new(),
             password: String::new(),
+            ntp: false,
             telnet: false,
             ftp: false,
         }
@@ -44,13 +46,16 @@ impl WiFiSettings {
 
     pub fn init(&self) -> Result<()> {
         if self.wifi {
-            enable_wifi()?;
-            disable_telnet()?;
+            wifi_on()?;
+            telnet_off()?;
+            if self.ntp {
+                ntp_sync()?;
+            }
             if self.telnet {
-                enable_telnet()?;
+                telnet_on()?;
             }
             if self.ftp {
-                enable_ftp()?;
+                ftp_on()?;
             }
         }
         Ok(())
@@ -79,11 +84,9 @@ impl WiFiSettings {
         let psk = &psk[..psk_end];
 
         Some(Self {
-            wifi: false,
             ssid: ssid.to_string(),
             password: psk.to_string(),
-            telnet: false,
-            ftp: false,
+            ..Default::default()
         })
     }
 
@@ -107,15 +110,23 @@ network={{
     pub fn toggle_wifi(&mut self, enabled: bool) -> Result<()> {
         self.wifi = enabled;
         if self.wifi {
-            enable_wifi()?;
+            wifi_on()?;
             if self.telnet {
-                enable_telnet()?;
+                telnet_on()?;
             }
             if self.ftp {
-                enable_ftp()?;
+                ftp_on()?;
             }
         } else {
-            disable_wifi()?;
+            wifi_off()?;
+        }
+        Ok(())
+    }
+
+    pub fn toggle_ntp(&mut self, enabled: bool) -> Result<()> {
+        self.ntp = enabled;
+        if self.ntp {
+            ntp_sync()?;
         }
         Ok(())
     }
@@ -123,9 +134,9 @@ network={{
     pub fn toggle_telnet(&mut self, enabled: bool) -> Result<()> {
         self.telnet = enabled;
         if self.telnet {
-            enable_telnet()?;
+            telnet_on()?;
         } else {
-            disable_telnet()?;
+            telnet_off()?;
         }
         Ok(())
     }
@@ -133,9 +144,9 @@ network={{
     pub fn toggle_ftp(&mut self, enabled: bool) -> Result<()> {
         self.ftp = enabled;
         if self.ftp {
-            enable_ftp()?;
+            ftp_on()?;
         } else {
-            disable_ftp()?;
+            ftp_off()?;
         }
         Ok(())
     }
@@ -147,57 +158,51 @@ impl Default for WiFiSettings {
     }
 }
 
-pub fn enable_wifi() -> Result<()> {
+pub fn wifi_on() -> Result<()> {
     #[cfg(feature = "miyoo")]
     Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("wifi-on.sh")).spawn()?;
     Ok(())
 }
 
-pub fn disable_wifi() -> Result<()> {
+pub fn wifi_off() -> Result<()> {
     #[cfg(feature = "miyoo")]
     Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("wifi-off.sh")).spawn()?;
     Ok(())
 }
 
-pub fn enable_telnet() -> Result<()> {
+pub fn telnet_on() -> Result<()> {
     #[cfg(feature = "miyoo")]
-    Command::new("telnetd")
-        .current_dir(crate::constants::ALLIUM_SD_ROOT.as_path())
-        .args(["-l", "sh"])
-        .stdout(Stdio::null())
-        .spawn()?;
+    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("telnet-on.sh")).spawn()?;
     Ok(())
 }
 
-pub fn disable_telnet() -> Result<()> {
+pub fn telnet_off() -> Result<()> {
     #[cfg(feature = "miyoo")]
-    Command::new("killall")
-        .arg("telnetd")
-        .stdout(Stdio::null())
-        .spawn()?;
+    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("telnet-off.sh")).spawn()?;
     Ok(())
 }
 
-pub fn enable_ftp() -> Result<()> {
+pub fn ftp_on() -> Result<()> {
     #[cfg(feature = "miyoo")]
-    Command::new("tcpsvd")
-        .current_dir(crate::constants::ALLIUM_SD_ROOT.as_path())
-        .args(["-E", "0.0.0.0", "21", "ftpd", "-w", "/mnt/SDCARD"])
-        .stdout(Stdio::null())
-        .spawn()?;
+    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("ftp-on.sh")).spawn()?;
     Ok(())
 }
 
-pub fn disable_ftp() -> Result<()> {
+pub fn ftp_off() -> Result<()> {
     #[cfg(feature = "miyoo")]
-    Command::new("killall")
-        .arg("ftpd")
-        .stdout(Stdio::null())
-        .spawn()?;
-    Command::new("killall")
-        .arg("tcpsvd")
-        .stdout(Stdio::null())
-        .spawn()?;
+    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("ftp-off.sh")).spawn()?;
+    Ok(())
+}
+
+pub fn ntp_sync() -> Result<()> {
+    #[cfg(feature = "miyoo")]
+    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("ntp-sync.sh")).spawn()?;
+    Ok(())
+}
+
+pub fn wait_for_wifi() -> Result<()> {
+    #[cfg(feature = "miyoo")]
+    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("wait-for-wifi.sh")).spawn()?;
     Ok(())
 }
 
@@ -214,4 +219,15 @@ pub fn ip_address() -> Option<String> {
             .all(|octet| octet.parse::<u8>().is_ok())
             .then_some(addr)
     })
+}
+
+struct ByteBuf<'a>(&'a [u8]);
+
+impl<'a> std::fmt::LowerHex for ByteBuf<'a> {
+    fn fmt(&self, fmtr: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        for byte in self.0 {
+            fmtr.write_fmt(format_args!("{:02x}", byte))?;
+        }
+        Ok(())
+    }
 }

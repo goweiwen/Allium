@@ -85,6 +85,11 @@ impl SettingsList {
         self.dirty = true;
     }
 
+    pub fn set_right(&mut self, i: usize, right: Box<dyn View>) {
+        self.right[i] = right;
+        self.dirty = true;
+    }
+
     pub fn select(&mut self, index: usize) {
         self.left[self.selected - self.top].set_background_color(StylesheetColor::Background);
         self.right[self.selected].set_background_color(StylesheetColor::Background);

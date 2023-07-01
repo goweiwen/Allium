@@ -1,6 +1,8 @@
 #!/bin/sh
 # Adapted from DotUI-X: https://github.com/anzz1/DotUI-X/blob/master/extras/Tools/WiFi.pak/wifion.sh
 
+
+
 if ! cat /proc/modules | grep -c 8188fu; then
 	insmod /mnt/SDCARD/.tmp_update/8188fu.ko
 fi
