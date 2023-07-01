@@ -1,6 +1,7 @@
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
+use std::time::Duration;
 
 use anyhow::Result;
 use chrono::{DateTime, Utc};
@@ -18,6 +19,7 @@ use tokio::process::{Child, Command};
 use common::database::Database;
 use common::game_info::GameInfo;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use tokio::select;
 
 #[cfg(unix)]
 use {
@@ -250,9 +252,6 @@ impl AlliumD<DefaultPlatform> {
             KeyEvent::Autorepeat(Key::Power) => {
                 self.handle_quit().await?;
             }
-            KeyEvent::Pressed(Key::Menu) => {
-                self.is_menu_pressed_alone = true;
-            }
             KeyEvent::Released(Key::Menu) => {
                 if self.is_menu_pressed_alone {
                     if self.is_ingame()
@@ -350,7 +349,13 @@ async fn terminate(child: &mut Child) -> Result<()> {
     signal(child, Signal::SIGTERM)?;
     #[cfg(not(unix))]
     child.kill().await?;
-    child.wait().await?;
+
+    select! {
+        _ = child.wait() => {}
+        _ = tokio::time::sleep(Duration::from_secs(1)) => {
+            signal(child, Signal::SIGKILL)?;
+        }
+    }
     Ok(())
 }
 
