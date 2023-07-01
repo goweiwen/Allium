@@ -87,6 +87,7 @@ impl SettingsList {
 
     pub fn set_right(&mut self, i: usize, right: Box<dyn View>) {
         self.right[i] = right;
+        self.has_layout = false;
         self.dirty = true;
     }
 
