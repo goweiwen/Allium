@@ -1,5 +1,6 @@
 use std::fs::{self, File};
 use std::io::Write;
+#[cfg(feature = "miyoo")]
 use std::process::Command;
 
 use anyhow::Result;
@@ -71,39 +72,48 @@ impl WiFiSettings {
     }
 
     fn load_wpa_supplicant_conf() -> Option<Self> {
-        let data = fs::read_to_string("/appconfigs/wpa_supplicant.conf").ok()?;
+        #[cfg(feature = "miyoo")]
+        {
+            let data = fs::read_to_string("/appconfigs/wpa_supplicant.conf").ok()?;
 
-        let ssid_index = data.find("ssid=\"")?;
-        let ssid = &data[ssid_index + 6..];
-        let ssid_end = ssid.find('"')?;
-        let ssid = &ssid[..ssid_end];
+            let ssid_index = data.find("ssid=\"")?;
+            let ssid = &data[ssid_index + 6..];
+            let ssid_end = ssid.find('"')?;
+            let ssid = &ssid[..ssid_end];
 
-        let psk_index = data.find("psk=\"")?;
-        let psk = &data[psk_index + 5..];
-        let psk_end = psk.find('"')?;
-        let psk = &psk[..psk_end];
+            let psk_index = data.find("psk=\"")?;
+            let psk = &data[psk_index + 5..];
+            let psk_end = psk.find('"')?;
+            let psk = &psk[..psk_end];
 
-        Some(Self {
-            ssid: ssid.to_string(),
-            password: psk.to_string(),
-            ..Default::default()
-        })
+            Some(Self {
+                ssid: ssid.to_string(),
+                password: psk.to_string(),
+                ..Default::default()
+            })
+        }
+
+        #[cfg(not(feature = "miyoo"))]
+        Some(Self::new())
     }
 
     fn update_wpa_supplicant_conf(&self) -> Result<()> {
-        let mut file = File::create("/appconfigs/wpa_supplicant.conf")?;
-        write!(
-            file,
-            r#"ctrl_interface=/var/run/wpa_supplicant
+        #[cfg(feature = "miyoo")]
+        {
+            let mut file = File::create("/appconfigs/wpa_supplicant.conf")?;
+            write!(
+                file,
+                r#"ctrl_interface=/var/run/wpa_supplicant
 update_config=1
 
 network={{
 	ssid="{ssid}"
 	psk="{password}"
 }}"#,
-            ssid = self.ssid.replace('"', "\\\""),
-            password = self.password.replace('"', "\\\""),
-        )?;
+                ssid = self.ssid.replace('"', "\\\""),
+                password = self.password.replace('"', "\\\""),
+            )?;
+        }
         Ok(())
     }
 
@@ -207,18 +217,29 @@ pub fn wait_for_wifi() -> Result<()> {
 }
 
 pub fn ip_address() -> Option<String> {
-    let output = Command::new("ip")
-        .args(["route", "get", "255.255.255.255"])
-        .output()
-        .ok()?;
-    let output = String::from_utf8(output.stdout).ok()?;
-    let ip_address = output.split_whitespace().last().map(|s| s.to_string());
+    #[cfg(feature = "miyoo")]
+    {
+        let output = Command::new("ip")
+            .args(["route", "get", "255.255.255.255"])
+            .output()
+            .ok()?;
+        let output = String::from_utf8(output.stdout).ok()?;
+        let ip_address = output.split_whitespace().last().map(|s| s.to_string());
 
-    ip_address.and_then(|addr| {
-        addr.split('.')
-            .all(|octet| octet.parse::<u8>().is_ok())
-            .then_some(addr)
-    })
+        return ip_address.and_then(|addr| {
+            addr.split('.')
+                .all(|octet| octet.parse::<u8>().is_ok())
+                .then_some(addr)
+        });
+    }
+
+    #[cfg(feature = "simulator")]
+    {
+        return Some("127.0.0.1".to_string());
+    }
+
+    #[cfg(not(any(feature = "miyoo", feature = "simulator")))]
+    return None;
 }
 
 struct ByteBuf<'a>(&'a [u8]);
