@@ -12,7 +12,9 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::{Stylesheet, StylesheetColor};
 use common::view::{ButtonHint, ButtonIcon, Image, ImageMode, Row, ScrollList, View};
-use embedded_graphics::prelude::OriginDimensions;
+use embedded_graphics::prelude::{OriginDimensions, Size};
+use embedded_graphics::primitives::{CornerRadii, Primitive, PrimitiveStyle, RoundedRectangle};
+use embedded_graphics::Drawable;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
@@ -27,6 +29,7 @@ pub struct Recents {
     sort: Sort,
     list: ScrollList,
     image: Image,
+    menu: Option<ScrollList>,
     button_hints: Row<ButtonHint<String>>,
 }
 
@@ -96,6 +99,7 @@ impl Recents {
             sort: Sort::LastPlayed,
             list,
             image,
+            menu: None,
             button_hints,
         };
 
@@ -138,6 +142,30 @@ impl Recents {
 
         Ok(())
     }
+
+    fn open_menu(&mut self) {
+        let Rect { x, y, w, h } = self.rect;
+        let styles = self.res.get::<Stylesheet>();
+        let locale = self.res.get::<Locale>();
+
+        let labels = vec![locale.t("recents-launch"), locale.t("recents-remove")];
+
+        let height = labels.len() as u32 * (styles.ui_font.size + SELECTION_MARGIN);
+
+        let mut menu = ScrollList::new(
+            Rect::new(
+                x + 12 + (w as i32 - 24) / 6,
+                (y + h as i32 - height as i32) / 2,
+                (w - 24) * 2 / 3,
+                height,
+            ),
+            labels,
+            Alignment::Center,
+            styles.ui_font.size + SELECTION_MARGIN,
+        );
+        menu.set_background_color(StylesheetColor::BackgroundHighlightBlend);
+        self.menu = Some(menu);
+    }
 }
 
 #[async_trait(?Send)]
@@ -149,9 +177,33 @@ impl View for Recents {
     ) -> Result<bool> {
         let mut drawn = false;
 
-        if self.list.should_draw() && self.list.draw(display, styles)? {
-            drawn = true;
+        if let Some(menu) = &mut self.menu {
+            if menu.should_draw() {
+                let mut rect = menu
+                    .children_mut()
+                    .iter_mut()
+                    .map(|v| v.bounding_box(styles))
+                    .reduce(|acc, r| acc.union(&r))
+                    .unwrap_or_default();
+                rect.y -= 12;
+                rect.h += 24;
+                rect.x -= 24;
+                rect.w += 48;
+                RoundedRectangle::new(
+                    rect.into(),
+                    CornerRadii::new(Size::new_equal((styles.ui_font.size + 8) / 2)),
+                )
+                .into_styled(PrimitiveStyle::with_fill(
+                    StylesheetColor::BackgroundHighlightBlend.to_color(styles),
+                ))
+                .draw(display)?;
+                menu.draw(display, styles)?;
+                drawn = true;
+            }
+            return Ok(drawn);
         }
+
+        drawn |= self.list.should_draw() && self.list.draw(display, styles)?;
 
         if styles.enable_box_art {
             // TODO: relayout list if box art is enabled/disabled
@@ -186,10 +238,16 @@ impl View for Recents {
     }
 
     fn should_draw(&self) -> bool {
-        self.list.should_draw() || self.image.should_draw() || self.button_hints.should_draw()
+        self.menu.as_ref().map(|m| m.should_draw()).unwrap_or(false)
+            || self.list.should_draw()
+            || self.image.should_draw()
+            || self.button_hints.should_draw()
     }
 
     fn set_should_draw(&mut self) {
+        if let Some(menu) = self.menu.as_mut() {
+            menu.set_should_draw();
+        }
         self.list.set_should_draw();
         self.image.set_should_draw();
         self.button_hints.set_should_draw();
@@ -201,21 +259,53 @@ impl View for Recents {
         commands: Sender<Command>,
         bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
-        match event {
-            KeyEvent::Pressed(Key::A) => {
-                self.select_entry(commands).await?;
-                Ok(true)
+        if let Some(ref mut menu) = self.menu {
+            match event {
+                KeyEvent::Pressed(Key::Select) | KeyEvent::Pressed(Key::B) => {
+                    self.menu = None;
+                    commands.send(Command::Redraw).await?;
+                    Ok(true)
+                }
+                KeyEvent::Pressed(Key::A) => match menu.selected() {
+                    0 => {
+                        self.select_entry(commands).await?;
+                        self.menu = None;
+                        Ok(true)
+                    }
+                    1 => {
+                        if let Some(entry) = self.entries.get(self.list.selected()) {
+                            self.res.get::<Database>().delete_game(&entry.path)?;
+                            self.load_entries()?;
+                            commands.send(Command::Redraw).await?;
+                            self.menu = None;
+                        }
+                        Ok(true)
+                    }
+                    _ => unreachable!("invalid menu selection"),
+                },
+                _ => menu.handle_key_event(event, commands, bubble).await,
             }
-            KeyEvent::Pressed(Key::Y) => {
-                self.sort = self.sort.next();
-                self.button_hints
-                    .get_mut(1)
-                    .unwrap()
-                    .set_text(self.sort.button_hint(&self.res.get::<Locale>()));
-                self.load_entries()?;
-                Ok(true)
+        } else {
+            match event {
+                KeyEvent::Pressed(Key::A) => {
+                    self.select_entry(commands).await?;
+                    Ok(true)
+                }
+                KeyEvent::Pressed(Key::Y) => {
+                    self.sort = self.sort.next();
+                    self.button_hints
+                        .get_mut(1)
+                        .unwrap()
+                        .set_text(self.sort.button_hint(&self.res.get::<Locale>()));
+                    self.load_entries()?;
+                    Ok(true)
+                }
+                KeyEvent::Pressed(Key::Select) => {
+                    self.open_menu();
+                    Ok(true)
+                }
+                _ => self.list.handle_key_event(event, commands, bubble).await,
             }
-            _ => self.list.handle_key_event(event, commands, bubble).await,
         }
     }
 

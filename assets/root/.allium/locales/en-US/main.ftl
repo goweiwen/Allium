@@ -6,6 +6,8 @@ tab-settings = Settings
 
 recents-sort-currently-last-played = Sort: Last Played
 recents-sort-currently-most-played = Sort: Most Played
+recents-launch = Launch
+recents-remove = Remove
 
 settings-wifi = Wi-Fi
 settings-wifi-wifi-enabled = Wi-Fi Enabled

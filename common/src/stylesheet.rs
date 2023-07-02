@@ -22,6 +22,7 @@ pub enum StylesheetColor {
     ButtonB,
     ButtonX,
     ButtonY,
+    BackgroundHighlightBlend,
 }
 
 impl StylesheetColor {
@@ -35,6 +36,9 @@ impl StylesheetColor {
             Self::ButtonB => stylesheet.button_b_color,
             Self::ButtonX => stylesheet.button_x_color,
             Self::ButtonY => stylesheet.button_y_color,
+            Self::BackgroundHighlightBlend => stylesheet
+                .background_color
+                .blend(stylesheet.highlight_color, 128),
         }
     }
 }

@@ -3,7 +3,9 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 use embedded_graphics::prelude::Size;
-use embedded_graphics::primitives::{Primitive, PrimitiveStyle, Rectangle, RoundedRectangle};
+use embedded_graphics::primitives::{
+    CornerRadii, Primitive, PrimitiveStyle, Rectangle, RoundedRectangle,
+};
 use embedded_graphics::Drawable;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
@@ -26,11 +28,26 @@ pub struct ScrollList {
     entry_height: u32,
     top: usize,
     selected: usize,
+    background_color: Option<StylesheetColor>,
     dirty: bool,
 }
 
 impl ScrollList {
-    pub fn new(rect: Rect, items: Vec<String>, alignment: Alignment, entry_height: u32) -> Self {
+    pub fn new(
+        mut rect: Rect,
+        items: Vec<String>,
+        alignment: Alignment,
+        entry_height: u32,
+    ) -> Self {
+        match alignment {
+            Alignment::Left => {}
+            Alignment::Center => {
+                rect.x += rect.w as i32 / 2;
+            }
+            Alignment::Right => {
+                rect.x = rect.x + rect.w as i32 - 1;
+            }
+        }
         let mut this = Self {
             rect,
             items: Vec::new(),
@@ -39,6 +56,7 @@ impl ScrollList {
             entry_height,
             top: 0,
             selected: 0,
+            background_color: None,
             dirty: true,
         };
 
@@ -59,15 +77,21 @@ impl ScrollList {
         self.items = items;
 
         self.children.clear();
-        let mut y = self.rect.y + 8;
+        let mut y = self.rect.y + 4;
         for i in 0..self.visible_count() {
             self.children.push(Label::new(
-                Point::new(self.rect.x + 12, y),
+                Point::new(self.rect.x + 12 * self.alignment.sign(), y),
                 self.items[i].to_owned(),
                 self.alignment,
                 Some(self.rect.w - 24),
             ));
             y += self.entry_height as i32;
+        }
+
+        if let Some(background_color) = self.background_color {
+            for child in &mut self.children {
+                child.set_background_color(background_color);
+            }
         }
 
         self.select(selected);
@@ -81,9 +105,9 @@ impl ScrollList {
             return;
         }
 
-        self.children
-            .get_mut(self.selected - self.top)
-            .map(|c| c.set_background_color(StylesheetColor::Background));
+        self.children.get_mut(self.selected - self.top).map(|c| {
+            c.set_background_color(self.background_color.unwrap_or(StylesheetColor::Background))
+        });
 
         if index >= self.top + self.visible_count() {
             self.top = (index - self.visible_count() + 1).min(self.items.len() - 1);
@@ -107,7 +131,7 @@ impl ScrollList {
     }
 
     pub fn visible_count(&self) -> usize {
-        ((self.rect.h as usize - 16) / self.entry_height as usize).min(self.items.len())
+        (self.rect.h as usize / self.entry_height as usize).min(self.items.len())
     }
 
     fn update_children(&mut self) {
@@ -125,7 +149,26 @@ impl View for ScrollList {
         styles: &Stylesheet,
     ) -> Result<bool> {
         if self.dirty {
-            display.load(self.bounding_box(styles))?;
+            if let Some(color) = self.background_color {
+                let mut rect = self
+                    .children_mut()
+                    .iter_mut()
+                    .map(|v| v.bounding_box(styles))
+                    .reduce(|acc, r| acc.union(&r))
+                    .unwrap_or_default();
+                rect.x -= 12;
+                rect.w += 24;
+                rect.y -= 4;
+                rect.h += 8;
+                RoundedRectangle::new(
+                    rect.into(),
+                    CornerRadii::new(Size::new_equal((styles.ui_font.size + 8) / 2)),
+                )
+                .into_styled(PrimitiveStyle::with_fill(color.to_color(styles)))
+                .draw(display)?;
+            } else {
+                display.load(self.bounding_box(styles))?;
+            }
 
             if let Some(selected) = self.children.get_mut(self.selected - self.top) {
                 let rect = selected.bounding_box(styles);
@@ -224,7 +267,21 @@ impl View for ScrollList {
     }
 
     fn bounding_box(&mut self, _styles: &Stylesheet) -> Rect {
-        self.rect
+        match self.alignment {
+            Alignment::Left => self.rect,
+            Alignment::Center => Rect::new(
+                self.rect.x - self.rect.w as i32 / 2,
+                self.rect.y,
+                self.rect.w,
+                self.rect.h,
+            ),
+            Alignment::Right => Rect::new(
+                self.rect.x - self.rect.w as i32 + 1,
+                self.rect.y,
+                self.rect.w,
+                self.rect.h,
+            ),
+        }
     }
 
     fn set_position(&mut self, point: Point) {
@@ -238,5 +295,12 @@ impl View for ScrollList {
         }
 
         self.dirty = true;
+    }
+
+    fn set_background_color(&mut self, color: StylesheetColor) {
+        self.background_color = Some(color);
+        for child in &mut self.children {
+            child.set_background_color(color);
+        }
     }
 }

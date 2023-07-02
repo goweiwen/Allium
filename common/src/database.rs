@@ -89,8 +89,8 @@ CREATE TABLE IF NOT EXISTS guides (
     pub fn delete_game(&self, path: &Path) -> Result<()> {
         let conn = self.conn.as_ref().unwrap();
         conn.execute(
-            "DELETE FROM games WHERE path = ?; DELETE FROM games_search WHERE path = ?;",
-            params![path.display().to_string(), path.display().to_string()],
+            "DELETE FROM games WHERE path = ?",
+            params![path.display().to_string()],
         )?;
         Ok(())
     }

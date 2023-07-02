@@ -9,7 +9,7 @@ use common::locale::{Locale, LocaleSettings};
 use common::resources::Resources;
 use common::view::View;
 use embedded_graphics::prelude::*;
-use log::{debug, warn};
+use log::{info, trace, warn};
 
 use common::database::Database;
 use common::display::Display;
@@ -104,7 +104,7 @@ impl AlliumLauncher<DefaultPlatform> {
     async fn handle_command(&mut self, command: Command) -> Result<()> {
         match command {
             Command::Exit => {
-                debug!("goodbye from allium launcher");
+                info!("goodbye from allium launcher");
                 self.view.save()?;
                 self.display.clear(Color::new(0, 0, 0))?;
                 self.display.flush()?;
@@ -112,7 +112,7 @@ impl AlliumLauncher<DefaultPlatform> {
             }
             #[allow(unused_mut)]
             Command::Exec(mut cmd) => {
-                debug!("executing command: {:?}", cmd);
+                info!("executing command: {:?}", cmd);
                 self.view.save()?;
                 self.display.clear(Color::new(0, 0, 0))?;
                 self.display.flush()?;
@@ -135,7 +135,7 @@ impl AlliumLauncher<DefaultPlatform> {
                 }
             }
             Command::SaveStylesheet(mut styles) => {
-                debug!("saving stylesheet");
+                trace!("saving stylesheet");
                 styles.load_fonts()?;
                 styles.save()?;
                 self.display.clear(styles.background_color)?;
@@ -149,12 +149,12 @@ impl AlliumLauncher<DefaultPlatform> {
                 )?;
             }
             Command::SaveDisplaySettings(settings) => {
-                debug!("saving display settings");
+                trace!("saving display settings");
                 settings.save()?;
                 self.platform.set_display_settings(&settings)?;
             }
             Command::SaveLocaleSettings(settings) => {
-                debug!("saving locale settings");
+                trace!("saving locale settings");
                 settings.save()?;
                 self.res.insert(Locale::new(&settings.lang));
                 self.view.save()?;
@@ -165,7 +165,7 @@ impl AlliumLauncher<DefaultPlatform> {
                 )?;
             }
             Command::Redraw => {
-                debug!("redrawing");
+                trace!("redrawing");
                 self.display.load(self.display.bounding_box().into())?;
                 self.view.set_should_draw();
             }

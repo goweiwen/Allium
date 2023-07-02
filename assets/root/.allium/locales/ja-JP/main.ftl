@@ -6,6 +6,8 @@ tab-settings = 設定
 
 recents-sort-currently-last-played = 最近順
 recents-sort-currently-most-played = 最も順
+recents-launch = 起動
+recents-remove = 削除
 
 settings-wifi = Wi-Fi
 settings-wifi-wifi-enabled = Wi-Fi有効
