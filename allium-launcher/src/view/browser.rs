@@ -42,7 +42,7 @@ impl Browser {
 
         let styles = res.get::<Stylesheet>();
 
-        let entries = entries(&directory)?;
+        let entries = entries(&directory, &res.get())?;
         let mut list = ScrollList::new(
             Rect::new(
                 x + 12,
@@ -265,11 +265,11 @@ impl View for Browser {
     }
 }
 
-pub fn entries(directory: &Directory) -> Result<Vec<Entry>> {
+pub fn entries(directory: &Directory, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
     let mut entries: Vec<_> = std::fs::read_dir(&directory.path)
         .map_err(|e| anyhow!("Failed to open directory: {:?}, {}", &directory.path, e))?
         .flat_map(|entry| entry.ok())
-        .flat_map(|entry| match Entry::new(entry.path()) {
+        .flat_map(|entry| match Entry::new(entry.path(), console_mapper) {
             Ok(Some(entry)) => Some(entry),
             _ => None,
         })

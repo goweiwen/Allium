@@ -6,6 +6,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
+use crate::consoles::ConsoleMapper;
 use crate::entry::app::App;
 use crate::entry::directory::Directory;
 use crate::entry::game::Game;
@@ -22,7 +23,7 @@ pub enum Entry {
 }
 
 impl Entry {
-    pub fn new(path: PathBuf) -> Result<Option<Entry>> {
+    pub fn new(path: PathBuf, console_mapper: &ConsoleMapper) -> Result<Option<Entry>> {
         // Don't add hidden files starting with .
         let file_name = match path.file_name().and_then(OsStr::to_str) {
             Some(file_name) => file_name,
@@ -52,7 +53,13 @@ impl Entry {
         if path.is_dir() {
             // Directories without extensions can be navigated into
             if extension.is_empty() {
-                return Ok(Some(Entry::Directory(Directory::new(path))));
+                return Ok(Some(Entry::Directory(
+                    if let Some(console) = console_mapper.get_console_by_dir(&path) {
+                        Directory::with_name(path, console.name.clone())
+                    } else {
+                        Directory::new(path)
+                    },
+                )));
             }
 
             // Apps are directories with .pak extension and have a config.json file inside

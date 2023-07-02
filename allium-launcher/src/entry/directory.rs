@@ -48,6 +48,19 @@ impl Directory {
             path,
         }
     }
+
+    pub fn with_name(path: PathBuf, name: String) -> Directory {
+        let full_name = path
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .unwrap_or("")
+            .to_string();
+        Directory {
+            name,
+            full_name,
+            path,
+        }
+    }
 }
 
 impl From<&Path> for Directory {

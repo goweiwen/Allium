@@ -80,6 +80,22 @@ impl ConsoleMapper {
         Ok(())
     }
 
+    /// Returns a console that matches the directory name exactly, or none.
+    pub fn get_console_by_dir(&self, path: &Path) -> Option<&Console> {
+        if let Some(name) = path.file_name().and_then(|name| name.to_str()) {
+            let console = self
+                .consoles
+                .iter()
+                .find(|core| core.patterns.iter().any(|s| name == s));
+            if console.is_some() {
+                return console;
+            }
+        }
+
+        None
+    }
+
+    /// Returns a console that this path maps to, or none.
     pub fn get_console(&self, path: &Path) -> Option<&Console> {
         let path_lowercase = path.as_os_str().to_ascii_lowercase();
 
