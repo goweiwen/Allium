@@ -95,6 +95,16 @@ CREATE TABLE IF NOT EXISTS guides (
         Ok(())
     }
 
+    pub fn update_game_path(&self, old: &Path, new: &Path) -> Result<()> {
+        let conn = self.conn.as_ref().unwrap();
+        let mut stmt = conn.prepare("UPDATE games SET path = ? WHERE path = ?")?;
+        stmt.execute(params![
+            new.display().to_string(),
+            old.display().to_string()
+        ])?;
+        Ok(())
+    }
+
     pub fn update_games(&self, games: &[Game]) -> Result<()> {
         let conn = self.conn.as_ref().unwrap();
         let mut stmt = conn.prepare("

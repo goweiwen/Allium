@@ -1,6 +1,12 @@
-use std::path::{Path, PathBuf};
+use std::{
+    ffi::OsStr,
+    fs, mem,
+    path::{Path, PathBuf},
+};
 
+use anyhow::Result;
 use common::constants::ALLIUM_GAMES_DIR;
+use log::info;
 use serde::{Deserialize, Serialize};
 
 use crate::entry::short_name;
@@ -73,6 +79,22 @@ impl Game {
         self.image = Some(image);
         self.image_ref()
     }
+
+    /// Attempts to resync the game path with the games directory. Returns the old path if it changed.
+    pub fn resync(&mut self) -> Result<Option<PathBuf>> {
+        Ok(if self.path.exists() {
+            None
+        } else if let Some(name) = self.path.file_name() {
+            if let Some(game) = find(&ALLIUM_GAMES_DIR, name)? {
+                info!("Resynced game path: {:?}", game);
+                Some(mem::replace(&mut self.path, game))
+            } else {
+                None
+            }
+        } else {
+            None
+        })
+    }
 }
 
 impl Ord for Game {
@@ -85,4 +107,22 @@ impl PartialOrd for Game {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
+}
+
+fn find(path: &Path, name: &OsStr) -> Result<Option<PathBuf>> {
+    if path.is_dir() {
+        for entry in fs::read_dir(path)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                let game = find(&path, name)?;
+                if game.is_some() {
+                    return Ok(game);
+                }
+            } else if path.file_name() == Some(name) {
+                return Ok(Some(path));
+            }
+        }
+    }
+    Ok(None)
 }
