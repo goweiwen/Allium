@@ -158,10 +158,7 @@ impl View for About {
                 bubble.push_back(Command::CloseView);
                 Ok(true)
             }
-            _ => {
-                self.list.handle_key_event(event, commands, bubble).await?;
-                Ok(true)
-            }
+            _ => self.list.handle_key_event(event, commands, bubble).await,
         }
     }
 

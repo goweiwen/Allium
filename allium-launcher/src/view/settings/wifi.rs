@@ -216,7 +216,7 @@ impl View for Wifi {
                 bubble.push_back(Command::CloseView);
                 Ok(true)
             }
-            _ => Ok(true),
+            _ => Ok(false),
         }
     }
 

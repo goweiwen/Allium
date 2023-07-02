@@ -213,7 +213,7 @@ impl View for Display {
                 bubble.push_back(Command::CloseView);
                 Ok(true)
             }
-            _ => Ok(true),
+            _ => Ok(false),
         }
     }
 

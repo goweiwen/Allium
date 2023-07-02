@@ -272,7 +272,7 @@ impl View for Keyboard {
                 }
                 self.dirty = true;
             }
-            KeyEvent::Pressed(Key::R) => {
+            KeyEvent::Pressed(Key::R) | KeyEvent::Pressed(Key::L) => {
                 self.value.pop();
                 self.dirty = true;
             }
