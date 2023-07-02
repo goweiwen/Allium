@@ -11,7 +11,7 @@ path = "src/lib.rs"
 
 [features]
 simulator = ["embedded-graphics-simulator", "sdl2"]
-miyoo = ["evdev", "framebuffer"]
+miyoo = ["evdev", "framebuffer", "ffi"]
 
 [dependencies]
 anyhow = "1.0.70"
@@ -35,7 +35,7 @@ tokio = { version = "1.28.2", features = ["full"] }
 type-map = "0.4.0"
 embedded-graphics-simulator = { version = "0.5.0", optional = true }
 sdl2 = { version = "0.35.2", optional = true }
-ffi = { version = "0.1.0", path = "../ffi" }
+ffi = { version = "0.1.0", path = "../ffi", optional = true }
 
 [target.'cfg(target_arch = "arm")'.dependencies]
 evdev = { version = "0.12.1", features = ["tokio"], optional = true }
