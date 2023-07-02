@@ -6,7 +6,7 @@ fn main() {
     println!("cargo:rustc-link-lib=cam_os_wrapper");
     println!("cargo:rustc-link-lib=mi_sys");
     println!("cargo:rustc-link-lib=static=mi_ao");
-    println!("cargo:rerun-if-changed=../third-party/my283/usr/include/*.h");
+    println!("cargo:rerun-if-changed=build.rs");
 
     let bindings = bindgen::Builder::default()
         .header("../third-party/my283/usr/include/mi_ao.h")
