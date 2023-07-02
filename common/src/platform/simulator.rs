@@ -51,14 +51,20 @@ impl Platform for SimulatorPlatform {
                     SimulatorEvent::KeyDown {
                         keycode, repeat, ..
                     } => {
+                        if keycode == Keycode::Q {
+                            process::exit(0);
+                        }
                         return if repeat {
                             KeyEvent::Autorepeat(Key::from(keycode))
                         } else {
                             KeyEvent::Pressed(Key::from(keycode))
-                        }
+                        };
                     }
                     SimulatorEvent::KeyUp { keycode, .. } => {
                         return KeyEvent::Released(Key::from(keycode))
+                    }
+                    SimulatorEvent::Quit => {
+                        process::exit(0);
                     }
                     _ => {}
                 }
