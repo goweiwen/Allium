@@ -94,7 +94,7 @@ impl Display for FramebufferDisplay {
 
     fn load(&mut self, mut rect: Rect) -> Result<()> {
         let Some(ref saved) = self.saved else {
-             bail!("No saved image");
+            bail!("No saved image");
         };
 
         let size = self.size();
