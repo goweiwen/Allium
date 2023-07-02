@@ -108,7 +108,7 @@ impl View for Number {
                 }
                 KeyEvent::Pressed(Key::B) => {
                     self.edit_state = None;
-                    self.label.set_text(format!("{}%", self.value));
+                    self.label.set_text(format!("{}", self.value));
                     bubble.push_back(Command::Unfocus);
                     Ok(true)
                 }
