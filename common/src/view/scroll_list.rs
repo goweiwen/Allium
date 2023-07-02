@@ -299,8 +299,10 @@ impl View for ScrollList {
 
     fn set_background_color(&mut self, color: StylesheetColor) {
         self.background_color = Some(color);
-        for child in &mut self.children {
-            child.set_background_color(color);
+        for (i, child) in self.children.iter_mut().enumerate() {
+            if i != self.selected {
+                child.set_background_color(color);
+            }
         }
     }
 }
