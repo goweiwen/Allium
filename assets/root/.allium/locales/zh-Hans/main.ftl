@@ -1,6 +1,6 @@
 # Launcher
-tab-games = 游戏
 tab-recents = 最近
+tab-games = 游戏
 tab-apps = 应用
 tab-settings = 设置
 

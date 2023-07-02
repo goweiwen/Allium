@@ -1,6 +1,6 @@
 # Launcher
-tab-games = ゲーム
 tab-recents = 最近
+tab-games = ゲーム
 tab-apps = アプリ
 tab-settings = 設定
 

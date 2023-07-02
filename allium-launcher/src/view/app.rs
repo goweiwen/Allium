@@ -37,7 +37,7 @@ where
 {
     rect: Rect,
     battery_indicator: BatteryIndicator<B>,
-    views: (Browser, Recents, Browser, Settings),
+    views: (Recents, Browser, Browser, Settings),
     selected: usize,
     tabs: Row<Label<String>>,
     dirty: bool,
@@ -50,7 +50,7 @@ where
     pub fn new(
         rect: Rect,
         res: Resources,
-        views: (Browser, Recents, Browser, Settings),
+        views: (Recents, Browser, Browser, Settings),
         selected: usize,
         battery: B,
     ) -> Result<Self> {
@@ -63,13 +63,13 @@ where
             {
                 let locale = res.get::<Locale>();
                 vec![
-                    Label::new(Point::zero(), locale.t("tab-games"), Alignment::Left, None),
                     Label::new(
                         Point::zero(),
                         locale.t("tab-recents"),
                         Alignment::Left,
                         None,
                     ),
+                    Label::new(Point::zero(), locale.t("tab-games"), Alignment::Left, None),
                     Label::new(Point::zero(), locale.t("tab-apps"), Alignment::Left, None),
                     Label::new(
                         Point::zero(),
@@ -111,8 +111,8 @@ where
             let file = File::open(ALLIUM_LAUNCHER_STATE.as_path())?;
             if let Ok(state) = serde_json::from_reader::<_, AppState>(file) {
                 let views = (
-                    Browser::load(tab_rect, res.clone(), state.games)?,
                     Recents::new(tab_rect, res.clone())?,
+                    Browser::load(tab_rect, res.clone(), state.games)?,
                     Browser::load(tab_rect, res.clone(), state.apps)?,
                     Settings::new(tab_rect, res.clone(), state.settings)?,
                 );
@@ -123,13 +123,13 @@ where
         }
 
         let views = (
+            Recents::new(tab_rect, res.clone())?,
             Browser::new(
                 tab_rect,
                 res.clone(),
                 ALLIUM_SD_ROOT.join("Roms").as_path().into(),
                 0,
             )?,
-            Recents::new(tab_rect, res.clone())?,
             Browser::new(
                 tab_rect,
                 res.clone(),
@@ -138,7 +138,7 @@ where
             )?,
             Settings::new(tab_rect, res.clone(), Default::default())?,
         );
-        let selected = 0;
+        let selected = 1;
         Self::new(rect, res, views, selected, battery)
     }
 
@@ -146,7 +146,7 @@ where
         let file = File::create(ALLIUM_LAUNCHER_STATE.as_path())?;
         let state = AppState {
             selected: self.selected,
-            games: self.views.0.save(),
+            games: self.views.1.save(),
             apps: self.views.2.save(),
             settings: self.views.3.save(),
         };

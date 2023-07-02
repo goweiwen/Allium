@@ -1,6 +1,6 @@
 # Launcher
-tab-games = Games
 tab-recents = Recents
+tab-games = Games
 tab-apps = Apps
 tab-settings = Settings
 
