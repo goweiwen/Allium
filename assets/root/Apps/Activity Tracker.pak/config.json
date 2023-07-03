@@ -1,0 +1,5 @@
+{
+  "label": "Activity Tracker",
+  "launch": "activity-tracker",
+  "description": "Tracks your playtime for each game."
+}

@@ -16,6 +16,9 @@ simulator-launcher: simulator-env
 simulator-menu: simulator-env
 	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_DATABASE=assets/simulator/allium.db ALLIUM_BASE_DIR=assets/simulator/.allium ALLIUM_SD_ROOT=assets/simulator cargo run --bin allium-menu --features=simulator
 
+simulator: simulator-env
+	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_DATABASE=assets/simulator/allium.db ALLIUM_BASE_DIR=assets/simulator/.allium ALLIUM_SD_ROOT=assets/simulator cargo run --bin $(bin) --features=simulator
+
 clean:
 	rm -r $(DIST_DIR)
 
@@ -29,16 +32,17 @@ third-party/my283:
 	rm third-party/my283.tar.xz
 
 build: third-party/my283
-	cross build --release --features=miyoo --bin=alliumd --bin=allium-launcher --bin=allium-menu
+	cross build --release --features=miyoo --bin=alliumd --bin=allium-launcher --bin=allium-menu --bin=activity-tracker
 
 build-with-console: third-party/my283
-	cross build --release --features=miyoo,console --bin=alliumd --bin=allium-launcher --bin=allium-menu
+	cross build --release --features=miyoo,console --bin=alliumd --bin=allium-launcher --bin=allium-menu --bin=activity-tracker
 
 package-build:
 	mkdir -p $(DIST_DIR)/.allium/bin
 	rsync -a $(BUILD_DIR)/alliumd $(DIST_DIR)/.allium/bin/
 	rsync -a $(BUILD_DIR)/allium-launcher $(DIST_DIR)/.allium/bin/
 	rsync -a $(BUILD_DIR)/allium-menu $(DIST_DIR)/.allium/bin/
+	rsync -a $(BUILD_DIR)/activity-tracker "$(DIST_DIR)/Apps/Activity Tracker.pak/"
 
 retroarch: $(RETROARCH)/retroarch_miyoo283 $(RETROARCH)/retroarch_miyoo354
 
@@ -60,11 +64,13 @@ bump-version: lint
 	sed -i "s/^version = \".*\"/version = \"$(version)\"/" allium-launcher/Cargo.toml
 	sed -i "s/^version = \".*\"/version = \"$(version)\"/" allium-menu/Cargo.toml
 	sed -i "s/^version = \".*\"/version = \"$(version)\"/" alliumd/Cargo.toml
+	sed -i "s/^version = \".*\"/version = \"$(version)\"/" activity-tracker/Cargo.toml
 	sed -i "s/^version = \".*\"/version = \"$(version)\"/" common/Cargo.toml
 	cargo check
 	git add allium-launcher/Cargo.toml
 	git add allium-menu/Cargo.toml
 	git add alliumd/Cargo.toml
+	git add activity-tracker/Cargo.toml
 	git add common/Cargo.toml
 	git add Cargo.lock
 	git commit -m "chore: bump version to v$(version)"

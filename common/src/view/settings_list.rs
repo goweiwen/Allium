@@ -64,7 +64,7 @@ impl SettingsList {
                 Point::new(self.rect.x + 12, y),
                 self.labels[i].to_owned(),
                 Alignment::Left,
-                Some(self.rect.w - 24),
+                Some((self.rect.w - 24) * 2 / 3),
             ));
             y += self.entry_height as i32;
         }
@@ -82,6 +82,7 @@ impl SettingsList {
             self.top = self.selected.min(self.labels.len() - self.visible_count());
         }
 
+        self.has_layout = false;
         self.dirty = true;
     }
 

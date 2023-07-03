@@ -1,5 +1,13 @@
 [workspace]
-members = ["common", "alliumd", "allium-launcher", "allium-menu", "ffi", "myctl"]
+members = [
+    "common",
+    "alliumd",
+    "allium-launcher",
+    "allium-menu",
+    "activity-tracker",
+    "ffi",
+    "myctl"
+]
 resolver = "2"
 
 # Following: https://github.com/johnthagen/min-sized-rust

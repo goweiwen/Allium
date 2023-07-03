@@ -1,7 +1,12 @@
-use std::fs::{self, File};
+use std::{
+    collections::HashMap,
+    fs::{self, File},
+};
 
 use anyhow::{Context, Result};
-use fluent_templates::{loader::langid, ArcLoader, LanguageIdentifier, Loader};
+use fluent_templates::{
+    fluent_bundle::FluentValue, loader::langid, ArcLoader, LanguageIdentifier, Loader,
+};
 use log::{debug, warn};
 use serde::{Deserialize, Serialize};
 
@@ -53,6 +58,7 @@ pub struct Locale {
 impl Locale {
     pub fn new(lang: &str) -> Self {
         let loader = ArcLoader::builder(ALLIUM_LOCALES_DIR.as_path(), langid!("en-US"))
+            .customize(|b| b.set_use_isolating(false))
             .build()
             .unwrap();
         let lang = lang.parse().unwrap();
@@ -62,6 +68,13 @@ impl Locale {
     pub fn t(&self, key: &str) -> String {
         self.loader
             .lookup(&self.lang, key)
+            .with_context(|| format!("looking up key: {}", key))
+            .unwrap()
+    }
+
+    pub fn ta(&self, key: &str, args: &HashMap<String, FluentValue<'_>>) -> String {
+        self.loader
+            .lookup_with_args(&self.lang, key, args)
             .with_context(|| format!("looking up key: {}", key))
             .unwrap()
     }
