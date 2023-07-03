@@ -21,6 +21,7 @@ simulator: simulator-env
 
 clean:
 	rm -r $(DIST_DIR)
+	rm -f $(RETROARCH)/retroarch
 
 static:
 	mkdir -p $(DIST_DIR)
@@ -44,17 +45,13 @@ package-build:
 	rsync -a $(BUILD_DIR)/allium-menu $(DIST_DIR)/.allium/bin/
 	rsync -a $(BUILD_DIR)/activity-tracker "$(DIST_DIR)/Apps/Activity Tracker.pak/"
 
-retroarch: $(RETROARCH)/retroarch_miyoo283 $(RETROARCH)/retroarch_miyoo354
+retroarch: $(RETROARCH)/retroarch
 
 package-retroarch: retroarch
-	rsync -a $(RETROARCH)/retroarch_miyoo354 $(DIST_DIR)/RetroArch/
-	rsync -a $(RETROARCH)/retroarch_miyoo283 $(DIST_DIR)/RetroArch/
+	rsync -a $(RETROARCH)/retroarch "$(DIST_DIR)/RetroArch"
 
-$(RETROARCH)/retroarch_miyoo354:
-	docker run --rm -v /$(ROOT_DIR)/third-party:/root/workspace $(TOOLCHAIN) bash -c "source /root/.bashrc; cd RetroArch; make clean all ADD_NETWORKING=1 PACKAGE_NAME=retroarch_miyoo354"
-
-$(RETROARCH)/retroarch_miyoo283:
-	docker run --rm -v /$(ROOT_DIR)/third-party:/root/workspace $(TOOLCHAIN) bash -c "source /root/.bashrc; cd RetroArch; make clean all PACKAGE_NAME=retroarch_miyoo283"
+$(RETROARCH)/retroarch:
+	docker run --rm -v /$(ROOT_DIR)/third-party:/root/workspace $(TOOLCHAIN) bash -c "source /root/.bashrc; cd RetroArch; make clean all ADD_NETWORKING=1 PACKAGE_NAME=retroarch"
 
 lint:
 	cargo fmt
