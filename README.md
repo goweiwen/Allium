@@ -43,6 +43,7 @@ The SD card layout should look like this:
 - Works without configuration
 - Box art (PNG, JPG, GIF, TGA, BMP)
 - Recents list (sort by last played or playtime)
+- Activity tracker
 - [RetroArch for all supported cores](https://github.com/goweiwen/Allium/wiki/Console-Mapper)
 - Battery indicator
 - Volume & Brightness (menu + vol up/down) control
@@ -57,7 +58,6 @@ The SD card layout should look like this:
 
 ## Planned Features
 (roughly in order of priority)
-- Recents list organizer (remove, resync path)
 - Favorites organizer?
 - Ingame menu disk changer
 - Clock adjustment
