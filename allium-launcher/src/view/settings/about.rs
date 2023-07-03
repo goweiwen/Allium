@@ -52,13 +52,13 @@ impl About {
             vec![
                 Box::new(Label::new(
                     Point::zero(),
-                    DefaultPlatform::device_model(),
+                    format!("v{}", ALLIUM_VERSION),
                     Alignment::Right,
                     None,
                 )),
                 Box::new(Label::new(
                     Point::zero(),
-                    format!("v{}", ALLIUM_VERSION),
+                    DefaultPlatform::device_model(),
                     Alignment::Right,
                     None,
                 )),
