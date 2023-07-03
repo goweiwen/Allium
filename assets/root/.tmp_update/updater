@@ -27,8 +27,14 @@ if [ -f /customer/lib/libpadsp.so ]; then
 	export LD_PRELOAD=libpadsp.so
 fi
 
-# kill default telnetd. Allium will launch its own if needed
-killall telnetd
+if [ -f /customer/app/axp_test ]; then
+	# kill default telnetd. Allium will launch its own if needed
+	killall telnetd
+else
+	# add a loopback address for RA network interface
+	ip addr add 127.0.0.1/8 dev lo
+	ifconfig lo up
+fi
 
 echo ondemand > "$CPU_PATH"
 rm -f "$SDCARD_PATH/update.log"
