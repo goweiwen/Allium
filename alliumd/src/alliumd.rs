@@ -116,15 +116,17 @@ fn spawn_main() -> Result<Child> {
 impl AlliumD<DefaultPlatform> {
     pub fn new() -> Result<AlliumD<DefaultPlatform>> {
         let platform = DefaultPlatform::new()?;
+        let state = AlliumDState::load()?;
+        let main = spawn_main()?;
 
         Ok(AlliumD {
             platform,
-            main: spawn_main()?,
+            main,
             menu: None,
             keys: EnumMap::default(),
             is_menu_pressed_alone: false,
             is_terminating: false,
-            state: AlliumDState::load()?,
+            state,
         })
     }
 
