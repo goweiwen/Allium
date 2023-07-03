@@ -1,10 +1,9 @@
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
-use std::time::Duration;
 
 use anyhow::Result;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use common::battery::Battery;
 use common::constants::{
     ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_MENU, ALLIUM_VERSION, BATTERY_SHUTDOWN_THRESHOLD,
@@ -321,6 +320,12 @@ impl AlliumD<DefaultPlatform> {
         let file = File::open(ALLIUM_GAME_INFO.as_path())?;
         let mut game_info: GameInfo = serde_json::from_reader(file)?;
 
+        // As a sanity check, don't add play time if the game was played for more than 24 hours
+        if game_info.play_time() > Duration::hours(24) {
+            warn!("play time is too long, not adding to database");
+            return Ok(());
+        }
+
         let database = Database::new()?;
         database.add_play_time(game_info.path.as_path(), game_info.play_time());
 
@@ -354,7 +359,7 @@ async fn terminate(child: &mut Child) -> Result<()> {
 
     select! {
         _ = child.wait() => {}
-        _ = tokio::time::sleep(Duration::from_secs(1)) => {
+        _ = tokio::time::sleep(std::time::Duration::from_secs(1)) => {
             signal(child, Signal::SIGKILL)?;
         }
     }
