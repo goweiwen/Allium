@@ -16,7 +16,7 @@ use std::fmt::Debug;
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::{ALLIUM_TOOLS_DIR, SELECTION_MARGIN};
+use common::constants::SELECTION_MARGIN;
 use common::display::Display as DisplayTrait;
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
@@ -74,7 +74,6 @@ impl Settings {
         labels.push(locale.t("settings-display"));
         labels.push(locale.t("settings-theme"));
         labels.push(locale.t("settings-language"));
-        labels.push(locale.t("settings-files"));
         labels.push(locale.t("settings-about"));
 
         let mut list = ScrollList::new(
@@ -95,8 +94,7 @@ impl Settings {
                 1 => Some(Box::new(Display::new(rect, res.clone(), Some(child)))),
                 2 => Some(Box::new(Theme::new(rect, res.clone(), Some(child)))),
                 3 => Some(Box::new(Language::new(rect, res.clone(), Some(child)))),
-                4 => None,
-                5 => Some(Box::new(About::new(rect, res.clone(), Some(child)))),
+                4 => Some(Box::new(About::new(rect, res.clone(), Some(child)))),
                 _ => None,
             }
         } else {
@@ -146,7 +144,7 @@ impl Settings {
         }
     }
 
-    async fn select_entry(&mut self, commands: Sender<Command>) -> Result<()> {
+    async fn select_entry(&mut self, _commands: Sender<Command>) -> Result<()> {
         let mut selected = self.list.selected();
         if !self.has_wifi {
             selected += 1
@@ -156,13 +154,7 @@ impl Settings {
             1 => self.child = Some(Box::new(Display::new(self.rect, self.res.clone(), None))),
             2 => self.child = Some(Box::new(Theme::new(self.rect, self.res.clone(), None))),
             3 => self.child = Some(Box::new(Language::new(self.rect, self.res.clone(), None))),
-            4 => {
-                let path = ALLIUM_TOOLS_DIR.join("Files.pak");
-                let mut command = std::process::Command::new(path.join("launch.sh"));
-                command.current_dir(path);
-                commands.send(Command::Exec(command)).await?;
-            }
-            5 => self.child = Some(Box::new(About::new(self.rect, self.res.clone(), None))),
+            4 => self.child = Some(Box::new(About::new(self.rect, self.res.clone(), None))),
             _ => unreachable!("Invalid index"),
         }
         self.dirty = true;
