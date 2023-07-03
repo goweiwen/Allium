@@ -88,7 +88,7 @@ jobs:
         run: |
           make all
           cd dist
-          zip -r ../allium-${{ matrix.target }}.zip .allium .tmp_update RetroArch
+          zip -r ../allium-${{ matrix.target }}.zip .allium .tmp_update RetroArch Apps BIOS Roms Saves
           cd -
           
       - name: Publish
