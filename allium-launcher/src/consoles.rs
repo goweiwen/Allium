@@ -237,44 +237,44 @@ mod tests {
         };
 
         // GB
-        assert!(eq("GB/rom.zip", "Nintendo - Game Boy", "gambatte"));
-        assert!(eq("rom.gb", "Nintendo - Game Boy", "gambatte"));
+        assert!(eq("GB/rom.zip", "Game Boy", "gambatte"));
+        assert!(eq("rom.gb", "Game Boy", "gambatte"));
 
         // GBC
-        assert!(eq("GBC/rom.zip", "Nintendo - Game Boy Color", "gambatte"));
-        assert!(eq("rom.gbc", "Nintendo - Game Boy Color", "gambatte"));
+        assert!(eq("GBC/rom.zip", "Game Boy Color", "gambatte"));
+        assert!(eq("rom.gbc", "Game Boy Color", "gambatte"));
 
         // GBA
-        assert!(eq("GBA/rom.zip", "Nintendo - Game Boy Advance", "gpsp"));
-        assert!(eq("rom.gba", "Nintendo - Game Boy Advance", "gpsp"));
+        assert!(eq("GBA/rom.zip", "Game Boy Advance", "gpsp"));
+        assert!(eq("rom.gba", "Game Boy Advance", "gpsp"));
 
         // NES
-        assert!(eq("FC/rom.zip", "Nintendo - NES", "fceumm"));
-        assert!(eq("NES/rom.zip", "Nintendo - NES", "fceumm"));
-        assert!(eq("rom.nes", "Nintendo - NES", "fceumm"));
+        assert!(eq("FC/rom.zip", "NES", "fceumm"));
+        assert!(eq("NES/rom.zip", "NES", "fceumm"));
+        assert!(eq("rom.nes", "NES", "fceumm"));
 
         // SNES
-        assert!(eq("SFC/rom.zip", "Nintendo - SNES", "mednafen_supafaust"));
-        assert!(eq("SNES/rom.zip", "Nintendo - SNES", "mednafen_supafaust"));
-        assert!(eq("rom.sfc", "Nintendo - SNES", "mednafen_supafaust"));
-        assert!(eq("rom.smc", "Nintendo - SNES", "mednafen_supafaust"));
+        assert!(eq("SFC/rom.zip", "SNES", "mednafen_supafaust"));
+        assert!(eq("SNES/rom.zip", "SNES", "mednafen_supafaust"));
+        assert!(eq("rom.sfc", "SNES", "mednafen_supafaust"));
+        assert!(eq("rom.smc", "SNES", "mednafen_supafaust"));
 
         // PS1
-        assert!(eq("PSX/rom.zip", "Sony - PlayStation", "pcsx_rearmed"));
-        assert!(eq("PS1/rom.zip", "Sony - PlayStation", "pcsx_rearmed"));
-        assert!(eq("PS/rom.zip", "Sony - PlayStation", "pcsx_rearmed"));
-        assert!(eq("PS/playlist.m3u", "Sony - PlayStation", "pcsx_rearmed"));
-        assert!(eq("rom.pbp", "Sony - PlayStation", "pcsx_rearmed"));
+        assert!(eq("PSX/rom.zip", "PlayStation", "pcsx_rearmed"));
+        assert!(eq("PS1/rom.zip", "PlayStation", "pcsx_rearmed"));
+        assert!(eq("PS/rom.zip", "PlayStation", "pcsx_rearmed"));
+        assert!(eq("PS/playlist.m3u", "PlayStation", "pcsx_rearmed"));
+        assert!(eq("rom.pbp", "PlayStation", "pcsx_rearmed"));
 
         // Neo Geo Pocket
-        assert!(eq("NGP/rom", "SNK - Neo Geo Pocket Color", "mednafen_ngp"));
-        assert!(eq("NGC/rom", "SNK - Neo Geo Pocket Color", "mednafen_ngp"));
-        assert!(eq("rom.ngp", "SNK - Neo Geo Pocket Color", "mednafen_ngp"));
-        assert!(eq("rom.ngc", "SNK - Neo Geo Pocket Color", "mednafen_ngp"));
+        assert!(eq("NGP/rom", "Neo Geo Pocket Color", "mednafen_ngp"));
+        assert!(eq("NGC/rom", "Neo Geo Pocket Color", "mednafen_ngp"));
+        assert!(eq("rom.ngp", "Neo Geo Pocket Color", "mednafen_ngp"));
+        assert!(eq("rom.ngc", "Neo Geo Pocket Color", "mednafen_ngp"));
 
         // Sega - Game Gear
-        assert!(eq("GG/rom", "Sega - Game Gear", "picodrive"));
-        assert!(eq("rom.gg", "Sega - Game Gear", "picodrive"));
+        assert!(eq("GG/rom", "Game Gear", "picodrive"));
+        assert!(eq("rom.gg", "Game Gear", "picodrive"));
 
         // NXEngine
         assert!(eq("Cave Story/Doukutsu.exe", "NXEngine", "nxengine"));
