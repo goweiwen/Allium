@@ -23,7 +23,7 @@ export PATH="/mnt/SDCARD/.tmp_update/bin:$PATH"
 
 # use audioserver to prevent pop-noise
 if [ -f /customer/lib/libpadsp.so ]; then
-	LD_PRELOAD=as_preload.so /customer/app/audioserver &
+	LD_PRELOAD=as_preload.so audioserver.mod &
 	export LD_PRELOAD=libpadsp.so
 fi
 
