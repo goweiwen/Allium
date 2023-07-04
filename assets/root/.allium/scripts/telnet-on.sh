@@ -2,8 +2,8 @@
 
 dir=$(dirname "$0")
 if "$dir"/wait-for-wifi.sh; then
-    cd /mnt/SDCARD/
-    telnetd -l sh > /dev/null &
+    cd /mnt/SDCARD/ || exit
+    telnetd -l sh
     exit 0
 fi
 
