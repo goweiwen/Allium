@@ -1,10 +1,10 @@
 use std::fs::{self, File};
 use std::io::Write;
 #[cfg(feature = "miyoo")]
-use std::process::Command;
+use tokio::process::Command;
 
 use anyhow::Result;
-use log::{debug, warn};
+use log::{debug, error, warn};
 use serde::{Deserialize, Serialize};
 
 use crate::constants::ALLIUM_WIFI_SETTINGS;
@@ -170,56 +170,164 @@ impl Default for WiFiSettings {
 
 pub fn wifi_on() -> Result<()> {
     #[cfg(feature = "miyoo")]
-    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("wifi-on.sh")).spawn()?;
+    tokio::spawn(async {
+        Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("wifi-on.sh"))
+            .spawn()
+            .map_err(|e| {
+                error!("failed to spawn wifi-on.sh: {}", e);
+                e
+            })
+            .unwrap()
+            .wait()
+            .await
+            .map_err(|e| {
+                error!("wifi-on.sh failed: {}", e);
+                e
+            })
+    });
     Ok(())
 }
 
 pub fn wifi_off() -> Result<()> {
     #[cfg(feature = "miyoo")]
-    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("wifi-off.sh")).spawn()?;
+    tokio::spawn(async {
+        Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("wifi-off.sh"))
+            .spawn()
+            .map_err(|e| {
+                error!("failed to spawn wifi-off.sh: {}", e);
+                e
+            })
+            .unwrap()
+            .wait()
+            .await
+            .map_err(|e| {
+                error!("wifi-off.sh failed: {}", e);
+                e
+            })
+    });
     Ok(())
 }
 
 pub fn telnet_on() -> Result<()> {
     #[cfg(feature = "miyoo")]
-    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("telnet-on.sh")).spawn()?;
+    tokio::spawn(async {
+        Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("telnet-on.sh"))
+            .spawn()
+            .map_err(|e| {
+                error!("failed to spawn telnet-on.sh: {}", e);
+                e
+            })
+            .unwrap()
+            .wait()
+            .await
+            .map_err(|e| {
+                error!("telnet-on.sh failed: {}", e);
+                e
+            })
+    });
     Ok(())
 }
 
 pub fn telnet_off() -> Result<()> {
     #[cfg(feature = "miyoo")]
-    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("telnet-off.sh")).spawn()?;
+    tokio::spawn(async {
+        Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("telnet-off.sh"))
+            .spawn()
+            .map_err(|e| {
+                error!("failed to spawn telnet-off.sh: {}", e);
+                e
+            })
+            .unwrap()
+            .wait()
+            .await
+            .map_err(|e| {
+                error!("telnet-off.sh failed: {}", e);
+                e
+            })
+    });
     Ok(())
 }
 
 pub fn ftp_on() -> Result<()> {
     #[cfg(feature = "miyoo")]
-    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("ftp-on.sh")).spawn()?;
+    tokio::spawn(async {
+        Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("ftp-on.sh"))
+            .spawn()
+            .map_err(|e| {
+                error!("failed to spawn ftp-on.sh: {}", e);
+                e
+            })
+            .unwrap()
+            .wait()
+            .await
+            .map_err(|e| {
+                error!("ftp-on.sh failed: {}", e);
+                e
+            })
+    });
     Ok(())
 }
 
 pub fn ftp_off() -> Result<()> {
     #[cfg(feature = "miyoo")]
-    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("ftp-off.sh")).spawn()?;
+    tokio::spawn(async {
+        Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("ftp-off.sh"))
+            .spawn()
+            .map_err(|e| {
+                error!("failed to spawn ftp-off.sh: {}", e);
+                e
+            })
+            .unwrap()
+            .wait()
+            .await
+            .map_err(|e| {
+                error!("ftp-off.sh failed: {}", e);
+                e
+            })
+    });
     Ok(())
 }
 
 pub fn ntp_sync() -> Result<()> {
     #[cfg(feature = "miyoo")]
-    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("ntp-sync.sh")).spawn()?;
+    tokio::spawn(async {
+        Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("ntp-sync.sh"))
+            .spawn()
+            .map_err(|e| {
+                error!("failed to spawn ntp-sync.sh: {}", e);
+                e
+            })
+            .unwrap()
+            .wait()
+            .await
+            .map_err(|e| {
+                error!("ntp-sync.sh failed: {}", e);
+                e
+            })
+    });
     Ok(())
 }
 
-pub fn wait_for_wifi() -> Result<()> {
+pub async fn wait_for_wifi() -> Result<()> {
     #[cfg(feature = "miyoo")]
-    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("wait-for-wifi.sh")).spawn()?;
+    Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("wait-for-wifi.sh"))
+        .spawn()
+        .map_err(|e| {
+            error!("failed to spawn wait-for-wifi.sh: {}", e);
+            e
+        })
+        .ok()
+        .unwrap()
+        .wait()
+        .await
+        .ok();
     Ok(())
 }
 
 pub fn ip_address() -> Option<String> {
     #[cfg(feature = "miyoo")]
     {
-        let output = Command::new("ip")
+        let output = std::process::Command::new("ip")
             .args(["route", "get", "255.255.255.255"])
             .output()
             .ok()?;
