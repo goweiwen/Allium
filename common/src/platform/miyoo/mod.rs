@@ -72,7 +72,7 @@ impl Platform for MiyooPlatform {
     fn shutdown(&self) -> Result<()> {
         #[cfg(unix)]
         {
-            std::process::Command::new("sync").spawn()?;
+            std::process::Command::new("sync").spawn()?.wait()?;
             match self.model {
                 MiyooDeviceModel::Miyoo283 => {
                     std::process::Command::new("reboot").exec();
