@@ -1,4 +1,6 @@
 #!/bin/sh
+export LD_LIBRARY_PATH="/lib:/config/lib:/customer/lib:/mnt/SDCARD/miyoo/lib:/mnt/SDCARD/.tmp_update/lib:/mnt/SDCARD/.tmp_update/lib/parasyte"
+export PATH="/mnt/SDCARD/.tmp_update/bin:$PATH"
 
 # init backlight
 echo 0 > /sys/class/pwm/pwmchip0/export
@@ -8,20 +10,15 @@ echo 1 > /sys/class/pwm/pwmchip0/pwm0/enable
 
 # init lcd
 cat /proc/ls
-sleep 0.5
-
-export SDCARD_PATH=/mnt/SDCARD
-export CPU_PATH=/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-export LD_LIBRARY_PATH="/mnt/SDCARD/.tmp_update/lib:$LD_LIBRARY_PATH"
-export PATH="/mnt/SDCARD/.tmp_update/bin:$PATH"
+sleep 0.25
 
 if [ -f /customer/app/axp_test ]; then
-  export MODEL=354
+	export MODEL=354
 
 	# kill default telnetd. Allium will launch its own if needed
 	killall telnetd
 else
-  export MODEL=283
+	export MODEL=283
 
 	# init charger detection
 	if [ ! -f /sys/devices/gpiochip0/gpio/gpio59/direction ]; then
@@ -40,17 +37,10 @@ if [ -f /customer/lib/libpadsp.so ]; then
 	export LD_PRELOAD=libpadsp.so
 fi
 
-echo ondemand > "$CPU_PATH"
-rm -f "$SDCARD_PATH/update.log"
-
-export SDL_HIDE_BATTERY=1
-
 # run Allium
-export DIR="/mnt/SDCARD/"
-cd "$DIR"
-RUST_LOG=debug RUST_BACKTRACE=1 .allium/bin/alliumd > ".allium/alliumd.log" 2>&1
+RUST_LOG=debug RUST_BACKTRACE=1 /mnt/SDCARD/.allium/bin/alliumd > /mnt/SDCARD/.allium/alliumd.log 2>&1
 
 while true; do
-	reboot # under no circumstances should stock be allowed to touch this card
+	reboot
 	sleep 10
 done
