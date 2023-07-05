@@ -67,10 +67,12 @@ impl AlliumDState {
                             "RTC is not working, advancing time to {}",
                             this.time.format("%F %T")
                         );
-                        Command::new("date")
-                            .arg("-s")
+                        std::process::Command::new("/sbin/hwclock")
+                            .arg("-w")
+                            .arg("-u")
                             .arg(this.time.format("%F %T").to_string())
-                            .spawn()?;
+                            .spawn()?
+                            .wait()?;
                     }
                     return Ok(this);
                 }
