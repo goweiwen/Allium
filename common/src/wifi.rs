@@ -4,7 +4,7 @@ use std::io::Write;
 use tokio::process::Command;
 
 use anyhow::Result;
-use log::{debug, error, warn};
+use log::{debug, warn};
 use serde::{Deserialize, Serialize};
 
 use crate::constants::ALLIUM_WIFI_SETTINGS;
@@ -174,14 +174,14 @@ pub fn wifi_on() -> Result<()> {
         Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("wifi-on.sh"))
             .spawn()
             .map_err(|e| {
-                error!("failed to spawn wifi-on.sh: {}", e);
+                log::error!("failed to spawn wifi-on.sh: {}", e);
                 e
             })
             .unwrap()
             .wait()
             .await
             .map_err(|e| {
-                error!("wifi-on.sh failed: {}", e);
+                log::error!("wifi-on.sh failed: {}", e);
                 e
             })
     });
@@ -194,14 +194,14 @@ pub fn wifi_off() -> Result<()> {
         Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("wifi-off.sh"))
             .spawn()
             .map_err(|e| {
-                error!("failed to spawn wifi-off.sh: {}", e);
+                log::error!("failed to spawn wifi-off.sh: {}", e);
                 e
             })
             .unwrap()
             .wait()
             .await
             .map_err(|e| {
-                error!("wifi-off.sh failed: {}", e);
+                log::error!("wifi-off.sh failed: {}", e);
                 e
             })
     });
@@ -214,14 +214,14 @@ pub fn telnet_on() -> Result<()> {
         Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("telnet-on.sh"))
             .spawn()
             .map_err(|e| {
-                error!("failed to spawn telnet-on.sh: {}", e);
+                log::error!("failed to spawn telnet-on.sh: {}", e);
                 e
             })
             .unwrap()
             .wait()
             .await
             .map_err(|e| {
-                error!("telnet-on.sh failed: {}", e);
+                log::error!("telnet-on.sh failed: {}", e);
                 e
             })
     });
@@ -234,14 +234,14 @@ pub fn telnet_off() -> Result<()> {
         Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("telnet-off.sh"))
             .spawn()
             .map_err(|e| {
-                error!("failed to spawn telnet-off.sh: {}", e);
+                log::error!("failed to spawn telnet-off.sh: {}", e);
                 e
             })
             .unwrap()
             .wait()
             .await
             .map_err(|e| {
-                error!("telnet-off.sh failed: {}", e);
+                log::error!("telnet-off.sh failed: {}", e);
                 e
             })
     });
@@ -254,14 +254,14 @@ pub fn ftp_on() -> Result<()> {
         Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("ftp-on.sh"))
             .spawn()
             .map_err(|e| {
-                error!("failed to spawn ftp-on.sh: {}", e);
+                log::error!("failed to spawn ftp-on.sh: {}", e);
                 e
             })
             .unwrap()
             .wait()
             .await
             .map_err(|e| {
-                error!("ftp-on.sh failed: {}", e);
+                log::error!("ftp-on.sh failed: {}", e);
                 e
             })
     });
@@ -274,14 +274,14 @@ pub fn ftp_off() -> Result<()> {
         Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("ftp-off.sh"))
             .spawn()
             .map_err(|e| {
-                error!("failed to spawn ftp-off.sh: {}", e);
+                log::error!("failed to spawn ftp-off.sh: {}", e);
                 e
             })
             .unwrap()
             .wait()
             .await
             .map_err(|e| {
-                error!("ftp-off.sh failed: {}", e);
+                log::error!("ftp-off.sh failed: {}", e);
                 e
             })
     });
@@ -294,14 +294,14 @@ pub fn ntp_sync() -> Result<()> {
         Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("ntp-sync.sh"))
             .spawn()
             .map_err(|e| {
-                error!("failed to spawn ntp-sync.sh: {}", e);
+                log::error!("failed to spawn ntp-sync.sh: {}", e);
                 e
             })
             .unwrap()
             .wait()
             .await
             .map_err(|e| {
-                error!("ntp-sync.sh failed: {}", e);
+                log::error!("ntp-sync.sh failed: {}", e);
                 e
             })
     });
@@ -313,7 +313,7 @@ pub async fn wait_for_wifi() -> Result<()> {
     Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("wait-for-wifi.sh"))
         .spawn()
         .map_err(|e| {
-            error!("failed to spawn wait-for-wifi.sh: {}", e);
+            log::error!("failed to spawn wait-for-wifi.sh: {}", e);
             e
         })
         .ok()
