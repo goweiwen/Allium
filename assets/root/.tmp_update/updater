@@ -10,30 +10,34 @@ echo 1 > /sys/class/pwm/pwmchip0/pwm0/enable
 cat /proc/ls
 sleep 0.5
 
-# init charger detection
-if [ ! -f /sys/devices/gpiochip0/gpio/gpio59/direction ]; then
-	echo 59 > /sys/class/gpio/export
-	echo in > /sys/devices/gpiochip0/gpio/gpio59/direction
-fi
-
 export SDCARD_PATH=/mnt/SDCARD
 export CPU_PATH=/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 export LD_LIBRARY_PATH="/mnt/SDCARD/.tmp_update/lib:$LD_LIBRARY_PATH"
 export PATH="/mnt/SDCARD/.tmp_update/bin:$PATH"
 
-# use audioserver to prevent pop-noise
-if [ -f /customer/lib/libpadsp.so ]; then
-	LD_PRELOAD=as_preload.so audioserver.mod &
-	export LD_PRELOAD=libpadsp.so
-fi
-
 if [ -f /customer/app/axp_test ]; then
+  export MODEL=354
+
 	# kill default telnetd. Allium will launch its own if needed
 	killall telnetd
 else
+  export MODEL=283
+
+	# init charger detection
+	if [ ! -f /sys/devices/gpiochip0/gpio/gpio59/direction ]; then
+		echo 59 > /sys/class/gpio/export
+		echo in > /sys/devices/gpiochip0/gpio/gpio59/direction
+	fi
+
 	# add a loopback address for RA network interface
 	ip addr add 127.0.0.1/8 dev lo
 	ifconfig lo up
+fi
+
+# use audioserver to prevent pop-noise
+if [ -f /customer/lib/libpadsp.so ]; then
+	LD_PRELOAD=as_preload.so audioserver_"$MODEL" &
+	export LD_PRELOAD=libpadsp.so
 fi
 
 echo ondemand > "$CPU_PATH"
