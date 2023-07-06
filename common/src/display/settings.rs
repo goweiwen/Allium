@@ -15,11 +15,36 @@ pub struct DisplaySettings {
     pub hue: u8,
     pub saturation: u8,
     pub contrast: u8,
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
 }
 
 impl DisplaySettings {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn apply(&self) -> Result<()> {
+        let mut file = File::create("/proc/mi_modules/mi_disp/mi_disp0")?;
+        file.write_all(
+            format!(
+                "csc 0 3 {:.0} {:.0} {:.0} {:.0} 0 0\n",
+                self.contrast, self.hue, self.luminance, self.saturation,
+            )
+            .as_bytes(),
+        )?;
+        file.write_all(
+            format!(
+                "colortemp 0 0 0 0 {:.0} {:.0} {:.0}\n",
+                self.b as f32 * 255.0 / 100.0,
+                self.g as f32 * 255.0 / 100.0,
+                self.r as f32 * 255.0 / 100.0,
+            )
+            .as_bytes(),
+        )?;
+
+        Ok(())
     }
 
     pub fn load() -> Result<Self> {
@@ -50,6 +75,9 @@ impl Default for DisplaySettings {
             hue: 50,
             saturation: 50,
             contrast: 50,
+            r: 50,
+            g: 50,
+            b: 50,
         }
     }
 }

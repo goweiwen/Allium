@@ -24,6 +24,9 @@ settings-display-luminance = 輝度
 settings-display-hue = 色相
 settings-display-contrast = コントラスト
 settings-display-saturation = 彩度
+settings-display-red = 赤
+settings-display-green = 緑
+settings-display-blue = 青
 settings-display-screen-resolution = 画面解像度
 settings-display-restart-to-apply-changes = *変更を適用するにはデバイスを再起動してください。
 

@@ -41,6 +41,10 @@ where
         }
     }
 
+    pub fn len(&self) -> usize {
+        self.children.len()
+    }
+
     pub fn get(&self, index: usize) -> Option<&V> {
         self.children.get(index)
     }

@@ -9,6 +9,7 @@ use common::constants::{
     ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_MENU, ALLIUM_VERSION, BATTERY_SHUTDOWN_THRESHOLD,
     BATTERY_UPDATE_INTERVAL,
 };
+use common::display::settings::DisplaySettings;
 use common::wifi::WiFiSettings;
 use enum_map::EnumMap;
 use log::{debug, error, info, trace, warn};
@@ -136,6 +137,8 @@ impl AlliumD<DefaultPlatform> {
 
         self.platform.set_volume(self.state.volume)?;
         self.platform.set_brightness(self.state.brightness)?;
+
+        DisplaySettings::load()?.apply()?;
 
         if DefaultPlatform::has_wifi() {
             WiFiSettings::load()?.init()?;

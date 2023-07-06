@@ -12,7 +12,7 @@ use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, ButtonIcon, Label, Percentage, Row, SettingsList, View};
+use common::view::{ButtonHint, ButtonIcon, Label, Number, Percentage, Row, SettingsList, View};
 
 use tokio::sync::mpsc::Sender;
 
@@ -22,10 +22,8 @@ pub struct Display {
     rect: Rect,
     settings: DisplaySettings,
     list: SettingsList,
-    restart_label: Label<String>,
     button_hints: Row<ButtonHint<String>>,
     edit_button: Option<ButtonHint<String>>,
-    has_changed: bool,
 }
 
 impl Display {
@@ -42,16 +40,28 @@ impl Display {
                 x + 12,
                 y + 8,
                 w - 24,
-                h - 8 - ButtonIcon::diameter(&styles) - 8 - ButtonIcon::diameter(&styles) - 8,
+                h - 8 - ButtonIcon::diameter(&styles) - 8,
             ),
             vec![
+                locale.t("settings-display-screen-resolution"),
                 locale.t("settings-display-luminance"),
                 locale.t("settings-display-hue"),
                 locale.t("settings-display-saturation"),
                 locale.t("settings-display-contrast"),
-                locale.t("settings-display-screen-resolution"),
+                locale.t("settings-display-red"),
+                locale.t("settings-display-green"),
+                locale.t("settings-display-blue"),
             ],
             vec![
+                Box::new(Label::new(
+                    Point::zero(),
+                    {
+                        let size = res.get::<Size>();
+                        format!("{}x{}", size.w, size.h)
+                    },
+                    Alignment::Right,
+                    None,
+                )),
                 Box::new(Percentage::new(
                     Point::zero(),
                     i32::from(settings.luminance),
@@ -72,14 +82,20 @@ impl Display {
                     i32::from(settings.contrast),
                     Alignment::Right,
                 )),
-                Box::new(Label::new(
+                Box::new(Percentage::new(
                     Point::zero(),
-                    {
-                        let size = res.get::<Size>();
-                        format!("{}x{}", size.w, size.h)
-                    },
+                    i32::from(settings.r),
                     Alignment::Right,
-                    None,
+                )),
+                Box::new(Percentage::new(
+                    Point::zero(),
+                    i32::from(settings.g),
+                    Alignment::Right,
+                )),
+                Box::new(Percentage::new(
+                    Point::zero(),
+                    i32::from(settings.b),
+                    Alignment::Right,
                 )),
             ],
             styles.ui_font.size + SELECTION_MARGIN,
@@ -88,35 +104,17 @@ impl Display {
             list.select(state.selected);
         }
 
-        let restart_label = Label::new(
-            Point::new(
-                rect.x + rect.w as i32 - 12,
-                rect.y + rect.h as i32 - 46 - 34,
-            ),
-            locale.t("settings-display-restart-to-apply-changes"),
-            Alignment::Right,
-            None,
-        );
-
         let button_hints = Row::new(
             Point::new(
                 rect.x + rect.w as i32 - 12,
                 rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
             ),
-            vec![
-                ButtonHint::new(
-                    Point::zero(),
-                    Key::A,
-                    locale.t("button-edit"),
-                    Alignment::Right,
-                ),
-                ButtonHint::new(
-                    Point::zero(),
-                    Key::B,
-                    locale.t("button-back"),
-                    Alignment::Right,
-                ),
-            ],
+            vec![ButtonHint::new(
+                Point::zero(),
+                Key::B,
+                locale.t("button-back"),
+                Alignment::Right,
+            )],
             Alignment::Right,
             12,
         );
@@ -125,10 +123,8 @@ impl Display {
             rect,
             settings,
             list,
-            restart_label,
             button_hints,
             edit_button: None,
-            has_changed: false,
         }
     }
 }
@@ -143,7 +139,6 @@ impl View for Display {
         let mut drawn = false;
 
         drawn |= self.list.should_draw() && self.list.draw(display, styles)?;
-        drawn |= self.has_changed && self.restart_label.draw(display, styles)?;
 
         if self.button_hints.should_draw() {
             display.load(Rect::new(
@@ -159,14 +154,11 @@ impl View for Display {
     }
 
     fn should_draw(&self) -> bool {
-        self.list.should_draw()
-            || self.has_changed && self.restart_label.should_draw()
-            || self.button_hints.should_draw()
+        self.list.should_draw() || self.button_hints.should_draw()
     }
 
     fn set_should_draw(&mut self) {
         self.list.set_should_draw();
-        self.restart_label.set_should_draw();
         self.button_hints.set_should_draw();
     }
 
@@ -181,22 +173,26 @@ impl View for Display {
             .handle_key_event(event, commands.clone(), bubble)
             .await?
         {
-            if self.list.selected() == 4 {
+            if self.list.selected() == 0 && self.button_hints.len() == 2 {
                 self.edit_button = self.button_hints.remove(0);
             } else if let Some(button) = self.edit_button.take() {
-                self.button_hints.insert(0, button);
+                if self.button_hints.len() == 1 {
+                    self.button_hints.insert(0, button);
+                }
             }
             while let Some(command) = bubble.pop_front() {
                 if let Command::ValueChanged(i, val) = command {
                     match i {
-                        0 => self.settings.luminance = val.as_int().unwrap() as u8,
-                        1 => self.settings.hue = val.as_int().unwrap() as u8,
-                        2 => self.settings.saturation = val.as_int().unwrap() as u8,
-                        3 => self.settings.contrast = val.as_int().unwrap() as u8,
+                        0 => {}
+                        1 => self.settings.luminance = val.as_int().unwrap() as u8,
+                        2 => self.settings.hue = val.as_int().unwrap() as u8,
+                        3 => self.settings.saturation = val.as_int().unwrap() as u8,
+                        4 => self.settings.contrast = val.as_int().unwrap() as u8,
+                        5 => self.settings.r = val.as_int().unwrap() as u8,
+                        6 => self.settings.g = val.as_int().unwrap() as u8,
+                        7 => self.settings.b = val.as_int().unwrap() as u8,
                         _ => unreachable!("Invalid index"),
                     }
-
-                    self.has_changed |= true;
 
                     commands
                         .send(Command::SaveDisplaySettings(Box::new(
@@ -218,15 +214,11 @@ impl View for Display {
     }
 
     fn children(&self) -> Vec<&dyn View> {
-        vec![&self.list, &self.restart_label, &self.button_hints]
+        vec![&self.list, &self.button_hints]
     }
 
     fn children_mut(&mut self) -> Vec<&mut dyn View> {
-        vec![
-            &mut self.list,
-            &mut self.restart_label,
-            &mut self.button_hints,
-        ]
+        vec![&mut self.list, &mut self.button_hints]
     }
 
     fn bounding_box(&mut self, _styles: &Stylesheet) -> Rect {

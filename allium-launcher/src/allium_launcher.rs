@@ -150,6 +150,7 @@ impl AlliumLauncher<DefaultPlatform> {
             }
             Command::SaveDisplaySettings(settings) => {
                 trace!("saving display settings");
+                settings.apply()?;
                 settings.save()?;
                 self.platform.set_display_settings(&settings)?;
             }
