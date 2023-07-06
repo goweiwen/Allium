@@ -359,7 +359,7 @@ async fn terminate(child: &mut Child) -> Result<()> {
 
     select! {
         _ = child.wait() => {}
-        _ = tokio::time::sleep(std::time::Duration::from_secs(1)) => {
+        _ = tokio::time::sleep(std::time::Duration::from_secs(5)) => {
             signal(child, Signal::SIGKILL)?;
         }
     }
