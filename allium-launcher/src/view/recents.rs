@@ -247,7 +247,9 @@ impl View for Recents {
     }
 
     fn should_draw(&self) -> bool {
-        self.menu.as_ref().map(|m| m.should_draw()).unwrap_or(false)
+        self.menu
+            .as_ref()
+            .map_or(false, common::view::View::should_draw)
             || self.list.should_draw()
             || self.image.should_draw()
             || self.button_hints.should_draw()
@@ -270,7 +272,7 @@ impl View for Recents {
     ) -> Result<bool> {
         if let Some(ref mut menu) = self.menu {
             match event {
-                KeyEvent::Pressed(Key::Select) | KeyEvent::Pressed(Key::B) => {
+                KeyEvent::Pressed(Key::Select | Key::B) => {
                     self.menu = None;
                     commands.send(Command::Redraw).await?;
                     Ok(true)

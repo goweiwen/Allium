@@ -180,7 +180,7 @@ where
         let v_metrics = self.font.v_metrics(scale);
         let start = rusttype::point(0.0, v_metrics.ascent);
 
-        let glyphs: Vec<rusttype::PositionedGlyph> = text
+        let glyphs: Vec<rusttype::PositionedGlyph<'_>> = text
             .chars()
             .map(|c| {
                 let mut g = self.font.glyph(c);
@@ -286,7 +286,7 @@ where
         let v_metrics = self.font.v_metrics(scale);
         let start = rusttype::point(0.0, v_metrics.ascent);
 
-        let glyphs: Vec<rusttype::PositionedGlyph> = text
+        let glyphs: Vec<rusttype::PositionedGlyph<'_>> = text
             .chars()
             .map(|c| {
                 let mut g = self.font.glyph(c);

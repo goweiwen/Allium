@@ -26,13 +26,13 @@ impl Game {
     pub fn new(path: PathBuf) -> Game {
         let full_name = path
             .file_stem()
-            .and_then(|stem| stem.to_str())
+            .and_then(std::ffi::OsStr::to_str)
             .unwrap_or("")
             .to_string();
         let name = short_name(&full_name);
         let extension = path
             .extension()
-            .and_then(|ext| ext.to_str())
+            .and_then(std::ffi::OsStr::to_str)
             .unwrap_or("")
             .to_string();
         Game {

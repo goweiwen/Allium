@@ -35,6 +35,7 @@ pub struct TextReader {
 }
 
 impl TextReader {
+    #[must_use]
     pub fn new(rect: Rect, res: Resources, path: PathBuf) -> Self {
         let text = fs::read_to_string(&path)
             .map_err(|e| error!("failed to load guide file: {}", e))
@@ -419,7 +420,10 @@ impl View for TextReader {
     fn should_draw(&self) -> bool {
         self.dirty
             || self.button_hints.should_draw()
-            || self.keyboard.as_ref().map_or(false, |k| k.should_draw())
+            || self
+                .keyboard
+                .as_ref()
+                .map_or(false, common::view::View::should_draw)
     }
 
     fn set_should_draw(&mut self) {

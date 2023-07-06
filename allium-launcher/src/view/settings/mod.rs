@@ -187,10 +187,7 @@ impl View for Settings {
     }
 
     fn should_draw(&self) -> bool {
-        self.child
-            .as_ref()
-            .map(|c| c.should_draw())
-            .unwrap_or(false)
+        self.child.as_ref().map_or(false, |c| c.should_draw())
             || self.list.should_draw()
             || self.button_hints.should_draw()
     }

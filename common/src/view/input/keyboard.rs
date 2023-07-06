@@ -337,6 +337,7 @@ const KEYBOARD_ROWS: i32 = 5;
 
 impl KeyboardKey {
     fn lowercase(&self) -> &str {
+        #[allow(clippy::enum_glob_use)]
         use KeyboardKey::*;
         match self {
             K1 => "1",
@@ -388,6 +389,7 @@ impl KeyboardKey {
     }
 
     fn uppercase(&self) -> &str {
+        #[allow(clippy::enum_glob_use)]
         use KeyboardKey::*;
         match self {
             K1 => "#",
@@ -439,6 +441,7 @@ impl KeyboardKey {
     }
 
     fn symbol(&self) -> &str {
+        #[allow(clippy::enum_glob_use)]
         use KeyboardKey::*;
         match self {
             K1 => "1",

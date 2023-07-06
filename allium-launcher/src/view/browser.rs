@@ -129,7 +129,7 @@ impl Browser {
         if let Some(entry) = self.entries.get_mut(self.list.selected()) {
             match entry {
                 Entry::Directory(dir) => {
-                    let child = Browser::new(self.rect, self.res.clone(), dir.to_owned(), 0)?;
+                    let child = Browser::new(self.rect, self.res.clone(), dir.clone(), 0)?;
                     self.child = Some(Box::new(child));
                 }
                 Entry::Game(game) => {
@@ -189,10 +189,7 @@ impl View for Browser {
     }
 
     fn should_draw(&self) -> bool {
-        self.child
-            .as_ref()
-            .map(|c| c.should_draw())
-            .unwrap_or(false)
+        self.child.as_ref().map_or(false, |c| c.should_draw())
             || self.list.should_draw()
             || self.button_hints.should_draw()
     }
@@ -268,8 +265,8 @@ impl View for Browser {
 pub fn entries(directory: &Directory, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
     let mut entries: Vec<_> = std::fs::read_dir(&directory.path)
         .map_err(|e| anyhow!("Failed to open directory: {:?}, {}", &directory.path, e))?
-        .flat_map(|entry| entry.ok())
-        .flat_map(|entry| match Entry::new(entry.path(), console_mapper) {
+        .filter_map(std::result::Result::ok)
+        .filter_map(|entry| match Entry::new(entry.path(), console_mapper) {
             Ok(Some(entry)) => Some(entry),
             _ => None,
         })

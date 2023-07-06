@@ -52,7 +52,7 @@ impl About {
             vec![
                 Box::new(Label::new(
                     Point::zero(),
-                    format!("v{}", ALLIUM_VERSION),
+                    format!("v{ALLIUM_VERSION}"),
                     Alignment::Right,
                     None,
                 )),
@@ -65,9 +65,10 @@ impl About {
                 Box::new(Label::new(Point::zero(), firmware, Alignment::Right, None)),
                 Box::new(Label::new(
                     Point::zero(),
-                    sys.long_os_version()
-                        .map(|s| s.trim().to_owned())
-                        .unwrap_or_else(|| locale.t("settings-about-unknown-value")),
+                    sys.long_os_version().map_or_else(
+                        || locale.t("settings-about-unknown-value"),
+                        |s| s.trim().to_owned(),
+                    ),
                     Alignment::Right,
                     None,
                 )),

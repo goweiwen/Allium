@@ -54,22 +54,22 @@ impl Display {
             vec![
                 Box::new(Percentage::new(
                     Point::zero(),
-                    settings.luminance as i32,
+                    i32::from(settings.luminance),
                     Alignment::Right,
                 )),
                 Box::new(Percentage::new(
                     Point::zero(),
-                    settings.hue as i32,
+                    i32::from(settings.hue),
                     Alignment::Right,
                 )),
                 Box::new(Percentage::new(
                     Point::zero(),
-                    settings.saturation as i32,
+                    i32::from(settings.saturation),
                     Alignment::Right,
                 )),
                 Box::new(Percentage::new(
                     Point::zero(),
-                    settings.contrast as i32,
+                    i32::from(settings.contrast),
                     Alignment::Right,
                 )),
                 Box::new(Label::new(

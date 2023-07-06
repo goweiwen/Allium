@@ -107,14 +107,14 @@ impl<'de> Deserialize<'de> for Color {
 }
 
 impl fmt::Display for Color {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (r, g, b) = (self.r(), self.g(), self.b());
         write!(f, "#{:02x}{:02x}{:02x}", r, g, b)
     }
 }
 
 impl fmt::UpperHex for Color {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (r, g, b) = (self.r(), self.g(), self.b());
         write!(f, "{:02X}{:02X}{:02X}", r, g, b)
     }

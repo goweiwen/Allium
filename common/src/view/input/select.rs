@@ -77,18 +77,14 @@ impl View for Select {
     ) -> Result<bool> {
         if let Some(value) = &mut self.edit_state {
             match event {
-                KeyEvent::Pressed(Key::Up)
-                | KeyEvent::Autorepeat(Key::Up)
-                | KeyEvent::Pressed(Key::Left)
-                | KeyEvent::Autorepeat(Key::Left) => {
+                KeyEvent::Pressed(Key::Up | Key::Left)
+                | KeyEvent::Autorepeat(Key::Up | Key::Left) => {
                     *value = (*value + 1).rem_euclid(self.values.len());
                     self.label.set_text(self.values[*value].clone());
                     return Ok(true);
                 }
-                KeyEvent::Pressed(Key::Down)
-                | KeyEvent::Autorepeat(Key::Down)
-                | KeyEvent::Pressed(Key::Right)
-                | KeyEvent::Autorepeat(Key::Right) => {
+                KeyEvent::Pressed(Key::Down | Key::Right)
+                | KeyEvent::Autorepeat(Key::Down | Key::Right) => {
                     *value = (*value as isize - 1).rem_euclid(self.values.len() as isize) as usize;
                     self.label.set_text(self.values[*value].clone());
                     return Ok(true);

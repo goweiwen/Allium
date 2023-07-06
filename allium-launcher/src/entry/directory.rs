@@ -38,7 +38,7 @@ impl Directory {
     pub fn new(path: PathBuf) -> Directory {
         let full_name = path
             .file_stem()
-            .and_then(|stem| stem.to_str())
+            .and_then(std::ffi::OsStr::to_str)
             .unwrap_or("")
             .to_string();
         let name = short_name(&full_name);
@@ -52,7 +52,7 @@ impl Directory {
     pub fn with_name(path: PathBuf, name: String) -> Directory {
         let full_name = path
             .file_stem()
-            .and_then(|stem| stem.to_str())
+            .and_then(std::ffi::OsStr::to_str)
             .unwrap_or("")
             .to_string();
         Directory {

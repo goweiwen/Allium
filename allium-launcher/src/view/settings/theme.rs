@@ -39,7 +39,7 @@ impl Theme {
             .iter()
             .map(|p| {
                 p.file_stem()
-                    .and_then(|s| s.to_str())
+                    .and_then(std::ffi::OsStr::to_str)
                     .unwrap_or("Unknown")
                     .replace(['_', '-'], " ")
             })

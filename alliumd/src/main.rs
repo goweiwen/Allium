@@ -1,3 +1,6 @@
+#![deny(clippy::all)]
+#![warn(rust_2018_idioms)]
+
 mod alliumd;
 
 use anyhow::Result;

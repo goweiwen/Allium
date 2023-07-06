@@ -1,3 +1,6 @@
+#![deny(clippy::all, unsafe_op_in_unsafe_fn)]
+#![warn(rust_2018_idioms)]
+
 pub mod battery;
 pub mod command;
 pub mod constants;

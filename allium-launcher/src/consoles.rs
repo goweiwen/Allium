@@ -82,7 +82,7 @@ impl ConsoleMapper {
 
     /// Returns a console that matches the directory name exactly, or none.
     pub fn get_console_by_dir(&self, path: &Path) -> Option<&Console> {
-        if let Some(name) = path.file_name().and_then(|name| name.to_str()) {
+        if let Some(name) = path.file_name().and_then(std::ffi::OsStr::to_str) {
             let console = self
                 .consoles
                 .iter()
@@ -99,7 +99,7 @@ impl ConsoleMapper {
     pub fn get_console(&self, path: &Path) -> Option<&Console> {
         let path_lowercase = path.as_os_str().to_ascii_lowercase();
 
-        if let Some(name) = path.file_name().and_then(|name| name.to_str()) {
+        if let Some(name) = path.file_name().and_then(std::ffi::OsStr::to_str) {
             let console = self
                 .consoles
                 .iter()
@@ -124,7 +124,7 @@ impl ConsoleMapper {
         let mut parent = Some(path);
         while let Some(path) = parent {
             trace!("path: {:?}", path);
-            if let Some(filename) = path.file_name().and_then(|path| path.to_str()) {
+            if let Some(filename) = path.file_name().and_then(std::ffi::OsStr::to_str) {
                 let console = self.consoles.iter().find(|core| {
                     core.patterns.iter().any(|pattern| {
                         filename == pattern || filename.contains(&format!("({})", pattern))
@@ -149,7 +149,7 @@ impl ConsoleMapper {
             let game_info = if let Some(ref path) = console.path {
                 GameInfo::new(
                     game.name.clone(),
-                    game.path.to_owned(),
+                    game.path.clone(),
                     path.display().to_string(),
                     vec![game.path.display().to_string()],
                     false,
@@ -157,9 +157,9 @@ impl ConsoleMapper {
             } else if let Some(retroarch_core) = console.cores.first() {
                 GameInfo::new(
                     game.name.clone(),
-                    game.path.to_owned(),
+                    game.path.clone(),
                     ALLIUM_RETROARCH.display().to_string(),
-                    vec![retroarch_core.to_owned(), game.path.display().to_string()],
+                    vec![retroarch_core.clone(), game.path.display().to_string()],
                     true,
                 )
             } else {

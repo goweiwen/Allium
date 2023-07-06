@@ -55,7 +55,7 @@ where
 
         let mut name = Label::new(
             Point::new(x + 12, y + 8),
-            game_info.name.to_owned(),
+            game_info.name.clone(),
             Alignment::Left,
             None,
         );
@@ -115,7 +115,7 @@ where
         let mut child = None;
         if state.is_text_reader_open {
             if let Some(guide) = game_info.guide.as_ref() {
-                child = Some(TextReader::new(rect, res.clone(), guide.to_path_buf()));
+                child = Some(TextReader::new(rect, res.clone(), guide.clone()));
             }
         }
 
@@ -201,11 +201,7 @@ where
             }
             MenuEntry::Guide => {
                 if let Some(guide) = self.res.get::<GameInfo>().guide.as_ref() {
-                    self.child = Some(TextReader::new(
-                        self.rect,
-                        self.res.clone(),
-                        guide.to_path_buf(),
-                    ));
+                    self.child = Some(TextReader::new(self.rect, self.res.clone(), guide.clone()));
                 }
             }
             MenuEntry::Settings => {
@@ -258,7 +254,7 @@ where
             || self
                 .child
                 .as_ref()
-                .map_or_else(|| self.menu.should_draw(), |c| c.should_draw())
+                .map_or_else(|| self.menu.should_draw(), common::view::View::should_draw)
             || self.button_hints.should_draw()
     }
 

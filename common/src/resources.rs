@@ -14,7 +14,7 @@ impl Resources {
     }
 
     /// Gets a ref to a resource from the resource map. Panics if the resource is not present.
-    pub fn get<T: 'static>(&self) -> Ref<T> {
+    pub fn get<T: 'static>(&self) -> Ref<'_, T> {
         trace!("getting ref to resource: {:?}", std::any::type_name::<T>());
         Ref::map(self.0.borrow(), |x| x.get::<T>().unwrap())
     }
