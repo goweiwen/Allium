@@ -18,7 +18,7 @@ pub struct Game {
     pub path: PathBuf,
     /// image is loaded lazily.
     /// None means image hasn't been looked for, Some(None) means no image was found, Some(Some(path)) means an image was found.
-    image: Option<Option<PathBuf>>,
+    pub image: Option<Option<PathBuf>>,
     pub extension: String,
 }
 

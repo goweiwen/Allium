@@ -142,7 +142,27 @@ impl Recents {
                 .select_most_played(RECENT_GAMES_LIMIT)?,
         };
 
-        self.entries = games.into_iter().map(|game| Game::new(game.path)).collect();
+        self.entries = games
+            .into_iter()
+            .map(|game| {
+                let extension = game
+                    .path
+                    .extension()
+                    .and_then(|e| e.to_str())
+                    .unwrap_or_default()
+                    .to_owned();
+
+                let full_name = game.name.clone();
+
+                Game {
+                    name: game.name,
+                    full_name,
+                    path: game.path,
+                    image: Some(game.image),
+                    extension,
+                }
+            })
+            .collect();
 
         self.list.set_items(
             self.entries.iter().map(|e| e.name.to_string()).collect(),

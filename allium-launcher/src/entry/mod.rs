@@ -14,6 +14,7 @@ use crate::entry::game::Game;
 pub mod app;
 pub mod directory;
 pub mod game;
+mod gamelist;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Entry {

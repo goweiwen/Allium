@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
 use common::constants::{IMAGE_WIDTH, SELECTION_MARGIN};
@@ -42,7 +42,7 @@ impl Browser {
 
         let styles = res.get::<Stylesheet>();
 
-        let entries = entries(&directory, &res.get())?;
+        let entries = directory.entries(&res.get())?;
         let mut list = ScrollList::new(
             Rect::new(
                 x + 12,
@@ -260,17 +260,4 @@ impl View for Browser {
     fn set_position(&mut self, _point: Point) {
         unimplemented!()
     }
-}
-
-pub fn entries(directory: &Directory, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
-    let mut entries: Vec<_> = std::fs::read_dir(&directory.path)
-        .map_err(|e| anyhow!("Failed to open directory: {:?}, {}", &directory.path, e))?
-        .filter_map(std::result::Result::ok)
-        .filter_map(|entry| match Entry::new(entry.path(), console_mapper) {
-            Ok(Some(entry)) => Some(entry),
-            _ => None,
-        })
-        .collect();
-    entries.sort_unstable();
-    Ok(entries)
 }
