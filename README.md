@@ -24,7 +24,7 @@ The goal of Allium is to replace MainUI (stock UI) with a faster and more user-f
 
 ## Installation
 
-Allium only supports the Miyoo Mini Plus for now.
+Allium supports both the Miyoo Mini and Miyoo Mini Plus on the same SD card.
 
 1. Format the SD card to [FAT32](https://github.com/anzz1/DotUI-X/wiki/fat32format).
 2. Download the latest release and extract into your SD card. e.g. `E:/`.
