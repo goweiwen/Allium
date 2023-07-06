@@ -292,16 +292,16 @@ impl AlliumD<DefaultPlatform> {
 
         self.state.time = Utc::now();
         self.state.save()?;
-        self.update_play_time()?;
 
-        if let Some(menu) = self.menu.as_mut() {
-            menu.kill().await?;
-        }
         if self.is_ingame() {
-            if self.menu.is_some() {
+            self.update_play_time()?;
+
+            if let Some(menu) = self.menu.as_mut() {
                 #[cfg(unix)]
                 signal(&self.main, Signal::SIGCONT)?;
+                menu.kill().await?;
             }
+
             #[cfg(unix)]
             signal(&self.main, Signal::SIGTERM)?;
             self.main.wait().await?;
