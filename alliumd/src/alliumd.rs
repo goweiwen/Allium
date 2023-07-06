@@ -302,9 +302,7 @@ impl AlliumD<DefaultPlatform> {
                 menu.kill().await?;
             }
 
-            #[cfg(unix)]
-            signal(&self.main, Signal::SIGTERM)?;
-            self.main.wait().await?;
+            terminate(&mut self.main).await?;
         }
 
         self.is_terminating = true;
