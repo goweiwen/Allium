@@ -70,7 +70,7 @@ impl ScrollList {
             self.items
                 .get(self.selected)
                 .and_then(|selected| items.iter().position(|s| s == selected))
-                .unwrap_or(0)
+                .unwrap_or_else(|| self.selected.clamp(0, items.len() - 1))
         } else {
             0
         };
