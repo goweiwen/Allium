@@ -192,11 +192,23 @@ impl View for Wifi {
         commands: Sender<Command>,
         bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
-        if self.list.handle_key_event(event, commands, bubble).await? {
+        if self
+            .list
+            .handle_key_event(event, commands.clone(), bubble)
+            .await?
+        {
             while let Some(command) = bubble.pop_front() {
                 if let Command::ValueChanged(i, val) = command {
                     match i {
-                        0 => self.settings.toggle_wifi(val.as_bool().unwrap())?,
+                        0 => {
+                            self.settings.toggle_wifi(val.as_bool().unwrap())?;
+                            let commands = commands.clone();
+                            tokio::spawn(async move {
+                                if wifi::wait_for_wifi().await.is_ok() {
+                                    commands.send(Command::Redraw).await.ok();
+                                }
+                            });
+                        }
                         1 => {} // ip address
                         2 => self.settings.ssid = val.as_string().unwrap().to_string(),
                         3 => self.settings.password = val.as_string().unwrap().to_string(),
