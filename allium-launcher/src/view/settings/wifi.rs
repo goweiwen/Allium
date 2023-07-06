@@ -201,7 +201,7 @@ impl View for Wifi {
                 if let Command::ValueChanged(i, val) = command {
                     match i {
                         0 => {
-                            self.settings.toggle_wifi(val.as_bool().unwrap())?;
+                            self.settings.set_wifi(val.as_bool().unwrap())?;
                             let commands = commands.clone();
                             tokio::spawn(async move {
                                 if wifi::wait_for_wifi().await.is_ok() {
@@ -210,8 +210,12 @@ impl View for Wifi {
                             });
                         }
                         1 => {} // ip address
-                        2 => self.settings.ssid = val.as_string().unwrap().to_string(),
-                        3 => self.settings.password = val.as_string().unwrap().to_string(),
+                        2 => self
+                            .settings
+                            .set_ssid(val.as_string().unwrap().to_string())?,
+                        3 => self
+                            .settings
+                            .set_password(val.as_string().unwrap().to_string())?,
                         4 => self.settings.toggle_ntp(val.as_bool().unwrap())?,
                         5 => self.settings.toggle_telnet(val.as_bool().unwrap())?,
                         6 => self.settings.toggle_ftp(val.as_bool().unwrap())?,

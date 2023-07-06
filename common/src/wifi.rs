@@ -117,7 +117,7 @@ network={{
         Ok(())
     }
 
-    pub fn toggle_wifi(&mut self, enabled: bool) -> Result<()> {
+    pub fn set_wifi(&mut self, enabled: bool) -> Result<()> {
         self.wifi = enabled;
         if self.wifi {
             wifi_on()?;
@@ -129,6 +129,28 @@ network={{
             }
         } else {
             wifi_off()?;
+            if self.telnet {
+                telnet_off()?;
+            }
+            if self.ftp {
+                ftp_off()?;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn set_ssid(&mut self, ssid: String) -> Result<()> {
+        self.ssid = ssid;
+        if self.wifi {
+            self.set_wifi(self.wifi)?;
+        }
+        Ok(())
+    }
+
+    pub fn set_password(&mut self, password: String) -> Result<()> {
+        self.password = password;
+        if self.wifi {
+            self.set_wifi(self.wifi)?;
         }
         Ok(())
     }
