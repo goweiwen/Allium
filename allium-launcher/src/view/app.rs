@@ -112,7 +112,15 @@ where
             if let Ok(state) = serde_json::from_reader::<_, AppState>(file) {
                 let views = (
                     Recents::new(tab_rect, res.clone())?,
-                    Browser::load(tab_rect, res.clone(), state.games)?,
+                    Browser::load(tab_rect, res.clone(), state.games).unwrap_or_else(|_| {
+                        Browser::new(
+                            tab_rect,
+                            res.clone(),
+                            ALLIUM_SD_ROOT.join("Roms").as_path().into(),
+                            0,
+                        )
+                        .unwrap()
+                    }),
                     Browser::load(tab_rect, res.clone(), state.apps)?,
                     Settings::new(tab_rect, res.clone(), state.settings)?,
                 );
