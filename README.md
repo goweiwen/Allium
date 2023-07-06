@@ -41,11 +41,11 @@ The SD card layout should look like this:
 ## Features
 - Supports stock/Onion/DotUI SD card layout
 - Works without configuration
-- Box art (PNG, JPG, GIF, TGA, BMP)
+- Box art (250px wide, PNG, JPG, GIF)
+- Supports gameslist.xml with nested folders
 - Recents list (sort by last played or playtime)
 - Activity tracker
 - [RetroArch for all supported cores](https://github.com/goweiwen/Allium/wiki/Console-Mapper)
-- Battery indicator
 - Volume & Brightness (menu + vol up/down) control
 - In-game menu (save, load, reset, access RetroArch menu, quit)
 - [In-game guide reader](https://github.com/goweiwen/Allium/wiki/In-game-Guide-Walkthrough-Reader)
