@@ -88,6 +88,9 @@ impl SettingsList {
 
     pub fn set_right(&mut self, i: usize, right: Box<dyn View>) {
         self.right[i] = right;
+        if i == self.selected {
+            self.right[i].set_background_color(StylesheetColor::Highlight);
+        }
         self.has_layout = false;
         self.dirty = true;
     }
@@ -124,11 +127,6 @@ impl SettingsList {
             .min(self.right.len())
     }
 
-    pub fn set_child(&mut self, index: usize, child: Box<dyn View>) {
-        self.right[index] = child;
-        self.dirty = true;
-    }
-
     fn update_children(&mut self) {
         for (i, child) in self.left.iter_mut().enumerate() {
             child.set_text(self.labels[self.top + i].to_owned());
@@ -144,41 +142,6 @@ impl View for SettingsList {
         styles: &Stylesheet,
     ) -> Result<bool> {
         if self.dirty {
-            display.load(self.bounding_box(styles))?;
-
-            let rect = if self.focused {
-                self.right
-                    .get_mut(self.selected)
-                    .map(|s| s.bounding_box(styles))
-            } else {
-                self.left
-                    .get_mut(self.selected - self.top)
-                    .map(|s| s.bounding_box(styles))
-            }
-            .unwrap_or_default();
-
-            RoundedRectangle::with_equal_corners(
-                Rectangle::new(
-                    embedded_graphics::prelude::Point::new(self.rect.x, rect.y - 4),
-                    Size::new(self.rect.w, rect.h + 8),
-                ),
-                Size::new_equal(rect.h),
-            )
-            .into_styled(PrimitiveStyle::with_fill(
-                styles.highlight_color.blend(styles.background_color, 128),
-            ))
-            .draw(display)?;
-
-            RoundedRectangle::with_equal_corners(
-                Rectangle::new(
-                    embedded_graphics::prelude::Point::new(rect.x - 12, rect.y - 4),
-                    Size::new(rect.w + 24, rect.h + 8),
-                ),
-                Size::new_equal(rect.h),
-            )
-            .into_styled(PrimitiveStyle::with_fill(styles.highlight_color))
-            .draw(display)?;
-
             if !self.has_layout {
                 for i in 0..self.visible_count() {
                     let child = &mut self.right[self.top + i];
@@ -189,6 +152,47 @@ impl View for SettingsList {
                     self.has_layout = true;
                 }
             }
+
+            display.load(self.bounding_box(styles))?;
+
+            let left = self
+                .left
+                .get_mut(self.selected - self.top)
+                .map(|s| s.bounding_box(styles))
+                .unwrap_or_default();
+            let right = self
+                .right
+                .get_mut(self.selected)
+                .map(|s| s.bounding_box(styles))
+                .unwrap_or_default();
+
+            // Highlight Background
+            if right.w != 0 && right.h != 0 {
+                let rect = left.union(&right);
+                RoundedRectangle::with_equal_corners(
+                    Rectangle::new(
+                        embedded_graphics::prelude::Point::new(self.rect.x, rect.y - 4),
+                        Size::new(self.rect.w, rect.h + 8),
+                    ),
+                    Size::new_equal(rect.h),
+                )
+                .into_styled(PrimitiveStyle::with_fill(
+                    styles.highlight_color.blend(styles.background_color, 128),
+                ))
+                .draw(display)?;
+            }
+
+            // Highlight
+            let rect = if self.focused { right } else { left };
+            RoundedRectangle::with_equal_corners(
+                Rectangle::new(
+                    embedded_graphics::prelude::Point::new(rect.x - 12, rect.y - 4),
+                    Size::new(rect.w + 24, rect.h + 8),
+                ),
+                Size::new_equal(rect.h),
+            )
+            .into_styled(PrimitiveStyle::with_fill(styles.highlight_color))
+            .draw(display)?;
 
             for (i, left) in self.left.iter_mut().enumerate() {
                 left.set_should_draw();

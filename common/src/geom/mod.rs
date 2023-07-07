@@ -76,31 +76,43 @@ pub struct Rect {
 }
 
 impl Rect {
+    #[inline]
     pub const fn new(x: i32, y: i32, w: u32, h: u32) -> Self {
         Self { x, y, w, h }
     }
 
+    #[inline]
     pub const fn zero() -> Self {
         Self::new(0, 0, 0, 0)
     }
 
+    #[inline]
     pub const fn top_left(&self) -> Point {
         Point::new(self.x, self.y)
     }
 
+    #[inline]
     pub const fn size(&self) -> Size {
         Size::new(self.w, self.h)
     }
 
+    #[inline]
     pub const fn right(&self) -> i32 {
         self.x + self.w as i32
     }
 
+    #[inline]
     pub const fn bottom(&self) -> i32 {
         self.y + self.h as i32
     }
 
     pub fn union(&self, other: &Self) -> Self {
+        if self.w == 0 || self.h == 0 {
+            return *other;
+        } else if other.w == 0 || other.h == 0 {
+            return *self;
+        }
+
         let x = self.x.min(other.x);
         let y = self.y.min(other.y);
         let w = ((self.x + self.w as i32).max(other.x + other.w as i32) - x) as u32;

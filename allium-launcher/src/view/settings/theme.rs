@@ -235,7 +235,7 @@ impl View for Theme {
                                         self.stylesheet.foreground_color.invert();
                                     self.stylesheet.background_color =
                                         self.stylesheet.background_color.invert();
-                                    self.list.set_child(
+                                    self.list.set_right(
                                         6,
                                         Box::new(ColorPicker::new(
                                             Point::zero(),
@@ -243,7 +243,7 @@ impl View for Theme {
                                             Alignment::Right,
                                         )),
                                     );
-                                    self.list.set_child(
+                                    self.list.set_right(
                                         7,
                                         Box::new(ColorPicker::new(
                                             Point::zero(),
@@ -259,7 +259,7 @@ impl View for Theme {
                                         self.stylesheet.foreground_color.invert();
                                     self.stylesheet.background_color =
                                         self.stylesheet.background_color.invert();
-                                    self.list.set_child(
+                                    self.list.set_right(
                                         6,
                                         Box::new(ColorPicker::new(
                                             Point::zero(),
@@ -267,7 +267,7 @@ impl View for Theme {
                                             Alignment::Right,
                                         )),
                                     );
-                                    self.list.set_child(
+                                    self.list.set_right(
                                         7,
                                         Box::new(ColorPicker::new(
                                             Point::zero(),
