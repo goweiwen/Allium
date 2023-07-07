@@ -3,7 +3,7 @@ use std::{
     fs::{self, File},
 };
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use fluent_templates::{
     fluent_bundle::FluentValue, loader::langid, ArcLoader, LanguageIdentifier, Loader,
 };
@@ -66,17 +66,19 @@ impl Locale {
     }
 
     pub fn t(&self, key: &str) -> String {
-        self.loader
-            .lookup(&self.lang, key)
-            .with_context(|| format!("looking up key: {}", key))
-            .unwrap()
+        self.loader.lookup(&self.lang, key).unwrap_or_else(|| {
+            warn!("failed to lookup key: {}", key);
+            String::new()
+        })
     }
 
     pub fn ta(&self, key: &str, args: &HashMap<String, FluentValue<'_>>) -> String {
         self.loader
             .lookup_with_args(&self.lang, key, args)
-            .with_context(|| format!("looking up key: {}", key))
-            .unwrap()
+            .unwrap_or_else(|| {
+                warn!("failed to lookup key: {}", key);
+                String::new()
+            })
     }
 
     pub fn language(&self) -> String {
