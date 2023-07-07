@@ -121,19 +121,25 @@ network={{
         self.wifi = enabled;
         if self.wifi {
             wifi_on()?;
-            if self.telnet {
-                telnet_on()?;
-            }
-            if self.ftp {
-                ftp_on()?;
-            }
+            let telnet = self.telnet;
+            let ftp = self.ftp;
+            tokio::spawn(async move {
+                if wait_for_wifi().await.is_ok() {
+                    if telnet {
+                        telnet_on().ok();
+                    }
+                    if ftp {
+                        ftp_on().ok();
+                    }
+                }
+            });
         } else {
             wifi_off()?;
             if self.telnet {
-                telnet_off()?;
+                telnet_off().ok();
             }
             if self.ftp {
-                ftp_off()?;
+                ftp_off().ok();
             }
         }
         Ok(())
