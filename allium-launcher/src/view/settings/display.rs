@@ -12,7 +12,7 @@ use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, ButtonIcon, Label, Number, Percentage, Row, SettingsList, View};
+use common::view::{ButtonHint, ButtonIcon, Label, Percentage, Row, SettingsList, View};
 
 use tokio::sync::mpsc::Sender;
 

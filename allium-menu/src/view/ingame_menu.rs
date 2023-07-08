@@ -88,12 +88,12 @@ where
                 .filter_map(|e| match e {
                     MenuEntry::Guide => {
                         if game_info.guide.is_some() {
-                            Some(e.as_str(&locale).to_owned())
+                            Some(e.as_str(&locale))
                         } else {
                             None
                         }
                     }
-                    _ => Some(e.as_str(&locale).to_owned()),
+                    _ => Some(e.as_str(&locale)),
                 })
                 .collect(),
             MenuEntry::iter()

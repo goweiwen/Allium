@@ -45,6 +45,10 @@ where
         self.children.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.children.is_empty()
+    }
+
     pub fn get(&self, index: usize) -> Option<&V> {
         self.children.get(index)
     }

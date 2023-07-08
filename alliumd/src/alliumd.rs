@@ -283,19 +283,19 @@ impl AlliumD<DefaultPlatform> {
                                 let max_disk_slots = max_disk_slots?;
                                 let max_disk_slots = max_disk_slots
                                     .as_ref()
-                                    .and_then(|s| s.split_ascii_whitespace().skip(1).next())
+                                    .and_then(|s| s.split_ascii_whitespace().nth(1))
                                     .unwrap_or("0");
 
                                 let disk_slot = disk_slot?;
                                 let disk_slot = disk_slot
                                     .as_ref()
-                                    .and_then(|s| s.split_ascii_whitespace().skip(1).next())
+                                    .and_then(|s| s.split_ascii_whitespace().nth(1))
                                     .unwrap_or("0");
 
                                 let state_slot = state_slot?;
                                 let state_slot = state_slot
                                     .as_ref()
-                                    .and_then(|s| s.split_ascii_whitespace().skip(1).next())
+                                    .and_then(|s| s.split_ascii_whitespace().nth(1))
                                     .unwrap_or("0");
 
                                 #[cfg(unix)]

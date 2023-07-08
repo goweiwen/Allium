@@ -191,7 +191,7 @@ impl Display for SimulatorWindow {
             rect.h = rect.h.min(size.height - rect.h);
         }
 
-        let image: ImageRaw<_, BigEndian> = ImageRaw::new(&saved.0, saved.1);
+        let image: ImageRaw<'_, _, BigEndian> = ImageRaw::new(&saved.0, saved.1);
         let image = image.sub_image(&rect.into());
         let image = Image::new(&image, rect.top_left().into());
         image.draw(&mut self.display)?;
