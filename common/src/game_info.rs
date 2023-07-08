@@ -23,6 +23,8 @@ pub struct GameInfo {
     pub args: Vec<String>,
     /// Do we enable the menu? Currently only enabled if RetroArch is used.
     pub has_menu: bool,
+    /// Path to the image.
+    pub image: Option<PathBuf>,
     /// Path to the guide text file.
     pub guide: Option<PathBuf>,
     /// Start time. Used to measure playtime.
@@ -37,6 +39,7 @@ impl Default for GameInfo {
             command: String::new(),
             args: Vec::new(),
             has_menu: false,
+            image: None,
             guide: None,
             start_time: Utc::now(),
         }
@@ -48,6 +51,7 @@ impl GameInfo {
     pub fn new(
         name: String,
         path: PathBuf,
+        image: Option<PathBuf>,
         command: String,
         args: Vec<String>,
         has_menu: bool,
@@ -60,6 +64,7 @@ impl GameInfo {
             command,
             args,
             has_menu,
+            image,
             guide,
             start_time: Utc::now(),
         }

@@ -150,6 +150,7 @@ impl ConsoleMapper {
                 GameInfo::new(
                     game.name.clone(),
                     game.path.clone(),
+                    game.image.clone().flatten(),
                     path.display().to_string(),
                     vec![game.path.display().to_string()],
                     false,
@@ -158,6 +159,7 @@ impl ConsoleMapper {
                 GameInfo::new(
                     game.name.clone(),
                     game.path.clone(),
+                    game.image.clone().flatten(),
                     ALLIUM_RETROARCH.display().to_string(),
                     vec![retroarch_core.clone(), game.path.display().to_string()],
                     true,
