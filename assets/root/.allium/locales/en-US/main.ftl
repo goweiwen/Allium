@@ -61,13 +61,14 @@ settings-about-storage-used = Storage Used
 settings-about-unknown-value = Unknown
 
 # Menu
-continue = Continue
-save = Save
-load = Load
-reset = Reset
-settings = Settings
-guide = Guide
-quit = Quit
+ingame-menu-continue = Continue
+ingame-menu-save = Save
+ingame-menu-load = Load
+ingame-menu-reset = Reset
+ingame-menu-settings = Settings
+ingame-menu-guide = Guide
+ingame-menu-quit = Quit
+ingame-menu-slot = Slot { $slot }
 
 guide-button-search = Search
 guide-button-next = Next

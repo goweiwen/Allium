@@ -15,7 +15,7 @@ async fn main() -> Result<()> {
     SimpleLogger::new().init().unwrap();
 
     let platform = DefaultPlatform::new()?;
-    let mut app = AlliumMenu::new(platform)?;
+    let mut app = AlliumMenu::new(platform).await?;
     app.run_event_loop().await?;
     Ok(())
 }

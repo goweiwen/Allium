@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::fs;
 use std::fs::File;
 
@@ -6,7 +6,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use common::battery::Battery;
 use common::command::Command;
-use common::constants::ALLIUM_MENU_STATE;
+use common::constants::{ALLIUM_MENU_STATE, SELECTION_MARGIN};
 use common::display::Display;
 use common::game_info::GameInfo;
 use common::geom::{Alignment, Point, Rect};
@@ -15,7 +15,9 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::retroarch::RetroArchCommand;
 use common::stylesheet::Stylesheet;
-use common::view::{BatteryIndicator, ButtonHint, ButtonIcon, Label, List, Row, View};
+use common::view::{
+    BatteryIndicator, ButtonHint, ButtonIcon, Label, NullView, Row, SettingsList, View,
+};
 use log::warn;
 use serde::{Deserialize, Serialize};
 use strum::{EnumCount, EnumIter, IntoEnumIterator};
@@ -36,9 +38,10 @@ where
     res: Resources,
     name: Label<String>,
     battery_indicator: BatteryIndicator<B>,
-    menu: List<Label<String>>,
+    menu: SettingsList,
     child: Option<TextReader>,
     button_hints: Row<ButtonHint<String>>,
+    state_slot: u8,
     dirty: bool,
 }
 
@@ -46,7 +49,13 @@ impl<B> IngameMenu<B>
 where
     B: Battery + 'static,
 {
-    pub fn new(rect: Rect, state: IngameMenuState, res: Resources, battery: B) -> Self {
+    pub fn new(
+        rect: Rect,
+        state: IngameMenuState,
+        res: Resources,
+        battery: B,
+        state_slot: u8,
+    ) -> Self {
         let Rect { x, y, w, h } = rect;
 
         let game_info = res.get::<GameInfo>();
@@ -64,7 +73,7 @@ where
         let battery_indicator = BatteryIndicator::new(Point::new(w as i32 - 12, y + 8), battery);
 
         let menu_w = 336;
-        let menu = List::new(
+        let menu = SettingsList::new(
             Rect::new(
                 x + 24,
                 y + 8 + styles.ui_font.size as i32 + 8,
@@ -72,21 +81,30 @@ where
                 h - 8 - styles.ui_font.size - 8,
             ),
             MenuEntry::iter()
-                .filter(|e| match e {
-                    MenuEntry::Guide => game_info.guide.is_some(),
-                    _ => true,
-                })
-                .map(|e| {
-                    Label::new(
-                        Point::zero(),
-                        e.as_str(&locale),
-                        Alignment::Left,
-                        Some(menu_w),
-                    )
+                .filter_map(|e| match e {
+                    MenuEntry::Guide => {
+                        if game_info.guide.is_some() {
+                            Some(e.as_str(&locale).to_owned())
+                        } else {
+                            None
+                        }
+                    }
+                    _ => Some(e.as_str(&locale).to_owned()),
                 })
                 .collect(),
-            Alignment::Left,
-            6,
+            MenuEntry::iter()
+                .filter_map(|e| match e {
+                    MenuEntry::Guide => {
+                        if game_info.guide.is_some() {
+                            Some(Box::new(NullView) as Box<dyn View>)
+                        } else {
+                            None
+                        }
+                    }
+                    _ => Some(Box::new(NullView) as Box<dyn View>),
+                })
+                .collect(),
+            styles.ui_font.size + SELECTION_MARGIN,
         );
 
         let button_hints = Row::new(
@@ -131,21 +149,35 @@ where
             menu,
             child,
             button_hints,
+            state_slot,
             dirty: false,
         }
     }
 
-    pub fn load_or_new(rect: Rect, res: Resources, battery: B) -> Result<Self> {
+    pub async fn load_or_new(rect: Rect, res: Resources, battery: B) -> Result<Self> {
+        let state_slot = RetroArchCommand::GetStateSlot
+            .send_recv()
+            .await?
+            .and_then(|s| s.split_ascii_whitespace().skip(1).next().map(|s| s.parse()))
+            .transpose()?
+            .unwrap_or(0);
+
         if ALLIUM_MENU_STATE.exists() {
             let file = File::open(ALLIUM_MENU_STATE.as_path())?;
             if let Ok(state) = serde_json::from_reader::<_, IngameMenuState>(file) {
-                return Ok(Self::new(rect, state, res, battery));
+                return Ok(Self::new(rect, state, res, battery, state_slot));
             }
             warn!("failed to deserialize state file, deleting");
             fs::remove_file(ALLIUM_MENU_STATE.as_path())?;
         }
 
-        Ok(Self::new(rect, Default::default(), res, battery))
+        Ok(Self::new(
+            rect,
+            Default::default(),
+            res,
+            battery,
+            state_slot,
+        ))
     }
 
     pub fn save(&self) -> Result<()> {
@@ -188,11 +220,15 @@ where
                 commands.send(Command::Exit).await?;
             }
             MenuEntry::Save => {
-                RetroArchCommand::SaveState.send().await?;
+                RetroArchCommand::SaveStateSlot(self.state_slot)
+                    .send()
+                    .await?;
                 commands.send(Command::Exit).await?;
             }
             MenuEntry::Load => {
-                RetroArchCommand::LoadState.send().await?;
+                RetroArchCommand::LoadStateSlot(self.state_slot)
+                    .send()
+                    .await?;
                 commands.send(Command::Exit).await?;
             }
             MenuEntry::Reset => {
@@ -293,9 +329,78 @@ where
             }
         }
 
+        // Handle state slot selection
+        let selected = self.menu.selected();
+        if selected == MenuEntry::Save as usize || selected == MenuEntry::Load as usize {
+            match event {
+                KeyEvent::Pressed(Key::Left) => {
+                    self.state_slot = self.state_slot.saturating_sub(1);
+                    RetroArchCommand::SetStateSlot(self.state_slot)
+                        .send()
+                        .await?;
+
+                    let mut map = HashMap::new();
+                    map.insert("slot".to_string(), self.state_slot.into());
+                    self.menu.set_right(
+                        self.menu.selected(),
+                        Box::new(Label::new(
+                            Point::zero(),
+                            self.res.get::<Locale>().ta("ingame-menu-slot", &map),
+                            Alignment::Right,
+                            None,
+                        )),
+                    );
+                    return Ok(true);
+                }
+                KeyEvent::Pressed(Key::Right) => {
+                    self.state_slot = self.state_slot.saturating_add(1);
+                    RetroArchCommand::SetStateSlot(self.state_slot)
+                        .send()
+                        .await?;
+
+                    let mut map = HashMap::new();
+                    map.insert("slot".to_string(), self.state_slot.into());
+                    self.menu.set_right(
+                        self.menu.selected(),
+                        Box::new(Label::new(
+                            Point::zero(),
+                            self.res.get::<Locale>().ta("ingame-menu-slot", &map),
+                            Alignment::Right,
+                            None,
+                        )),
+                    );
+                    return Ok(true);
+                }
+                _ => {}
+            }
+        }
+
         match event {
             KeyEvent::Pressed(common::platform::Key::A) => self.select_entry(commands).await,
-            event => self.menu.handle_key_event(event, commands, bubble).await,
+            event => {
+                let prev = self.menu.selected();
+                let consumed = self.menu.handle_key_event(event, commands, bubble).await?;
+                let curr = self.menu.selected();
+                if consumed && prev != curr {
+                    if prev == MenuEntry::Save as usize || prev == MenuEntry::Load as usize {
+                        self.menu.set_right(prev, Box::new(NullView));
+                    }
+                    if curr == MenuEntry::Save as usize || curr == MenuEntry::Load as usize {
+                        let mut map = HashMap::new();
+                        map.insert("slot".to_string(), self.state_slot.into());
+                        self.menu.set_right(
+                            curr,
+                            Box::new(Label::new(
+                                Point::zero(),
+                                self.res.get::<Locale>().ta("ingame-menu-slot", &map),
+                                Alignment::Right,
+                                None,
+                            )),
+                        );
+                    }
+                }
+                Ok(consumed)
+            }
         }
     }
 
@@ -341,13 +446,13 @@ pub enum MenuEntry {
 impl MenuEntry {
     fn as_str(&self, locale: &Locale) -> String {
         match self {
-            MenuEntry::Continue => locale.t("continue"),
-            MenuEntry::Save => locale.t("save"),
-            MenuEntry::Load => locale.t("load"),
-            MenuEntry::Reset => locale.t("reset"),
-            MenuEntry::Guide => locale.t("guide"),
-            MenuEntry::Settings => locale.t("settings"),
-            MenuEntry::Quit => locale.t("quit"),
+            MenuEntry::Continue => locale.t("ingame-menu-continue"),
+            MenuEntry::Save => locale.t("ingame-menu-save"),
+            MenuEntry::Load => locale.t("ingame-menu-load"),
+            MenuEntry::Reset => locale.t("ingame-menu-reset"),
+            MenuEntry::Guide => locale.t("ingame-menu-guide"),
+            MenuEntry::Settings => locale.t("ingame-menu-settings"),
+            MenuEntry::Quit => locale.t("ingame-menu-quit"),
         }
     }
 }

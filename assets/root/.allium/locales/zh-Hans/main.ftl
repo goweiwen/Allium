@@ -61,13 +61,14 @@ settings-about-storage-used = 已使用的存储空间
 settings-about-unknown-value = 未知
 
 # Menu
-continue = 继续
-save = 保存
-load = 载入
-reset = 重置
-settings = 设置
-guide = 指南
-quit = 退出
+ingame-menu-continue = 继续
+ingame-menu-save = 保存
+ingame-menu-load = 载入
+ingame-menu-reset = 重置
+ingame-menu-settings = 设置
+ingame-menu-guide = 指南
+ingame-menu-quit = 退出
+ingame-menu-slot = 槽位{ $slot }
 
 guide-button-search = 搜索
 guide-button-next = 下一项

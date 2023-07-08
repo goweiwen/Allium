@@ -61,13 +61,14 @@ settings-about-storage-used = 使用済みストレージ
 settings-about-unknown-value = 不明
 
 # Menu
-continue = 続ける
-save = セーブ
-load = ロード
-reset = リセット
-settings = 設定
-guide = ガイド
-quit = 終了
+ingame-menu-continue = 続ける
+ingame-menu-save = セーブ
+ingame-menu-load = ロード
+ingame-menu-reset = リセット
+ingame-menu-settings = 設定
+ingame-menu-guide = ガイド
+ingame-menu-quit = 終了
+ingame-menu-slot = スロット{ $slot }
 
 guide-button-search = 捜索
 guide-button-next = 次へ
