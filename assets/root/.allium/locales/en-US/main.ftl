@@ -69,6 +69,7 @@ ingame-menu-settings = Settings
 ingame-menu-guide = Guide
 ingame-menu-quit = Quit
 ingame-menu-slot = Slot { $slot }
+ingame-menu-disk = Disk { $disk }
 
 guide-button-search = Search
 guide-button-next = Next

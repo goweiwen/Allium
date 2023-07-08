@@ -10,8 +10,10 @@ use common::constants::{
     BATTERY_UPDATE_INTERVAL,
 };
 use common::display::settings::DisplaySettings;
+use common::retroarch::RetroArchCommand;
 use common::wifi::WiFiSettings;
 use enum_map::EnumMap;
+use futures::future::join3;
 use log::{debug, error, info, trace, warn};
 use serde::{Deserialize, Serialize};
 use tokio::process::{Child, Command};
@@ -270,9 +272,39 @@ impl AlliumD<DefaultPlatform> {
                             if let Some(menu) = &mut self.menu {
                                 terminate(menu).await?;
                             } else if game_info.has_menu {
+                                // TODO: combine these into one command?
+                                let (max_disk_slots, disk_slot, state_slot) = join3(
+                                    RetroArchCommand::GetDiskCount.send_recv(),
+                                    RetroArchCommand::GetDiskSlot.send_recv(),
+                                    RetroArchCommand::GetStateSlot.send_recv(),
+                                )
+                                .await;
+
+                                let max_disk_slots = max_disk_slots?;
+                                let max_disk_slots = max_disk_slots
+                                    .as_ref()
+                                    .and_then(|s| s.split_ascii_whitespace().skip(1).next())
+                                    .unwrap_or("0");
+
+                                let disk_slot = disk_slot?;
+                                let disk_slot = disk_slot
+                                    .as_ref()
+                                    .and_then(|s| s.split_ascii_whitespace().skip(1).next())
+                                    .unwrap_or("0");
+
+                                let state_slot = state_slot?;
+                                let state_slot = state_slot
+                                    .as_ref()
+                                    .and_then(|s| s.split_ascii_whitespace().skip(1).next())
+                                    .unwrap_or("0");
+
                                 #[cfg(unix)]
                                 signal(&self.main, Signal::SIGSTOP)?;
-                                self.menu = Some(Command::new(ALLIUM_MENU.as_path()).spawn()?);
+                                self.menu = Some(
+                                    Command::new(ALLIUM_MENU.as_path())
+                                        .args([disk_slot, max_disk_slots, state_slot])
+                                        .spawn()?,
+                                );
                             }
                         }
                     }

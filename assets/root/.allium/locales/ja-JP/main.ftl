@@ -69,6 +69,7 @@ ingame-menu-settings = 設定
 ingame-menu-guide = ガイド
 ingame-menu-quit = 終了
 ingame-menu-slot = スロット{ $slot }
+ingame-menu-disk = ディスク{ $disk }
 
 guide-button-search = 捜索
 guide-button-next = 次へ

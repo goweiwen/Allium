@@ -41,6 +41,8 @@ where
     menu: SettingsList,
     child: Option<TextReader>,
     button_hints: Row<ButtonHint<String>>,
+    disk_slot: u8,
+    max_disk_slots: u8,
     state_slot: u8,
     dirty: bool,
 }
@@ -54,6 +56,8 @@ where
         state: IngameMenuState,
         res: Resources,
         battery: B,
+        disk_slot: u8,
+        max_disk_slots: u8,
         state_slot: u8,
     ) -> Self {
         let Rect { x, y, w, h } = rect;
@@ -73,7 +77,7 @@ where
         let battery_indicator = BatteryIndicator::new(Point::new(w as i32 - 12, y + 8), battery);
 
         let menu_w = 336;
-        let menu = SettingsList::new(
+        let mut menu = SettingsList::new(
             Rect::new(
                 x + 24,
                 y + 8 + styles.ui_font.size as i32 + 8,
@@ -106,6 +110,19 @@ where
                 .collect(),
             styles.ui_font.size + SELECTION_MARGIN,
         );
+        if max_disk_slots > 1 {
+            let mut map = HashMap::new();
+            map.insert("disk".to_string(), (disk_slot + 1).into());
+            menu.set_right(
+                MenuEntry::Continue as usize,
+                Box::new(Label::new(
+                    Point::zero(),
+                    locale.ta("ingame-menu-disk", &map),
+                    Alignment::Right,
+                    None,
+                )),
+            );
+        }
 
         let button_hints = Row::new(
             Point::new(
@@ -149,23 +166,33 @@ where
             menu,
             child,
             button_hints,
+            disk_slot,
+            max_disk_slots,
             state_slot,
             dirty: false,
         }
     }
 
-    pub async fn load_or_new(rect: Rect, res: Resources, battery: B) -> Result<Self> {
-        let state_slot = RetroArchCommand::GetStateSlot
-            .send_recv()
-            .await?
-            .and_then(|s| s.split_ascii_whitespace().skip(1).next().map(|s| s.parse()))
-            .transpose()?
-            .unwrap_or(0);
-
+    pub async fn load_or_new(
+        rect: Rect,
+        res: Resources,
+        battery: B,
+        disk_slot: u8,
+        max_disk_slots: u8,
+        state_slot: u8,
+    ) -> Result<Self> {
         if ALLIUM_MENU_STATE.exists() {
             let file = File::open(ALLIUM_MENU_STATE.as_path())?;
             if let Ok(state) = serde_json::from_reader::<_, IngameMenuState>(file) {
-                return Ok(Self::new(rect, state, res, battery, state_slot));
+                return Ok(Self::new(
+                    rect,
+                    state,
+                    res,
+                    battery,
+                    disk_slot,
+                    max_disk_slots,
+                    state_slot,
+                ));
             }
             warn!("failed to deserialize state file, deleting");
             fs::remove_file(ALLIUM_MENU_STATE.as_path())?;
@@ -176,6 +203,8 @@ where
             Default::default(),
             res,
             battery,
+            disk_slot,
+            max_disk_slots,
             state_slot,
         ))
     }
@@ -329,11 +358,53 @@ where
             }
         }
 
+        // Handle disk slot selection
+        let selected = self.menu.selected();
+        if self.max_disk_slots > 1 && selected == MenuEntry::Continue as usize {
+            match event {
+                KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
+                    self.disk_slot = self.disk_slot.saturating_sub(1);
+                    RetroArchCommand::SetDiskSlot(self.disk_slot).send().await?;
+
+                    let mut map = HashMap::new();
+                    map.insert("disk".to_string(), (self.disk_slot + 1).into());
+                    self.menu.set_right(
+                        self.menu.selected(),
+                        Box::new(Label::new(
+                            Point::zero(),
+                            self.res.get::<Locale>().ta("ingame-menu-disk", &map),
+                            Alignment::Right,
+                            None,
+                        )),
+                    );
+                    return Ok(true);
+                }
+                KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
+                    self.disk_slot = (self.disk_slot + 1).min(self.max_disk_slots - 1);
+                    RetroArchCommand::SetDiskSlot(self.disk_slot).send().await?;
+
+                    let mut map = HashMap::new();
+                    map.insert("disk".to_string(), (self.disk_slot + 1).into());
+                    self.menu.set_right(
+                        self.menu.selected(),
+                        Box::new(Label::new(
+                            Point::zero(),
+                            self.res.get::<Locale>().ta("ingame-menu-disk", &map),
+                            Alignment::Right,
+                            None,
+                        )),
+                    );
+                    return Ok(true);
+                }
+                _ => {}
+            }
+        }
+
         // Handle state slot selection
         let selected = self.menu.selected();
         if selected == MenuEntry::Save as usize || selected == MenuEntry::Load as usize {
             match event {
-                KeyEvent::Pressed(Key::Left) => {
+                KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
                     self.state_slot = self.state_slot.saturating_sub(1);
                     RetroArchCommand::SetStateSlot(self.state_slot)
                         .send()
@@ -352,7 +423,7 @@ where
                     );
                     return Ok(true);
                 }
-                KeyEvent::Pressed(Key::Right) => {
+                KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
                     self.state_slot = self.state_slot.saturating_add(1);
                     RetroArchCommand::SetStateSlot(self.state_slot)
                         .send()
@@ -376,12 +447,35 @@ where
         }
 
         match event {
-            KeyEvent::Pressed(common::platform::Key::A) => self.select_entry(commands).await,
+            KeyEvent::Pressed(Key::A) => self.select_entry(commands).await,
+            KeyEvent::Pressed(Key::Left | Key::Right)
+            | KeyEvent::Autorepeat(Key::Left | Key::Right) => {
+                // Don't scroll with left/right
+                Ok(true)
+            }
             event => {
                 let prev = self.menu.selected();
                 let consumed = self.menu.handle_key_event(event, commands, bubble).await?;
                 let curr = self.menu.selected();
                 if consumed && prev != curr {
+                    if self.max_disk_slots > 1 {
+                        if prev == MenuEntry::Continue as usize {
+                            self.menu.set_right(prev, Box::new(NullView));
+                        }
+                        if curr == MenuEntry::Continue as usize {
+                            let mut map = HashMap::new();
+                            map.insert("disk".to_string(), (self.disk_slot + 1).into());
+                            self.menu.set_right(
+                                curr,
+                                Box::new(Label::new(
+                                    Point::zero(),
+                                    self.res.get::<Locale>().ta("ingame-menu-disk", &map),
+                                    Alignment::Right,
+                                    None,
+                                )),
+                            );
+                        }
+                    }
                     if prev == MenuEntry::Save as usize || prev == MenuEntry::Load as usize {
                         self.menu.set_right(prev, Box::new(NullView));
                     }

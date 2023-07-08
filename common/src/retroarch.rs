@@ -39,7 +39,7 @@ pub enum RetroArchCommand {
     DiskPrev,
     GrabMouseToggle,
     MenuToggle,
-    GetDiskSlotCount,
+    GetDiskCount,
     GetDiskSlot,
     SetDiskSlot(u8),
     GetStateSlot,
@@ -72,14 +72,23 @@ impl RetroArchCommand {
             RETROARCH_UDP_SOCKET
         );
         socket.send(self.as_str().as_bytes()).await?;
-        let mut reply = Vec::with_capacity(128);
+        let mut reply = vec![0; 128];
         select! {
-            ret = socket.recv(&mut reply) => if let Err(e) = ret {
-                error!("Failed to receive reply from RetroArch: {}", e);
+            ret = socket.recv_from(&mut reply) => match ret {
+                Ok((len, _socket)) => {
+                    reply.truncate(len);
+                    let reply = String::from_utf8(reply)?;
+                    debug!("Received reply from RetroArch: {:?}", reply);
+                    return Ok(Some(reply));
+                }
+                Err(e) => {
+                    error!("Error receiving from RetroArch: {}", e);
+                    return Err(e.into());
+                }
             },
             _ = tokio::time::sleep(Duration::from_millis(100)) => {},
         }
-        Ok(Some(String::from_utf8(reply)?))
+        Ok(None)
     }
 
     fn as_str(&self) -> Cow<'static, str> {
@@ -114,7 +123,7 @@ impl RetroArchCommand {
             RetroArchCommand::DiskPrev => Cow::Borrowed("DISK_PREV"),
             RetroArchCommand::GrabMouseToggle => Cow::Borrowed("GRAB_MOUSE_TOGGLE"),
             RetroArchCommand::MenuToggle => Cow::Borrowed("MENU_TOGGLE"),
-            RetroArchCommand::GetDiskSlotCount => Cow::Borrowed("GET_DISK_SLOT_COUNT"),
+            RetroArchCommand::GetDiskCount => Cow::Borrowed("GET_DISK_COUNT"),
             RetroArchCommand::GetDiskSlot => Cow::Borrowed("GET_DISK_SLOT"),
             RetroArchCommand::SetDiskSlot(slot) => Cow::Owned(format!("SET_DISK_SLOT {slot}")),
             RetroArchCommand::GetStateSlot => Cow::Borrowed("GET_STATE_SLOT"),

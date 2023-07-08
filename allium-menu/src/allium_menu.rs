@@ -33,7 +33,12 @@ where
 }
 
 impl AlliumMenu<DefaultPlatform> {
-    pub async fn new(mut platform: DefaultPlatform) -> Result<Self> {
+    pub async fn new(
+        mut platform: DefaultPlatform,
+        disk_slot: u8,
+        max_disk_slots: u8,
+        state_slot: u8,
+    ) -> Result<Self> {
         let display = platform.display()?;
         let battery = platform.battery()?;
         let rect = display.bounding_box().into();
@@ -50,7 +55,15 @@ impl AlliumMenu<DefaultPlatform> {
             platform,
             display,
             res: res.clone(),
-            view: IngameMenu::load_or_new(rect, res, battery).await?,
+            view: IngameMenu::load_or_new(
+                rect,
+                res,
+                battery,
+                disk_slot,
+                max_disk_slots,
+                state_slot,
+            )
+            .await?,
         })
     }
 
