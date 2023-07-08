@@ -46,9 +46,8 @@ The SD card layout should look like this:
 - Recents list (sort by last played or playtime)
 - Activity tracker
 - [RetroArch for all supported cores](https://github.com/goweiwen/Allium/wiki/Console-Mapper)
-- Volume & Brightness (menu + vol up/down) control
-- In-game menu (save, load, reset, access RetroArch menu, quit)
-- [In-game guide reader](https://github.com/goweiwen/Allium/wiki/In-game-Guide-Walkthrough-Reader)
+- Volume & Brightness (select/start + l/r) control
+- In-game menu (save, load, reset, access RetroArch menu, [guide]((https://github.com/goweiwen/Allium/wiki/In-game-Guide-Walkthrough-Reader)), disk changer, quit)
 - Automatic resume when powering off/on
 - Settings page
     - WiFi (IP Address, NTP, Telnet, FTP)
@@ -58,8 +57,9 @@ The SD card layout should look like this:
 
 ## Planned Features
 (roughly in order of priority)
-- Favorites organizer?
-- Ingame menu disk changer
+- Search
+- Suspend
+- Favorites
 - Clock adjustment
 - WiFi stuff:
     - OTA update
@@ -75,7 +75,6 @@ The SD card layout should look like this:
 - Theme manager
     - Built-in themes
     - Save current theme to file
-- File-system database to cache folder structure
 
 ## Development
 
@@ -111,3 +110,12 @@ Running `make` will build Allium and RetroArch, then copy the built and static f
 make all
 cp -r dist/. <sdcard>
 ```
+
+## Acknowledgements
+
+Allium is only possible thanks to the Miyoo Mini community, including but not limited to:
+- eggs: RetroArch port, [many code samples](https://www.dropbox.com/sh/hqcsr1h1d7f8nr3/AABtSOygIX_e4mio3rkLetWTa), answering questions on Discord
+- [Onion team](https://github.com/OnionUI/Onion) (Aemiii91, Schmurtz, Totofaki, and more): Maintaining a sane-defaults RetroArch configuration, and the huge village
+- kebabstorm: [Miyoo Mini resources](https://github.com/anzz1/miyoomini-resources)
+- shauninman: Allium is heavily inspired by [MiniUI](https://github.com/shauninman/MiniUI)'s simplicity and clean design
+- Early adopters and testers of Allium
