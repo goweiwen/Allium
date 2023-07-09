@@ -69,5 +69,6 @@ bump-version: lint
 	git add activity-tracker/Cargo.toml
 	git add common/Cargo.toml
 	git add Cargo.lock
+	git add assets/root/.allium/version.txt
 	git commit -m "chore: bump version to v$(version)"
 	git tag "v$(version)" -a
