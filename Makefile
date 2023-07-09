@@ -33,16 +33,14 @@ third-party/my283:
 	rm third-party/my283.tar.xz
 
 build: third-party/my283
-	cross build --release --features=miyoo --bin=alliumd --bin=allium-launcher --bin=allium-menu --bin=activity-tracker
-
-build-with-console: third-party/my283
-	cross build --release --features=miyoo,console --bin=alliumd --bin=allium-launcher --bin=allium-menu --bin=activity-tracker
+	cross build --release --features=miyoo --bin=alliumd --bin=allium-launcher --bin=allium-menu --bin=activity-tracker --bin=screenshot
 
 package-build:
 	mkdir -p $(DIST_DIR)/.allium/bin
 	rsync -a $(BUILD_DIR)/alliumd $(DIST_DIR)/.allium/bin/
 	rsync -a $(BUILD_DIR)/allium-launcher $(DIST_DIR)/.allium/bin/
 	rsync -a $(BUILD_DIR)/allium-menu $(DIST_DIR)/.allium/bin/
+	rsync -a $(BUILD_DIR)/screenshot $(DIST_DIR)/.tmp_update/bin/
 	rsync -a $(BUILD_DIR)/activity-tracker "$(DIST_DIR)/Apps/Activity Tracker.pak/"
 
 retroarch: $(RETROARCH)/retroarch

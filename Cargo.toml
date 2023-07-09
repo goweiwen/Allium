@@ -6,7 +6,8 @@ members = [
     "allium-menu",
     "activity-tracker",
     "ffi",
-    "myctl"
+    "myctl",
+    "screenshot",
 ]
 resolver = "2"
 

@@ -7,7 +7,7 @@ use chrono::{DateTime, Duration, Utc};
 use common::battery::Battery;
 use common::constants::{
     ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_MENU, ALLIUM_VERSION, BATTERY_SHUTDOWN_THRESHOLD,
-    BATTERY_UPDATE_INTERVAL,
+    BATTERY_UPDATE_INTERVAL, ALLIUM_SD_ROOT,
 };
 use common::display::settings::DisplaySettings;
 use common::retroarch::RetroArchCommand;
@@ -257,8 +257,27 @@ impl AlliumD<DefaultPlatform> {
                     self.add_volume(1)?
                 }
             }
+            KeyEvent::Released(Key::Power) => {
+                if self.keys[Key::Menu] {
+                    let game_info = GameInfo::load()?;
+                    let name = match game_info.as_ref() {
+                        Some(game_info) => game_info.name.as_str(),
+                        None => "Allium",
+                    };
+                    let file_name = format!(
+                        "{}-{}.png",
+                        chrono::Local::now().format("%Y-%m-%d_%H-%M-%S"),
+                        name,
+                    );
+                    Command::new("screenshot").arg(ALLIUM_SD_ROOT.join("Screenshots").join(file_name)).spawn()?;
+                } else {
+                    // TODO: suspend
+                }
+            }
             KeyEvent::Autorepeat(Key::Power) => {
-                self.handle_quit().await?;
+                if !self.keys[Key::Menu] {
+                    self.handle_quit().await?;
+                }
             }
             KeyEvent::Released(Key::Menu) => {
                 if self.is_menu_pressed_alone {
