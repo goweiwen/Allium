@@ -61,6 +61,7 @@ bump-version: lint
 	sed -i "s/^version = \".*\"/version = \"$(version)\"/" alliumd/Cargo.toml
 	sed -i "s/^version = \".*\"/version = \"$(version)\"/" activity-tracker/Cargo.toml
 	sed -i "s/^version = \".*\"/version = \"$(version)\"/" common/Cargo.toml
+	echo "v$(version)" > assets/root/.allium/version.txt
 	cargo check
 	git add allium-launcher/Cargo.toml
 	git add allium-menu/Cargo.toml
