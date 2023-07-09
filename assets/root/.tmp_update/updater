@@ -39,7 +39,7 @@ if [ -f /customer/lib/libpadsp.so ]; then
 fi
 
 # run Allium
-RUST_LOG=debug RUST_BACKTRACE=1 /mnt/SDCARD/.allium/bin/alliumd > /mnt/SDCARD/.allium/alliumd.log 2>&1
+RUST_LOG=none /mnt/SDCARD/.allium/bin/alliumd > /dev/null 2>&1
 
 while true; do
 	reboot
