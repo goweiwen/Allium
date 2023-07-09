@@ -73,22 +73,22 @@ impl RetroArchCommand {
         );
         socket.send(self.as_str().as_bytes()).await?;
         let mut reply = vec![0; 128];
-        select! {
-            ret = socket.recv_from(&mut reply) => match ret {
-                Ok((len, _socket)) => {
-                    reply.truncate(len);
-                    let reply = String::from_utf8(reply)?;
-                    debug!("Received reply from RetroArch: {:?}", reply);
-                    return Ok(Some(reply));
-                }
-                Err(e) => {
-                    error!("Error receiving from RetroArch: {}", e);
-                    return Err(e.into());
-                }
-            },
-            _ = tokio::time::sleep(Duration::from_millis(100)) => {},
+        match tokio::time::timeout(Duration::from_secs(1), socket.recv_from(&mut reply)).await {
+            Ok(Ok((len, _socket))) => {
+                reply.truncate(len);
+                let reply = String::from_utf8(reply)?;
+                debug!("Received reply from RetroArch: {:?}", reply);
+                return Ok(Some(reply));
+            }
+            Ok(Err(e)) => {
+                error!("Error receiving from RetroArch: {}", e);
+                return Err(e.into());
+            }
+            Err(e) => {
+                error!("Timeout receiving from RetroArch: {}", e);
+                return Err(e.into());
+            }
         }
-        Ok(None)
     }
 
     fn as_str(&self) -> Cow<'static, str> {

@@ -21,7 +21,6 @@ use tokio::process::{Child, Command};
 use common::database::Database;
 use common::game_info::GameInfo;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
-use tokio::select;
 
 #[cfg(unix)]
 use {
@@ -360,7 +359,7 @@ impl AlliumD<DefaultPlatform> {
             if let Some(menu) = self.menu.as_mut() {
                 #[cfg(unix)]
                 signal(&self.main, Signal::SIGCONT)?;
-                menu.kill().await?;
+                terminate(menu).await?;
             }
 
             terminate(&mut self.main).await?;
@@ -418,11 +417,8 @@ async fn terminate(child: &mut Child) -> Result<()> {
     #[cfg(not(unix))]
     child.kill().await?;
 
-    select! {
-        _ = child.wait() => {}
-        _ = tokio::time::sleep(std::time::Duration::from_secs(5)) => {
-            signal(child, Signal::SIGKILL)?;
-        }
+    if let Err(e) = tokio::time::timeout(std::time:: Duration::from_secs(1), child.wait()).await {
+        signal(child, Signal::SIGKILL)?;
     }
     Ok(())
 }
