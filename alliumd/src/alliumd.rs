@@ -6,8 +6,8 @@ use anyhow::Result;
 use chrono::{DateTime, Duration, Utc};
 use common::battery::Battery;
 use common::constants::{
-    ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_MENU, ALLIUM_VERSION, BATTERY_SHUTDOWN_THRESHOLD,
-    BATTERY_UPDATE_INTERVAL, ALLIUM_SD_ROOT,
+    ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_MENU, ALLIUM_SD_ROOT, ALLIUM_VERSION,
+    BATTERY_SHUTDOWN_THRESHOLD, BATTERY_UPDATE_INTERVAL,
 };
 use common::display::settings::DisplaySettings;
 use common::retroarch::RetroArchCommand;
@@ -70,12 +70,17 @@ impl AlliumDState {
                             "RTC is not working, advancing time to {}",
                             this.time.format("%F %T")
                         );
-                        std::process::Command::new("/sbin/hwclock")
+                        let mut date = std::process::Command::new("date")
+                            .arg("-s")
+                            .arg(this.time.format("%F %T").to_string())
+                            .spawn()?;
+                        let mut hwclock = std::process::Command::new("/sbin/hwclock")
                             .arg("-w")
                             .arg("-u")
                             .arg(this.time.format("%F %T").to_string())
-                            .spawn()?
-                            .wait()?;
+                            .spawn()?;
+                        date.wait()?;
+                        hwclock.wait()?;
                     }
                     return Ok(this);
                 }
@@ -269,7 +274,9 @@ impl AlliumD<DefaultPlatform> {
                         chrono::Local::now().format("%Y-%m-%d_%H-%M-%S"),
                         name,
                     );
-                    Command::new("screenshot").arg(ALLIUM_SD_ROOT.join("Screenshots").join(file_name)).spawn()?;
+                    Command::new("screenshot")
+                        .arg(ALLIUM_SD_ROOT.join("Screenshots").join(file_name))
+                        .spawn()?;
                 } else {
                     // TODO: suspend
                 }
