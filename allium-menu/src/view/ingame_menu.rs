@@ -6,7 +6,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use common::battery::Battery;
 use common::command::Command;
-use common::constants::{ALLIUM_MENU_STATE, IMAGE_WIDTH, SELECTION_MARGIN};
+use common::constants::{ALLIUM_MENU_STATE, SELECTION_MARGIN};
 use common::display::Display;
 use common::game_info::GameInfo;
 use common::geom::{Alignment, Point, Rect};
@@ -14,10 +14,9 @@ use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::retroarch::RetroArchCommand;
-use common::stylesheet::{Stylesheet, StylesheetColor};
+use common::stylesheet::Stylesheet;
 use common::view::{
-    BatteryIndicator, ButtonHint, ButtonIcon, Image, ImageMode, Label, NullView, Row, SettingsList,
-    View,
+    BatteryIndicator, ButtonHint, ButtonIcon, Label, NullView, Row, SettingsList, View,
 };
 use log::warn;
 use serde::{Deserialize, Serialize};
@@ -40,7 +39,6 @@ where
     name: Label<String>,
     battery_indicator: BatteryIndicator<B>,
     menu: SettingsList,
-    image: Option<Image>,
     child: Option<TextReader>,
     button_hints: Row<ButtonHint<String>>,
     disk_slot: u8,
@@ -80,9 +78,9 @@ where
 
         let mut menu = SettingsList::new(
             Rect::new(
-                x + 12,
+                x + 24,
                 y + 8 + styles.ui_font.size as i32 + 8,
-                w - IMAGE_WIDTH - 12 - 12 - 24 - 12,
+                w / 2 - 48,
                 h - 8 - styles.ui_font.size - 8,
             ),
             MenuEntry::iter()
@@ -125,23 +123,6 @@ where
             );
         }
 
-        let image = game_info.image.as_ref().map(|path| {
-            let mut image = Image::new(
-                Rect::new(
-                    x + w as i32 - IMAGE_WIDTH as i32 - 24,
-                    y + 8 + styles.ui_font.size as i32 + 8,
-                    IMAGE_WIDTH,
-                    h - 8 - ButtonIcon::diameter(&styles) - 8,
-                ),
-                path.to_path_buf(),
-                ImageMode::Contain,
-            );
-            image
-                .set_background_color(StylesheetColor::Background)
-                .set_border_radius(12);
-            image
-        });
-
         let button_hints = Row::new(
             Point::new(
                 x + w as i32 - 12,
@@ -182,7 +163,6 @@ where
             name,
             battery_indicator,
             menu,
-            image,
             child,
             button_hints,
             disk_slot,
@@ -325,9 +305,6 @@ where
             drawn |= self.battery_indicator.should_draw()
                 && self.battery_indicator.draw(display, styles)?;
             drawn |= self.menu.should_draw() && self.menu.draw(display, styles)?;
-            if let Some(image) = self.image.as_mut() {
-                drawn |= image.should_draw() && image.draw(display, styles)?;
-            }
             drawn |= self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
         }
 
@@ -342,7 +319,6 @@ where
                 || self.name.should_draw()
                 || self.battery_indicator.should_draw()
                 || self.menu.should_draw()
-                || self.image.as_ref().map_or(false, |v| v.should_draw())
                 || self.button_hints.should_draw()
         }
     }
@@ -355,9 +331,6 @@ where
             self.name.set_should_draw();
             self.battery_indicator.set_should_draw();
             self.menu.set_should_draw();
-            if let Some(image) = self.image.as_mut() {
-                image.set_should_draw();
-            }
             self.button_hints.set_should_draw();
         }
     }
