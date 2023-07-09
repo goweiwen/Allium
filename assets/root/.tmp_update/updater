@@ -1,6 +1,7 @@
 #!/bin/sh
-export LD_LIBRARY_PATH="/mnt/SDCARD/.tmp_update/lib:/lib:/config/lib:/customer/lib"
-export PATH="/mnt/SDCARD/.tmp_update/bin:$PATH"
+export ROOT="/mnt/SDCARD"
+export LD_LIBRARY_PATH="$ROOT/.tmp_update/lib:/lib:/config/lib:/customer/lib"
+export PATH="$ROOT/.tmp_update/bin:$PATH"
 
 # init backlight
 echo 0 > /sys/class/pwm/pwmchip0/export

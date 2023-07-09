@@ -1,5 +1,3 @@
 #!/bin/sh
-echo $0 $*
-
-cd /mnt/SDCARD/RetroArch/
-HOME=/mnt/SDCARD/RetroArch/ ./retroarch.sh -v
+DIR=/mnt/SDCARD/RetroArch
+HOME=/mnt/SDCARD/RetroArch exec "$DIR/retroarch" -v
