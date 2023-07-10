@@ -100,6 +100,10 @@ impl ActivityTracker {
                 .iter()
                 .map(|e| {
                     let mut map = HashMap::new();
+                    map.insert(
+                        "hours_decimal".to_string(),
+                        (e.play_time.num_minutes() as f32 / 60.0).into(),
+                    );
                     map.insert("hours".to_string(), e.play_time.num_hours().into());
                     map.insert(
                         "minutes".to_string(),
