@@ -11,7 +11,7 @@ sort-search = 検索
 
 
 recents-launch = 起動
-recents-remove = 削除
+recents-remove-from-recents = 最近から削除
 
 settings-wifi = Wi-Fi
 settings-wifi-wifi-enabled = Wi-Fi有効

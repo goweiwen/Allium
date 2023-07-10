@@ -10,7 +10,7 @@ sort-most-played = Sort: Playtime
 sort-search = Search
 
 recents-launch = Launch
-recents-remove = Remove
+recents-remove-from-recents = Remove from Recents
 
 settings-wifi = Wi-Fi
 settings-wifi-wifi-enabled = Wi-Fi Enabled

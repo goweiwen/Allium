@@ -10,7 +10,7 @@ sort-most-played = 排序:最久玩
 sort-search = 搜索
 
 recents-launch = 启动
-recents-remove = 移除
+recents-remove-from-recents = 从最近中移除
 
 settings-wifi = Wi-Fi
 settings-wifi-wifi-enabled = Wi-Fi启用

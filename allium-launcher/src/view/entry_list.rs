@@ -200,7 +200,10 @@ where
         let styles = self.res.get::<Stylesheet>();
         let locale = self.res.get::<Locale>();
 
-        let labels = vec![locale.t("recents-launch"), locale.t("recents-remove")];
+        let labels = vec![
+            locale.t("recents-launch"),
+            locale.t("recents-remove-from-recents"),
+        ];
 
         let height = labels.len() as u32 * (styles.ui_font.size + SELECTION_MARGIN);
 
