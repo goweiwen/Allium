@@ -275,7 +275,9 @@ impl AlliumD<DefaultPlatform> {
                     );
                     Command::new("screenshot")
                         .arg(ALLIUM_SD_ROOT.join("Screenshots").join(file_name))
-                        .spawn()?.wait().await?;
+                        .spawn()?
+                        .wait()
+                        .await?;
                 } else {
                     // TODO: suspend
                 }
@@ -417,7 +419,7 @@ async fn terminate(child: &mut Child) -> Result<()> {
     #[cfg(not(unix))]
     child.kill().await?;
 
-    if let Err(e) = tokio::time::timeout(std::time:: Duration::from_secs(1), child.wait()).await {
+    if let Err(e) = tokio::time::timeout(std::time::Duration::from_secs(1), child.wait()).await {
         signal(child, Signal::SIGKILL)?;
     }
     Ok(())
