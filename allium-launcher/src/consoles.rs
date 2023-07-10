@@ -141,6 +141,12 @@ impl ConsoleMapper {
     }
 
     pub fn launch_game(&self, database: &Database, game: &mut Game) -> Result<Option<Command>> {
+        if !game.path.exists() {
+            if let Some(old) = game.resync()? {
+                database.update_game_path(&old, &game.path)?;
+            }
+        }
+
         game.image();
         database.increment_play_count(&game.name, game.path.as_path(), game.image_ref())?;
 
