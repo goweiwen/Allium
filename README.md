@@ -44,6 +44,7 @@ The SD card layout should look like this:
 - Box art (250px wide, PNG, JPG, GIF)
 - Supports gameslist.xml with nested folders
 - Recents list (sort by last played or playtime)
+- Search games by name
 - Activity tracker
 - [RetroArch for all supported cores](https://github.com/goweiwen/Allium/wiki/Console-Mapper)
 - Volume & Brightness (select/start + l/r) control
@@ -57,7 +58,6 @@ The SD card layout should look like this:
 
 ## Planned Features
 (roughly in order of priority)
-- Search
 - Suspend
 - Favorites
 - Clock adjustment
