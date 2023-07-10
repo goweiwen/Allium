@@ -14,10 +14,13 @@ lazy_static! {
         &env::var("ALLIUM_SD_ROOT").unwrap_or_else(|_| "/mnt/SDCARD/".to_string())
     );
     pub static ref ALLIUM_BASE_DIR: PathBuf = PathBuf::from(
-        &env::var("ALLIUM_BASE_DIR").unwrap_or_else(|_| "/mnt/SDCARD/.allium".to_string())
+        &env::var("ALLIUM_BASE_DIR").map_or_else(|_| ALLIUM_SD_ROOT.join(".allium"), PathBuf::from)
     );
     pub static ref ALLIUM_GAMES_DIR: PathBuf = PathBuf::from(
-        &env::var("ALLIUM_GAMES_DIR").unwrap_or_else(|_| "/mnt/SDCARD/Roms".to_string())
+        &env::var("ALLIUM_GAMES_DIR").map_or_else(|_| ALLIUM_SD_ROOT.join("Roms"), PathBuf::from)
+    );
+    pub static ref ALLIUM_APPS_DIR: PathBuf = PathBuf::from(
+        &env::var("ALLIUM_APPS_DIR").map_or_else(|_| ALLIUM_SD_ROOT.join("Apps"), PathBuf::from)
     );
 
     // Folders

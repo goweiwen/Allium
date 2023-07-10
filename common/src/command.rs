@@ -14,6 +14,7 @@ pub enum Command {
     TrapFocus,
     Unfocus,
     Redraw,
+    Search,
 }
 
 #[derive(Debug, Clone)]

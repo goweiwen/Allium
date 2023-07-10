@@ -170,6 +170,10 @@ impl AlliumLauncher<DefaultPlatform> {
                 self.display.load(self.display.bounding_box().into())?;
                 self.view.set_should_draw();
             }
+            Command::Search => {
+                trace!("searching");
+                self.view.search();
+            }
             command => {
                 warn!("unhandled command: {:?}", command);
             }

@@ -26,6 +26,13 @@ pub struct Game {
     pub last_played: i64,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NewGame {
+    pub name: String,
+    pub path: PathBuf,
+    pub image: Option<PathBuf>,
+}
+
 impl Database {
     pub fn new() -> Result<Self> {
         if !ALLIUM_DATABASE.exists() {
@@ -83,6 +90,11 @@ CREATE TABLE IF NOT EXISTS guides (
     path TEXT NOT NULL UNIQUE,
     cursor INTEGER NOT NULL
 );"),
+M::up("
+CREATE TABLE IF NOT EXISTS key_value (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);")
         ])
     }
 
@@ -108,32 +120,18 @@ CREATE TABLE IF NOT EXISTS guides (
         Ok(())
     }
 
-    pub fn update_games(&self, games: &[Game]) -> Result<()> {
-        let mut stmt = self
-            .conn
-            .as_ref()
-            .unwrap()
-            .prepare("
+    pub fn update_games(&self, games: &[NewGame]) -> Result<()> {
+        let mut stmt = self.conn.as_ref().unwrap().prepare(
+            "
 INSERT INTO games (name, path, image, play_count, play_time, last_played)
-VALUES (?, ?, ?, ?, ?, ?)
-ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, play_count = ?, play_time = ?, last_played = ?")?;
+VALUES (?, ?, ?, 0, 0, 0)
+ON CONFLICT(path) DO UPDATE SET name = ?, image = ?",
+        )?;
 
         for game in games {
             let path = game.path.display().to_string();
             let image = game.image.as_ref().map(|p| p.display().to_string());
-            stmt.execute(params![
-                game.name,
-                path,
-                image,
-                game.play_count,
-                game.play_time.num_seconds(),
-                game.last_played,
-                game.name,
-                image,
-                game.play_count,
-                game.play_time.num_seconds(),
-                game.last_played
-            ])?;
+            stmt.execute(params![game.name, path, image, game.name, image,])?;
         }
 
         Ok(())
@@ -177,11 +175,9 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, play_count = ?, play_time =
 
     /// Search for games by name. The query is a prefix search on words, so "Fi" will match both "Fire Emblem" and "Pokemon Fire Red".
     pub fn search(&self, query: &str, limit: i64) -> Result<Vec<Game>> {
-        let mut stmt = self
-            .conn
-            .as_ref()
-            .unwrap()
-            .prepare("SELECT games.name, games.path, image, play_count, play_time, last_played FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.name MATCH ? LIMIT ?")?;
+        let conn = self.conn.as_ref().unwrap();
+
+        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.name MATCH ? LIMIT ?")?;
 
         let rows = stmt.query_map(params![format!("{}*", query), limit], map_game)?;
 
@@ -212,7 +208,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, play_count = ?, play_time =
             .prepare("SELECT name, path, image, play_count, play_time, last_played FROM games WHERE path = ? LIMIT 1")?;
 
         let mut results = vec![None; paths.len()];
-        for (i, path) in paths.into_iter().enumerate() {
+        for (i, path) in paths.iter().enumerate() {
             let game = stmt
                 .query_row(params![path.display().to_string()], map_game)
                 .optional()?;
@@ -292,6 +288,32 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
 
         Ok(())
     }
+
+    pub fn set_has_indexed(&self, has_indexed: bool) -> Result<()> {
+        let mut stmt = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .prepare("INSERT INTO key_value (key, value) VALUES ('has_indexed', 1) ON CONFLICT(key) DO UPDATE SET value = ?")?;
+
+        stmt.execute([if has_indexed { "1" } else { "0" }])?;
+
+        Ok(())
+    }
+
+    pub fn has_indexed(&self) -> Result<bool> {
+        let mut stmt = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .prepare("SELECT value FROM key_value WHERE key = 'has_indexed'")?;
+
+        let value = stmt
+            .query_row([], |row| row.get::<_, String>(0))
+            .optional()?;
+
+        Ok(matches!(value.as_deref(), Some("1")))
+    }
 }
 
 #[cfg(test)]
@@ -308,21 +330,15 @@ mod tests {
         let database = Database::in_memory().unwrap();
 
         let games = vec![
-            Game {
+            NewGame {
                 name: "Game One".to_string(),
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
-                play_count: 0,
-                play_time: Duration::zero(),
-                last_played: 0,
             },
-            Game {
+            NewGame {
                 name: "Game Two".to_string(),
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
-                play_count: 0,
-                play_time: Duration::zero(),
-                last_played: 0,
             },
         ];
 
@@ -363,21 +379,15 @@ mod tests {
         let database = Database::in_memory().unwrap();
 
         let games = vec![
-            Game {
+            NewGame {
                 name: "Game One".to_string(),
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
-                play_count: 0,
-                play_time: Duration::zero(),
-                last_played: 0,
             },
-            Game {
+            NewGame {
                 name: "Game Two".to_string(),
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
-                play_count: 0,
-                play_time: Duration::zero(),
-                last_played: 0,
             },
         ];
 
@@ -414,21 +424,15 @@ mod tests {
         let database = Database::in_memory().unwrap();
 
         let games = vec![
-            Game {
+            NewGame {
                 name: "Game One".to_string(),
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
-                play_count: 0,
-                play_time: Duration::zero(),
-                last_played: 0,
             },
-            Game {
+            NewGame {
                 name: "Game Two".to_string(),
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
-                play_count: 0,
-                play_time: Duration::zero(),
-                last_played: 0,
             },
         ];
 
@@ -452,21 +456,15 @@ mod tests {
         let database = Database::in_memory().unwrap();
 
         let games = vec![
-            Game {
+            NewGame {
                 name: "Game One".to_string(),
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
-                play_count: 0,
-                play_time: Duration::zero(),
-                last_played: 0,
             },
-            Game {
+            NewGame {
                 name: "Game Two".to_string(),
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
-                play_count: 0,
-                play_time: Duration::zero(),
-                last_played: 0,
             },
         ];
 

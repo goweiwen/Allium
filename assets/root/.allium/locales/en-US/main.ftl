@@ -5,8 +5,9 @@ tab-apps = Apps
 tab-settings = Settings
 
 sort-alphabetical = Sort: A-Z
-sort-last-played = Sort: Last Played
-sort-most-played = Sort: Most Played
+sort-last-played = Sort: Recent
+sort-most-played = Sort: Playtime
+sort-search = Search
 
 recents-launch = Launch
 recents-remove = Remove

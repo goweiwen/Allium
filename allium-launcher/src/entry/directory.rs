@@ -4,11 +4,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::Result;
-use common::constants::ALLIUM_GAMES_DIR;
+use anyhow::{anyhow, Result};
+use common::{constants::ALLIUM_GAMES_DIR, database::Database};
 use serde::{Deserialize, Serialize};
 
-use crate::entry::{game::Game, gamelist::GameList, short_name, Entry};
+use crate::{
+    consoles::ConsoleMapper,
+    entry::{game::Game, gamelist::GameList, short_name, Entry},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Directory {
@@ -67,7 +70,7 @@ impl Directory {
         }
     }
 
-    pub fn parse_game_list(&self, game_list: &Path) -> Result<Vec<Entry>> {
+    fn parse_game_list(&self, game_list: &Path) -> Result<Vec<Entry>> {
         let file = File::open(game_list)?;
         let gamelist: GameList = serde_xml_rs::from_reader(file)?;
 
@@ -109,6 +112,54 @@ impl Directory {
         });
 
         Ok(folders.chain(games).collect())
+    }
+
+    pub fn entries(&self, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
+        let gamelist = self.path.join("gamelist.xml");
+        if gamelist.exists() {
+            return self.parse_game_list(&gamelist);
+        }
+
+        let gamelist = self.path.join("miyoogamelist.xml");
+        if gamelist.exists() {
+            return self.parse_game_list(&gamelist);
+        }
+
+        let entries: Vec<_> = std::fs::read_dir(&self.path)
+            .map_err(|e| anyhow!("Failed to open directory: {:?}, {}", &self.path, e))?
+            .filter_map(std::result::Result::ok)
+            .filter_map(|entry| match Entry::new(entry.path(), console_mapper) {
+                Ok(Some(entry)) => Some(entry),
+                _ => None,
+            })
+            .collect();
+
+        Ok(entries)
+    }
+
+    pub fn populate_db(&self, database: &Database, console_mapper: &ConsoleMapper) -> Result<()> {
+        let entries = self.entries(console_mapper)?;
+
+        for entry in &entries {
+            match entry {
+                Entry::Directory(dir) => dir.populate_db(database, console_mapper)?,
+                Entry::Game(_) | Entry::App(_) => {}
+            }
+        }
+
+        let games: Vec<_> = entries
+            .into_iter()
+            .filter_map(|entry| match entry {
+                Entry::Game(game) => Some(common::database::NewGame {
+                    name: game.name,
+                    path: game.path,
+                    image: game.image.flatten(),
+                }),
+                _ => None,
+            })
+            .collect();
+        database.update_games(&games)?;
+        Ok(())
     }
 }
 

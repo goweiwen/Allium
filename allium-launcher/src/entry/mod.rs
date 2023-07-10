@@ -112,6 +112,7 @@ fn short_name(name: &str) -> String {
 }
 
 pub trait Sort: Debug + Clone {
+    const HAS_BUTTON_HINTS: bool = true;
     fn button_hint(&self, locale: &Locale) -> String;
     fn next(&self) -> Self;
     fn with_directory(&self, directory: Directory) -> Self;

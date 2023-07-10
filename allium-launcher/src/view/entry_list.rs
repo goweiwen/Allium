@@ -78,31 +78,33 @@ where
             .set_background_color(StylesheetColor::Background)
             .set_border_radius(12);
 
-        let button_hints = Row::new(
+        let mut button_hints = Row::new(
             Point::new(
                 x + w as i32 - 12,
                 y + h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
             ),
-            {
-                let locale = res.get::<Locale>();
-                vec![
-                    ButtonHint::new(
-                        Point::zero(),
-                        Key::A,
-                        locale.t("button-select"),
-                        Alignment::Right,
-                    ),
-                    ButtonHint::new(
-                        Point::zero(),
-                        Key::Y,
-                        sort.button_hint(&locale),
-                        Alignment::Right,
-                    ),
-                ]
-            },
+            Vec::with_capacity(2),
             Alignment::Right,
             12,
         );
+        {
+            let locale = res.get::<Locale>();
+
+            button_hints.push(ButtonHint::new(
+                Point::zero(),
+                Key::A,
+                locale.t("button-select"),
+                Alignment::Right,
+            ));
+            if S::HAS_BUTTON_HINTS {
+                button_hints.push(ButtonHint::new(
+                    Point::zero(),
+                    Key::Y,
+                    sort.button_hint(&locale),
+                    Alignment::Right,
+                ))
+            }
+        }
 
         drop(styles);
 
@@ -168,6 +170,18 @@ where
                     commands.send(app.command()).await?;
                 }
             }
+        }
+        Ok(())
+    }
+
+    pub fn sort(&mut self, sort: S) -> Result<()> {
+        self.sort = sort;
+        self.load_entries()?;
+        if S::HAS_BUTTON_HINTS {
+            self.button_hints
+                .get_mut(1)
+                .unwrap()
+                .set_text(self.sort.button_hint(&self.res.get::<Locale>()));
         }
         Ok(())
     }
@@ -366,12 +380,7 @@ where
                     Ok(true)
                 }
                 KeyEvent::Pressed(Key::Y) => {
-                    self.sort = self.sort.next();
-                    self.button_hints
-                        .get_mut(1)
-                        .unwrap()
-                        .set_text(self.sort.button_hint(&self.res.get::<Locale>()));
-                    self.load_entries()?;
+                    self.sort(self.sort.next())?;
                     Ok(true)
                 }
                 KeyEvent::Pressed(Key::Select) => {

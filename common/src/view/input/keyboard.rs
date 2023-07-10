@@ -120,7 +120,7 @@ impl View for Keyboard {
             let w = key_size as i32 * KEYBOARD_COLUMNS + key_padding * 14;
             let h = key_size as i32 * KEYBOARD_ROWS + key_padding * 5;
             let x0 = (display.size().width as i32 - w) / 2;
-            let y0 = display.size().height as i32 - h - ButtonIcon::diameter(styles) as i32 - 8;
+            let y0 = display.size().height as i32 - h - ButtonIcon::diameter(styles) as i32 - 8 - 8;
 
             RoundedRectangle::with_equal_corners(
                 Rectangle::new(

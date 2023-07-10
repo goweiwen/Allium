@@ -7,6 +7,7 @@ tab-settings = 设置
 sort-alphabetical = 排序:A-Z
 sort-last-played = 排序:最后玩
 sort-most-played = 排序:最久玩
+sort-search = 搜索
 
 recents-launch = 启动
 recents-remove = 移除

@@ -5,7 +5,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use common::battery::Battery;
 use common::command::Command;
-use common::constants::{ALLIUM_LAUNCHER_STATE, ALLIUM_SD_ROOT};
+use common::constants::{ALLIUM_APPS_DIR, ALLIUM_GAMES_DIR, ALLIUM_LAUNCHER_STATE};
 use common::display::Display;
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
@@ -17,16 +17,19 @@ use log::{trace, warn};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
-use crate::view::browser::BrowserState;
+use crate::entry::directory::Directory;
+use crate::view::apps::{AppsSort, AppsState};
+use crate::view::entry_list::EntryList;
+use crate::view::games::{GamesSort, GamesState};
 use crate::view::settings::SettingsState;
 use crate::view::Recents;
-use crate::view::{Browser, Settings};
+use crate::view::{Apps, Games, Settings};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct AppState {
     selected: usize,
-    games: BrowserState,
-    apps: BrowserState,
+    games: GamesState,
+    apps: AppsState,
     settings: SettingsState,
 }
 
@@ -37,7 +40,7 @@ where
 {
     rect: Rect,
     battery_indicator: BatteryIndicator<B>,
-    views: (Recents, Browser, Browser, Settings),
+    views: (Recents, Games, Apps, Settings),
     selected: usize,
     tabs: Row<Label<String>>,
     dirty: bool,
@@ -50,7 +53,7 @@ where
     pub fn new(
         rect: Rect,
         res: Resources,
-        views: (Recents, Browser, Browser, Settings),
+        views: (Recents, Games, Apps, Settings),
         selected: usize,
         battery: B,
     ) -> Result<Self> {
@@ -112,16 +115,20 @@ where
             if let Ok(state) = serde_json::from_reader::<_, AppState>(file) {
                 let views = (
                     Recents::new(tab_rect, res.clone())?,
-                    Browser::load(tab_rect, res.clone(), state.games).unwrap_or_else(|_| {
-                        Browser::new(
+                    Games::load(tab_rect, res.clone(), state.games).unwrap_or_else(|_| {
+                        Games::new(
                             tab_rect,
                             res.clone(),
-                            ALLIUM_SD_ROOT.join("Roms").as_path().into(),
-                            0,
+                            EntryList::new(
+                                tab_rect,
+                                res.clone(),
+                                GamesSort::Alphabetical(Directory::new(ALLIUM_GAMES_DIR.clone())),
+                            )
+                            .unwrap(),
                         )
                         .unwrap()
                     }),
-                    Browser::load(tab_rect, res.clone(), state.apps)?,
+                    Apps::load(tab_rect, res.clone(), state.apps)?,
                     Settings::new(tab_rect, res.clone(), state.settings)?,
                 );
                 return Self::new(rect, res, views, state.selected, battery);
@@ -132,17 +139,23 @@ where
 
         let views = (
             Recents::new(tab_rect, res.clone())?,
-            Browser::new(
+            Games::new(
                 tab_rect,
                 res.clone(),
-                ALLIUM_SD_ROOT.join("Roms").as_path().into(),
-                0,
+                EntryList::new(
+                    tab_rect,
+                    res.clone(),
+                    GamesSort::Alphabetical(Directory::new(ALLIUM_GAMES_DIR.clone())),
+                )?,
             )?,
-            Browser::new(
+            Apps::new(
                 tab_rect,
                 res.clone(),
-                ALLIUM_SD_ROOT.join("Apps").as_path().into(),
-                0,
+                EntryList::new(
+                    tab_rect,
+                    res.clone(),
+                    AppsSort::Alphabetical(Directory::new(ALLIUM_APPS_DIR.clone())),
+                )?,
             )?,
             Settings::new(tab_rect, res.clone(), Default::default())?,
         );
@@ -204,6 +217,11 @@ where
     fn prev(&mut self) {
         let selected = (self.selected as isize - 1).rem_euclid(4);
         self.tab_change(selected as usize)
+    }
+
+    pub fn search(&mut self) {
+        self.tab_change(0);
+        self.views.0.search();
     }
 }
 

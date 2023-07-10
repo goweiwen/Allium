@@ -1,16 +1,16 @@
 use std::collections::VecDeque;
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Duration;
 use common::command::Command;
 use common::database::Database;
-use common::geom::{Point, Rect};
+use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
-use common::platform::{DefaultPlatform, KeyEvent, Platform};
+use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::View;
+use common::view::{ButtonHint, ButtonIcon, Row, View};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
@@ -19,46 +19,62 @@ use crate::entry::directory::Directory;
 use crate::entry::{Entry, Sort};
 use crate::view::entry_list::{EntryList, EntryListState};
 
-pub type BrowserState = EntryListState<GamesSort>;
+pub type GamesState = EntryListState<GamesSort>;
 
 #[derive(Debug, Clone)]
-pub struct Browser {
+pub struct Games {
     rect: Rect,
     list: EntryList<GamesSort>,
+    button_hints: Row<ButtonHint<String>>,
 }
 
-impl Browser {
-    pub fn new(rect: Rect, res: Resources, directory: Directory, selected: usize) -> Result<Self> {
-        let Rect { x, y, w, h } = rect;
+impl Games {
+    pub fn new(rect: Rect, res: Resources, list: EntryList<GamesSort>) -> Result<Self> {
+        let Rect { x, y, w: _, h } = rect;
 
-        let mut list = EntryList::new(
-            Rect::new(x, y, w, h),
-            res,
-            GamesSort::Alphabetical(directory),
-        )?;
+        let styles = res.get::<Stylesheet>();
+
+        let button_hints = Row::new(
+            Point::new(
+                x + 12,
+                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+            ),
+            {
+                let locale = res.get::<Locale>();
+                vec![ButtonHint::new(
+                    Point::zero(),
+                    Key::X,
+                    locale.t("sort-search"),
+                    Alignment::Left,
+                )]
+            },
+            Alignment::Left,
+            12,
+        );
+
+        Ok(Self {
+            rect,
+            list,
+            button_hints,
+        })
+    }
+
+    pub fn load(rect: Rect, res: Resources, state: GamesState) -> Result<Self> {
+        let selected = state.selected;
+
+        let mut list = EntryList::load(rect, res.clone(), state)?;
         list.select(selected);
 
-        Ok(Self { rect, list })
+        Self::new(rect, res, list)
     }
 
-    pub fn load(rect: Rect, res: Resources, state: BrowserState) -> Result<Self> {
-        let Rect {
-            x: _,
-            y: _,
-            w: _,
-            h: _,
-        } = rect;
-        let list = EntryList::load(rect, res, state)?;
-        Ok(Self { rect, list })
-    }
-
-    pub fn save(&self) -> BrowserState {
+    pub fn save(&self) -> GamesState {
         self.list.save()
     }
 }
 
 #[async_trait(?Send)]
-impl View for Browser {
+impl View for Games {
     fn draw(
         &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,
@@ -66,17 +82,22 @@ impl View for Browser {
     ) -> Result<bool> {
         let mut drawn = false;
 
-        drawn |= self.list.should_draw() && self.list.draw(display, styles)?;
+        if self.list.should_draw() {
+            drawn |= self.list.should_draw() && self.list.draw(display, styles)?;
+            self.button_hints.set_should_draw();
+        }
+        drawn |= self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
 
         Ok(drawn)
     }
 
     fn should_draw(&self) -> bool {
-        self.list.should_draw()
+        self.list.should_draw() || self.button_hints.should_draw()
     }
 
     fn set_should_draw(&mut self) {
         self.list.set_should_draw();
+        self.button_hints.set_should_draw();
     }
 
     async fn handle_key_event(
@@ -85,7 +106,13 @@ impl View for Browser {
         commands: Sender<Command>,
         bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
-        self.list.handle_key_event(event, commands, bubble).await
+        match event {
+            KeyEvent::Pressed(Key::X) => {
+                commands.send(Command::Search).await?;
+                return Ok(true);
+            }
+            _ => self.list.handle_key_event(event, commands, bubble).await,
+        }
     }
 
     fn children(&self) -> Vec<&dyn View> {
@@ -148,26 +175,7 @@ impl Sort for GamesSort {
     }
 
     fn entries(&self, database: &Database, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
-        let directory = self.directory();
-
-        let gamelist = directory.path.join("gamelist.xml");
-        if gamelist.exists() {
-            return directory.parse_game_list(&gamelist);
-        }
-
-        let gamelist = directory.path.join("miyoogamelist.xml");
-        if gamelist.exists() {
-            return directory.parse_game_list(&gamelist);
-        }
-
-        let mut entries: Vec<_> = std::fs::read_dir(&directory.path)
-            .map_err(|e| anyhow!("Failed to open directory: {:?}, {}", &directory.path, e))?
-            .filter_map(std::result::Result::ok)
-            .filter_map(|entry| match Entry::new(entry.path(), console_mapper) {
-                Ok(Some(entry)) => Some(entry),
-                _ => None,
-            })
-            .collect();
+        let mut entries = self.directory().entries(console_mapper)?;
 
         match self {
             GamesSort::Alphabetical(_) => {

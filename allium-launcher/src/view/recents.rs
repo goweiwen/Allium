@@ -2,15 +2,16 @@ use std::collections::VecDeque;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use common::command::Command;
-use common::constants::RECENT_GAMES_LIMIT;
+use common::command::{Command, Value};
+use common::constants::{ALLIUM_GAMES_DIR, RECENT_GAMES_LIMIT};
 use common::database::Database;
-use common::geom::{Point, Rect};
+use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
-use common::platform::{DefaultPlatform, KeyEvent, Platform};
+use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::View;
+use common::view::{ButtonHint, ButtonIcon, Keyboard, Row, View};
+use log::error;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
@@ -22,8 +23,11 @@ use crate::view::entry_list::EntryList;
 
 #[derive(Debug)]
 pub struct Recents {
+    res: Resources,
     rect: Rect,
     list: EntryList<RecentsSort>,
+    button_hints: Row<ButtonHint<String>>,
+    keyboard: Option<Keyboard>,
 }
 
 impl Recents {
@@ -34,9 +38,37 @@ impl Recents {
 
         let list = EntryList::new(Rect::new(x, y, w, h), res.clone(), RecentsSort::LastPlayed)?;
 
+        let button_hints = Row::new(
+            Point::new(
+                x + 12,
+                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+            ),
+            {
+                let locale = res.get::<Locale>();
+                vec![ButtonHint::new(
+                    Point::zero(),
+                    Key::X,
+                    locale.t("sort-search"),
+                    Alignment::Left,
+                )]
+            },
+            Alignment::Left,
+            12,
+        );
+
         drop(styles);
 
-        Ok(Self { rect, list })
+        Ok(Self {
+            res,
+            rect,
+            list,
+            button_hints,
+            keyboard: None,
+        })
+    }
+
+    pub fn search(&mut self) {
+        self.keyboard = Some(Keyboard::new(self.res.clone(), String::new(), false));
     }
 }
 
@@ -49,17 +81,34 @@ impl View for Recents {
     ) -> Result<bool> {
         let mut drawn = false;
 
-        drawn |= self.list.should_draw() && self.list.draw(display, styles)?;
+        if self.list.should_draw() {
+            drawn |= self.list.should_draw() && self.list.draw(display, styles)?;
+            self.button_hints.set_should_draw();
+        }
+        drawn |= self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
+
+        if let Some(keyboard) = self.keyboard.as_mut() {
+            if drawn {
+                keyboard.set_should_draw();
+            }
+            drawn |= keyboard.should_draw() && keyboard.draw(display, styles)?;
+        }
 
         Ok(drawn)
     }
 
     fn should_draw(&self) -> bool {
         self.list.should_draw()
+            || self.button_hints.should_draw()
+            || self.keyboard.as_ref().map_or(false, |k| k.should_draw())
     }
 
     fn set_should_draw(&mut self) {
         self.list.set_should_draw();
+        self.button_hints.set_should_draw();
+        if let Some(keyboard) = self.keyboard.as_mut() {
+            keyboard.set_should_draw();
+        }
     }
 
     async fn handle_key_event(
@@ -68,7 +117,43 @@ impl View for Recents {
         commands: Sender<Command>,
         bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
-        self.list.handle_key_event(event, commands, bubble).await
+        if let Some(keyboard) = self.keyboard.as_mut() {
+            if keyboard
+                .handle_key_event(event, commands.clone(), bubble)
+                .await?
+            {
+                bubble.retain_mut(|c| match c {
+                    Command::ValueChanged(_, val) => {
+                        if let Value::String(val) = val {
+                            if let Err(e) = self.list.sort(RecentsSort::Search(val.clone())) {
+                                error!("Failed to sort: {}", e);
+                            }
+                        }
+                        false
+                    }
+                    Command::CloseView => {
+                        self.keyboard = None;
+                        false
+                    }
+                    _ => true,
+                });
+                return Ok(true);
+            }
+        }
+
+        match event {
+            KeyEvent::Pressed(Key::X) => {
+                if self.keyboard.is_none() {
+                    self.search();
+                } else {
+                    self.keyboard = None;
+                    self.list.sort(RecentsSort::LastPlayed)?;
+                    commands.send(Command::Redraw).await?;
+                }
+                return Ok(true);
+            }
+            _ => self.list.handle_key_event(event, commands, bubble).await,
+        }
     }
 
     fn children(&self) -> Vec<&dyn View> {
@@ -88,10 +173,11 @@ impl View for Recents {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum RecentsSort {
     LastPlayed,
     MostPlayed,
+    Search(String),
 }
 
 impl Sort for RecentsSort {
@@ -99,6 +185,7 @@ impl Sort for RecentsSort {
         match self {
             RecentsSort::LastPlayed => locale.t("sort-last-played"),
             RecentsSort::MostPlayed => locale.t("sort-most-played"),
+            RecentsSort::Search(_) => locale.t("sort-search"),
         }
     }
 
@@ -106,6 +193,7 @@ impl Sort for RecentsSort {
         match self {
             RecentsSort::LastPlayed => RecentsSort::MostPlayed,
             RecentsSort::MostPlayed => RecentsSort::LastPlayed,
+            RecentsSort::Search(_) => RecentsSort::LastPlayed,
         }
     }
 
@@ -113,10 +201,17 @@ impl Sort for RecentsSort {
         unimplemented!();
     }
 
-    fn entries(&self, database: &Database, _console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
+    fn entries(&self, database: &Database, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
         let games = match self {
             RecentsSort::LastPlayed => database.select_last_played(RECENT_GAMES_LIMIT),
             RecentsSort::MostPlayed => database.select_most_played(RECENT_GAMES_LIMIT),
+            RecentsSort::Search(query) => {
+                if !database.has_indexed()? {
+                    Directory::new(ALLIUM_GAMES_DIR.clone())
+                        .populate_db(database, console_mapper)?;
+                }
+                database.search(query, RECENT_GAMES_LIMIT)
+            }
         };
 
         let games = match games {
