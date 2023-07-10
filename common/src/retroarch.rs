@@ -2,7 +2,7 @@ use std::{borrow::Cow, time::Duration};
 
 use anyhow::Result;
 use log::{debug, error, trace};
-use tokio::{net::UdpSocket, select};
+use tokio::net::UdpSocket;
 
 use crate::constants::RETROARCH_UDP_SOCKET;
 
@@ -78,15 +78,15 @@ impl RetroArchCommand {
                 reply.truncate(len);
                 let reply = String::from_utf8(reply)?;
                 debug!("Received reply from RetroArch: {:?}", reply);
-                return Ok(Some(reply));
+                Ok(Some(reply))
             }
             Ok(Err(e)) => {
                 error!("Error receiving from RetroArch: {}", e);
-                return Err(e.into());
+                Err(e.into())
             }
             Err(e) => {
                 error!("Timeout receiving from RetroArch: {}", e);
-                return Err(e.into());
+                Err(e.into())
             }
         }
     }
