@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::time::Duration;
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -201,8 +202,9 @@ where
         let locale = self.res.get::<Locale>();
 
         let labels = vec![
-            locale.t("recents-launch"),
-            locale.t("recents-remove-from-recents"),
+            locale.t("menu-launch"),
+            locale.t("menu-remove-from-recents"),
+            locale.t("menu-repopulate-database"),
         ];
 
         let height = labels.len() as u32 * (styles.ui_font.size + SELECTION_MARGIN);
@@ -366,6 +368,18 @@ where
                             commands.send(Command::Redraw).await?;
                             self.menu = None;
                         }
+                        Ok(true)
+                    }
+                    2 => {
+                        commands.send(Command::Redraw).await?;
+                        self.menu = None;
+                        let toast = self.res.get::<Locale>().t("populating-database");
+                        commands.send(Command::Toast(toast, None)).await?;
+                        commands.send(Command::PopulateDb).await?;
+                        commands
+                            .send(Command::Toast(String::new(), Some(Duration::ZERO)))
+                            .await?;
+                        commands.send(Command::Redraw).await?;
                         Ok(true)
                     }
                     _ => unreachable!("invalid menu selection"),

@@ -108,7 +108,7 @@ impl View for Games {
     ) -> Result<bool> {
         match event {
             KeyEvent::Pressed(Key::X) => {
-                commands.send(Command::Search).await?;
+                commands.send(Command::StartSearch).await?;
                 return Ok(true);
             }
             _ => self.list.handle_key_event(event, commands, bubble).await,

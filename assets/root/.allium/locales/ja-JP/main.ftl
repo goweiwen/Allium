@@ -9,9 +9,13 @@ sort-last-played = ソート:最近プレイ
 sort-most-played = ソート:プレイ時間
 sort-search = 検索
 
+populating-database = データベースへの入力...
+    数分かかるかもしれません。
+    お茶でも飲んでいいですよ！
 
-recents-launch = 起動
-recents-remove-from-recents = 最近から削除
+menu-launch = 起動
+menu-remove-from-recents = 最近から削除
+menu-repopulate-database = データベースを再入力
 
 settings-wifi = Wi-Fi
 settings-wifi-wifi-enabled = Wi-Fi有効

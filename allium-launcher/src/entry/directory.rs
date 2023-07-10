@@ -1,4 +1,5 @@
 use std::{
+    collections::VecDeque,
     ffi::OsStr,
     fs::File,
     path::{Path, PathBuf},
@@ -137,12 +138,19 @@ impl Directory {
         Ok(entries)
     }
 
-    pub fn populate_db(&self, database: &Database, console_mapper: &ConsoleMapper) -> Result<()> {
+    /// Populate the database with the games in this directory, pushing any subdirectories onto the
+    /// queue.
+    pub fn populate_db(
+        &self,
+        queue: &mut VecDeque<Directory>,
+        database: &Database,
+        console_mapper: &ConsoleMapper,
+    ) -> Result<()> {
         let entries = self.entries(console_mapper)?;
 
         for entry in &entries {
             match entry {
-                Entry::Directory(dir) => dir.populate_db(database, console_mapper)?,
+                Entry::Directory(dir) => queue.push_back(dir.clone()),
                 Entry::Game(_) | Entry::App(_) => {}
             }
         }
@@ -159,6 +167,7 @@ impl Directory {
             })
             .collect();
         database.update_games(&games)?;
+
         Ok(())
     }
 }

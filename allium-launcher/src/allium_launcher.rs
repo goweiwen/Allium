@@ -3,6 +3,7 @@ use std::process;
 
 use anyhow::Result;
 use common::command::Command;
+use common::constants::ALLIUM_GAMES_DIR;
 use common::display::color::Color;
 use common::geom;
 use common::locale::{Locale, LocaleSettings};
@@ -18,7 +19,8 @@ use common::stylesheet::Stylesheet;
 use type_map::TypeMap;
 
 use crate::consoles::ConsoleMapper;
-use crate::view::App;
+use crate::entry::directory::Directory;
+use crate::view::{App, Toast};
 
 #[derive(Debug)]
 pub struct AlliumLauncher<P: Platform> {
@@ -26,6 +28,7 @@ pub struct AlliumLauncher<P: Platform> {
     display: P::Display,
     res: Resources,
     view: App<P::Battery>,
+    toast: Option<Toast>,
 }
 
 impl AlliumLauncher<DefaultPlatform> {
@@ -51,6 +54,7 @@ impl AlliumLauncher<DefaultPlatform> {
             display,
             res,
             view,
+            toast: None,
         })
     }
 
@@ -66,11 +70,20 @@ impl AlliumLauncher<DefaultPlatform> {
         let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 
         loop {
-            if self.view.should_draw()
+            let mut drawn = self.view.should_draw()
                 && self
                     .view
-                    .draw(&mut self.display, &self.res.get::<Stylesheet>())?
-            {
+                    .draw(&mut self.display, &self.res.get::<Stylesheet>())?;
+
+            if let Some(toast) = self.toast.as_mut() {
+                if toast.has_expired() {
+                    self.toast = None;
+                } else {
+                    drawn |= toast.draw(&mut self.display, &self.res.get::<Stylesheet>())?;
+                }
+            }
+
+            if drawn {
                 self.display.flush()?;
             }
 
@@ -78,6 +91,11 @@ impl AlliumLauncher<DefaultPlatform> {
             tokio::select! {
                 _ = sigterm.recv() => {
                     self.handle_command(Command::Exit).await?;
+                }
+                cmd = rx.recv() => {
+                    if let Some(cmd) = cmd {
+                        self.handle_command(cmd).await?;
+                    }
                 }
                 event = self.platform.poll() => {
                     let mut bubble = VecDeque::new();
@@ -93,10 +111,6 @@ impl AlliumLauncher<DefaultPlatform> {
                     self.view.handle_key_event(event, tx.clone(), &mut bubble).await?;
                 }
                 else => {}
-            }
-
-            while let Ok(cmd) = rx.try_recv() {
-                self.handle_command(cmd).await?;
             }
         }
     }
@@ -170,9 +184,32 @@ impl AlliumLauncher<DefaultPlatform> {
                 self.display.load(self.display.bounding_box().into())?;
                 self.view.set_should_draw();
             }
-            Command::Search => {
+            Command::StartSearch => {
+                trace!("starting search");
+                self.view.start_search();
+            }
+            Command::Search(query) => {
                 trace!("searching");
-                self.view.search();
+                self.view.search(query)?;
+            }
+            Command::Toast(text, duration) => {
+                trace!("showing toast: {:?}", text);
+                self.toast = Some(Toast::new(text, duration));
+            }
+            Command::PopulateDb => {
+                let mut queue = VecDeque::with_capacity(10);
+                queue.push_back(Directory::new(ALLIUM_GAMES_DIR.clone()));
+
+                let database = self.res.get::<Database>();
+                let console_mapper = self.res.get::<ConsoleMapper>();
+
+                database.clear()?;
+
+                while let Some(dir) = queue.pop_front() {
+                    dir.populate_db(&mut queue, &database, &console_mapper)?;
+                }
+
+                database.set_has_indexed(true)?;
             }
             command => {
                 warn!("unhandled command: {:?}", command);

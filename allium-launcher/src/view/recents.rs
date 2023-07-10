@@ -1,9 +1,10 @@
 use std::collections::VecDeque;
+use std::time::Duration;
 
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::{Command, Value};
-use common::constants::{ALLIUM_GAMES_DIR, RECENT_GAMES_LIMIT};
+use common::constants::RECENT_GAMES_LIMIT;
 use common::database::Database;
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
@@ -11,7 +12,6 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::{ButtonHint, ButtonIcon, Keyboard, Row, View};
-use log::error;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
@@ -67,8 +67,28 @@ impl Recents {
         })
     }
 
-    pub fn search(&mut self) {
+    pub fn start_search(&mut self) {
         self.keyboard = Some(Keyboard::new(self.res.clone(), String::new(), false));
+    }
+
+    pub async fn try_search(&mut self, commands: Sender<Command>, query: String) -> Result<()> {
+        if !self.res.get::<Database>().has_indexed()? {
+            let toast = self.res.get::<Locale>().t("populating-database");
+            commands.send(Command::Toast(toast, None)).await?;
+            commands.send(Command::PopulateDb).await?;
+            commands
+                .send(Command::Toast(String::new(), Some(Duration::ZERO)))
+                .await?;
+        }
+
+        commands.send(Command::Search(query)).await?;
+
+        Ok(())
+    }
+
+    pub fn search(&mut self, query: String) -> Result<()> {
+        self.list.sort(RecentsSort::Search(query))?;
+        Ok(())
     }
 }
 
@@ -122,12 +142,11 @@ impl View for Recents {
                 .handle_key_event(event, commands.clone(), bubble)
                 .await?
             {
+                let mut query = None;
                 bubble.retain_mut(|c| match c {
                     Command::ValueChanged(_, val) => {
                         if let Value::String(val) = val {
-                            if let Err(e) = self.list.sort(RecentsSort::Search(val.clone())) {
-                                error!("Failed to sort: {}", e);
-                            }
+                            query = Some(val.clone());
                         }
                         false
                     }
@@ -137,6 +156,9 @@ impl View for Recents {
                     }
                     _ => true,
                 });
+                if let Some(query) = query {
+                    self.try_search(commands, query).await?;
+                }
                 return Ok(true);
             }
         }
@@ -144,7 +166,7 @@ impl View for Recents {
         match event {
             KeyEvent::Pressed(Key::X) => {
                 if self.keyboard.is_none() {
-                    self.search();
+                    self.start_search();
                 } else {
                     self.keyboard = None;
                     self.list.sort(RecentsSort::LastPlayed)?;
@@ -201,17 +223,11 @@ impl Sort for RecentsSort {
         unimplemented!();
     }
 
-    fn entries(&self, database: &Database, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
+    fn entries(&self, database: &Database, _console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
         let games = match self {
             RecentsSort::LastPlayed => database.select_last_played(RECENT_GAMES_LIMIT),
             RecentsSort::MostPlayed => database.select_most_played(RECENT_GAMES_LIMIT),
-            RecentsSort::Search(query) => {
-                if !database.has_indexed()? {
-                    Directory::new(ALLIUM_GAMES_DIR.clone())
-                        .populate_db(database, console_mapper)?;
-                }
-                database.search(query, RECENT_GAMES_LIMIT)
-            }
+            RecentsSort::Search(query) => database.search(query, RECENT_GAMES_LIMIT),
         };
 
         let games = match games {

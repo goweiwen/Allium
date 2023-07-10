@@ -9,8 +9,13 @@ sort-last-played = Sort: Recent
 sort-most-played = Sort: Playtime
 sort-search = Search
 
-recents-launch = Launch
-recents-remove-from-recents = Remove from Recents
+populating-database = Populating database...
+    This may take several minutes.
+    Go grab a coffee!
+
+menu-launch = Launch
+menu-remove-from-recents = Remove from Recents
+menu-repopulate-database = Repopulate Database
 
 settings-wifi = Wi-Fi
 settings-wifi-wifi-enabled = Wi-Fi Enabled

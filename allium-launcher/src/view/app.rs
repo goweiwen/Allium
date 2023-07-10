@@ -219,9 +219,15 @@ where
         self.tab_change(selected as usize)
     }
 
-    pub fn search(&mut self) {
+    pub fn start_search(&mut self) {
         self.tab_change(0);
-        self.views.0.search();
+        self.views.0.start_search();
+    }
+
+    pub fn search(&mut self, query: String) -> Result<()> {
+        self.tab_change(0);
+        self.views.0.search(query)?;
+        Ok(())
     }
 }
 

@@ -9,8 +9,13 @@ sort-last-played = 排序:最后玩
 sort-most-played = 排序:最久玩
 sort-search = 搜索
 
-recents-launch = 启动
-recents-remove-from-recents = 从最近中移除
+populating-database = 填充数据库...
+    这可能需要几分钟。
+    去喝点茶吧！
+
+menu-launch = 启动
+menu-remove-from-recents = 从最近中移除
+menu-repopulate-database = 重新填充数据库
 
 settings-wifi = Wi-Fi
 settings-wifi-wifi-enabled = Wi-Fi启用

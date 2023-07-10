@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::display::color::Color;
 use crate::locale::LocaleSettings;
 use crate::{display::settings::DisplaySettings, stylesheet::Stylesheet};
@@ -14,7 +16,10 @@ pub enum Command {
     TrapFocus,
     Unfocus,
     Redraw,
-    Search,
+    StartSearch,
+    Search(String),
+    Toast(String, Option<Duration>),
+    PopulateDb,
 }
 
 #[derive(Debug, Clone)]

@@ -99,8 +99,7 @@ CREATE TABLE IF NOT EXISTS key_value (
     }
 
     pub fn delete_game(&self, path: &Path) -> Result<()> {
-        let conn = self.conn.as_ref().unwrap();
-        conn.execute(
+        self.conn.as_ref().unwrap().execute(
             "DELETE FROM games WHERE path = ?",
             params![path.display().to_string()],
         )?;
@@ -175,6 +174,10 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?",
 
     /// Search for games by name. The query is a prefix search on words, so "Fi" will match both "Fire Emblem" and "Pokemon Fire Red".
     pub fn search(&self, query: &str, limit: i64) -> Result<Vec<Game>> {
+        if query.is_empty() {
+            return Ok(Vec::new());
+        }
+
         let conn = self.conn.as_ref().unwrap();
 
         let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.name MATCH ? LIMIT ?")?;
@@ -226,90 +229,92 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?",
         path: &Path,
         image: Option<&Path>,
     ) -> Result<()> {
-        let mut stmt = self.conn.as_ref().unwrap().prepare(
+        self.conn.as_ref().unwrap().execute(
             "
 INSERT INTO games (name, path, image, play_count, play_time, last_played)
 VALUES (?, ?, ?, ?, ?, ?)
 ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
+            params![
+                name,
+                path.display().to_string(),
+                image.map(|p| p.display().to_string()),
+                1,
+                0,
+                0
+            ],
         )?;
 
-        stmt.execute(params![
-            name,
-            path.display().to_string(),
-            image.map(|p| p.display().to_string()),
-            1,
-            0,
-            0
-        ])?;
-
-        let mut stmt = self.conn.as_ref().unwrap().prepare(
+        self.conn.as_ref().unwrap().execute(
             "UPDATE games SET last_played = (SELECT MAX(last_played) FROM games) + 1 WHERE path = ?",
-        )?;
-        stmt.execute([path.display().to_string()])?;
+        [path.display().to_string()])?;
 
         Ok(())
     }
 
     /// Increases the play time of a game. Does nothing if the game doesn't exist.
     pub fn add_play_time(&self, path: &Path, play_time: Duration) -> Result<()> {
-        let mut stmt = self
-            .conn
-            .as_ref()
-            .unwrap()
-            .prepare("UPDATE games SET play_time = play_time + ? WHERE path = ?")?;
-
-        stmt.execute(params![play_time.num_seconds(), path.display().to_string()])?;
+        self.conn.as_ref().unwrap().execute(
+            "UPDATE games SET play_time = play_time + ? WHERE path = ?",
+            params![play_time.num_seconds(), path.display().to_string()],
+        )?;
 
         Ok(())
     }
 
     pub fn get_guide_cursor(&self, path: &Path) -> Result<u64> {
-        let mut stmt = self
+        let cursor = self
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT cursor FROM guides WHERE path = ?")?;
-
-        let cursor = stmt
-            .query_row([path.display().to_string()], |row| row.get(0))
+            .query_row(
+                "SELECT cursor FROM guides WHERE path = ?",
+                [path.display().to_string()],
+                |row| row.get(0),
+            )
             .optional()?;
 
         Ok(cursor.unwrap_or(0))
     }
 
     pub fn update_guide_cursor(&self, path: &Path, cursor: u64) -> Result<()> {
-        let mut stmt = self
+        self
             .conn
             .as_ref()
             .unwrap()
-            .prepare("INSERT INTO guides (path, cursor) VALUES (?, ?) ON CONFLICT(path) DO UPDATE SET cursor = ?")?;
+            .execute("INSERT INTO guides (path, cursor) VALUES (?, ?) ON CONFLICT(path) DO UPDATE SET cursor = ?", params![path.display().to_string(), cursor, cursor])?;
 
-        stmt.execute(params![path.display().to_string(), cursor, cursor])?;
+        Ok(())
+    }
+
+    pub fn clear(&self) -> Result<()> {
+        self.conn.as_ref().unwrap().execute(
+            "DELETE FROM games WHERE last_played = 0 AND play_time = 0",
+            [],
+        )?;
 
         Ok(())
     }
 
     pub fn set_has_indexed(&self, has_indexed: bool) -> Result<()> {
-        let mut stmt = self
+        self
             .conn
             .as_ref()
             .unwrap()
-            .prepare("INSERT INTO key_value (key, value) VALUES ('has_indexed', 1) ON CONFLICT(key) DO UPDATE SET value = ?")?;
-
-        stmt.execute([if has_indexed { "1" } else { "0" }])?;
+            .execute("INSERT INTO key_value (key, value) VALUES ('has_indexed', 1) ON CONFLICT(key) DO UPDATE SET value = ?", [if has_indexed { "1" } else {"0"}])?;
 
         Ok(())
     }
 
     pub fn has_indexed(&self) -> Result<bool> {
-        let mut stmt = self
+        let value = self
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT value FROM key_value WHERE key = 'has_indexed'")?;
-
-        let value = stmt
-            .query_row([], |row| row.get::<_, String>(0))
+            .query_row(
+                "SELECT value FROM key_value WHERE key = 'has_indexed'",
+                [],
+                |row| row.get::<_, String>(0),
+            )
             .optional()?;
 
         Ok(matches!(value.as_deref(), Some("1")))
