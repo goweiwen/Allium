@@ -4,8 +4,10 @@ tab-games = ゲーム
 tab-apps = アプリ
 tab-settings = 設定
 
-recents-sort-currently-last-played = 最近順
-recents-sort-currently-most-played = 最も順
+sort-alphabetical = ソート:A-Z
+sort-last-played = ソート:最近プレイ
+sort-most-played = ソート:プレイ時間
+
 recents-launch = 起動
 recents-remove = 削除
 

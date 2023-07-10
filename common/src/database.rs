@@ -6,7 +6,7 @@ use std::{
 use anyhow::{Context, Result};
 use chrono::Duration;
 use log::info;
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{params, Connection, OptionalExtension, Row};
 use rusqlite_migration::{Migrations, M};
 
 use crate::constants::{ALLIUM_BASE_DIR, ALLIUM_DATABASE};
@@ -96,8 +96,11 @@ CREATE TABLE IF NOT EXISTS guides (
     }
 
     pub fn update_game_path(&self, old: &Path, new: &Path) -> Result<()> {
-        let conn = self.conn.as_ref().unwrap();
-        let mut stmt = conn.prepare("UPDATE games SET path = ? WHERE path = ?")?;
+        let mut stmt = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .prepare("UPDATE games SET path = ? WHERE path = ?")?;
         stmt.execute(params![
             new.display().to_string(),
             old.display().to_string()
@@ -106,8 +109,11 @@ CREATE TABLE IF NOT EXISTS guides (
     }
 
     pub fn update_games(&self, games: &[Game]) -> Result<()> {
-        let conn = self.conn.as_ref().unwrap();
-        let mut stmt = conn.prepare("
+        let mut stmt = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .prepare("
 INSERT INTO games (name, path, image, play_count, play_time, last_played)
 VALUES (?, ?, ?, ?, ?, ?)
 ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, play_count = ?, play_time = ?, last_played = ?")?;
@@ -135,18 +141,13 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, play_count = ?, play_time =
 
     /// Selects played games sorted by most play time first.
     pub fn select_most_played(&self, limit: i64) -> Result<Vec<Game>> {
-        let mut stmt = self.conn.as_ref().unwrap().prepare("SELECT name, path, image, play_count, play_time, last_played FROM games WHERE play_time > 0 ORDER BY play_time DESC LIMIT ?")?;
+        let mut stmt = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .prepare("SELECT name, path, image, play_count, play_time, last_played FROM games WHERE last_played > 0 ORDER BY play_time DESC LIMIT ?")?;
 
-        let rows = stmt.query_map([limit], |row| {
-            Ok(Game {
-                name: row.get(0)?,
-                path: PathBuf::from(row.get::<_, String>(1)?),
-                image: row.get::<_, Option<String>>(2)?.map(PathBuf::from),
-                play_count: row.get(3)?,
-                play_time: Duration::seconds(row.get(4)?),
-                last_played: row.get(5)?,
-            })
-        })?;
+        let rows = stmt.query_map([limit], map_game)?;
 
         let mut games = Vec::new();
         for row in rows {
@@ -158,18 +159,13 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, play_count = ?, play_time =
 
     /// Selects played games sorted by last played first.
     pub fn select_last_played(&self, limit: i64) -> Result<Vec<Game>> {
-        let mut stmt = self.conn.as_ref().unwrap().prepare("SELECT name, path, image, play_count, play_time, last_played FROM games WHERE last_played > 0 ORDER BY last_played DESC LIMIT ?")?;
+        let mut stmt = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .prepare("SELECT name, path, image, play_count, play_time, last_played FROM games WHERE last_played > 0 ORDER BY last_played DESC LIMIT ?")?;
 
-        let rows = stmt.query_map([limit], |row| {
-            Ok(Game {
-                name: row.get(0)?,
-                path: PathBuf::from(row.get::<_, String>(1)?),
-                image: row.get::<_, Option<String>>(2)?.map(PathBuf::from),
-                play_count: row.get(3)?,
-                play_time: Duration::seconds(row.get(4)?),
-                last_played: row.get(5)?,
-            })
-        })?;
+        let rows = stmt.query_map([limit], map_game)?;
 
         let mut games = Vec::new();
         for row in rows {
@@ -181,18 +177,13 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, play_count = ?, play_time =
 
     /// Search for games by name. The query is a prefix search on words, so "Fi" will match both "Fire Emblem" and "Pokemon Fire Red".
     pub fn search(&self, query: &str, limit: i64) -> Result<Vec<Game>> {
-        let mut stmt = self.conn.as_ref().unwrap().prepare("SELECT games.name, games.path, image, play_count, play_time, last_played FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.name MATCH ? LIMIT ?")?;
+        let mut stmt = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .prepare("SELECT games.name, games.path, image, play_count, play_time, last_played FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.name MATCH ? LIMIT ?")?;
 
-        let rows = stmt.query_map(params![format!("{}*", query), limit], |row| {
-            Ok(Game {
-                name: row.get(0)?,
-                path: PathBuf::from(row.get::<_, String>(1)?),
-                image: row.get::<_, Option<String>>(2)?.map(PathBuf::from),
-                play_count: row.get(3)?,
-                play_time: Duration::seconds(row.get(4)?),
-                last_played: row.get(5)?,
-            })
-        })?;
+        let rows = stmt.query_map(params![format!("{}*", query), limit], map_game)?;
 
         let mut games = Vec::new();
         for row in rows {
@@ -203,20 +194,33 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, play_count = ?, play_time =
     }
 
     pub fn select_game(&self, path: &str) -> Result<Option<Game>> {
-        let game = self.conn.as_ref().unwrap().query_row(
-            "SELECT name, path, image, play_count, play_time, last_played FROM games WHERE path = ? LIMIT 1",
-       [path], |row| {
-            Ok(Game {
-                name: row.get(0)?,
-                path: PathBuf::from(row.get::<_, String>(1)?),
-                image: row.get::<_, Option<String>>(2)?.map(PathBuf::from),
-                play_count: row.get(3)?,
-                play_time: Duration::seconds(row.get(4)?),
-                last_played: row.get(5)?,
-            })
-        }).optional()?;
+        let game = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .query_row("SELECT name, path, image, play_count, play_time, last_played FROM games WHERE path = ? LIMIT 1", [path], map_game)
+            .optional()?;
 
         Ok(game)
+    }
+
+    pub fn select_games(&self, paths: &[&Path]) -> Result<Vec<Option<Game>>> {
+        let mut stmt = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .prepare("SELECT name, path, image, play_count, play_time, last_played FROM games WHERE path = ? LIMIT 1")?;
+
+        let mut results = vec![None; paths.len()];
+        for (i, path) in paths.into_iter().enumerate() {
+            let game = stmt
+                .query_row(params![path.display().to_string()], map_game)
+                .optional()?;
+
+            results[i] = game;
+        }
+
+        Ok(results)
     }
 
     /// Increment the play count of a game, inserting a new row if it doesn't exist.
@@ -232,6 +236,7 @@ INSERT INTO games (name, path, image, play_count, play_time, last_played)
 VALUES (?, ?, ?, ?, ?, ?)
 ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
         )?;
+
         stmt.execute(params![
             name,
             path.display().to_string(),
@@ -441,4 +446,60 @@ mod tests {
         let results = database.search("Ga", 100).unwrap();
         assert_eq!(results[0].path, games[0].path);
     }
+
+    #[test]
+    fn test_select_games() {
+        let database = Database::in_memory().unwrap();
+
+        let games = vec![
+            Game {
+                name: "Game One".to_string(),
+                path: PathBuf::from("test_directory/Game One.rom"),
+                image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
+                play_count: 0,
+                play_time: Duration::zero(),
+                last_played: 0,
+            },
+            Game {
+                name: "Game Two".to_string(),
+                path: PathBuf::from("test_directory/Game Two.rom"),
+                image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
+                play_count: 0,
+                play_time: Duration::zero(),
+                last_played: 0,
+            },
+        ];
+
+        database.update_games(&games).unwrap();
+
+        let results = database
+            .select_games(&[&games[0].path, &games[1].path])
+            .unwrap();
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].as_ref().map(|g| &g.path), Some(&games[0].path));
+        assert_eq!(results[1].as_ref().map(|g| &g.path), Some(&games[1].path));
+
+        let results = database.select_games(&[&games[1].path]).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].as_ref().map(|g| &g.path), Some(&games[1].path));
+
+        let fake_path = PathBuf::from("test_directory/Game Three.rom");
+        let results = database
+            .select_games(&[&games[0].path, &fake_path])
+            .unwrap();
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].as_ref().map(|g| &g.path), Some(&games[0].path));
+        assert_eq!(results[1].as_ref().map(|g| &g.path), None);
+    }
+}
+
+fn map_game(row: &Row<'_>) -> rusqlite::Result<Game> {
+    Ok(Game {
+        name: row.get(0)?,
+        path: PathBuf::from(row.get::<_, String>(1)?),
+        image: row.get::<_, Option<String>>(2)?.map(PathBuf::from),
+        play_count: row.get(3)?,
+        play_time: Duration::seconds(row.get(4)?),
+        last_played: row.get(5)?,
+    })
 }

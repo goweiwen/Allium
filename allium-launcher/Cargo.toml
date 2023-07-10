@@ -12,6 +12,7 @@ miyoo = ["common/miyoo"]
 
 [dependencies]
 anyhow = "1.0.70"
+chrono = { version = "0.4.26", features = ["serde"] }
 embedded-graphics = "0.8.0"
 lazy_static = "1.4.0"
 regex = "1.8.3"

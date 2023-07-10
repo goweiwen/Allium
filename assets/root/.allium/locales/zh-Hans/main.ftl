@@ -4,8 +4,10 @@ tab-games = 游戏
 tab-apps = 应用
 tab-settings = 设置
 
-recents-sort-currently-last-played = 最后播放
-recents-sort-currently-most-played = 最常播放
+sort-alphabetical = 排序:A-Z
+sort-last-played = 排序:最后玩
+sort-most-played = 排序:最久玩
+
 recents-launch = 启动
 recents-remove = 移除
 

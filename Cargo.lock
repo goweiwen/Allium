@@ -91,6 +91,7 @@ version = "0.16.2"
 dependencies = [
  "anyhow",
  "async-trait",
+ "chrono",
  "common",
  "embedded-graphics",
  "image 0.23.14",

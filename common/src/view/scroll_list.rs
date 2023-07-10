@@ -17,7 +17,7 @@ use crate::stylesheet::{Stylesheet, StylesheetColor};
 use crate::view::{Command, Label, View};
 
 /// A listing of selectable entries. Assumes that all entries have the same size.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScrollList {
     rect: Rect,
     /// All entries.
@@ -66,6 +66,13 @@ impl ScrollList {
     }
 
     pub fn set_items(&mut self, items: Vec<String>, preserve_selection: bool) {
+        if items.is_empty() {
+            self.items = items;
+            self.children.clear();
+            self.dirty = true;
+            return;
+        }
+
         let selected = if preserve_selection {
             self.items
                 .get(self.selected)
@@ -100,7 +107,7 @@ impl ScrollList {
         self.dirty = true;
     }
 
-    pub fn select(&mut self, index: usize) {
+    pub fn select(&mut self, mut index: usize) {
         if self.visible_count() == 0 {
             return;
         }
@@ -109,15 +116,14 @@ impl ScrollList {
             c.set_background_color(self.background_color.unwrap_or(StylesheetColor::Background))
         });
 
+        index = index.clamp(0, self.items.len() - 1);
         if index >= self.top + self.visible_count() {
             self.top = (index - self.visible_count() + 1).min(self.items.len() - 1);
-            self.update_children();
         } else if index < self.top {
             self.top = index;
-            self.update_children();
         }
-
         self.selected = index;
+        self.update_children();
 
         self.children
             .get_mut(self.selected - self.top)

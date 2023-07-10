@@ -4,14 +4,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use common::constants::ALLIUM_GAMES_DIR;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    consoles::ConsoleMapper,
-    entry::{game::Game, gamelist::GameList, short_name, Entry},
-};
+use crate::entry::{game::Game, gamelist::GameList, short_name, Entry};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Directory {
@@ -68,29 +65,6 @@ impl Directory {
             full_name,
             path,
         }
-    }
-
-    pub fn entries(&self, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
-        let gamelist = self.path.join("gamelist.xml");
-        if gamelist.exists() {
-            return self.parse_game_list(&gamelist);
-        }
-
-        let gamelist = self.path.join("miyoogamelist.xml");
-        if gamelist.exists() {
-            return self.parse_game_list(&gamelist);
-        }
-
-        let mut entries: Vec<_> = std::fs::read_dir(&self.path)
-            .map_err(|e| anyhow!("Failed to open directory: {:?}, {}", &self.path, e))?
-            .filter_map(std::result::Result::ok)
-            .filter_map(|entry| match Entry::new(entry.path(), console_mapper) {
-                Ok(Some(entry)) => Some(entry),
-                _ => None,
-            })
-            .collect();
-        entries.sort_unstable();
-        Ok(entries)
     }
 
     pub fn parse_game_list(&self, game_list: &Path) -> Result<Vec<Entry>> {

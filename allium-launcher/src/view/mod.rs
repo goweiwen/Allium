@@ -1,5 +1,6 @@
 mod app;
 mod browser;
+mod entry_list;
 mod recents;
 mod settings;
 

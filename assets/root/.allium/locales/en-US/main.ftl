@@ -4,8 +4,10 @@ tab-games = Games
 tab-apps = Apps
 tab-settings = Settings
 
-recents-sort-currently-last-played = Sort: Last Played
-recents-sort-currently-most-played = Sort: Most Played
+sort-alphabetical = Sort: A-Z
+sort-last-played = Sort: Last Played
+sort-most-played = Sort: Most Played
+
 recents-launch = Launch
 recents-remove = Remove
 

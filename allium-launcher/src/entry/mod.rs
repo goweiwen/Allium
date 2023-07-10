@@ -1,7 +1,10 @@
 use std::ffi::OsStr;
+use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
+use common::database::Database;
+use common::locale::Locale;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -106,4 +109,11 @@ fn short_name(name: &str) -> String {
     let name = name.trim().to_owned();
 
     name
+}
+
+pub trait Sort: Debug + Clone {
+    fn button_hint(&self, locale: &Locale) -> String;
+    fn next(&self) -> Self;
+    fn with_directory(&self, directory: Directory) -> Self;
+    fn entries(&self, database: &Database, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>>;
 }
