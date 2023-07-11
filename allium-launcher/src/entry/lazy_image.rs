@@ -31,11 +31,22 @@ impl LazyImage {
         // Search for Imgs folder upwards, recursively
         let mut parent = path.clone();
         let mut image = None;
+        let file_name = path.file_name().unwrap();
         'image: while parent.pop() {
             let mut image_path = parent.join("Imgs");
             if image_path.is_dir() {
-                image_path.extend(path.strip_prefix(&parent).unwrap());
                 const IMAGE_EXTENSIONS: [&str; 4] = ["png", "jpg", "jpeg", "gif"];
+                image_path.push(file_name);
+                for ext in &IMAGE_EXTENSIONS {
+                    image_path.set_extension(ext);
+                    println!("{:?}", image_path);
+                    if image_path.is_file() {
+                        image = Some(image_path);
+                        break 'image;
+                    }
+                }
+                image_path.pop();
+                image_path.extend(path.strip_prefix(&parent).unwrap());
                 for ext in &IMAGE_EXTENSIONS {
                     image_path.set_extension(ext);
                     if image_path.is_file() {
