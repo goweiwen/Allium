@@ -1,7 +1,7 @@
-use image::{Rgb, RgbImage};
+use image::{Rgba, RgbaImage};
 
 /// Draw rounded corners on an image.
-pub fn round(image: &mut RgbImage, color: Rgb<u8>, radius: u32) {
+pub fn round(image: &mut RgbaImage, color: Rgba<u8>, radius: u32) {
     let (width, height) = image.dimensions();
 
     let radius_squared = radius.pow(2) as i32;
@@ -42,10 +42,10 @@ pub fn round(image: &mut RgbImage, color: Rgb<u8>, radius: u32) {
     }
 }
 
-fn blend(a: &Rgb<u8>, b: &Rgb<u8>, v: f32) -> Rgb<u8> {
+fn blend(a: &Rgba<u8>, b: &Rgba<u8>, v: f32) -> Rgba<u8> {
     let v = v.clamp(0.0, 1.0);
     let r = (a[0] as f32 * v + b[0] as f32 * (1.0 - v)) as u8;
     let g = (a[1] as f32 * v + b[1] as f32 * (1.0 - v)) as u8;
     let b = (a[2] as f32 * v + b[2] as f32 * (1.0 - v)) as u8;
-    Rgb([r, g, b])
+    Rgba([r, g, b, a[3]])
 }

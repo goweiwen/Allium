@@ -15,6 +15,7 @@ use embedded_graphics_simulator::{
 use itertools::iproduct;
 use log::{trace, warn};
 use sdl2::keyboard::Keycode;
+use image::{Rgba, ImageBuffer, buffer::ConvertBuffer};
 
 use crate::battery::Battery;
 use crate::display::color::Color;
@@ -165,7 +166,7 @@ impl Display for SimulatorWindow {
             .display
             .to_rgb_output_image(&OutputSettingsBuilder::new().build());
         let size = image.size();
-        let buffer = image.as_image_buffer();
+        let buffer: ImageBuffer<Rgba<u8>, Vec<u8>> = image.as_image_buffer().convert();
         self.saved = Some((buffer.as_raw().to_vec(), size.width));
         Ok(())
     }

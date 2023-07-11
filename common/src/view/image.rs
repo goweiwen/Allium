@@ -5,7 +5,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use embedded_graphics::image::ImageRaw;
 use embedded_graphics::Drawable;
-use image::{GenericImageView, RgbImage};
+use image::{GenericImageView, RgbaImage};
 use log::{error, trace};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
@@ -34,7 +34,7 @@ pub struct Image {
     rect: Rect,
     path: Option<PathBuf>,
     #[serde(skip)]
-    image: Option<RgbImage>,
+    image: Option<RgbaImage>,
     mode: ImageMode,
     background_color: Option<StylesheetColor>,
     border_radius: u32,
@@ -161,7 +161,7 @@ fn image(
     mode: ImageMode,
     background_color: Option<Color>,
     border_radius: u32,
-) -> Option<RgbImage> {
+) -> Option<RgbaImage> {
     let mut image = ::image::open(path)
         .map_err(|e| error!("Failed to load image at {}: {}", path.display(), e))
         .ok()?;
@@ -175,7 +175,7 @@ fn image(
             image = image.resize_to_fill(rect.w, new_height, image::imageops::FilterType::Nearest);
         }
     }
-    let mut image = image.to_rgb8();
+    let mut image = image.to_rgba8();
     if border_radius != 0 {
         if let Some(background_color) = background_color {
             round(&mut image, background_color.into(), border_radius);

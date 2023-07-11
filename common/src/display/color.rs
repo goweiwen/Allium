@@ -1,47 +1,52 @@
 use std::fmt;
 
-use embedded_graphics::pixelcolor::{raw::RawU24, Rgb888};
-use embedded_graphics::prelude::{PixelColor, RgbColor};
-use image::Rgb;
+use embedded_graphics::pixelcolor::{raw::RawU32, Rgb888};
+use embedded_graphics::prelude::{PixelColor, RawData, RgbColor};
+use image::Rgba;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Color(Rgb888);
+pub struct Color(u32);
 
 impl Color {
     #[inline]
     pub fn new(r: u8, g: u8, b: u8) -> Self {
-        Self(Rgb888::new(r, g, b))
+        Self(0xFF | (b as u32) << 8 | (g as u32) << 16 | (r as u32) << 24)
     }
 
     #[inline]
     pub fn r(&self) -> u8 {
-        self.0.r()
+        (self.0 >> 24) as u8
     }
 
     #[inline]
     pub fn g(&self) -> u8 {
-        self.0.g()
+        (self.0 >> 16) as u8
     }
 
     #[inline]
     pub fn b(&self) -> u8 {
-        self.0.b()
+        (self.0 >> 8) as u8
+    }
+
+    #[inline]
+    pub fn a(&self) -> u8 {
+        self.0 as u8
     }
 
     #[inline]
     pub fn with_r(&self, r: u8) -> Self {
-        Self(Rgb888::new(r, self.g(), self.b()))
+        Self((r as u32) << 24 | self.0 & 0x00FFFFFF)
     }
 
     #[inline]
     pub fn with_g(&self, g: u8) -> Self {
-        Self(Rgb888::new(self.r(), g, self.b()))
+        Self((g as u32) << 16 | self.0 & 0xFF00FFFF)
     }
 
     #[inline]
     pub fn with_b(&self, b: u8) -> Self {
-        Self(Rgb888::new(self.r(), self.g(), b))
+        Self((b as u32) << 8 | self.0 & 0xFFFF00FF)
     }
 
     pub fn char(&self, i: usize) -> String {
@@ -64,26 +69,26 @@ impl Color {
     }
 
     pub fn invert(&self) -> Self {
-        Self(Rgb888::new(255 - self.r(), 255 - self.g(), 255 - self.b()))
+        Self::new(255 - self.r(), 255 - self.g(), 255 - self.b())
     }
 
     pub fn blend(&self, other: Self, alpha: u8) -> Self {
-        Self(Rgb888::new(
+        Self::new(
             ((self.r() as i32 * (255 - alpha as i32) + other.r() as i32 * alpha as i32) / 255)
                 as u8,
             ((self.g() as i32 * (255 - alpha as i32) + other.g() as i32 * alpha as i32) / 255)
                 as u8,
             ((self.b() as i32 * (255 - alpha as i32) + other.b() as i32 * alpha as i32) / 255)
                 as u8,
-        ))
+        )
     }
 
     pub fn overlay(&self, other: Self) -> Self {
-        Self(Rgb888::new(
+        Self::new(
             overlay(self.r(), other.r()),
             overlay(self.g(), other.g()),
             overlay(self.b(), other.b()),
-        ))
+        )
     }
 }
 
@@ -102,7 +107,7 @@ impl<'de> Deserialize<'de> for Color {
         let r = u8::from_str_radix(&hex[0..2], 16).map_err(serde::de::Error::custom)?;
         let g = u8::from_str_radix(&hex[2..4], 16).map_err(serde::de::Error::custom)?;
         let b = u8::from_str_radix(&hex[4..6], 16).map_err(serde::de::Error::custom)?;
-        Ok(Color(Rgb888::new(r, g, b)))
+        Ok(Color::new(r, g, b))
     }
 }
 
@@ -121,30 +126,35 @@ impl fmt::UpperHex for Color {
 }
 
 impl PixelColor for Color {
-    type Raw = RawU24;
+    type Raw = RawU32;
 }
 
 impl From<Rgb888> for Color {
     fn from(rgb: Rgb888) -> Self {
-        Color(rgb)
+        Color(0xFF | (rgb.b() as u32) << 8 | (rgb.g() as u32) << 16 | (rgb.r() as u32) << 24)
     }
 }
 
 impl From<Color> for Rgb888 {
     fn from(color: Color) -> Self {
-        color.0
+        Rgb888::new((color.0 >> 24) as u8, (color.0 >> 16) as u8, (color.0 >> 8) as u8)
     }
 }
 
-impl From<RawU24> for Color {
-    fn from(raw: RawU24) -> Self {
-        Color(Rgb888::from(raw))
+impl From<RawU32> for Color {
+    fn from(raw: RawU32) -> Self {
+        Color(raw.into_inner())
     }
 }
 
-impl From<Color> for Rgb<u8> {
+impl From<Color> for Rgba<u8> {
     fn from(color: Color) -> Self {
-        Rgb([color.r(), color.g(), color.b()])
+        Rgba([
+            (color.0 >> 24) as u8,
+            (color.0 >> 16) as u8,
+            (color.0 >> 8) as u8,
+            color.0 as u8,
+        ])
     }
 }
 
