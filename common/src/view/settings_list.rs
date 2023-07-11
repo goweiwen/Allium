@@ -10,7 +10,7 @@ use tokio::sync::mpsc::Sender;
 use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
-use crate::stylesheet::{Stylesheet, StylesheetColor};
+use crate::stylesheet::Stylesheet;
 use crate::view::{Command, Label, View};
 
 /// A listing of selectable entries. Assumes that all entries have the same size.
@@ -68,12 +68,6 @@ impl SettingsList {
             ));
             y += self.entry_height as i32;
         }
-        self.left
-            .get_mut(0)
-            .map(|c| c.set_background_color(StylesheetColor::Highlight));
-        if let Some(c) = self.right.get_mut(0) {
-            c.set_background_color(StylesheetColor::Highlight)
-        }
 
         self.top = 0;
         if self.selected >= self.top + self.visible_count() {
@@ -88,17 +82,11 @@ impl SettingsList {
 
     pub fn set_right(&mut self, i: usize, right: Box<dyn View>) {
         self.right[i] = right;
-        if i == self.selected {
-            self.right[i].set_background_color(StylesheetColor::Highlight);
-        }
         self.has_layout = false;
         self.dirty = true;
     }
 
     pub fn select(&mut self, index: usize) {
-        self.left[self.selected - self.top].set_background_color(StylesheetColor::Background);
-        self.right[self.selected].set_background_color(StylesheetColor::Background);
-
         if index >= self.top + self.visible_count() {
             self.top = index - self.visible_count() + 1;
             self.update_children();
@@ -110,9 +98,6 @@ impl SettingsList {
         }
 
         self.selected = index;
-
-        self.left[self.selected - self.top].set_background_color(StylesheetColor::Highlight);
-        self.right[self.selected].set_background_color(StylesheetColor::Highlight);
 
         self.dirty = true;
     }

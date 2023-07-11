@@ -1,7 +1,9 @@
 use image::{Rgba, RgbaImage};
 
 /// Draw rounded corners on an image.
-pub fn round(image: &mut RgbaImage, color: Rgba<u8>, radius: u32) {
+pub fn round(image: &mut RgbaImage, radius: u32) {
+    let color = Rgba([0, 0, 0, 0]);
+
     let (width, height) = image.dimensions();
 
     let radius_squared = radius.pow(2) as i32;
@@ -19,33 +21,67 @@ pub fn round(image: &mut RgbaImage, color: Rgba<u8>, radius: u32) {
                 image.put_pixel(width - x - 1, height - y - 1, color);
             } else if distance_squared > radius_squared {
                 // Rough approximation of the coverage of the pixel by the circle.
-                let v = (radius_squared_1 - distance_squared) as f32
-                    / (radius_squared_1 - radius_squared) as f32;
-                image.put_pixel(x, y, blend(image.get_pixel(x, y), &color, v));
-                image.put_pixel(
-                    width - x - 1,
-                    y,
-                    blend(image.get_pixel(width - x - 1, y), &color, v),
-                );
+                let v = (radius_squared_1 - distance_squared) * 255
+                    / (radius_squared_1 - radius_squared);
+
+                let pixel = image.get_pixel(x, y);
                 image.put_pixel(
                     x,
-                    height - y - 1,
-                    blend(image.get_pixel(x, height - y - 1), &color, v),
+                    y,
+                    Rgba([
+                        pixel[0],
+                        pixel[1],
+                        pixel[2],
+                        (v * pixel[3] as i32 / 255) as u8,
+                    ]),
                 );
-                image.put_pixel(
-                    width - x - 1,
-                    height - y - 1,
-                    blend(image.get_pixel(width - x - 1, height - y - 1), &color, v),
-                );
+
+                {
+                    let x = width - x - 1;
+                    let pixel = image.get_pixel(x, y);
+                    image.put_pixel(
+                        x,
+                        y,
+                        Rgba([
+                            pixel[0],
+                            pixel[1],
+                            pixel[2],
+                            (v * pixel[3] as i32 / 255) as u8,
+                        ]),
+                    );
+                }
+
+                {
+                    let y = height - y - 1;
+                    let pixel = image.get_pixel(x, y);
+                    image.put_pixel(
+                        x,
+                        y,
+                        Rgba([
+                            pixel[0],
+                            pixel[1],
+                            pixel[2],
+                            (v * pixel[3] as i32 / 255) as u8,
+                        ]),
+                    );
+                }
+
+                {
+                    let x = width - x - 1;
+                    let y = height - y - 1;
+                    let pixel = image.get_pixel(x, y);
+                    image.put_pixel(
+                        x,
+                        y,
+                        Rgba([
+                            pixel[0],
+                            pixel[1],
+                            pixel[2],
+                            (v * pixel[3] as i32 / 255) as u8,
+                        ]),
+                    );
+                }
             }
         }
     }
-}
-
-fn blend(a: &Rgba<u8>, b: &Rgba<u8>, v: f32) -> Rgba<u8> {
-    let v = v.clamp(0.0, 1.0);
-    let r = (a[0] as f32 * v + b[0] as f32 * (1.0 - v)) as u8;
-    let g = (a[1] as f32 * v + b[1] as f32 * (1.0 - v)) as u8;
-    let b = (a[2] as f32 * v + b[2] as f32 * (1.0 - v)) as u8;
-    Rgba([r, g, b, a[3]])
 }

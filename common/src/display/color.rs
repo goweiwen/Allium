@@ -11,7 +11,12 @@ pub struct Color(u32);
 impl Color {
     #[inline]
     pub fn new(r: u8, g: u8, b: u8) -> Self {
-        Self(0xFF | (b as u32) << 8 | (g as u32) << 16 | (r as u32) << 24)
+        Self::rgba(r, g, b, 0xFF)
+    }
+
+    #[inline]
+    pub fn rgba(r: u8, g: u8, b: u8, a: u8) -> Self {
+        Self(a as u32 | (b as u32) << 8 | (g as u32) << 16 | (r as u32) << 24)
     }
 
     #[inline]
@@ -137,7 +142,11 @@ impl From<Rgb888> for Color {
 
 impl From<Color> for Rgb888 {
     fn from(color: Color) -> Self {
-        Rgb888::new((color.0 >> 24) as u8, (color.0 >> 16) as u8, (color.0 >> 8) as u8)
+        Rgb888::new(
+            (color.0 >> 24) as u8,
+            (color.0 >> 16) as u8,
+            (color.0 >> 8) as u8,
+        )
     }
 }
 

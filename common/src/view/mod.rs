@@ -41,7 +41,7 @@ use tokio::sync::mpsc::Sender;
 use crate::command::Command;
 use crate::geom::{Point, Rect};
 use crate::platform::{DefaultPlatform, KeyEvent, Platform};
-use crate::stylesheet::{Stylesheet, StylesheetColor};
+use crate::stylesheet::Stylesheet;
 
 #[async_trait(?Send)]
 pub trait View {
@@ -84,13 +84,6 @@ pub trait View {
 
     /// Sets the position of the view.
     fn set_position(&mut self, point: Point);
-
-    /// Sets the background color of the view.
-    fn set_background_color(&mut self, _color: StylesheetColor) {
-        self.children_mut()
-            .iter_mut()
-            .for_each(|c| c.set_background_color(_color));
-    }
 }
 
 impl fmt::Debug for dyn View {
@@ -147,10 +140,5 @@ impl View for Box<dyn View> {
     /// Sets the position of the view.
     fn set_position(&mut self, point: Point) {
         (**self).set_position(point)
-    }
-
-    /// Sets the background color of the view.
-    fn set_background_color(&mut self, _color: StylesheetColor) {
-        (**self).set_background_color(_color)
     }
 }

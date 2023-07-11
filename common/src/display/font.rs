@@ -6,7 +6,6 @@ use std::vec::Vec;
 
 use embedded_graphics::{
     draw_target::DrawTarget,
-    pixelcolor::Rgb888,
     prelude::*,
     primitives::Rectangle,
     text::{
@@ -18,6 +17,8 @@ use embedded_graphics::{
 use rusttype::vector;
 use rusttype::Font;
 use rusttype::GlyphId;
+
+use crate::display::color::Color;
 
 /// Style properties for text using a ttf and otf font.
 ///
@@ -161,7 +162,7 @@ impl<C: PixelColor> CharacterStyle for FontTextStyle<C> {
 
 impl<C> TextRenderer for FontTextStyle<C>
 where
-    C: PixelColor + Into<Rgb888> + From<Rgb888> + fmt::Debug,
+    C: PixelColor + Into<Color> + From<Color> + fmt::Debug,
 {
     type Color = C;
 
@@ -234,18 +235,10 @@ where
                             let text_g = text_color.g();
                             let text_b = text_color.b();
 
-                            let (text_r, text_g, text_b) = rgba_background_to_rgb(
-                                text_r,
-                                text_g,
-                                text_b,
-                                text_a,
-                                self.background_color,
-                            );
-
                             if text_a > 0 {
                                 pixels.push(Pixel(
                                     Point::new(position.x + off_x, position.y + off_y),
-                                    Rgb888::new(text_r, text_g, text_b).into(),
+                                    Color::rgba(text_r, text_g, text_b, text_a).into(),
                                 ));
                             }
                         }
@@ -423,91 +416,5 @@ impl<C: PixelColor> FontTextStyleBuilder<C> {
     /// [`font`]: #method.font
     pub fn build(self) -> FontTextStyle<C> {
         self.style
-    }
-}
-
-fn pixel_color_to_u32<C: Into<Rgb888>>(color: C) -> u32 {
-    let color = color.into();
-
-    0xFF000000 | ((color.r() as u32) << 16) | ((color.g() as u32) << 8) | (color.b() as u32)
-}
-
-fn u32_to_rgba(color: u32) -> (u8, u8, u8, u8) {
-    (
-        ((color & 0x00FF0000) >> 16) as u8,
-        ((color & 0x0000FF00) >> 8) as u8,
-        (color & 0x000000FF) as u8,
-        ((color & 0xFF000000) >> 24) as u8,
-    )
-}
-
-fn rgba_to_rgb(r: u8, g: u8, b: u8, a: u8) -> (u8, u8, u8) {
-    let alpha = a as f32 / 255.;
-
-    (
-        (r as f32 * alpha).ceil() as u8,
-        (g as f32 * alpha).ceil() as u8,
-        (b as f32 * alpha).ceil() as u8,
-    )
-}
-
-fn rgba_background_to_rgb<C: Into<Rgb888>>(
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8,
-    background_color: Option<C>,
-) -> (u8, u8, u8) {
-    if let Some(background_color) = background_color {
-        let background_color_data = pixel_color_to_u32(background_color);
-        let (br, bg, bb, ba) = u32_to_rgba(background_color_data);
-        let (br, bg, bb) = rgba_to_rgb(br, bg, bb, ba);
-
-        let alpha = a as f32 / 255.;
-        let b_alpha = 1. - alpha;
-
-        return (
-            ((r as f32 * alpha) + br as f32 * b_alpha).ceil() as u8,
-            ((g as f32 * alpha) + bg as f32 * b_alpha).ceil() as u8,
-            ((b as f32 * alpha) + bb as f32 * b_alpha).ceil() as u8,
-        );
-    }
-
-    rgba_to_rgb(r, g, b, a)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use embedded_graphics::pixelcolor::Rgb888;
-
-    #[test]
-    fn test_pixel_color_to_u32() {
-        assert_eq!(4294967295, pixel_color_to_u32(Rgb888::WHITE));
-        assert_eq!(4278190080, pixel_color_to_u32(Rgb888::BLACK));
-    }
-
-    #[test]
-    fn test_u32_to_rgba() {
-        assert_eq!((255, 255, 255, 255), u32_to_rgba(4294967295));
-        assert_eq!((0, 0, 0, 255), u32_to_rgba(4278190080));
-    }
-
-    #[test]
-    fn test_rgba_to_rgb() {
-        assert_eq!((255, 255, 255), rgba_to_rgb(255, 255, 255, 255));
-        assert_eq!((100, 100, 100), rgba_to_rgb(255, 255, 255, 100));
-    }
-
-    #[test]
-    fn test_rgba_background_to_rgb() {
-        assert_eq!(
-            (255, 255, 255),
-            rgba_background_to_rgb::<Rgb888>(255, 255, 255, 255, None)
-        );
-        assert_eq!(
-            (100, 100, 100),
-            rgba_background_to_rgb(255, 255, 255, 100, Some(Rgb888::BLACK))
-        );
     }
 }

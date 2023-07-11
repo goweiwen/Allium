@@ -75,9 +75,7 @@ where
             ),
             ImageMode::Contain,
         );
-        image
-            .set_background_color(StylesheetColor::Background)
-            .set_border_radius(12);
+        image.set_border_radius(12);
 
         let mut button_hints = Row::new(
             Point::new(
@@ -209,7 +207,7 @@ where
 
         let height = labels.len() as u32 * (styles.ui_font.size + SELECTION_MARGIN);
 
-        let mut menu = ScrollList::new(
+        let menu = ScrollList::new(
             Rect::new(
                 x + 12 + (w as i32 - 24) / 6,
                 (y + h as i32 - height as i32) / 2,
@@ -220,7 +218,6 @@ where
             Alignment::Center,
             styles.ui_font.size + SELECTION_MARGIN,
         );
-        menu.set_background_color(StylesheetColor::BackgroundHighlightBlend);
         self.menu = Some(menu);
     }
 }

@@ -12,7 +12,7 @@ use crate::command::Command;
 use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
-use crate::stylesheet::{Stylesheet, StylesheetColor};
+use crate::stylesheet::Stylesheet;
 use crate::view::View;
 
 /// A listing of selectable entries. Assumes that all entries have the same size.
@@ -34,8 +34,7 @@ impl<V> List<V>
 where
     V: View,
 {
-    pub fn new(rect: Rect, mut children: Vec<V>, alignment: Alignment, margin: u32) -> Self {
-        children[0].set_background_color(StylesheetColor::Highlight);
+    pub fn new(rect: Rect, children: Vec<V>, alignment: Alignment, margin: u32) -> Self {
         Self {
             rect,
             children,
@@ -48,9 +47,7 @@ where
     }
 
     pub fn select(&mut self, index: usize) {
-        self.children[self.selected].set_background_color(StylesheetColor::Background);
         self.selected = index;
-        self.children[self.selected].set_background_color(StylesheetColor::Highlight);
         self.dirty = true;
     }
 

@@ -16,7 +16,7 @@ use crate::display::image::round;
 use crate::display::Display;
 use crate::geom::{Point, Rect};
 use crate::platform::{DefaultPlatform, KeyEvent, Platform};
-use crate::stylesheet::{Stylesheet, StylesheetColor};
+use crate::stylesheet::Stylesheet;
 use crate::view::View;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -36,7 +36,6 @@ pub struct Image {
     #[serde(skip)]
     image: Option<RgbaImage>,
     mode: ImageMode,
-    background_color: Option<StylesheetColor>,
     border_radius: u32,
     dirty: bool,
 }
@@ -48,16 +47,9 @@ impl Image {
             path: Some(path),
             image: None,
             mode,
-            background_color: None,
             border_radius: 0,
             dirty: true,
         }
-    }
-
-    pub fn set_background_color(&mut self, color: StylesheetColor) -> &mut Self {
-        self.background_color = Some(color);
-        self.dirty = self.border_radius != 0;
-        self
     }
 
     pub fn set_border_radius(&mut self, radius: u32) -> &mut Self {
@@ -72,7 +64,6 @@ impl Image {
             path: None,
             image: None,
             mode,
-            background_color: None,
             border_radius: 0,
             dirty: true,
         }
@@ -93,17 +84,11 @@ impl View for Image {
     fn draw(
         &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,
-        styles: &Stylesheet,
+        _styles: &Stylesheet,
     ) -> Result<bool> {
         if self.image.is_none() {
             if let Some(ref path) = self.path {
-                self.image = image(
-                    path,
-                    self.rect,
-                    self.mode,
-                    self.background_color.map(|c| c.to_color(styles)),
-                    self.border_radius,
-                );
+                self.image = image(path, self.rect, self.mode, self.border_radius);
             }
         }
 
@@ -155,13 +140,7 @@ impl View for Image {
     }
 }
 
-fn image(
-    path: &Path,
-    rect: Rect,
-    mode: ImageMode,
-    background_color: Option<Color>,
-    border_radius: u32,
-) -> Option<RgbaImage> {
+fn image(path: &Path, rect: Rect, mode: ImageMode, border_radius: u32) -> Option<RgbaImage> {
     let mut image = ::image::open(path)
         .map_err(|e| error!("Failed to load image at {}: {}", path.display(), e))
         .ok()?;
@@ -177,9 +156,7 @@ fn image(
     }
     let mut image = image.to_rgba8();
     if border_radius != 0 {
-        if let Some(background_color) = background_color {
-            round(&mut image, background_color.into(), border_radius);
-        }
+        round(&mut image, border_radius);
     }
     Some(image)
 }

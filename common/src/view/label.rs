@@ -54,12 +54,6 @@ where
         self
     }
 
-    pub fn set_background_color(&mut self, color: StylesheetColor) -> &mut Self {
-        self.background_color = color;
-        self.dirty = true;
-        self
-    }
-
     pub fn text(&self) -> &str {
         self.text.as_ref()
     }
@@ -204,9 +198,5 @@ where
     fn set_position(&mut self, point: Point) {
         self.point = point;
         self.dirty = true;
-    }
-
-    fn set_background_color(&mut self, color: StylesheetColor) {
-        self.set_background_color(color);
     }
 }

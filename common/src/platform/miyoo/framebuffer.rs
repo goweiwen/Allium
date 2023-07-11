@@ -186,9 +186,19 @@ impl DrawTarget for Buffer {
             let y: i32 = height - coord.y - 1;
             if 0 <= x && x < width && 0 <= y && y < height {
                 let index: u32 = (x as u32 + y as u32 * width as u32) * bytespp;
-                self.buffer[index as usize] = color.b();
-                self.buffer[index as usize + 1] = color.g();
-                self.buffer[index as usize + 2] = color.r();
+
+                let a = color.a() as u32;
+                let a_inv = 255 - a;
+
+                let b = (self.buffer[index as usize] as u32 * a_inv + color.b() as u32 * a) / 255;
+                let g =
+                    (self.buffer[index as usize + 1] as u32 * a_inv + color.g() as u32 * a) / 255;
+                let r =
+                    (self.buffer[index as usize + 2] as u32 * a_inv + color.r() as u32 * a) / 255;
+
+                self.buffer[index as usize] = b as u8;
+                self.buffer[index as usize + 1] = g as u8;
+                self.buffer[index as usize + 2] = r as u8;
             }
         }
 

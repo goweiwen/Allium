@@ -313,8 +313,4 @@ impl View for ColorPicker {
     fn set_position(&mut self, point: Point) {
         self.point = point;
     }
-
-    fn set_background_color(&mut self, color: StylesheetColor) {
-        self.background_color = color;
-    }
 }

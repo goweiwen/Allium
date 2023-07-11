@@ -8,14 +8,13 @@ use async_trait::async_trait;
 use embedded_graphics::image::{Image, ImageRaw};
 use embedded_graphics::pixelcolor::raw::BigEndian;
 use embedded_graphics::prelude::*;
-use embedded_graphics::primitives::Rectangle;
 use embedded_graphics_simulator::{
     OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
 };
+use image::{buffer::ConvertBuffer, ImageBuffer, Rgba};
 use itertools::iproduct;
 use log::{trace, warn};
 use sdl2::keyboard::Keycode;
-use image::{Rgba, ImageBuffer, buffer::ConvertBuffer};
 
 use crate::battery::Battery;
 use crate::display::color::Color;
@@ -209,30 +208,23 @@ impl DrawTarget for SimulatorWindow {
     where
         I: IntoIterator<Item = embedded_graphics::Pixel<Self::Color>>,
     {
+        let pixels: Vec<_> = pixels
+            .into_iter()
+            .map(|p| {
+                let curr = self.display.get_pixel(p.0);
+                let color = p.1;
+
+                let a = color.a() as u32;
+                let a_inv = 255 - a;
+
+                let b = (curr.b() as u32 * a_inv + color.b() as u32 * a) / 255;
+                let g = (curr.g() as u32 * a_inv + color.g() as u32 * a) / 255;
+                let r = (curr.r() as u32 * a_inv + color.r() as u32 * a) / 255;
+
+                Pixel(p.0, Color::new(r as u8, g as u8, b as u8))
+            })
+            .collect();
         Ok(self.display.draw_iter(pixels)?)
-    }
-
-    fn fill_contiguous<I>(
-        &mut self,
-        area: &Rectangle,
-        colors: I,
-    ) -> std::result::Result<(), Self::Error>
-    where
-        I: IntoIterator<Item = Self::Color>,
-    {
-        Ok(self.display.fill_contiguous(area, colors)?)
-    }
-
-    fn fill_solid(
-        &mut self,
-        area: &Rectangle,
-        color: Self::Color,
-    ) -> std::result::Result<(), Self::Error> {
-        Ok(self.display.fill_solid(area, color)?)
-    }
-
-    fn clear(&mut self, color: Self::Color) -> std::result::Result<(), Self::Error> {
-        Ok(self.display.clear(color)?)
     }
 }
 

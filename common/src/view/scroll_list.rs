@@ -95,12 +95,6 @@ impl ScrollList {
             y += self.entry_height as i32;
         }
 
-        if let Some(background_color) = self.background_color {
-            for child in &mut self.children {
-                child.set_background_color(background_color);
-            }
-        }
-
         self.select(selected);
         self.update_children();
 
@@ -112,10 +106,6 @@ impl ScrollList {
             return;
         }
 
-        self.children.get_mut(self.selected - self.top).map(|c| {
-            c.set_background_color(self.background_color.unwrap_or(StylesheetColor::Background))
-        });
-
         index = index.clamp(0, self.items.len() - 1);
         if index >= self.top + self.visible_count() {
             self.top = (index - self.visible_count() + 1).min(self.items.len() - 1);
@@ -124,10 +114,6 @@ impl ScrollList {
         }
         self.selected = index;
         self.update_children();
-
-        self.children
-            .get_mut(self.selected - self.top)
-            .map(|c| c.set_background_color(StylesheetColor::Highlight));
 
         self.dirty = true;
     }
@@ -301,14 +287,5 @@ impl View for ScrollList {
         }
 
         self.dirty = true;
-    }
-
-    fn set_background_color(&mut self, color: StylesheetColor) {
-        self.background_color = Some(color);
-        for (i, child) in self.children.iter_mut().enumerate() {
-            if i != self.selected {
-                child.set_background_color(color);
-            }
-        }
     }
 }
