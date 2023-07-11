@@ -221,13 +221,13 @@ impl TextReader {
             let locale = self.res.get::<Locale>();
             self.button_hints.push(ButtonHint::new(
                 Point::zero(),
-                Key::L,
+                Key::L2,
                 locale.t("guide-next"),
                 Alignment::Right,
             ));
             self.button_hints.push(ButtonHint::new(
                 Point::zero(),
-                Key::R,
+                Key::R2,
                 locale.t("guide-prev"),
                 Alignment::Right,
             ));
@@ -465,18 +465,18 @@ impl View for TextReader {
                 KeyEvent::Pressed(Key::Down) | KeyEvent::Autorepeat(Key::Down) => {
                     self.move_forward_lines(1);
                 }
-                KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
+                KeyEvent::Pressed(Key::L) | KeyEvent::Autorepeat(Key::L) => {
                     self.move_back_lines(10);
                 }
-                KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
+                KeyEvent::Pressed(Key::R) | KeyEvent::Autorepeat(Key::R) => {
                     self.move_forward_lines(10);
                 }
-                KeyEvent::Pressed(Key::L) => {
+                KeyEvent::Pressed(Key::L2) => {
                     let last_searched = mem::take(&mut self.last_searched);
                     self.search_backward(last_searched);
                     self.dirty = true;
                 }
-                KeyEvent::Pressed(Key::R) => {
+                KeyEvent::Pressed(Key::R2) => {
                     let last_searched = mem::take(&mut self.last_searched);
                     self.search_forward(last_searched);
                     self.dirty = true;

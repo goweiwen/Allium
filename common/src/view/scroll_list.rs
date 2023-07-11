@@ -241,7 +241,7 @@ impl View for ScrollList {
                     self.dirty = true;
                     Ok(true)
                 }
-                KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
+                KeyEvent::Pressed(Key::L) | KeyEvent::Autorepeat(Key::L) => {
                     self.select(
                         (self.selected as isize - 5).clamp(0, self.items.len() as isize - 1)
                             as usize,
@@ -249,7 +249,7 @@ impl View for ScrollList {
                     self.dirty = true;
                     Ok(true)
                 }
-                KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
+                KeyEvent::Pressed(Key::R) | KeyEvent::Autorepeat(Key::R) => {
                     self.select((self.selected + 5).clamp(0, self.items.len() - 1));
                     self.dirty = true;
                     Ok(true)

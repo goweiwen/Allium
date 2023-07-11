@@ -287,12 +287,12 @@ where
         }
 
         match event {
-            KeyEvent::Pressed(Key::L) => {
+            KeyEvent::Pressed(Key::Left) => {
                 trace!("switch state prev");
                 self.prev();
                 Ok(true)
             }
-            KeyEvent::Pressed(Key::R) => {
+            KeyEvent::Pressed(Key::Right) => {
                 trace!("switch state next");
                 self.next();
                 Ok(true)
