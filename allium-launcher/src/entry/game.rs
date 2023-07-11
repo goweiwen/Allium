@@ -9,16 +9,14 @@ use common::constants::ALLIUM_GAMES_DIR;
 use log::info;
 use serde::{Deserialize, Serialize};
 
-use crate::entry::short_name;
+use crate::entry::{lazy_image::LazyImage, short_name};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Game {
     pub name: String,
     pub full_name: String,
     pub path: PathBuf,
-    /// image is loaded lazily.
-    /// None means image hasn't been looked for, Some(None) means no image was found, Some(Some(path)) means an image was found.
-    pub image: Option<Option<PathBuf>>,
+    pub image: LazyImage,
     pub extension: String,
 }
 
@@ -35,49 +33,18 @@ impl Game {
             .and_then(std::ffi::OsStr::to_str)
             .unwrap_or("")
             .to_string();
+        let image = LazyImage::Unknown(path.clone());
         Game {
             name,
             full_name,
             path,
-            image: None,
+            image,
             extension,
         }
     }
 
-    /// Returns the image path if already cached
-    pub fn image_ref(&self) -> Option<&Path> {
-        if let Some(Some(ref image)) = self.image {
-            Some(image)
-        } else {
-            None
-        }
-    }
-
-    /// Searches for the image path, caches it, and returns it
     pub fn image(&mut self) -> Option<&Path> {
-        // Search for Imgs folder upwards, recursively
-        let mut parent = self.path.clone();
-        let mut image = None;
-        'image: while parent.pop() {
-            let mut image_path = parent.join("Imgs");
-            if image_path.is_dir() {
-                image_path.extend(self.path.strip_prefix(&parent).unwrap());
-                const IMAGE_EXTENSIONS: [&str; 7] =
-                    ["png", "jpg", "jpeg", "webp", "gif", "tga", "bmp"];
-                for ext in &IMAGE_EXTENSIONS {
-                    image_path.set_extension(ext);
-                    if image_path.is_file() {
-                        image = Some(image_path);
-                        break 'image;
-                    }
-                }
-            }
-            if parent.to_str() == ALLIUM_GAMES_DIR.to_str() {
-                break;
-            }
-        }
-        self.image = Some(image);
-        self.image_ref()
+        self.image.image()
     }
 
     /// Attempts to resync the game path with the games directory. Returns the old path if it changed.

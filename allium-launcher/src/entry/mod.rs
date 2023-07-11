@@ -1,3 +1,9 @@
+pub mod app;
+pub mod directory;
+pub mod game;
+mod gamelist;
+pub mod lazy_image;
+
 use std::ffi::OsStr;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
@@ -13,11 +19,6 @@ use crate::consoles::ConsoleMapper;
 use crate::entry::app::App;
 use crate::entry::directory::Directory;
 use crate::entry::game::Game;
-
-pub mod app;
-pub mod directory;
-pub mod game;
-mod gamelist;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Entry {
@@ -86,7 +87,7 @@ impl Entry {
     pub fn image(&mut self) -> Option<&Path> {
         match self {
             Entry::Game(game) => game.image(),
-            Entry::Directory(_) => None,
+            Entry::Directory(dir) => dir.image(),
             Entry::App(app) => app.image.as_deref(),
         }
     }

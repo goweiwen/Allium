@@ -18,6 +18,7 @@ use tokio::sync::mpsc::Sender;
 use crate::consoles::ConsoleMapper;
 use crate::entry::directory::Directory;
 use crate::entry::game::Game;
+use crate::entry::lazy_image::LazyImage;
 use crate::entry::{Entry, Sort};
 use crate::view::entry_list::EntryList;
 
@@ -250,11 +251,13 @@ impl Sort for RecentsSort {
 
                 let full_name = game.name.clone();
 
+                let image = LazyImage::from_path(&game.path, game.image);
+
                 Entry::Game(Game {
                     name: game.name,
                     full_name,
                     path: game.path,
-                    image: Some(game.image),
+                    image,
                     extension,
                 })
             })

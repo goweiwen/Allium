@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     consoles::ConsoleMapper,
-    entry::{game::Game, gamelist::GameList, short_name, Entry},
+    entry::{game::Game, gamelist::GameList, lazy_image::LazyImage, short_name, Entry},
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -19,6 +19,9 @@ pub struct Directory {
     pub name: String,
     pub full_name: String,
     pub path: PathBuf,
+    /// image is loaded lazily.
+    /// None means image hasn't been looked for, Some(None) means no image was found, Some(Some(path)) means an image was found.
+    pub image: LazyImage,
 }
 
 impl Ord for Directory {
@@ -39,6 +42,7 @@ impl Default for Directory {
             name: "Games".to_string(),
             full_name: "Games".to_string(),
             path: ALLIUM_GAMES_DIR.to_owned(),
+            image: LazyImage::Unknown(ALLIUM_GAMES_DIR.to_owned()),
         }
     }
 }
@@ -51,10 +55,12 @@ impl Directory {
             .unwrap_or("")
             .to_string();
         let name = short_name(&full_name);
+        let image = LazyImage::Unknown(path.clone());
         Directory {
             name,
             full_name,
             path,
+            image,
         }
     }
 
@@ -64,11 +70,17 @@ impl Directory {
             .and_then(std::ffi::OsStr::to_str)
             .unwrap_or("")
             .to_string();
+        let image = LazyImage::Unknown(path.clone());
         Directory {
             name,
             full_name,
             path,
+            image,
         }
+    }
+
+    pub fn image(&mut self) -> Option<&Path> {
+        self.image.image()
     }
 
     fn parse_game_list(&self, game_list: &Path) -> Result<Vec<Entry>> {
@@ -90,13 +102,23 @@ impl Directory {
 
             let full_name = game.name.clone();
 
-            let image = game.image.map(|p| self.path.join(p)).filter(|p| p.exists());
+            let image = match game.image {
+                Some(image) => {
+                    let path = self.path.join(image);
+                    if path.exists() {
+                        LazyImage::Found(path)
+                    } else {
+                        LazyImage::Unknown(path)
+                    }
+                }
+                None => LazyImage::Unknown(path.clone()),
+            };
 
             Some(Entry::Game(Game {
                 path,
                 name: game.name,
                 full_name,
-                image: Some(image),
+                image,
                 extension,
             }))
         });
@@ -161,7 +183,7 @@ impl Directory {
                 Entry::Game(game) => Some(common::database::NewGame {
                     name: game.name,
                     path: game.path,
-                    image: game.image.flatten(),
+                    image: game.image.try_image().map(Path::to_path_buf),
                 }),
                 _ => None,
             })

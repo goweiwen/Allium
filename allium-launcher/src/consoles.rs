@@ -147,8 +147,8 @@ impl ConsoleMapper {
             }
         }
 
-        game.image();
-        database.increment_play_count(&game.name, game.path.as_path(), game.image_ref())?;
+        let image = game.image().map(Path::to_path_buf);
+        database.increment_play_count(&game.name, game.path.as_path(), image.as_deref())?;
 
         let core = self.get_console(game.path.as_path());
         Ok(if let Some(console) = core {
@@ -156,7 +156,7 @@ impl ConsoleMapper {
                 GameInfo::new(
                     game.name.clone(),
                     game.path.clone(),
-                    game.image.clone().flatten(),
+                    image,
                     path.display().to_string(),
                     vec![game.path.display().to_string()],
                     false,
@@ -165,7 +165,7 @@ impl ConsoleMapper {
                 GameInfo::new(
                     game.name.clone(),
                     game.path.clone(),
-                    game.image.clone().flatten(),
+                    image,
                     ALLIUM_RETROARCH.display().to_string(),
                     vec![retroarch_core.clone(), game.path.display().to_string()],
                     true,
