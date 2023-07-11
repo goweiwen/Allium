@@ -1,5 +1,5 @@
 use std::{
-    collections::VecDeque,
+    collections::{HashSet, VecDeque},
     ffi::OsStr,
     fs::File,
     path::{Path, PathBuf},
@@ -138,24 +138,30 @@ impl Directory {
     }
 
     pub fn entries(&self, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
+        let mut entries = vec![];
+
         let gamelist = self.path.join("gamelist.xml");
         if gamelist.exists() {
-            return self.parse_game_list(&gamelist);
+            entries.extend(self.parse_game_list(&gamelist)?.into_iter());
         }
 
         let gamelist = self.path.join("miyoogamelist.xml");
         if gamelist.exists() {
-            return self.parse_game_list(&gamelist);
+            entries.extend(self.parse_game_list(&gamelist)?.into_iter());
         }
 
-        let entries: Vec<_> = std::fs::read_dir(&self.path)
-            .map_err(|e| anyhow!("Failed to open directory: {:?}, {}", &self.path, e))?
-            .filter_map(std::result::Result::ok)
-            .filter_map(|entry| match Entry::new(entry.path(), console_mapper) {
-                Ok(Some(entry)) => Some(entry),
-                _ => None,
-            })
-            .collect();
+        entries.extend(
+            std::fs::read_dir(&self.path)
+                .map_err(|e| anyhow!("Failed to open directory: {:?}, {}", &self.path, e))?
+                .filter_map(std::result::Result::ok)
+                .filter_map(|entry| match Entry::new(entry.path(), console_mapper) {
+                    Ok(Some(entry)) => Some(entry),
+                    _ => None,
+                }),
+        );
+
+        let mut uniques = HashSet::new();
+        entries.retain(|e| uniques.insert(e.path().to_path_buf()));
 
         Ok(entries)
     }
