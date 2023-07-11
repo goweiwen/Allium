@@ -228,56 +228,65 @@ impl View for Theme {
             while let Some(command) = bubble.pop_front() {
                 if let Command::ValueChanged(i, val) = command {
                     match i {
-                        0 => match val.as_bool().unwrap() {
-                            true => {
-                                if !self.stylesheet.background_color.is_dark() {
-                                    self.stylesheet.foreground_color =
-                                        self.stylesheet.foreground_color.invert();
-                                    self.stylesheet.background_color =
-                                        self.stylesheet.background_color.invert();
-                                    self.list.set_right(
-                                        6,
-                                        Box::new(ColorPicker::new(
-                                            Point::zero(),
-                                            self.stylesheet.foreground_color,
-                                            Alignment::Right,
-                                        )),
-                                    );
-                                    self.list.set_right(
-                                        7,
-                                        Box::new(ColorPicker::new(
-                                            Point::zero(),
-                                            self.stylesheet.background_color,
-                                            Alignment::Right,
-                                        )),
-                                    );
-                                }
-                            }
-                            false => {
-                                if self.stylesheet.background_color.is_dark() {
-                                    self.stylesheet.foreground_color =
-                                        self.stylesheet.foreground_color.invert();
-                                    self.stylesheet.background_color =
-                                        self.stylesheet.background_color.invert();
-                                    self.list.set_right(
-                                        6,
-                                        Box::new(ColorPicker::new(
-                                            Point::zero(),
-                                            self.stylesheet.foreground_color,
-                                            Alignment::Right,
-                                        )),
-                                    );
-                                    self.list.set_right(
-                                        7,
-                                        Box::new(ColorPicker::new(
-                                            Point::zero(),
-                                            self.stylesheet.background_color,
-                                            Alignment::Right,
-                                        )),
-                                    );
-                                }
-                            }
-                        },
+                        0 => {
+                            self.stylesheet.toggle_dark_mode();
+                            self.list.set_right(
+                                6,
+                                Box::new(ColorPicker::new(
+                                    Point::zero(),
+                                    self.stylesheet.foreground_color,
+                                    Alignment::Right,
+                                )),
+                            );
+                            self.list.set_right(
+                                7,
+                                Box::new(ColorPicker::new(
+                                    Point::zero(),
+                                    self.stylesheet.background_color,
+                                    Alignment::Right,
+                                )),
+                            );
+                            self.list.set_right(
+                                8,
+                                Box::new(ColorPicker::new(
+                                    Point::zero(),
+                                    self.stylesheet.disabled_color,
+                                    Alignment::Right,
+                                )),
+                            );
+                            self.list.set_right(
+                                9,
+                                Box::new(ColorPicker::new(
+                                    Point::zero(),
+                                    self.stylesheet.button_a_color,
+                                    Alignment::Right,
+                                )),
+                            );
+                            self.list.set_right(
+                                10,
+                                Box::new(ColorPicker::new(
+                                    Point::zero(),
+                                    self.stylesheet.button_b_color,
+                                    Alignment::Right,
+                                )),
+                            );
+                            self.list.set_right(
+                                11,
+                                Box::new(ColorPicker::new(
+                                    Point::zero(),
+                                    self.stylesheet.button_x_color,
+                                    Alignment::Right,
+                                )),
+                            );
+                            self.list.set_right(
+                                12,
+                                Box::new(ColorPicker::new(
+                                    Point::zero(),
+                                    self.stylesheet.button_y_color,
+                                    Alignment::Right,
+                                )),
+                            );
+                        }
                         1 => {
                             self.stylesheet.ui_font.path =
                                 self.fonts[val.as_int().unwrap() as usize].clone()

@@ -1,5 +1,6 @@
 use std::fs::{self, File};
 use std::io::Write;
+use std::mem;
 use std::path::PathBuf;
 
 use anyhow::Result;
@@ -113,13 +114,21 @@ impl StylesheetFont {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Stylesheet {
     pub enable_box_art: bool,
+    #[serde(default = "Stylesheet::default_foreground_color")]
     pub foreground_color: Color,
+    #[serde(default = "Stylesheet::default_background_color")]
     pub background_color: Color,
+    #[serde(default = "Stylesheet::default_highlight_color")]
     pub highlight_color: Color,
+    #[serde(default = "Stylesheet::default_disabled_color")]
     pub disabled_color: Color,
+    #[serde(default = "Stylesheet::default_button_a_color")]
     pub button_a_color: Color,
+    #[serde(default = "Stylesheet::default_button_b_color")]
     pub button_b_color: Color,
+    #[serde(default = "Stylesheet::default_button_x_color")]
     pub button_x_color: Color,
+    #[serde(default = "Stylesheet::default_button_y_color")]
     pub button_y_color: Color,
     #[serde(default = "StylesheetFont::ui_font")]
     pub ui_font: StylesheetFont,
@@ -127,6 +136,23 @@ pub struct Stylesheet {
     pub guide_font: StylesheetFont,
     #[serde(skip, default = "StylesheetFont::cjk_font")]
     pub cjk_font: StylesheetFont,
+
+    #[serde(default = "Stylesheet::default_alt_foreground_color")]
+    alt_foreground_color: Color,
+    #[serde(default = "Stylesheet::default_alt_background_color")]
+    alt_background_color: Color,
+    #[serde(default = "Stylesheet::default_alt_highlight_color")]
+    alt_highlight_color: Color,
+    #[serde(default = "Stylesheet::default_alt_disabled_color")]
+    alt_disabled_color: Color,
+    #[serde(default = "Stylesheet::default_alt_button_a_color")]
+    alt_button_a_color: Color,
+    #[serde(default = "Stylesheet::default_alt_button_b_color")]
+    alt_button_b_color: Color,
+    #[serde(default = "Stylesheet::default_alt_button_x_color")]
+    alt_button_x_color: Color,
+    #[serde(default = "Stylesheet::default_alt_button_y_color")]
+    alt_button_y_color: Color,
 }
 
 impl Stylesheet {
@@ -192,6 +218,17 @@ impl Stylesheet {
         Ok(())
     }
 
+    pub fn toggle_dark_mode(&mut self) {
+        mem::swap(&mut self.foreground_color, &mut self.alt_foreground_color);
+        mem::swap(&mut self.background_color, &mut self.alt_background_color);
+        mem::swap(&mut self.highlight_color, &mut self.alt_highlight_color);
+        mem::swap(&mut self.disabled_color, &mut self.alt_disabled_color);
+        mem::swap(&mut self.button_a_color, &mut self.alt_button_a_color);
+        mem::swap(&mut self.button_b_color, &mut self.alt_button_b_color);
+        mem::swap(&mut self.button_x_color, &mut self.alt_button_x_color);
+        mem::swap(&mut self.button_y_color, &mut self.alt_button_y_color);
+    }
+
     fn patch_ra_config(&self) -> Result<()> {
         let mut file = File::create("/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.cfg")?;
         write!(
@@ -212,23 +249,111 @@ rgui_particle_color = "0xFF{highlight:X}"
         )?;
         Ok(())
     }
+
+    #[inline]
+    fn default_foreground_color() -> Color {
+        Color::new(255, 255, 255)
+    }
+
+    #[inline]
+    fn default_background_color() -> Color {
+        Color::new(0, 0, 0)
+    }
+
+    #[inline]
+    fn default_highlight_color() -> Color {
+        Color::new(114, 135, 253)
+    }
+
+    #[inline]
+    fn default_disabled_color() -> Color {
+        Color::new(88, 91, 112)
+    }
+
+    #[inline]
+    fn default_button_a_color() -> Color {
+        Color::new(235, 26, 29)
+    }
+
+    #[inline]
+    fn default_button_b_color() -> Color {
+        Color::new(254, 206, 21)
+    }
+
+    #[inline]
+    fn default_button_x_color() -> Color {
+        Color::new(7, 73, 180)
+    }
+
+    #[inline]
+    fn default_button_y_color() -> Color {
+        Color::new(0, 141, 69)
+    }
+
+    #[inline]
+    fn default_alt_foreground_color() -> Color {
+        Color::new(41, 44, 60)
+    }
+
+    #[inline]
+    fn default_alt_background_color() -> Color {
+        Color::new(239, 241, 245)
+    }
+
+    #[inline]
+    fn default_alt_highlight_color() -> Color {
+        Color::new(114, 135, 253)
+    }
+
+    #[inline]
+    fn default_alt_disabled_color() -> Color {
+        Color::new(124, 127, 147)
+    }
+
+    #[inline]
+    fn default_alt_button_a_color() -> Color {
+        Color::new(243, 139, 168)
+    }
+
+    #[inline]
+    fn default_alt_button_b_color() -> Color {
+        Color::new(249, 226, 175)
+    }
+
+    #[inline]
+    fn default_alt_button_x_color() -> Color {
+        Color::new(137, 180, 250)
+    }
+
+    #[inline]
+    fn default_alt_button_y_color() -> Color {
+        Color::new(148, 226, 213)
+    }
 }
 
 impl Default for Stylesheet {
     fn default() -> Self {
         Self {
             enable_box_art: true,
-            foreground_color: Color::new(255, 255, 255),
-            background_color: Color::new(0, 0, 0),
-            highlight_color: Color::new(151, 135, 187),
-            disabled_color: Color::new(75, 75, 75),
-            button_a_color: Color::new(235, 26, 29),
-            button_b_color: Color::new(254, 206, 21),
-            button_x_color: Color::new(7, 73, 180),
-            button_y_color: Color::new(0, 141, 69),
+            foreground_color: Self::default_foreground_color(),
+            background_color: Self::default_background_color(),
+            highlight_color: Self::default_highlight_color(),
+            disabled_color: Self::default_disabled_color(),
+            button_a_color: Self::default_button_a_color(),
+            button_b_color: Self::default_button_b_color(),
+            button_x_color: Self::default_button_x_color(),
+            button_y_color: Self::default_button_y_color(),
             ui_font: StylesheetFont::ui_font(),
             guide_font: StylesheetFont::guide_font(),
             cjk_font: StylesheetFont::cjk_font(),
+            alt_foreground_color: Self::default_alt_foreground_color(),
+            alt_background_color: Self::default_alt_background_color(),
+            alt_highlight_color: Self::default_alt_highlight_color(),
+            alt_disabled_color: Self::default_alt_disabled_color(),
+            alt_button_a_color: Self::default_alt_button_a_color(),
+            alt_button_b_color: Self::default_alt_button_b_color(),
+            alt_button_x_color: Self::default_alt_button_x_color(),
+            alt_button_y_color: Self::default_alt_button_y_color(),
         }
     }
 }
