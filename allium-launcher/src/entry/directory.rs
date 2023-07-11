@@ -7,6 +7,7 @@ use std::{
 
 use anyhow::{anyhow, Result};
 use common::{constants::ALLIUM_GAMES_DIR, database::Database};
+use log::error;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -142,12 +143,18 @@ impl Directory {
 
         let gamelist = self.path.join("gamelist.xml");
         if gamelist.exists() {
-            entries.extend(self.parse_game_list(&gamelist)?.into_iter());
+            match self.parse_game_list(&gamelist) {
+                Ok(res) => entries.extend(res.into_iter()),
+                Err(e) => error!("Failed to parse gamelist.xml: {}", e),
+            }
         }
 
         let gamelist = self.path.join("miyoogamelist.xml");
         if gamelist.exists() {
-            entries.extend(self.parse_game_list(&gamelist)?.into_iter());
+            match self.parse_game_list(&gamelist) {
+                Ok(res) => entries.extend(res.into_iter()),
+                Err(e) => error!("Failed to parse gamelist.xml: {}", e),
+            }
         }
 
         entries.extend(
