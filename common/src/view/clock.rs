@@ -1,5 +1,5 @@
 use std::collections::VecDeque;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -35,21 +35,24 @@ impl Clock {
 
 #[async_trait(?Send)]
 impl View for Clock {
+    fn update(&mut self, _dt: Duration) {
+        if self.last_updated.elapsed() >= CLOCK_UPDATE_INTERVAL {
+            self.label.set_text(text());
+            self.last_updated = Instant::now();
+        }
+    }
+
     fn draw(
         &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        if self.last_updated.elapsed() >= CLOCK_UPDATE_INTERVAL {
-            self.label.set_text(text());
-        }
-
         display.load(self.bounding_box(styles))?;
         self.label.draw(display, styles)
     }
 
     fn should_draw(&self) -> bool {
-        self.last_updated.elapsed() >= CLOCK_UPDATE_INTERVAL || self.label.should_draw()
+        self.label.should_draw()
     }
 
     fn set_should_draw(&mut self) {

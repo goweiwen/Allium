@@ -1,6 +1,6 @@
 #!/bin/sh
 export ROOT="/mnt/SDCARD"
-export LD_LIBRARY_PATH="/lib:/config/lib:/customer/lib:$ROOT/.tmp_update/lib"
+export LD_LIBRARY_PATH="/lib:/config/lib:/customer/lib:$ROOT/miyoo:$ROOT/.tmp_update/lib"
 export PATH="$ROOT/.tmp_update/bin:$PATH"
 
 # init backlight
@@ -13,6 +13,13 @@ echo 1 > /sys/class/pwm/pwmchip0/pwm0/enable
 cat /proc/ls
 sleep 0.25
 
+# restore timezone
+if [ -f $ROOT/.allium/state/timezone ]; then
+  export TZ
+  TZ="$(cat $ROOT/.allium/state/timezone)"
+fi
+
+# perform model-specific logic
 if [ -f /customer/app/axp_test ]; then
 	export MODEL=354
 

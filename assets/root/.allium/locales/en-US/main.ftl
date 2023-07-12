@@ -27,6 +27,10 @@ settings-wifi-telnet-enabled = Telnet Enabled
 settings-wifi-ftp-enabled = FTP Enabled
 settings-wifi-connecting= Connecting...
 
+settings-clock = Date & Time
+settings-clock-datetime = Date & Time
+settings-clock-timezone = Timezone
+
 settings-display = Display
 settings-display-luminance = Luminance
 settings-display-hue = Hue

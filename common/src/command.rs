@@ -28,6 +28,7 @@ pub enum Value {
     Int(i32),
     String(String),
     Color(Color),
+    DateTime(chrono::NaiveDateTime),
 }
 
 impl Value {
@@ -55,6 +56,13 @@ impl Value {
     pub fn as_color(self) -> Option<Color> {
         match self {
             Value::Color(c) => Some(c),
+            _ => None,
+        }
+    }
+
+    pub fn as_datetime(self) -> Option<chrono::NaiveDateTime> {
+        match self {
+            Value::DateTime(dt) => Some(dt),
             _ => None,
         }
     }

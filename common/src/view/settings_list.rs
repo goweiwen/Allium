@@ -205,19 +205,38 @@ impl View for SettingsList {
             let right = &mut self.right[self.selected];
             right.set_should_draw();
 
-            let rect = right.bounding_box(styles);
+            let left = self.left.get_mut(self.selected - self.top).unwrap();
+            let left_rect = left.bounding_box(styles);
+            let right_rect = right.bounding_box(styles);
+
+            // Highlight Background
+            if right_rect.w != 0 && right_rect.h != 0 {
+                let rect = left_rect.union(&right_rect);
+                RoundedRectangle::with_equal_corners(
+                    Rectangle::new(
+                        embedded_graphics::prelude::Point::new(self.rect.x, rect.y - 4),
+                        Size::new(self.rect.w, rect.h + 8),
+                    ),
+                    Size::new_equal(rect.h),
+                )
+                .into_styled(PrimitiveStyle::with_fill(
+                    styles.highlight_color.blend(styles.background_color, 128),
+                ))
+                .draw(display)?;
+            }
 
             // Highlight
             RoundedRectangle::with_equal_corners(
                 Rectangle::new(
-                    embedded_graphics::prelude::Point::new(rect.x - 12, rect.y - 4),
-                    Size::new(rect.w + 24, rect.h + 8),
+                    embedded_graphics::prelude::Point::new(right_rect.x - 12, right_rect.y - 4),
+                    Size::new(right_rect.w + 24, right_rect.h + 8),
                 ),
-                Size::new_equal(rect.h),
+                Size::new_equal(right_rect.h),
             )
             .into_styled(PrimitiveStyle::with_fill(styles.highlight_color))
             .draw(display)?;
 
+            left.draw(display, styles)?;
             right.draw(display, styles)?;
             drawn = true
         }

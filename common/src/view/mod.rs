@@ -22,6 +22,7 @@ pub use self::clock::Clock;
 pub use self::image::{Image, ImageMode};
 pub use self::input::button::Button;
 pub use self::input::color_picker::ColorPicker;
+pub use self::input::datetime::DateTime;
 pub use self::input::keyboard::Keyboard;
 pub use self::input::number::Number;
 pub use self::input::percentage::Percentage;

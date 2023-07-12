@@ -27,6 +27,10 @@ settings-wifi-telnet-enabled = Telnet有効
 settings-wifi-ftp-enabled = FTP有効
 settings-wifi-connecting= 接続中...
 
+settings-clock = 日付と時刻
+settings-clock-datetime = 日付と時刻
+settings-clock-timezone = タイムゾーン
+
 settings-display = ディスプレイ
 settings-display-luminance = 輝度
 settings-display-hue = 色相
