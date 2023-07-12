@@ -102,7 +102,7 @@ impl ActivityTracker {
                     let mut map = HashMap::new();
                     map.insert(
                         "hours_decimal".to_string(),
-                        (e.play_time.num_minutes() as f32 / 60.0).into(),
+                        format!("{:.1}", (e.play_time.num_minutes() as f32 / 60.0)).into(),
                     );
                     map.insert("hours".to_string(), e.play_time.num_hours().into());
                     map.insert(
@@ -211,8 +211,8 @@ enum Sort {
 impl Sort {
     fn button_hint(&self, locale: &Locale) -> String {
         match self {
-            Sort::LastPlayed => locale.t("recents-sort-currently-last-played"),
-            Sort::MostPlayed => locale.t("recents-sort-currently-most-played"),
+            Sort::LastPlayed => locale.t("recents-sort-last-played"),
+            Sort::MostPlayed => locale.t("recents-sort-most-played"),
         }
     }
 
