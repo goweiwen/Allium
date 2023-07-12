@@ -1,6 +1,6 @@
 #!/bin/sh
 export ROOT="/mnt/SDCARD"
-export LD_LIBRARY_PATH="$ROOT/.tmp_update/lib:/lib:/config/lib:/customer/lib"
+export LD_LIBRARY_PATH="/lib:/config/lib:/customer/lib:$ROOT/.tmp_update/lib"
 export PATH="$ROOT/.tmp_update/bin:$PATH"
 
 # init backlight
