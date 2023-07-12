@@ -348,6 +348,10 @@ where
             }
         } else if let Some(menu) = self.menu.as_mut() {
             match event {
+                KeyEvent::Pressed(Key::Left | Key::Right) => {
+                    // trap tab change
+                    Ok(true)
+                }
                 KeyEvent::Pressed(Key::Select | Key::B) => {
                     self.menu = None;
                     commands.send(Command::Redraw).await?;
