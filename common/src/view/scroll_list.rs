@@ -7,7 +7,7 @@ use embedded_graphics::primitives::{
     CornerRadii, Primitive, PrimitiveStyle, Rectangle, RoundedRectangle,
 };
 use embedded_graphics::Drawable;
-use serde::{Deserialize, Serialize};
+
 use tokio::sync::mpsc::Sender;
 
 use crate::display::Display;
@@ -17,7 +17,7 @@ use crate::stylesheet::{Stylesheet, StylesheetColor};
 use crate::view::{Command, Label, View};
 
 /// A listing of selectable entries. Assumes that all entries have the same size.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct ScrollList {
     rect: Rect,
     /// All entries.
@@ -106,6 +106,10 @@ impl ScrollList {
             return;
         }
 
+        self.children
+            .get_mut(self.selected)
+            .map(|v| v.scroll(false));
+
         index = index.clamp(0, self.items.len() - 1);
         if index >= self.top + self.visible_count() {
             self.top = (index - self.visible_count() + 1).min(self.items.len() - 1);
@@ -114,6 +118,8 @@ impl ScrollList {
         }
         self.selected = index;
         self.update_children();
+
+        self.children.get_mut(self.selected).map(|v| v.scroll(true));
 
         self.dirty = true;
     }
@@ -140,7 +146,7 @@ impl View for ScrollList {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        if self.dirty {
+        if self.should_draw() {
             if let Some(color) = self.background_color {
                 let mut rect = self
                     .children_mut()
@@ -197,7 +203,7 @@ impl View for ScrollList {
     }
 
     fn should_draw(&self) -> bool {
-        self.dirty
+        self.dirty || self.children.iter().any(|v| v.should_draw())
     }
 
     fn set_should_draw(&mut self) {

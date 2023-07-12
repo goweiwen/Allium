@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
+
 use tokio::sync::mpsc::Sender;
 
 use crate::display::Display;
@@ -11,7 +11,7 @@ use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use crate::stylesheet::Stylesheet;
 use crate::view::{ButtonIcon, Command, Label, View};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct ButtonHint<S>
 where
     S: AsRef<str> + PartialEq + Send,

@@ -141,15 +141,21 @@ impl AlliumD<DefaultPlatform> {
     pub async fn run_event_loop(&mut self) -> Result<()> {
         info!("hello from Allium {}", ALLIUM_VERSION);
 
+        info!("setting volume: {}", self.state.volume);
         self.platform.set_volume(self.state.volume)?;
+
+        info!("setting brightness: {}", self.state.brightness);
         self.platform.set_brightness(self.state.brightness)?;
 
+        info!("loading display settings");
         DisplaySettings::load()?.apply()?;
 
         if DefaultPlatform::has_wifi() {
+            info!("wifi detected, loading wifi settings");
             WiFiSettings::load()?.init()?;
         }
 
+        info!("starting event loop");
         #[cfg(unix)]
         {
             let mut sigint = tokio::signal::unix::signal(SignalKind::interrupt())?;
@@ -185,6 +191,7 @@ impl AlliumD<DefaultPlatform> {
                     _ = sigint.recv() => self.handle_quit().await?,
                     _ = sigterm.recv() => self.handle_quit().await?,
                     _ = battery_interval.tick() => {
+                        info!("updating battery");
                         if let Err(e) = battery.update() {
                             error!("failed to update battery: {}", e);
                         }

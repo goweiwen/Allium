@@ -407,11 +407,19 @@ where
     }
 
     fn children(&self) -> Vec<&dyn View> {
-        vec![&self.list, &self.image, &self.button_hints]
+        if let Some(child) = self.child.as_ref() {
+            vec![child.as_ref() as &dyn View]
+        } else {
+            vec![&self.list, &self.image, &self.button_hints]
+        }
     }
 
     fn children_mut(&mut self) -> Vec<&mut dyn View> {
-        vec![&mut self.list, &mut self.image, &mut self.button_hints]
+        if let Some(child) = self.child.as_mut() {
+            vec![child.as_mut() as &mut dyn View]
+        } else {
+            vec![&mut self.list, &mut self.image, &mut self.button_hints]
+        }
     }
 
     fn bounding_box(&mut self, _styles: &Stylesheet) -> Rect {

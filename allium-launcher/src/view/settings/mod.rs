@@ -187,17 +187,20 @@ impl View for Settings {
     }
 
     fn should_draw(&self) -> bool {
-        self.child.as_ref().map_or(false, |c| c.should_draw())
-            || self.list.should_draw()
-            || self.button_hints.should_draw()
+        if let Some(child) = self.child.as_ref() {
+            child.should_draw()
+        } else {
+            self.list.should_draw() || self.button_hints.should_draw()
+        }
     }
 
     fn set_should_draw(&mut self) {
         if let Some(ref mut child) = self.child {
             child.set_should_draw();
+        } else {
+            self.list.set_should_draw();
+            self.button_hints.set_should_draw();
         }
-        self.list.set_should_draw();
-        self.button_hints.set_should_draw();
     }
 
     async fn handle_key_event(
@@ -232,19 +235,19 @@ impl View for Settings {
     }
 
     fn children(&self) -> Vec<&dyn View> {
-        let mut children: Vec<&dyn View> = vec![&self.list, &self.button_hints];
         if let Some(child) = self.child.as_deref() {
-            children.push(child);
+            vec![child as &dyn View]
+        } else {
+            vec![&self.list, &self.button_hints]
         }
-        children
     }
 
     fn children_mut(&mut self) -> Vec<&mut dyn View> {
-        let mut children: Vec<&mut dyn View> = vec![&mut self.list, &mut self.button_hints];
         if let Some(child) = self.child.as_deref_mut() {
-            children.push(child);
+            vec![child as &mut dyn View]
+        } else {
+            vec![&mut self.list, &mut self.button_hints]
         }
-        children
     }
 
     fn bounding_box(&mut self, _styles: &Stylesheet) -> Rect {

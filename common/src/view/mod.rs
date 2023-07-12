@@ -13,6 +13,7 @@ mod settings_list;
 
 use std::collections::VecDeque;
 use std::fmt;
+use std::time::Duration;
 
 pub use self::battery_indicator::BatteryIndicator;
 pub use self::button_hint::ButtonHint;
@@ -45,6 +46,11 @@ use crate::stylesheet::Stylesheet;
 
 #[async_trait(?Send)]
 pub trait View {
+    /// Update the view.
+    fn update(&mut self, dt: Duration) {
+        self.children_mut().iter_mut().for_each(|c| c.update(dt));
+    }
+
     /// Draw the view. Returns true if the view was drawn.
     fn draw(
         &mut self,
@@ -94,6 +100,10 @@ impl fmt::Debug for dyn View {
 
 #[async_trait(?Send)]
 impl View for Box<dyn View> {
+    fn update(&mut self, dt: Duration) {
+        (**self).update(dt)
+    }
+
     fn draw(
         &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,

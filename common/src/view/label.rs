@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::time::Duration;
 
 use crate::command::Command;
 use crate::geom::{Alignment, Point, Rect};
@@ -7,7 +8,7 @@ use async_trait::async_trait;
 use embedded_graphics::prelude::Dimensions;
 use embedded_graphics::text::Text;
 use embedded_graphics::Drawable;
-use serde::{Deserialize, Serialize};
+use log::trace;
 use tokio::sync::mpsc::Sender;
 
 use crate::display::color::Color;
@@ -16,11 +17,18 @@ use crate::platform::{DefaultPlatform, KeyEvent, Platform};
 use crate::stylesheet::{Stylesheet, StylesheetColor};
 use crate::view::View;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
+struct Scrolling {
+    offset: usize,
+    dt: Duration,
+}
+
+#[derive(Debug, Clone)]
 pub struct Label<S>
 where
     S: AsRef<str> + PartialEq + Send,
 {
+    rect: Option<Rect>,
     point: Point,
     text: S,
     alignment: Alignment,
@@ -28,6 +36,7 @@ where
     truncated_text: Option<String>,
     color: StylesheetColor,
     background_color: StylesheetColor,
+    scrolling: Option<Scrolling>,
     dirty: bool,
 }
 
@@ -37,6 +46,7 @@ where
 {
     pub fn new(point: Point, text: S, alignment: Alignment, width: Option<u32>) -> Self {
         Self {
+            rect: None,
             point,
             text,
             alignment,
@@ -44,8 +54,23 @@ where
             truncated_text: None,
             color: StylesheetColor::Foreground,
             background_color: StylesheetColor::Background,
+            scrolling: None,
             dirty: true,
         }
+    }
+
+    pub fn scroll(&mut self, enabled: bool) -> &mut Self {
+        if enabled && self.width.is_some() {
+            self.scrolling = Some(Scrolling {
+                offset: 0,
+                dt: Duration::from_millis(0),
+            });
+            self.truncated_text = None;
+        } else {
+            self.truncated_text = None;
+            self.scrolling = None;
+        }
+        self
     }
 
     pub fn color(&mut self, color: StylesheetColor) -> &mut Self {
@@ -68,21 +93,48 @@ where
     }
 
     fn layout(&mut self, styles: &Stylesheet) {
+        if self.truncated_text.is_some() {
+            return;
+        }
+
+        self.dirty = true;
+
         let text_style = FontTextStyleBuilder::<Color>::new(styles.ui_font.font())
             .font_fallback(styles.cjk_font.font())
             .font_size(styles.ui_font.size)
             .build();
 
-        if self.truncated_text.is_none() {
-            if let Some(width) = self.width {
-                let mut text = Text::with_alignment(
-                    self.truncated_text
-                        .as_deref()
-                        .unwrap_or_else(|| self.text.as_ref()),
-                    self.point.into(),
-                    text_style.clone(),
-                    self.alignment.into(),
-                );
+        let mut text = Text::with_alignment(
+            self.text.as_ref(),
+            self.point.into(),
+            text_style.clone(),
+            self.alignment.into(),
+        );
+        let rect = text.bounding_box().into();
+        self.rect = Some(rect);
+
+        if let Some(width) = self.width {
+            if let Some(scrolling) = self.scrolling.as_ref() {
+                let scroll_text = self
+                    .text
+                    .as_ref()
+                    .chars()
+                    .chain("     ".chars())
+                    .chain(self.text.as_ref().chars().take(scrolling.offset))
+                    .skip(scrolling.offset)
+                    .collect::<String>();
+                text.text = &scroll_text;
+
+                while text.bounding_box().size.width > width {
+                    let mut n = text.text.len() - 1;
+                    while !text.text.is_char_boundary(n) {
+                        n -= 1;
+                    }
+                    text.text = &text.text[..n];
+                }
+                self.truncated_text = Some(text.text.trim_end().to_string());
+            } else {
+                text.text = self.text.as_ref();
 
                 let ellipsis_width = Text::with_alignment(
                     "...",
@@ -108,12 +160,10 @@ where
                 } else {
                     self.truncated_text = Some(text.text.to_string());
                 }
-            } else {
-                self.truncated_text = Some(self.text.as_ref().to_owned());
             }
+        } else {
+            self.truncated_text = Some(self.text.as_ref().to_owned());
         }
-
-        self.dirty = true;
     }
 }
 
@@ -122,6 +172,44 @@ impl<S> View for Label<S>
 where
     S: AsRef<str> + PartialEq + Send,
 {
+    fn update(&mut self, dt: Duration) {
+        let Some(scrolling) = self.scrolling.as_mut() else {
+            return;
+        };
+        let Some(rect) = self.rect else {
+            trace!("haven't calculated rect, skip for now");
+            return;
+        };
+        let Some(width) = self.width else {
+            trace!("we don't have any width, we don't need to scroll");
+            self.scroll(false);
+            return;
+        };
+
+        if rect.w < width {
+            trace!("text is smaller than width, we don't need to scroll");
+            self.scroll(false);
+            return;
+        }
+
+        scrolling.dt += dt;
+
+        let offset = scrolling.offset;
+        while scrolling.dt > Duration::from_millis(200) {
+            scrolling.dt -= Duration::from_millis(200);
+            scrolling.offset += 1;
+        }
+
+        if offset >= self.text.as_ref().chars().count() + 5 {
+            scrolling.offset = 0;
+        }
+
+        if scrolling.offset != offset {
+            self.truncated_text = None;
+            self.set_should_draw();
+        }
+    }
+
     fn draw(
         &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,
@@ -177,22 +265,27 @@ where
     }
 
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
-        if self.truncated_text.is_none() {
-            self.layout(styles);
-        }
-
         let text_style = FontTextStyleBuilder::<Color>::new(styles.ui_font.font())
             .font_fallback(styles.cjk_font.font())
             .font_size(styles.ui_font.size)
             .build();
 
-        let mut text = self.truncated_text.as_deref().unwrap();
-        if text.is_empty() {
-            text = " ";
+        let mut rect: Rect = Text::with_alignment(
+            self.text.as_ref(),
+            self.point.into(),
+            text_style,
+            self.alignment.into(),
+        )
+        .bounding_box()
+        .into();
+
+        if self.scrolling.is_some() {
+            if let Some(width) = self.width {
+                rect.w = rect.w.min(width);
+            }
         }
-        Text::with_alignment(text, self.point.into(), text_style, self.alignment.into())
-            .bounding_box()
-            .into()
+
+        rect
     }
 
     fn set_position(&mut self, point: Point) {

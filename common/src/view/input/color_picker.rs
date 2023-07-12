@@ -67,6 +67,7 @@ impl View for ColorPicker {
         if !self.dirty {
             return Ok(false);
         }
+        self.dirty = false;
 
         let color = self
             .edit_state

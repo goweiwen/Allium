@@ -4,7 +4,7 @@ use std::time::Instant;
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Local;
-use serde::{Deserialize, Serialize};
+
 use tokio::sync::mpsc::Sender;
 
 use crate::constants::CLOCK_UPDATE_INTERVAL;
@@ -14,11 +14,10 @@ use crate::platform::{DefaultPlatform, KeyEvent, Platform};
 use crate::stylesheet::Stylesheet;
 use crate::view::{Command, Label, View};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Clock {
     label: Label<String>,
     point: Point,
-    #[serde(skip, default = "Instant::now")]
     last_updated: Instant,
 }
 

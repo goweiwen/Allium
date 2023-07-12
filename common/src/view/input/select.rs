@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
+
 use tokio::sync::mpsc::Sender;
 
 use crate::command::Value;
@@ -11,14 +11,12 @@ use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use crate::stylesheet::Stylesheet;
 use crate::view::{Command, Label, View};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Select {
     point: Point,
     value: usize,
     values: Vec<String>,
-    alignment: Alignment,
     label: Label<String>,
-    #[serde(skip)]
     edit_state: Option<usize>,
 }
 
@@ -35,7 +33,6 @@ impl Select {
             point,
             value,
             values,
-            alignment,
             label,
             edit_state: None,
         }

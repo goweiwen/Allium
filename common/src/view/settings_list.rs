@@ -184,6 +184,8 @@ impl View for SettingsList {
                 let right = &mut self.right[self.top + i];
                 right.set_should_draw();
             }
+
+            self.dirty = false;
         }
 
         let mut drawn = false;
@@ -202,6 +204,20 @@ impl View for SettingsList {
         if self.focused {
             let right = &mut self.right[self.selected];
             right.set_should_draw();
+
+            let rect = right.bounding_box(styles);
+
+            // Highlight
+            RoundedRectangle::with_equal_corners(
+                Rectangle::new(
+                    embedded_graphics::prelude::Point::new(rect.x - 12, rect.y - 4),
+                    Size::new(rect.w + 24, rect.h + 8),
+                ),
+                Size::new_equal(rect.h),
+            )
+            .into_styled(PrimitiveStyle::with_fill(styles.highlight_color))
+            .draw(display)?;
+
             right.draw(display, styles)?;
             drawn = true
         }
@@ -212,13 +228,23 @@ impl View for SettingsList {
     fn should_draw(&self) -> bool {
         self.dirty
             || self.left.iter().any(|c| c.should_draw())
-            || self.right.iter().any(|c| c.should_draw())
+            || self
+                .right
+                .iter()
+                .skip(self.top)
+                .take(self.visible_count())
+                .any(|c| c.should_draw())
     }
 
     fn set_should_draw(&mut self) {
         self.dirty = true;
         self.left.iter_mut().for_each(|c| c.set_should_draw());
-        self.right.iter_mut().for_each(|c| c.set_should_draw());
+        let visible_count = self.visible_count();
+        self.right
+            .iter_mut()
+            .skip(self.top)
+            .take(visible_count)
+            .for_each(|c| c.set_should_draw());
     }
     async fn handle_key_event(
         &mut self,

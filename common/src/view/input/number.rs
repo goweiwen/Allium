@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
+
 use tokio::sync::mpsc::Sender;
 
 use crate::command::Value;
@@ -11,15 +11,13 @@ use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use crate::stylesheet::Stylesheet;
 use crate::view::{Command, Label, View};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Number {
     point: Point,
     value: i32,
     min: i32,
     max: i32,
-    alignment: Alignment,
     label: Label<String>,
-    #[serde(skip)]
     edit_state: Option<i32>,
 }
 
@@ -37,7 +35,6 @@ impl Number {
             value,
             min,
             max,
-            alignment,
             label,
             edit_state: None,
         }
