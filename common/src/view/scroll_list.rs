@@ -65,6 +65,11 @@ impl ScrollList {
         this
     }
 
+    pub fn set_background_color(&mut self, color: Option<StylesheetColor>) {
+        self.background_color = color;
+        self.dirty = true;
+    }
+
     pub fn set_items(&mut self, items: Vec<String>, preserve_selection: bool) {
         if items.is_empty() {
             self.items = items;
