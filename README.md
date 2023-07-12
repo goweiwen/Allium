@@ -53,15 +53,16 @@ The SD card layout should look like this:
 - Automatic resume when powering off/on
 - Settings page
     - WiFi (IP Address, NTP, Telnet, FTP)
+    - Date, time, timezone
     - Change LCD settings
     - Customize theme colours, font
     - Change system language
 
 ## Planned Features
 (roughly in order of priority)
+- Specify default cores for rom
 - Suspend
 - Favorites
-- Clock adjustment
 - WiFi stuff:
     - OTA update
     - Metadata/box art scraper
