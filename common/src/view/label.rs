@@ -87,6 +87,7 @@ where
         if self.text != text {
             self.text = text;
             self.truncated_text = None;
+            self.rect = None;
             self.dirty = true;
         }
         self
@@ -147,13 +148,15 @@ where
                 .width;
 
                 let mut truncated = false;
-                while text.bounding_box().size.width + ellipsis_width > width {
-                    let mut n = text.text.len() - 1;
-                    while !text.text.is_char_boundary(n) {
-                        n -= 1;
+                if text.bounding_box().size.width > width {
+                    while text.bounding_box().size.width + ellipsis_width > width {
+                        let mut n = text.text.len() - 1;
+                        while !text.text.is_char_boundary(n) {
+                            n -= 1;
+                        }
+                        text.text = &text.text[..n];
+                        truncated = true;
                     }
-                    text.text = &text.text[..n];
-                    truncated = true;
                 }
                 if truncated {
                     self.truncated_text = Some(format!("{}...", text.text.trim_end()));
