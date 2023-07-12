@@ -26,7 +26,14 @@ impl DisplaySettings {
     }
 
     pub fn apply(&self) -> Result<()> {
-        let mut file = File::create("/proc/mi_modules/mi_disp/mi_disp0")?;
+        let mut file = match File::create("/proc/mi_modules/mi_disp/mi_disp0") {
+            Ok(file) => file,
+            Err(err) => {
+                warn!("failed to open display settings file: {}", err);
+                return Ok(());
+            }
+        };
+
         file.write_all(
             format!(
                 "csc 0 3 {:.0} {:.0} {:.0} {:.0} 0 0\n",
