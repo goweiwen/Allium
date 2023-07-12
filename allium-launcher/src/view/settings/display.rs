@@ -118,13 +118,19 @@ impl Display {
             Alignment::Right,
             12,
         );
+        let edit_button = Some(ButtonHint::new(
+            Point::zero(),
+            Key::A,
+            locale.t("button-edit"),
+            Alignment::Right,
+        ));
 
         Self {
             rect,
             settings,
             list,
             button_hints,
-            edit_button: None,
+            edit_button,
         }
     }
 }
