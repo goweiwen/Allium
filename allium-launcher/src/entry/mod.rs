@@ -80,7 +80,7 @@ impl Entry {
         Ok(Some(Entry::Game(Game::new(path))))
     }
 
-    pub fn path<'a>(&'a self) -> &'a Path {
+    pub fn path(&self) -> &Path {
         match self {
             Entry::Game(game) => &game.path,
             Entry::Directory(directory) => &directory.path,
