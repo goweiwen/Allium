@@ -1,5 +1,7 @@
 {
-  "label":"Terminal",
-  "launch":"launch.sh",
-  "description":"st - Simple Terminal"
+"label":"Terminal",
+"icon":"st_72x72.png",
+"iconsel":"st_72x72.png",
+"launch":"launch.sh",
+"description":"Simple Terminal for Miyoo Mini"
 }
