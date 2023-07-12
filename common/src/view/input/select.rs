@@ -76,13 +76,13 @@ impl View for Select {
             match event {
                 KeyEvent::Pressed(Key::Up | Key::Left)
                 | KeyEvent::Autorepeat(Key::Up | Key::Left) => {
-                    *value = (*value + 1).rem_euclid(self.values.len());
+                    *value = (*value as isize - 1).rem_euclid(self.values.len() as isize) as usize;
                     self.label.set_text(self.values[*value].clone());
                     return Ok(true);
                 }
                 KeyEvent::Pressed(Key::Down | Key::Right)
                 | KeyEvent::Autorepeat(Key::Down | Key::Right) => {
-                    *value = (*value as isize - 1).rem_euclid(self.values.len() as isize) as usize;
+                    *value = (*value + 1).rem_euclid(self.values.len());
                     self.label.set_text(self.values[*value].clone());
                     return Ok(true);
                 }
