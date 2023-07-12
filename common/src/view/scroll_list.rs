@@ -112,7 +112,7 @@ impl ScrollList {
         }
 
         self.children
-            .get_mut(self.selected)
+            .get_mut(self.selected - self.top)
             .map(|v| v.scroll(false));
 
         index = index.clamp(0, self.items.len() - 1);
@@ -124,7 +124,9 @@ impl ScrollList {
         self.selected = index;
         self.update_children();
 
-        self.children.get_mut(self.selected).map(|v| v.scroll(true));
+        self.children
+            .get_mut(self.selected - self.top)
+            .map(|v| v.scroll(true));
 
         self.dirty = true;
     }
