@@ -213,11 +213,11 @@ impl View for Settings {
             if child.handle_key_event(event, commands, bubble).await? {
                 bubble.retain(|cmd| match cmd {
                     Command::CloseView => {
-                        self.set_should_draw();
                         self.child = None;
-                        true
+                        self.set_should_draw();
+                        false
                     }
-                    _ => false,
+                    _ => true,
                 });
                 Ok(true)
             } else {
