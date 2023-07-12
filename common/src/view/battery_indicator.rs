@@ -1,5 +1,5 @@
 use std::collections::VecDeque;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -8,6 +8,7 @@ use embedded_graphics::primitives::{
     CornerRadii, Primitive, PrimitiveStyleBuilder, RoundedRectangle, Triangle,
 };
 use embedded_graphics::Drawable;
+use log::error;
 use tokio::sync::mpsc::Sender;
 
 use crate::battery::Battery;
@@ -42,12 +43,6 @@ where
             dirty: true,
         }
     }
-
-    pub fn update(&mut self) -> Result<()> {
-        self.battery.update()?;
-        self.dirty = true;
-        Ok(())
-    }
 }
 
 #[async_trait(?Send)]
@@ -55,16 +50,22 @@ impl<B> View for BatteryIndicator<B>
 where
     B: Battery,
 {
+    fn update(&mut self, _dt: Duration) {
+        if self.last_updated.elapsed() < BATTERY_UPDATE_INTERVAL {
+            return;
+        }
+        self.last_updated = Instant::now();
+        if let Err(e) = self.battery.update() {
+            error!("Failed to update battery: {}", e);
+        }
+        self.dirty = true;
+    }
+
     fn draw(
         &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        if self.last_updated.elapsed() >= BATTERY_UPDATE_INTERVAL {
-            self.last_updated = Instant::now();
-            self.update()?;
-        }
-
         let mut drawn = false;
 
         if self.dirty {
@@ -214,7 +215,7 @@ where
     }
 
     fn should_draw(&self) -> bool {
-        self.dirty || self.last_updated.elapsed() >= BATTERY_UPDATE_INTERVAL
+        self.dirty
     }
 
     fn set_should_draw(&mut self) {
