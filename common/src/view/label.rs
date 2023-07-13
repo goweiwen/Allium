@@ -40,6 +40,9 @@ where
     dirty: bool,
 }
 
+const SCROLL_DELAY: Duration = Duration::from_millis(1000);
+const SCROLL_INTERVAL: Duration = Duration::from_micros(166_667);
+
 impl<S> Label<S>
 where
     S: AsRef<str> + PartialEq + Send,
@@ -198,8 +201,8 @@ where
         scrolling.dt += dt;
 
         let offset = scrolling.offset;
-        while scrolling.dt > Duration::from_millis(200) {
-            scrolling.dt -= Duration::from_millis(200);
+        while scrolling.dt > SCROLL_DELAY {
+            scrolling.dt -= SCROLL_INTERVAL;
             scrolling.offset += 1;
         }
 

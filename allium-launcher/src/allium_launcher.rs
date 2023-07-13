@@ -70,7 +70,7 @@ impl AlliumLauncher<DefaultPlatform> {
 
         let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 
-        let mut timer = tokio::time::interval(tokio::time::Duration::from_millis(100));
+        let mut frame_interval = tokio::time::interval(tokio::time::Duration::from_micros(166_667));
 
         let mut last_frame = Instant::now();
         loop {
@@ -97,7 +97,7 @@ impl AlliumLauncher<DefaultPlatform> {
 
             #[cfg(unix)]
             tokio::select! {
-                _ = timer.tick() => {}
+                _ = frame_interval.tick() => {}
                 _ = sigterm.recv() => {
                     self.handle_command(Command::Exit).await?;
                 }
