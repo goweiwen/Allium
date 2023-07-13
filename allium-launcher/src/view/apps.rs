@@ -21,7 +21,7 @@ use crate::view::entry_list::{EntryList, EntryListState};
 
 pub type AppsState = EntryListState<AppsSort>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Apps {
     rect: Rect,
     list: EntryList<AppsSort>,
@@ -128,8 +128,8 @@ impl Sort for AppsSort {
         }
     }
 
-    fn entries(&self, _database: &Database, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
-        let mut entries = self.directory().entries(console_mapper)?;
+    fn entries(&self, database: &Database, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
+        let mut entries = self.directory().entries(database, console_mapper)?;
         entries.sort_unstable();
         Ok(entries)
     }

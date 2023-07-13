@@ -259,6 +259,7 @@ impl Sort for RecentsSort {
                     path: game.path,
                     image,
                     extension,
+                    core: game.core,
                 })
             })
             .collect())

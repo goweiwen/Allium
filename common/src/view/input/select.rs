@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 
+use log::trace;
 use tokio::sync::mpsc::Sender;
 
 use crate::command::Value;
@@ -72,6 +73,7 @@ impl View for Select {
         _command: Sender<Command>,
         bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
+        trace!("selection: {:?}", self.values[self.value]);
         if let Some(value) = &mut self.edit_state {
             match event {
                 KeyEvent::Pressed(Key::Up | Key::Left)

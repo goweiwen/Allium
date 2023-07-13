@@ -14,6 +14,7 @@ populating-database = Populating database...
     Go grab a coffee!
 
 menu-launch = Launch
+menu-core = Core: { $core }
 menu-remove-from-recents = Remove from Recents
 menu-repopulate-database = Repopulate Database
 

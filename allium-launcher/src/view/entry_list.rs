@@ -13,7 +13,7 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::{Stylesheet, StylesheetColor};
 use common::view::{ButtonHint, ButtonIcon, Image, ImageMode, Row, ScrollList, View};
-use embedded_graphics::prelude::{OriginDimensions, Size};
+use embedded_graphics::prelude::{Dimensions, OriginDimensions, Size};
 use embedded_graphics::primitives::{CornerRadii, Primitive, PrimitiveStyle, RoundedRectangle};
 use embedded_graphics::Drawable;
 use serde::{Deserialize, Serialize};
@@ -29,7 +29,13 @@ pub struct EntryListState<S> {
     pub child: Option<Box<EntryListState<S>>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
+pub struct CoreSelection {
+    core: usize,
+    cores: Vec<String>,
+}
+
+#[derive(Debug)]
 pub struct EntryList<S>
 where
     S: Sort,
@@ -41,6 +47,7 @@ where
     list: ScrollList,
     image: Image,
     menu: Option<ScrollList>,
+    core: Option<CoreSelection>,
     button_hints: Row<ButtonHint<String>>,
     pub child: Option<Box<EntryList<S>>>,
 }
@@ -115,6 +122,7 @@ where
             list,
             image,
             menu: None,
+            core: None,
             button_hints,
             child: None,
         };
@@ -194,18 +202,46 @@ where
         Ok(())
     }
 
-    fn open_menu(&mut self) {
+    fn open_menu(&mut self) -> Result<()> {
         let Rect { x, y, w, h } = self.rect;
         let styles = self.res.get::<Stylesheet>();
         let locale = self.res.get::<Locale>();
 
-        let labels = vec![
+        let mut entries = vec![
             locale.t("menu-launch"),
             locale.t("menu-remove-from-recents"),
             locale.t("menu-repopulate-database"),
         ];
 
-        let height = labels.len() as u32 * (styles.ui_font.size + SELECTION_MARGIN);
+        let entry = self.entries.get(self.list.selected()).unwrap();
+        match entry {
+            Entry::Game(game) => {
+                let cores = self
+                    .res
+                    .get::<ConsoleMapper>()
+                    .get_console(&game.path)
+                    .map(|c| c.cores.clone())
+                    .unwrap_or_default();
+
+                if !cores.is_empty() {
+                    let core = game.core.to_owned().unwrap_or_else(|| cores[0].clone());
+                    let i = cores.iter().position(|c| c == &core).unwrap_or_default();
+
+                    entries.insert(
+                        1,
+                        locale.ta(
+                            "menu-core",
+                            &[("core".to_string(), core.into())].into_iter().collect(),
+                        ),
+                    );
+
+                    self.core = Some(CoreSelection { core: i, cores });
+                }
+            }
+            Entry::App(_) | Entry::Directory(_) => {}
+        }
+
+        let height = entries.len() as u32 * (styles.ui_font.size + SELECTION_MARGIN);
 
         let mut menu = ScrollList::new(
             Rect::new(
@@ -214,12 +250,14 @@ where
                 (w - 24) * 2 / 3,
                 height,
             ),
-            labels,
-            Alignment::Center,
+            entries,
+            Alignment::Left,
             styles.ui_font.size + SELECTION_MARGIN,
         );
         menu.set_background_color(Some(StylesheetColor::BackgroundHighlightBlend));
         self.menu = Some(menu);
+
+        Ok(())
     }
 }
 
@@ -241,16 +279,12 @@ where
 
         if let Some(menu) = &mut self.menu {
             if menu.should_draw() {
-                let mut rect = menu
-                    .children_mut()
-                    .iter_mut()
-                    .map(|v| v.bounding_box(styles))
-                    .reduce(|acc, r| acc.union(&r))
-                    .unwrap_or_default();
+                let mut rect = menu.bounding_box(styles);
                 rect.y -= 12;
                 rect.h += 24;
                 rect.x -= 24;
                 rect.w += 48;
+                rect = rect.intersection(&display.bounding_box().into());
                 RoundedRectangle::new(
                     rect.into(),
                     CornerRadii::new(Size::new_equal((styles.ui_font.size + 8) / 2)),
@@ -259,6 +293,7 @@ where
                     StylesheetColor::BackgroundHighlightBlend.to_color(styles),
                 ))
                 .draw(display)?;
+                menu.set_should_draw();
                 menu.draw(display, styles)?;
                 drawn = true;
             }
@@ -348,44 +383,92 @@ where
             }
         } else if let Some(menu) = self.menu.as_mut() {
             match event {
-                KeyEvent::Pressed(Key::Left | Key::Right) => {
-                    // trap tab change
-                    Ok(true)
+                KeyEvent::Pressed(Key::Left) => {
+                    let selected = menu.selected();
+                    if let Some(core) = self.core.as_mut() {
+                        if selected == 1 {
+                            core.core = core.core.saturating_sub(1);
+                            let locale = self.res.get::<Locale>();
+                            menu.set_item(
+                                selected,
+                                locale.ta(
+                                    "menu-core",
+                                    &[("core".to_string(), core.cores[core.core].clone().into())]
+                                        .into_iter()
+                                        .collect(),
+                                ),
+                            )
+                        }
+                    }
+                    Ok(true) // trap tab focus
+                }
+                KeyEvent::Pressed(Key::Right) => {
+                    let selected = menu.selected();
+                    if let Some(core) = self.core.as_mut() {
+                        if selected == 1 {
+                            core.core = (core.core + 1).min(core.cores.len() - 1);
+                            let locale = self.res.get::<Locale>();
+                            menu.set_item(
+                                selected,
+                                locale.ta(
+                                    "menu-core",
+                                    &[("core".to_string(), core.cores[core.core].clone().into())]
+                                        .into_iter()
+                                        .collect(),
+                                ),
+                            )
+                        }
+                    }
+                    Ok(true) // trap tab focus
                 }
                 KeyEvent::Pressed(Key::Select | Key::B) => {
                     self.menu = None;
                     commands.send(Command::Redraw).await?;
                     Ok(true)
                 }
-                KeyEvent::Pressed(Key::A) => match menu.selected() {
-                    0 => {
-                        self.select_entry(commands).await?;
-                        self.menu = None;
-                        Ok(true)
+                KeyEvent::Pressed(Key::A) => {
+                    let mut selected = menu.selected();
+                    if self.core.is_none() {
+                        selected += 1;
                     }
-                    1 => {
-                        if let Some(Entry::Game(game)) = self.entries.get(self.list.selected()) {
-                            self.res.get::<Database>().reset_game(&game.path)?;
-                            self.load_entries()?;
-                            commands.send(Command::Redraw).await?;
-                            self.menu = None;
+                    match selected {
+                        0 => {
+                            self.select_entry(commands).await?;
                         }
-                        Ok(true)
+                        1 => {
+                            let entry = self.entries.get_mut(self.list.selected()).unwrap();
+                            if let (Some(core), Entry::Game(game)) = (self.core.as_ref(), entry) {
+                                let db = self.res.get::<Database>();
+                                let core = &core.cores[core.core];
+                                db.set_core(&game.path, core)?;
+                                game.core = Some(core.to_string());
+                            }
+                            self.core = None;
+                            self.select_entry(commands).await?;
+                        }
+                        2 => {
+                            if let Some(Entry::Game(game)) = self.entries.get(self.list.selected())
+                            {
+                                self.res.get::<Database>().reset_game(&game.path)?;
+                                self.load_entries()?;
+                                commands.send(Command::Redraw).await?;
+                            }
+                        }
+                        3 => {
+                            commands.send(Command::Redraw).await?;
+                            let toast = self.res.get::<Locale>().t("populating-database");
+                            commands.send(Command::Toast(toast, None)).await?;
+                            commands.send(Command::PopulateDb).await?;
+                            commands
+                                .send(Command::Toast(String::new(), Some(Duration::ZERO)))
+                                .await?;
+                            commands.send(Command::Redraw).await?;
+                        }
+                        _ => unreachable!("invalid menu selection"),
                     }
-                    2 => {
-                        commands.send(Command::Redraw).await?;
-                        self.menu = None;
-                        let toast = self.res.get::<Locale>().t("populating-database");
-                        commands.send(Command::Toast(toast, None)).await?;
-                        commands.send(Command::PopulateDb).await?;
-                        commands
-                            .send(Command::Toast(String::new(), Some(Duration::ZERO)))
-                            .await?;
-                        commands.send(Command::Redraw).await?;
-                        Ok(true)
-                    }
-                    _ => unreachable!("invalid menu selection"),
-                },
+                    self.menu = None;
+                    Ok(true)
+                }
                 _ => menu.handle_key_event(event, commands, bubble).await,
             }
         } else {
@@ -403,7 +486,7 @@ where
                     Ok(true)
                 }
                 KeyEvent::Pressed(Key::Select) => {
-                    self.open_menu();
+                    self.open_menu()?;
                     Ok(true)
                 }
                 _ => self.list.handle_key_event(event, commands, bubble).await,

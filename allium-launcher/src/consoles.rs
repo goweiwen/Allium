@@ -161,13 +161,15 @@ impl ConsoleMapper {
                     vec![game.path.display().to_string()],
                     false,
                 )
-            } else if let Some(retroarch_core) = console.cores.first() {
+            } else if let Some(retroarch_core) =
+                game.core.clone().or_else(|| console.cores.first().cloned())
+            {
                 GameInfo::new(
                     game.name.clone(),
                     game.path.clone(),
                     image,
                     ALLIUM_RETROARCH.display().to_string(),
-                    vec![retroarch_core.clone(), game.path.display().to_string()],
+                    vec![retroarch_core, game.path.display().to_string()],
                     true,
                 )
             } else {

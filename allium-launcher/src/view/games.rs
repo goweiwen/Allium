@@ -21,7 +21,7 @@ use crate::view::entry_list::{EntryList, EntryListState};
 
 pub type GamesState = EntryListState<GamesSort>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Games {
     rect: Rect,
     list: EntryList<GamesSort>,
@@ -175,7 +175,7 @@ impl Sort for GamesSort {
     }
 
     fn entries(&self, database: &Database, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
-        let mut entries = self.directory().entries(console_mapper)?;
+        let mut entries = self.directory().entries(database, console_mapper)?;
 
         match self {
             GamesSort::Alphabetical(_) => {

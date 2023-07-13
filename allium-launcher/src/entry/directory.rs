@@ -121,6 +121,7 @@ impl Directory {
                 full_name,
                 image,
                 extension,
+                core: None,
             }))
         });
 
@@ -138,7 +139,11 @@ impl Directory {
         Ok(folders.chain(games).collect())
     }
 
-    pub fn entries(&self, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
+    pub fn entries(
+        &self,
+        database: &Database,
+        console_mapper: &ConsoleMapper,
+    ) -> Result<Vec<Entry>> {
         let mut entries = vec![];
 
         let gamelist = self.path.join("gamelist.xml");
@@ -170,6 +175,14 @@ impl Directory {
         let mut uniques = HashSet::new();
         entries.retain(|e| uniques.insert(e.path().to_path_buf()));
 
+        for entry in entries.iter_mut() {
+            if let Entry::Game(game) = entry {
+                if let Some(core) = database.get_core(&game.path)? {
+                    game.core = Some(core);
+                }
+            }
+        }
+
         Ok(entries)
     }
 
@@ -181,7 +194,7 @@ impl Directory {
         database: &Database,
         console_mapper: &ConsoleMapper,
     ) -> Result<()> {
-        let entries = self.entries(console_mapper)?;
+        let entries = self.entries(database, console_mapper)?;
 
         for entry in &entries {
             match entry {
@@ -197,6 +210,7 @@ impl Directory {
                     name: game.name,
                     path: game.path,
                     image: game.image.try_image().map(Path::to_path_buf),
+                    core: game.core,
                 }),
                 _ => None,
             })

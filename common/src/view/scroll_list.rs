@@ -70,6 +70,16 @@ impl ScrollList {
         self.dirty = true;
     }
 
+    pub fn set_item(&mut self, index: usize, item: String) {
+        if index >= self.items.len() {
+            return;
+        }
+
+        self.items[index] = item.clone();
+        self.children[index - self.top].set_text(item);
+        self.dirty = true;
+    }
+
     pub fn set_items(&mut self, items: Vec<String>, preserve_selection: bool) {
         if items.is_empty() {
             self.items = items;

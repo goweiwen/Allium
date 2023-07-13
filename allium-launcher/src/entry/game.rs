@@ -13,11 +13,18 @@ use crate::entry::{lazy_image::LazyImage, short_name};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Game {
+    /// Short name of the game, used to display.
     pub name: String,
+    /// Full name of the game, used to sort.
     pub full_name: String,
+    /// Path to the game file.
     pub path: PathBuf,
+    /// Box art
     pub image: LazyImage,
+    /// Extension of the game file.
     pub extension: String,
+    /// The core to use for this game. If None, the default core will be used.
+    pub core: Option<String>,
 }
 
 impl Game {
@@ -40,6 +47,7 @@ impl Game {
             path,
             image,
             extension,
+            core: None,
         }
     }
 

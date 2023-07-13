@@ -24,6 +24,7 @@ pub struct Game {
     pub play_count: i64,
     pub play_time: Duration,
     pub last_played: i64,
+    pub core: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -31,6 +32,7 @@ pub struct NewGame {
     pub name: String,
     pub path: PathBuf,
     pub image: Option<PathBuf>,
+    pub core: Option<String>,
 }
 
 impl Database {
@@ -94,7 +96,10 @@ M::up("
 CREATE TABLE IF NOT EXISTS key_value (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
-);")
+);"),
+M::up("
+ALTER TABLE games ADD COLUMN core TEXT;
+"),
         ])
     }
 
@@ -122,15 +127,17 @@ CREATE TABLE IF NOT EXISTS key_value (
     pub fn update_games(&self, games: &[NewGame]) -> Result<()> {
         let mut stmt = self.conn.as_ref().unwrap().prepare(
             "
-INSERT INTO games (name, path, image, play_count, play_time, last_played)
-VALUES (?, ?, ?, 0, 0, 0)
-ON CONFLICT(path) DO UPDATE SET name = ?, image = ?",
+INSERT INTO games (name, path, image, play_count, play_time, last_played, core)
+VALUES (?, ?, ?, 0, 0, 0, ?)
+ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
         )?;
 
         for game in games {
             let path = game.path.display().to_string();
             let image = game.image.as_ref().map(|p| p.display().to_string());
-            stmt.execute(params![game.name, path, image, game.name, image,])?;
+            stmt.execute(params![
+                game.name, path, image, game.core, game.name, image, game.core
+            ])?;
         }
 
         Ok(())
@@ -142,7 +149,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?",
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played FROM games WHERE last_played > 0 ORDER BY play_time DESC LIMIT ?")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE last_played > 0 ORDER BY play_time DESC LIMIT ?")?;
 
         let rows = stmt.query_map([limit], map_game)?;
 
@@ -160,7 +167,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?",
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played FROM games WHERE last_played > 0 ORDER BY last_played DESC LIMIT ?")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE last_played > 0 ORDER BY last_played DESC LIMIT ?")?;
 
         let rows = stmt.query_map([limit], map_game)?;
 
@@ -180,7 +187,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?",
 
         let conn = self.conn.as_ref().unwrap();
 
-        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.name MATCH ? LIMIT ?")?;
+        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.name MATCH ? LIMIT ?")?;
 
         let rows = stmt.query_map(params![format!("{}*", query), limit], map_game)?;
 
@@ -197,7 +204,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?",
             .conn
             .as_ref()
             .unwrap()
-            .query_row("SELECT name, path, image, play_count, play_time, last_played FROM games WHERE path = ? LIMIT 1", [path], map_game)
+            .query_row("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE path = ? LIMIT 1", [path], map_game)
             .optional()?;
 
         Ok(game)
@@ -208,7 +215,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?",
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played FROM games WHERE path = ? LIMIT 1")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE path = ? LIMIT 1")?;
 
         let mut results = vec![None; paths.len()];
         for (i, path) in paths.iter().enumerate() {
@@ -231,8 +238,8 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?",
     ) -> Result<()> {
         self.conn.as_ref().unwrap().execute(
             "
-INSERT INTO games (name, path, image, play_count, play_time, last_played)
-VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO games (name, path, image, play_count, play_time, last_played, core)
+VALUES (?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
             params![
                 name,
@@ -240,7 +247,8 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
                 image.map(|p| p.display().to_string()),
                 1,
                 0,
-                0
+                0,
+                None::<String>,
             ],
         )?;
 
@@ -286,9 +294,10 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
         Ok(())
     }
 
+    /// Deletes all games that have no play time, play count, or core.
     pub fn clear(&self) -> Result<()> {
         self.conn.as_ref().unwrap().execute(
-            "DELETE FROM games WHERE last_played = 0 AND play_time = 0",
+            "DELETE FROM games WHERE last_played = 0 AND play_time = 0 AND core = NULL",
             [],
         )?;
 
@@ -319,6 +328,31 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
 
         Ok(matches!(value.as_deref(), Some("1")))
     }
+
+    pub fn get_core(&self, path: &Path) -> Result<Option<String>> {
+        let core = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .query_row(
+                "SELECT core FROM games WHERE path = ?",
+                [path.display().to_string()],
+                |row| row.get::<_, Option<String>>(0),
+            )
+            .optional()?
+            .flatten();
+
+        Ok(core)
+    }
+
+    pub fn set_core(&self, path: &Path, core: &str) -> Result<()> {
+        self.conn.as_ref().unwrap().execute(
+            "UPDATE games SET core = ? WHERE path = ?",
+            params![core, path.display().to_string()],
+        )?;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -339,11 +373,13 @@ mod tests {
                 name: "Game One".to_string(),
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
+                core: None,
             },
             NewGame {
                 name: "Game Two".to_string(),
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
+                core: None,
             },
         ];
 
@@ -388,11 +424,13 @@ mod tests {
                 name: "Game One".to_string(),
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
+                core: None,
             },
             NewGame {
                 name: "Game Two".to_string(),
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
+                core: None,
             },
         ];
 
@@ -433,11 +471,13 @@ mod tests {
                 name: "Game One".to_string(),
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
+                core: None,
             },
             NewGame {
                 name: "Game Two".to_string(),
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
+                core: None,
             },
         ];
 
@@ -465,11 +505,13 @@ mod tests {
                 name: "Game One".to_string(),
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
+                core: None,
             },
             NewGame {
                 name: "Game Two".to_string(),
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
+                core: None,
             },
         ];
 
@@ -494,6 +536,38 @@ mod tests {
         assert_eq!(results[0].as_ref().map(|g| &g.path), Some(&games[0].path));
         assert_eq!(results[1].as_ref().map(|g| &g.path), None);
     }
+
+    #[test]
+    fn test_set_core() -> Result<()> {
+        let db = Database::in_memory().unwrap();
+
+        let games = vec![
+            NewGame {
+                name: "Game One".to_string(),
+                path: PathBuf::from("test_directory/Game One.rom"),
+                image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
+                core: None,
+            },
+            NewGame {
+                name: "Game Two".to_string(),
+                path: PathBuf::from("test_directory/Game Two.rom"),
+                image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
+                core: None,
+            },
+        ];
+
+        db.update_games(&games).unwrap();
+
+        let core = db.get_core(&games[0].path)?;
+        assert_eq!(core, None);
+
+        db.set_core(&games[0].path, "CORE")?;
+
+        let core = db.get_core(&games[0].path)?;
+        assert_eq!(core, Some("CORE".to_string()));
+
+        Ok(())
+    }
 }
 
 fn map_game(row: &Row<'_>) -> rusqlite::Result<Game> {
@@ -504,5 +578,6 @@ fn map_game(row: &Row<'_>) -> rusqlite::Result<Game> {
         play_count: row.get(3)?,
         play_time: Duration::seconds(row.get(4)?),
         last_played: row.get(5)?,
+        core: row.get(6)?,
     })
 }

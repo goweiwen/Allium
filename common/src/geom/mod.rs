@@ -119,6 +119,14 @@ impl Rect {
         let h = ((self.y + self.h as i32).max(other.y + other.h as i32) - y) as u32;
         Self::new(x, y, w, h)
     }
+
+    pub fn intersection(&self, other: &Self) -> Self {
+        let x = self.x.max(other.x);
+        let y = self.y.max(other.y);
+        let w = ((self.x + self.w as i32).min(other.x + other.w as i32) - x) as u32;
+        let h = ((self.y + self.h as i32).min(other.y + other.h as i32) - y) as u32;
+        Self::new(x, y, w, h)
+    }
 }
 
 impl Default for Rect {

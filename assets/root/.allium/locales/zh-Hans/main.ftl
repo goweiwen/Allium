@@ -14,6 +14,7 @@ populating-database = 填充数据库...
     去喝点茶吧！
 
 menu-launch = 启动
+menu-core = 核心:{ $core }
 menu-remove-from-recents = 从最近中移除
 menu-repopulate-database = 重新填充数据库
 

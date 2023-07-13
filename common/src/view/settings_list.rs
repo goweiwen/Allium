@@ -3,14 +3,16 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 use embedded_graphics::prelude::Size;
-use embedded_graphics::primitives::{Primitive, PrimitiveStyle, Rectangle, RoundedRectangle};
+use embedded_graphics::primitives::{
+    CornerRadii, Primitive, PrimitiveStyle, Rectangle, RoundedRectangle,
+};
 use embedded_graphics::Drawable;
 use tokio::sync::mpsc::Sender;
 
 use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
-use crate::stylesheet::Stylesheet;
+use crate::stylesheet::{Stylesheet, StylesheetColor};
 use crate::view::{Command, Label, View};
 
 /// A listing of selectable entries. Assumes that all entries have the same size.
@@ -23,6 +25,7 @@ pub struct SettingsList {
     entry_height: u32,
     top: usize,
     selected: usize,
+    background_color: Option<StylesheetColor>,
     focused: bool,
     dirty: bool,
     has_layout: bool,
@@ -44,6 +47,7 @@ impl SettingsList {
             top: 0,
             selected: 0,
             focused: false,
+            background_color: None,
             dirty: true,
             has_layout: false,
         };
@@ -53,12 +57,17 @@ impl SettingsList {
         this
     }
 
+    pub fn set_background_color(&mut self, color: Option<StylesheetColor>) {
+        self.background_color = color;
+        self.dirty = true;
+    }
+
     pub fn set_items(&mut self, left: Vec<String>, right: Vec<Box<dyn View>>) {
         self.labels = left;
         self.right = right;
         self.left.clear();
 
-        let mut y = self.rect.y + 8;
+        let mut y = self.rect.y + 4;
         for i in 0..self.visible_count() {
             self.left.push(Label::new(
                 Point::new(self.rect.x + 12, y),
@@ -106,8 +115,24 @@ impl SettingsList {
         self.selected
     }
 
+    pub fn left(&self, i: usize) -> &str {
+        &self.labels[i]
+    }
+
+    pub fn left_mut(&mut self, i: usize) -> &mut Label<String> {
+        &mut self.left[i]
+    }
+
+    pub fn right(&self, i: usize) -> &dyn View {
+        &self.right[i]
+    }
+
+    pub fn right_mut(&mut self, i: usize) -> &mut dyn View {
+        &mut self.right[i]
+    }
+
     pub fn visible_count(&self) -> usize {
-        ((self.rect.h as usize - 16) / self.entry_height as usize)
+        (self.rect.h as usize / self.entry_height as usize)
             .min(self.labels.len())
             .min(self.right.len())
     }
@@ -132,13 +157,32 @@ impl View for SettingsList {
                     let child = &mut self.right[self.top + i];
                     child.set_position(Point::new(
                         self.rect.x + self.rect.w as i32 - 13,
-                        self.rect.y + 8 + i as i32 * self.entry_height as i32,
+                        self.rect.y + 4 + i as i32 * self.entry_height as i32,
                     ));
                     self.has_layout = true;
                 }
             }
 
-            display.load(self.bounding_box(styles))?;
+            if let Some(color) = self.background_color {
+                let mut rect = self
+                    .children_mut()
+                    .iter_mut()
+                    .map(|v| v.bounding_box(styles))
+                    .reduce(|acc, r| acc.union(&r))
+                    .unwrap_or_default();
+                rect.x -= 12;
+                rect.w += 24;
+                rect.y -= 4;
+                rect.h += 8;
+                RoundedRectangle::new(
+                    rect.into(),
+                    CornerRadii::new(Size::new_equal((styles.ui_font.size + 8) / 2)),
+                )
+                .into_styled(PrimitiveStyle::with_fill(color.to_color(styles)))
+                .draw(display)?;
+            } else {
+                display.load(self.bounding_box(styles))?;
+            }
 
             let left = self
                 .left
