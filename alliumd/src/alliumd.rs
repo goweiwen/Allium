@@ -165,10 +165,14 @@ impl AlliumD<DefaultPlatform> {
             let mut battery = self.platform.battery()?;
 
             loop {
-                let menu_terminated = match self.menu.as_mut() {
-                    Some(menu) => menu.wait().fuse(),
-                    None => Fuse::terminated(),
-                };
+                if let Some(menu) = self.menu.as_mut() {
+                    if menu.try_wait()?.is_some() {
+                        info!("menu process terminated, resuming game");
+                        self.menu = None;
+                        #[cfg(unix)]
+                        signal(&self.main, Signal::SIGCONT)?;
+                    }
+                }
 
                 tokio::select! {
                     key_event = self.platform.poll() => {
@@ -181,12 +185,6 @@ impl AlliumD<DefaultPlatform> {
                             GameInfo::delete()?;
                             self.main = spawn_main()?;
                         }
-                    }
-                    _ = menu_terminated => {
-                        info!("menu process terminated, resuming game");
-                        self.menu = None;
-                        #[cfg(unix)]
-                        signal(&self.main, Signal::SIGCONT)?;
                     }
                     _ = sigint.recv() => self.handle_quit().await?,
                     _ = sigterm.recv() => self.handle_quit().await?,
