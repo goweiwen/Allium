@@ -98,9 +98,9 @@ CREATE TABLE IF NOT EXISTS key_value (
         ])
     }
 
-    pub fn delete_game(&self, path: &Path) -> Result<()> {
+    pub fn reset_game(&self, path: &Path) -> Result<()> {
         self.conn.as_ref().unwrap().execute(
-            "DELETE FROM games WHERE path = ?",
+            "UPDATE games SET play_count = 0, play_time = 0, last_played = 0 WHERE path = ?",
             params![path.display().to_string()],
         )?;
         Ok(())
