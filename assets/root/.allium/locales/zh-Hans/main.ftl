@@ -96,3 +96,5 @@ button-select = 选择
 
 keyboard-button-backspace = 退格
 keyboard-button-shift = Shift
+
+powering-off = 关机中...

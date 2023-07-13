@@ -10,6 +10,7 @@ use common::constants::{
     BATTERY_SHUTDOWN_THRESHOLD, BATTERY_UPDATE_INTERVAL,
 };
 use common::display::settings::DisplaySettings;
+use common::locale::{Locale, LocaleSettings};
 use common::retroarch::RetroArchCommand;
 use common::wifi::WiFiSettings;
 use enum_map::EnumMap;
@@ -24,10 +25,7 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 
 #[cfg(unix)]
 use {
-    futures::future::{Fuse, FutureExt},
-    nix::sys::signal::kill,
-    nix::sys::signal::Signal,
-    nix::unistd::Pid,
+    nix::sys::signal::kill, nix::sys::signal::Signal, nix::unistd::Pid,
     tokio::signal::unix::SignalKind,
 };
 
@@ -48,6 +46,7 @@ pub struct AlliumD<P: Platform> {
     is_menu_pressed_alone: bool,
     is_terminating: bool,
     state: AlliumDState,
+    locale: Locale,
 }
 
 impl AlliumDState {
@@ -126,6 +125,7 @@ impl AlliumD<DefaultPlatform> {
         let platform = DefaultPlatform::new()?;
         let state = AlliumDState::load()?;
         let main = spawn_main()?;
+        let locale = Locale::new(&LocaleSettings::load()?.lang);
 
         Ok(AlliumD {
             platform,
@@ -135,6 +135,7 @@ impl AlliumD<DefaultPlatform> {
             is_menu_pressed_alone: false,
             is_terminating: false,
             state,
+            locale,
         })
     }
 
@@ -373,6 +374,13 @@ impl AlliumD<DefaultPlatform> {
         }
 
         self.is_terminating = true;
+
+        let mut say = Command::new("say")
+            .arg(self.locale.t("powering-off"))
+            .spawn()?;
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+        say.wait().await?;
+
         self.platform.shutdown()?;
 
         Ok(())

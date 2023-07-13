@@ -7,6 +7,7 @@ members = [
     "activity-tracker",
     "ffi",
     "myctl",
+    "say",
     "screenshot",
 ]
 resolver = "2"

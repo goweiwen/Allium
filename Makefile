@@ -17,7 +17,7 @@ simulator-menu: simulator-env
 	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_DATABASE=assets/simulator/allium.db ALLIUM_BASE_DIR=assets/simulator/.allium ALLIUM_SD_ROOT=assets/simulator cargo run --features=simulator --bin allium-menu 1 3 2
 
 simulator: simulator-env
-	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_DATABASE=assets/simulator/allium.db ALLIUM_BASE_DIR=assets/simulator/.allium ALLIUM_SD_ROOT=assets/simulator cargo run --bin $(bin) --features=simulator
+	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_DATABASE=assets/simulator/allium.db ALLIUM_BASE_DIR=assets/simulator/.allium ALLIUM_SD_ROOT=assets/simulator cargo run --bin $(bin) --features=simulator $(args)
 
 clean:
 	rm -r $(DIST_DIR)
@@ -33,7 +33,7 @@ third-party/my283:
 	rm third-party/my283.tar.xz
 
 build: third-party/my283
-	cross build --release --features=miyoo --bin=alliumd --bin=allium-launcher --bin=allium-menu --bin=activity-tracker --bin=screenshot
+	cross build --release --features=miyoo --bin=alliumd --bin=allium-launcher --bin=allium-menu --bin=activity-tracker --bin=screenshot --bin=say
 
 package-build:
 	mkdir -p $(DIST_DIR)/.allium/bin
@@ -41,6 +41,7 @@ package-build:
 	rsync -a $(BUILD_DIR)/allium-launcher $(DIST_DIR)/.allium/bin/
 	rsync -a $(BUILD_DIR)/allium-menu $(DIST_DIR)/.allium/bin/
 	rsync -a $(BUILD_DIR)/screenshot $(DIST_DIR)/.tmp_update/bin/
+	rsync -a $(BUILD_DIR)/say $(DIST_DIR)/.tmp_update/bin/
 	rsync -a $(BUILD_DIR)/activity-tracker "$(DIST_DIR)/Apps/Activity Tracker.pak/"
 
 retroarch: $(RETROARCH)/retroarch

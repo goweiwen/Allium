@@ -96,3 +96,5 @@ button-select = 開く
 
 keyboard-button-backspace = 消す
 keyboard-button-shift = シフト
+
+powering-off = 電源を切っています...

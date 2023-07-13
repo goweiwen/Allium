@@ -96,3 +96,5 @@ button-select = Select
 
 keyboard-button-backspace = Backspace
 keyboard-button-shift = Shift
+
+powering-off = Powering off...

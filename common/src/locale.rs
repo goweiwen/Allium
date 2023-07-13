@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    fmt,
     fs::{self, File},
 };
 
@@ -87,5 +88,11 @@ impl Locale {
 
     pub fn languages(&self) -> Vec<String> {
         self.loader.locales().map(|i| i.to_string()).collect()
+    }
+}
+
+impl fmt::Debug for Locale {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Locale").field("lang", &self.lang).finish()
     }
 }
