@@ -4,7 +4,7 @@ DIST_DIR := dist
 RETROARCH := third-party/RetroArch
 TOOLCHAIN := mholdg16/miyoomini-toolchain:latest
 
-all: static build package-build package-retroarch
+all: static build package-build package-retroarch migrations
 
 simulator-env:
 	mkdir -p assets/simulator
@@ -43,6 +43,15 @@ package-build:
 	rsync -a $(BUILD_DIR)/screenshot $(DIST_DIR)/.tmp_update/bin/
 	rsync -a $(BUILD_DIR)/say $(DIST_DIR)/.tmp_update/bin/
 	rsync -a $(BUILD_DIR)/activity-tracker "$(DIST_DIR)/Apps/Activity Tracker.pak/"
+
+MIGRATIONS_DIR := $(DIST_DIR)/.allium/migrations
+migrations: $(MIGRATIONS_DIR)/0000-retroarch-config/retroarch-config.zip $(MIGRATIONS_DIR)/0001-retroarch-core-overrides/retroarch-core-overrides.zip
+
+$(DIST_DIR)/.allium/migrations/0000-retroarch-config/retroarch-config.zip:
+	assets/migrations/0000-retroarch-config/package.sh
+
+$(DIST_DIR)/.allium/migrations/0001-retroarch-core-overrides/retroarch-core-overrides.zip:
+	assets/migrations/0001-retroarch-core-overrides/package.sh
 
 retroarch: $(RETROARCH)/retroarch
 

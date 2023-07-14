@@ -45,8 +45,24 @@ if [ -f /customer/lib/libpadsp.so ]; then
 	export LD_PRELOAD=libpadsp.so
 fi
 
+# run migration scripts that haven't been run yet
+for script in "$ROOT"/.allium/migrations/*; do
+	if [ ! -f "$script/.done" ]; then
+		say ""
+		say "$(cat "$script"/name.txt)"
+		if ! "$script/run.sh"; then
+			# stop everything if migration fails
+			say ""
+			say "Installation failed. Please reinstall Allium."
+			reboot
+			sleep 10
+		fi
+		touch "$script/.done"
+	fi
+done
+
 # run Allium
-RUST_LOG=none /mnt/SDCARD/.allium/bin/alliumd > /dev/null 2>&1
+RUST_LOG=none "$ROOT"/.allium/bin/alliumd > /dev/null 2>&1
 
 while true; do
 	reboot

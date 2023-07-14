@@ -287,7 +287,7 @@ mod tests {
         assert!(eq("rom.gg", "Game Gear", "picodrive"));
 
         // NXEngine
-        assert!(eq("Cave Story/Doukutsu.exe", "NXEngine", "nxengine"));
-        assert!(eq("Cave Story (NXENGINE).m3u", "NXEngine", "nxengine"));
+        assert!(eq("Cave Story/Doukutsu.exe", "Cave Story", "nxengine"));
+        assert!(eq("Cave Story (NXENGINE).m3u", "Cave Story", "nxengine"));
     }
 }

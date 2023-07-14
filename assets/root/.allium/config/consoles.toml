@@ -4,9 +4,8 @@ patterns = ["CPC"]
 extensions = ["sna", "kcr"]
 
 [Arcade]
-cores = ["mame2003_plus"]
+cores = ["mame2003_plus", "fbneo", "fbalpha2012", "fbalpha2012_cps1", "fbalpha2012_cps2", "fbalpha2012_cps3", "km_mame2003_xtreme", "mame2003_midway", "mame2003", "mame2000", "mba_mini"]
 patterns = ["ARCADE"]
-extensions = []
 
 ["Atari - 800"]
 cores = ["atari800"]
@@ -28,15 +27,23 @@ cores = ["prosystem"]
 patterns = ["SEVENTYEIGHTHUNDRED"]
 extensions = ["a78"]
 
+["Atari Jaguar"]
+cores = ["virtualjaguar"]
+patterns = ["JAGUAR"]
+extensions = ["j64", "jag"]
+
 ["Atari Lynx"]
-cores = ["handy"]
+cores = ["handy", "mednafen_lynx"]
 patterns = ["LYNX"]
 extensions = ["lnx"]
+
+["Atari ST"]
+cores = ["hatari"]
+patterns = ["ATARIST"]
 
 ["Sufami Turbo"]
 cores = ["snes9x"]
 patterns = ["SUFAMI"]
-extensions = []
 
 [WonderSwanColor]
 cores = ["mednafen_wswan"]
@@ -44,19 +51,16 @@ patterns = ["WS"]
 extensions = ["ws", "pc2"]
 
 [CPS1]
-cores = ["fbalpha2012_cps1"]
+cores = ["fbalpha2012_cps1", "mame2003_plus", "fbneo", "fbalpha2012", "fbalpha2012_cps1", "km_mame2003_xtreme", "mame2003_midway", "mame2003", "mame2000", "mba_mini"]
 patterns = ["CPS1"]
-extensions = []
 
 [CPS2]
-cores = ["fbalpha2012_cps2"]
+cores = ["fbalpha2012_cps2", "mame2003_plus", "fbneo", "fbalpha2012", "fbalpha2012_cps2", "km_mame2003_xtreme", "mame2003_midway", "mame2003", "mame2000", "mba_mini"]
 patterns = ["CPS2"]
-extensions = []
 
 [CPS3]
-cores = ["fbalpha2012_cps3"]
+cores = ["fbalpha2012_cps3", "mame2003_plus", "fbneo", "fbalpha2012", "fbalpha2012_cps3", "km_mame2003_xtreme", "mame2003_midway", "mame2003", "mame2000", "mba_mini"]
 patterns = ["CPS3"]
-extensions = []
 
 [ColecoVision]
 cores = ["bluemsx"]
@@ -64,7 +68,7 @@ patterns = ["COLECO"]
 extensions = ["ri", "col", "sc"]
 
 [Amiga]
-cores = ["puae2021"]
+cores = ["puae2021", "puae", "uae4arm"]
 patterns = ["AMIGA"]
 extensions = [
     "adf",
@@ -86,7 +90,6 @@ extensions = [
 ["Commodore 64"]
 cores = ["vice_x64"]
 patterns = ["COMMODORE"]
-extensions = []
 
 [VIC-20]
 cores = ["vice_xvic"]
@@ -139,7 +142,6 @@ extensions = ["vec"]
 ["Odyssey 2"]
 cores = ["o2em"]
 patterns = ["ODYSSEY"]
-extensions = []
 
 [Intellivision]
 cores = ["freeintv"]
@@ -149,10 +151,9 @@ extensions = ["int"]
 ["Mega Duck"]
 cores = ["sameduck"]
 patterns = ["MEGADUCK"]
-extensions = []
 
 [MS-DOS]
-cores = ["dosbox_pure"]
+cores = ["dosbox_pure", "dosbox_pure_0.9.7"]
 patterns = ["DOS"]
 extensions = [
     "dosz",
@@ -169,9 +170,9 @@ extensions = [
 ]
 
 [MSX]
-cores = ["bluemsx"]
+cores = ["bluemsx", "fmsx"]
 patterns = ["MSX"]
-extensions = []
+extensions = ["mx1", "mx2" ]
 
 [SuperGrafx]
 cores = ["mednafen_supergrafx"]
@@ -181,7 +182,6 @@ extensions = ["sgx"]
 ["TurboGrafx CD"]
 cores = ["mednafen_pce_fast"]
 patterns = ["PCECD"]
-extensions = []
 
 [TurboGrafx-16]
 cores = ["mednafen_pce_fast"]
@@ -199,19 +199,23 @@ patterns = ["GW"]
 extensions = ["mgw"]
 
 ["Game Boy"]
-cores = ["gambatte", "tgbdual"]
+cores = ["gambatte", "tgbdual", "gearboy", "mgba", "vbam", "vba_next"]
 patterns = ["GB", "TGB_Dual"]
 extensions = ["gb"]
 
 ["Game Boy Color"]
-cores = ["gambatte", "mgba"]
+cores = ["gambatte", "tgbdual", "gearboy", "mgba", "vbam", "vba_next"]
 patterns = ["GBC", "SGB"]
 extensions = ["gbc"]
 
 ["Game Boy Advance"]
-cores = ["gpsp", "mgba"]
+cores = ["gpsp", "mgba", "vbam", "vba_next"]
 patterns = ["GBA"]
 extensions = ["gba"]
+
+["Super Game Boy"]
+cores = ["mgba", "tgbdual", "gearboy", "bsnes"]
+patterns = ["SGB"]
 
 [NES]
 cores = ["fceumm", "nestopia"]
@@ -229,7 +233,7 @@ patterns = ["SATELLAVIEW"]
 extensions = ["st"]
 
 [SNES]
-cores = ["mednafen_supafaust", "snes9x"]
+cores = ["mednafen_supafaust", "snes9x", "snes9x2010", "snes9x2005", "snes9x2005_plus", "snes9x2002", "chimerasnes"]
 patterns = ["SFC", "SNES"]
 extensions = ["sfc", "smc", "swc", "fig"]
 
@@ -241,10 +245,9 @@ extensions = ["vb", "vboy"]
 ["Phillips Videopac+"]
 cores = ["o2em"]
 patterns = ["VIDEOPAC"]
-extensions = []
 
 [PICO-8]
-cores = ["fake08"]
+cores = ["fake08", "retro8"]
 patterns = ["PICO"]
 extensions = ["p8", "png"]
 
@@ -264,22 +267,21 @@ patterns = ["THIRTYTWOX"]
 extensions = ["32x"]
 
 ["Sega CD"]
-cores = ["picodrive"]
+cores = ["picodrive", "genesis_plus_gx"]
 patterns = ["SEGACD"]
-extensions = []
 
 ["Game Gear"]
-cores = ["picodrive"]
+cores = ["picodrive", "genesis_plus_gx"]
 patterns = ["GG"]
 extensions = ["gg"]
 
 [Genesis]
-cores = ["picodrive"]
+cores = ["picodrive", "genesis_plus_gx"]
 patterns = ["MD"]
 extensions = ["gen", "smd", "md"]
 
 ["Master System"]
-cores = ["picodrive"]
+cores = ["picodrive", "genesis_plus_gx"]
 patterns = ["MS"]
 extensions = ["sms"]
 
@@ -287,6 +289,10 @@ extensions = ["sms"]
 cores = ["gearsystem"]
 patterns = ["SEGASGONE"]
 extensions = ["sg"]
+
+["Sega VMU"]
+cores = ["vemulator"]
+patterns = ["VMU"]
 
 ["ZX Spectrum"]
 cores = ["fuse"]
@@ -296,12 +302,10 @@ extensions = ["tzx", "z80", "rzx", "scl", "trd"]
 ["Neo Geo"]
 cores = ["fbalpha2012_neogeo"]
 patterns = ["NEOGEO"]
-extensions = []
 
 ["Neo Geo CD"]
 cores = ["neocd"]
 patterns = ["NEOCD"]
-extensions = []
 
 ["Neo Geo Pocket Color"]
 cores = ["mednafen_ngp"]
@@ -323,22 +327,19 @@ cores = ["potator"]
 patterns = ["SUPERVISION"]
 extensions = ["sv"]
 
-[J2ME]
-cores = ["squirreljme"]
-patterns = ["J2ME"]
-extensions = []
+[PC-8000]
+cores = ["quasi88"]
+patterns = ["PC8000"]
 
 [PC-98]
-cores = ["np2kai"]
+cores = ["np2kai", "nekop2"]
 patterns = ["PC98", "PCNINETYEIGHT", "NINETYEIGHT"]
-extensions = []
 
 [PC-FX]
 cores = ["mednafen_pcfx"]
 patterns = ["PCFX"]
-extensions = []
 
-[NXEngine]
+["Cave Story"]
 cores = ["nxengine"]
 patterns = ["NXENGINE"]
 file_name = ["Doukutsu.exe"]
@@ -346,3 +347,87 @@ file_name = ["Doukutsu.exe"]
 ["SH Launcher"]
 cores = ["sh_launcher"]
 extensions = ["sh"]
+
+["Sinclair ZX81"]
+cores = ["zx81"]
+patterns = ["ZX81", "ZXEIGHTYONE"]
+
+[ChaiLove]
+cores = ["chailove"]
+patterns = ["CHAILOVE"]
+
+[Daphne]
+cores = ["daphne"]
+patterns = ["DAPHNE"]
+extensions = ["daphne"]
+
+[EasyRPG]
+cores = ["easyrpg"]
+patterns = ["EASYRPG"]
+
+["Wolfenstein 3D"]
+cores = ["ecwolf"]
+patterns = ["ECWOLF"]
+
+["Game Music Emu"]
+cores = ["gme"]
+patterns = ["GME"]
+
+["LÖVE"]
+cores = ["lutro"]
+patterns = ["LOVE"]
+extensions = ["love"]
+
+["Palm OS"]
+cores = ["mu"]
+patterns = ["PALMOS"]
+extensions = ["prc", "pqa"]
+
+["Texas Instruments TI-83"]
+cores = ["numero"]
+patterns = ["TI83"]
+
+[3DO]
+cores = ["opera"]
+patterns = ["PANASONIC", "3DO"]
+
+[Doom]
+cores = ["prboom"]
+patterns = ["DOOM", "PRBOOM"]
+extensions = ["wad", "iwad", "pwad"]
+
+["Sharp X1"]
+cores = ["x1"]
+patterns = ["SHARPX1"]
+
+["Sharp X68000"]
+cores = ["px68k"]
+patterns = ["X68000"]
+
+[Flashback]
+cores = ["reminiscence"]
+patterns = ["FLASHBACK"]
+
+["Thomson"]
+cores = ["theodore"]
+patterns = ["THOMSON"]
+
+[Quake]
+cores = ["tyrquake"]
+patterns = ["QUAKE"]
+
+[MicroW8]
+cores = ["uw8"]
+patterns = ["MICROW8"]
+
+[Uzebox]
+cores = ["uzem"]
+patterns = ["UZEBOX"]
+
+["GCE Vectrex"]
+cores = ["vecx"]
+patterns = ["VECRTEX"]
+
+["Rick Dangerous"]
+cores = ["xrick"]
+patterns = ["XRICK"]
