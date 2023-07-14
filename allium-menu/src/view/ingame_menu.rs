@@ -149,6 +149,7 @@ where
         let mut child = None;
         if state.is_text_reader_open {
             if let Some(guide) = game_info.guide.as_ref() {
+                menu.select(MenuEntry::Guide as usize);
                 child = Some(TextReader::new(rect, res.clone(), guide.clone()));
             }
         }
