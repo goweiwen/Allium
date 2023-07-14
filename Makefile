@@ -33,7 +33,7 @@ third-party/my283:
 	rm third-party/my283.tar.xz
 
 build: third-party/my283
-	cross build --release --features=miyoo --bin=alliumd --bin=allium-launcher --bin=allium-menu --bin=activity-tracker --bin=screenshot --bin=say
+	cross build --release --features=miyoo --bin=alliumd --bin=allium-launcher --bin=allium-menu --bin=activity-tracker --bin=screenshot --bin=say --bin=show
 
 package-build:
 	mkdir -p $(DIST_DIR)/.allium/bin
@@ -42,6 +42,7 @@ package-build:
 	rsync -a $(BUILD_DIR)/allium-menu $(DIST_DIR)/.allium/bin/
 	rsync -a $(BUILD_DIR)/screenshot $(DIST_DIR)/.tmp_update/bin/
 	rsync -a $(BUILD_DIR)/say $(DIST_DIR)/.tmp_update/bin/
+	rsync -a $(BUILD_DIR)/show $(DIST_DIR)/.tmp_update/bin/
 	rsync -a $(BUILD_DIR)/activity-tracker "$(DIST_DIR)/Apps/Activity Tracker.pak/"
 
 MIGRATIONS_DIR := $(DIST_DIR)/.allium/migrations

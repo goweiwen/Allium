@@ -9,6 +9,7 @@ members = [
     "myctl",
     "say",
     "screenshot",
+    "show",
 ]
 resolver = "2"
 

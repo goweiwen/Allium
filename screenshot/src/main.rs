@@ -31,8 +31,6 @@ fn screenshot(path: impl AsRef<Path>) -> Result<()> {
 
     let x0 = fb.var_screen_info.xoffset as usize;
     let y0 = fb.var_screen_info.yoffset as usize;
-    let x = 0;
-    let y = 0;
     let w = fb.var_screen_info.xres as usize;
     let h = fb.var_screen_info.yres as usize;
     let bpp = fb.var_screen_info.bits_per_pixel as usize / 8;
@@ -40,8 +38,8 @@ fn screenshot(path: impl AsRef<Path>) -> Result<()> {
     let mut image = image::RgbImage::new(w as u32, h as u32);
     let frame = fb.read_frame();
 
-    for y in y..y + h {
-        for x in x..x + w {
+    for y in 0..h {
+        for x in 0..w {
             let i = ((y0 + y) * w + (x0 + x)) * bpp;
             let pixel = Rgb([frame[i + 2], frame[i + 1], frame[i]]);
             image.put_pixel((w - x - 1) as u32, (h - y - 1) as u32, pixel);
