@@ -1,6 +1,6 @@
 [package]
 name = "allium-menu"
-version = "0.19.2"
+version = "0.20.0"
 edition = "2021"
 include = ["/src"]
 
