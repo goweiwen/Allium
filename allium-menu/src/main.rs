@@ -2,35 +2,47 @@
 #![warn(rust_2018_idioms)]
 
 mod allium_menu;
+mod retroarch_info;
 pub mod view;
 
-use std::env;
+use std::time::Duration;
 
 use anyhow::Result;
 
 use allium_menu::AlliumMenu;
-use common::platform::{DefaultPlatform, Platform};
-use log::trace;
+use common::{
+    platform::{DefaultPlatform, Platform},
+    retroarch::RetroArchCommand,
+};
 use simple_logger::SimpleLogger;
+
+use crate::retroarch_info::RetroArchInfo;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     SimpleLogger::new().init().unwrap();
 
-    let mut args = env::args().skip(1);
+    let info = RetroArchCommand::GetInfo.send_recv().await?.map(|ret| {
+        let mut rets = ret.split_ascii_whitespace().skip(1);
 
-    let disk_slot = args.next().and_then(|s| s.parse::<u8>().ok()).unwrap_or(0);
-    let max_disk_slots = args.next().and_then(|s| s.parse::<u8>().ok()).unwrap_or(0);
-    let state_slot = args.next().and_then(|s| s.parse::<u8>().ok()).unwrap_or(0);
-    trace!(
-        "max_disk_slots: {}, disk_slot: {}, state_slot: {}",
-        max_disk_slots,
-        disk_slot,
-        state_slot
-    );
+        let max_disk_slots = rets.next().map_or(0, |s| s.parse().unwrap_or(0));
+        let disk_slot = rets.next().map_or(0, |s| s.parse().unwrap_or(0));
+        let state_slot = rets.next().map(|s| s.parse().unwrap_or(0));
+
+        RetroArchInfo {
+            max_disk_slots,
+            disk_slot,
+            state_slot,
+        }
+    });
+
+    if info.is_some() {
+        RetroArchCommand::PauseToggle.send().await?;
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
 
     let platform = DefaultPlatform::new()?;
-    let mut app = AlliumMenu::new(platform, disk_slot, max_disk_slots, state_slot).await?;
+    let mut app = AlliumMenu::new(platform, info).await?;
     app.run_event_loop().await?;
     Ok(())
 }

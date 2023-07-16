@@ -20,10 +20,10 @@ use common::view::{
 };
 use log::warn;
 use serde::{Deserialize, Serialize};
-use strum::{EnumCount, EnumIter, IntoEnumIterator};
 use tokio::sync::mpsc::Sender;
 
-use crate::view::TextReader;
+use crate::retroarch_info::RetroArchInfo;
+use crate::view::text_reader::TextReader;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct IngameMenuState {
@@ -41,9 +41,8 @@ where
     menu: SettingsList,
     child: Option<TextReader>,
     button_hints: Row<ButtonHint<String>>,
-    disk_slot: u8,
-    max_disk_slots: u8,
-    state_slot: u8,
+    entries: Vec<MenuEntry>,
+    info: Option<RetroArchInfo>,
     dirty: bool,
 }
 
@@ -56,9 +55,7 @@ where
         state: IngameMenuState,
         res: Resources,
         battery: B,
-        disk_slot: u8,
-        max_disk_slots: u8,
-        state_slot: u8,
+        info: Option<RetroArchInfo>,
     ) -> Self {
         let Rect { x, y, w, h } = rect;
 
@@ -76,6 +73,7 @@ where
 
         let battery_indicator = BatteryIndicator::new(Point::new(w as i32 - 12, y + 8), battery);
 
+        let entries = MenuEntry::entries(&info);
         let mut menu = SettingsList::new(
             Rect::new(
                 x + 24,
@@ -83,44 +81,27 @@ where
                 w / 2 - 48,
                 h - 8 - styles.ui_font.size - 8,
             ),
-            MenuEntry::iter()
-                .filter_map(|e| match e {
-                    MenuEntry::Guide => {
-                        if game_info.guide.is_some() {
-                            Some(e.as_str(&locale))
-                        } else {
-                            None
-                        }
-                    }
-                    _ => Some(e.as_str(&locale)),
-                })
-                .collect(),
-            MenuEntry::iter()
-                .filter_map(|e| match e {
-                    MenuEntry::Guide => {
-                        if game_info.guide.is_some() {
-                            Some(Box::new(NullView) as Box<dyn View>)
-                        } else {
-                            None
-                        }
-                    }
-                    _ => Some(Box::new(NullView) as Box<dyn View>),
-                })
+            entries.iter().map(|e| e.as_str(&locale)).collect(),
+            entries
+                .iter()
+                .map(|_| Box::new(NullView) as Box<dyn View>)
                 .collect(),
             styles.ui_font.size + SELECTION_MARGIN,
         );
-        if max_disk_slots > 1 {
-            let mut map = HashMap::new();
-            map.insert("disk".to_string(), (disk_slot + 1).into());
-            menu.set_right(
-                MenuEntry::Continue as usize,
-                Box::new(Label::new(
-                    Point::zero(),
-                    locale.ta("ingame-menu-disk", &map),
-                    Alignment::Right,
-                    None,
-                )),
-            );
+        if let Some(info) = info.as_ref() {
+            if info.max_disk_slots > 1 && !state.is_text_reader_open {
+                let mut map = HashMap::new();
+                map.insert("disk".to_string(), (info.disk_slot + 1).into());
+                menu.set_right(
+                    MenuEntry::Continue as usize,
+                    Box::new(Label::new(
+                        Point::zero(),
+                        locale.ta("ingame-menu-disk", &map),
+                        Alignment::Right,
+                        None,
+                    )),
+                );
+            }
         }
 
         let button_hints = Row::new(
@@ -166,9 +147,8 @@ where
             menu,
             child,
             button_hints,
-            disk_slot,
-            max_disk_slots,
-            state_slot,
+            entries,
+            info,
             dirty: false,
         }
     }
@@ -177,36 +157,18 @@ where
         rect: Rect,
         res: Resources,
         battery: B,
-        disk_slot: u8,
-        max_disk_slots: u8,
-        state_slot: u8,
+        info: Option<RetroArchInfo>,
     ) -> Result<Self> {
         if ALLIUM_MENU_STATE.exists() {
             let file = File::open(ALLIUM_MENU_STATE.as_path())?;
             if let Ok(state) = serde_json::from_reader::<_, IngameMenuState>(file) {
-                return Ok(Self::new(
-                    rect,
-                    state,
-                    res,
-                    battery,
-                    disk_slot,
-                    max_disk_slots,
-                    state_slot,
-                ));
+                return Ok(Self::new(rect, state, res, battery, info));
             }
             warn!("failed to deserialize state file, deleting");
             fs::remove_file(ALLIUM_MENU_STATE.as_path())?;
         }
 
-        Ok(Self::new(
-            rect,
-            Default::default(),
-            res,
-            battery,
-            disk_slot,
-            max_disk_slots,
-            state_slot,
-        ))
+        Ok(Self::new(rect, Default::default(), res, battery, info))
     }
 
     pub fn save(&self) -> Result<()> {
@@ -222,40 +184,19 @@ where
     }
 
     async fn select_entry(&mut self, commands: Sender<Command>) -> Result<bool> {
-        let selected = match self.menu.selected() {
-            0 => MenuEntry::Continue,
-            1 => MenuEntry::Save,
-            2 => MenuEntry::Load,
-            3 => MenuEntry::Reset,
-            4 => {
-                if self.res.get::<GameInfo>().guide.is_some() {
-                    MenuEntry::Guide
-                } else {
-                    MenuEntry::Settings
-                }
-            }
-            5 => {
-                if self.res.get::<GameInfo>().guide.is_some() {
-                    MenuEntry::Settings
-                } else {
-                    MenuEntry::Quit
-                }
-            }
-            6 => MenuEntry::Quit,
-            _ => unreachable!(),
-        };
+        let selected = self.entries[self.menu.selected()];
         match selected {
             MenuEntry::Continue => {
                 commands.send(Command::Exit).await?;
             }
             MenuEntry::Save => {
-                RetroArchCommand::SaveStateSlot(self.state_slot)
+                RetroArchCommand::SaveStateSlot(self.info.as_ref().unwrap().state_slot.unwrap())
                     .send()
                     .await?;
                 commands.send(Command::Exit).await?;
             }
             MenuEntry::Load => {
-                RetroArchCommand::LoadStateSlot(self.state_slot)
+                RetroArchCommand::LoadStateSlot(self.info.as_ref().unwrap().state_slot.unwrap())
                     .send()
                     .await?;
                 commands.send(Command::Exit).await?;
@@ -274,7 +215,15 @@ where
                 commands.send(Command::Exit).await?;
             }
             MenuEntry::Quit => {
-                RetroArchCommand::Quit.send().await?;
+                if self.info.is_some() {
+                    RetroArchCommand::Quit.send().await?;
+                } else {
+                    tokio::process::Command::new("pkill")
+                        .arg("retroarch")
+                        .spawn()?
+                        .wait()
+                        .await?;
+                }
                 commands.send(Command::Exit).await?;
             }
         }
@@ -359,91 +308,91 @@ where
             }
         }
 
+        let selected = self.menu.selected();
+
         // Handle disk slot selection
-        let selected = self.menu.selected();
-        if self.max_disk_slots > 1 && selected == MenuEntry::Continue as usize {
-            match event {
-                KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
-                    self.disk_slot = self.disk_slot.saturating_sub(1);
-                    RetroArchCommand::SetDiskSlot(self.disk_slot).send().await?;
+        if let Some(info) = self.info.as_mut() {
+            if info.max_disk_slots > 1 && selected == MenuEntry::Continue as usize {
+                match event {
+                    KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
+                        info.disk_slot = info.disk_slot.saturating_sub(1);
+                        RetroArchCommand::SetDiskSlot(info.disk_slot).send().await?;
 
-                    let mut map = HashMap::new();
-                    map.insert("disk".to_string(), (self.disk_slot + 1).into());
-                    self.menu.set_right(
-                        self.menu.selected(),
-                        Box::new(Label::new(
-                            Point::zero(),
-                            self.res.get::<Locale>().ta("ingame-menu-disk", &map),
-                            Alignment::Right,
-                            None,
-                        )),
-                    );
-                    return Ok(true);
-                }
-                KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
-                    self.disk_slot = (self.disk_slot + 1).min(self.max_disk_slots - 1);
-                    RetroArchCommand::SetDiskSlot(self.disk_slot).send().await?;
+                        let mut map = HashMap::new();
+                        map.insert("disk".to_string(), (info.disk_slot + 1).into());
+                        self.menu.set_right(
+                            self.menu.selected(),
+                            Box::new(Label::new(
+                                Point::zero(),
+                                self.res.get::<Locale>().ta("ingame-menu-disk", &map),
+                                Alignment::Right,
+                                None,
+                            )),
+                        );
+                        return Ok(true);
+                    }
+                    KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
+                        info.disk_slot = (info.disk_slot + 1).min(info.max_disk_slots - 1);
+                        RetroArchCommand::SetDiskSlot(info.disk_slot).send().await?;
 
-                    let mut map = HashMap::new();
-                    map.insert("disk".to_string(), (self.disk_slot + 1).into());
-                    self.menu.set_right(
-                        self.menu.selected(),
-                        Box::new(Label::new(
-                            Point::zero(),
-                            self.res.get::<Locale>().ta("ingame-menu-disk", &map),
-                            Alignment::Right,
-                            None,
-                        )),
-                    );
-                    return Ok(true);
+                        let mut map = HashMap::new();
+                        map.insert("disk".to_string(), (info.disk_slot + 1).into());
+                        self.menu.set_right(
+                            self.menu.selected(),
+                            Box::new(Label::new(
+                                Point::zero(),
+                                self.res.get::<Locale>().ta("ingame-menu-disk", &map),
+                                Alignment::Right,
+                                None,
+                            )),
+                        );
+                        return Ok(true);
+                    }
+                    _ => {}
                 }
-                _ => {}
             }
-        }
 
-        // Handle state slot selection
-        let selected = self.menu.selected();
-        if selected == MenuEntry::Save as usize || selected == MenuEntry::Load as usize {
-            match event {
-                KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
-                    self.state_slot = self.state_slot.saturating_sub(1);
-                    RetroArchCommand::SetStateSlot(self.state_slot)
-                        .send()
-                        .await?;
+            // Handle state slot selection
+            if let Some(mut state_slot) = info.state_slot {
+                if selected == MenuEntry::Save as usize || selected == MenuEntry::Load as usize {
+                    match event {
+                        KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
+                            state_slot = state_slot.saturating_sub(1);
+                            RetroArchCommand::SetStateSlot(state_slot).send().await?;
 
-                    let mut map = HashMap::new();
-                    map.insert("slot".to_string(), self.state_slot.into());
-                    self.menu.set_right(
-                        self.menu.selected(),
-                        Box::new(Label::new(
-                            Point::zero(),
-                            self.res.get::<Locale>().ta("ingame-menu-slot", &map),
-                            Alignment::Right,
-                            None,
-                        )),
-                    );
-                    return Ok(true);
+                            let mut map = HashMap::new();
+                            map.insert("slot".to_string(), state_slot.into());
+                            self.menu.set_right(
+                                self.menu.selected(),
+                                Box::new(Label::new(
+                                    Point::zero(),
+                                    self.res.get::<Locale>().ta("ingame-menu-slot", &map),
+                                    Alignment::Right,
+                                    None,
+                                )),
+                            );
+                            return Ok(true);
+                        }
+                        KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
+                            state_slot = state_slot.saturating_add(1);
+                            RetroArchCommand::SetStateSlot(state_slot).send().await?;
+
+                            let mut map = HashMap::new();
+                            map.insert("slot".to_string(), state_slot.into());
+                            self.menu.set_right(
+                                self.menu.selected(),
+                                Box::new(Label::new(
+                                    Point::zero(),
+                                    self.res.get::<Locale>().ta("ingame-menu-slot", &map),
+                                    Alignment::Right,
+                                    None,
+                                )),
+                            );
+                            return Ok(true);
+                        }
+                        _ => {}
+                    }
                 }
-                KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
-                    self.state_slot = self.state_slot.saturating_add(1);
-                    RetroArchCommand::SetStateSlot(self.state_slot)
-                        .send()
-                        .await?;
-
-                    let mut map = HashMap::new();
-                    map.insert("slot".to_string(), self.state_slot.into());
-                    self.menu.set_right(
-                        self.menu.selected(),
-                        Box::new(Label::new(
-                            Point::zero(),
-                            self.res.get::<Locale>().ta("ingame-menu-slot", &map),
-                            Alignment::Right,
-                            None,
-                        )),
-                    );
-                    return Ok(true);
-                }
-                _ => {}
             }
         }
 
@@ -459,39 +408,46 @@ where
                 let consumed = self.menu.handle_key_event(event, commands, bubble).await?;
                 let curr = self.menu.selected();
                 if consumed && prev != curr {
-                    if self.max_disk_slots > 1 {
-                        if prev == MenuEntry::Continue as usize {
-                            self.menu.set_right(prev, Box::new(NullView));
+                    if let Some(info) = self.info.as_ref() {
+                        if info.max_disk_slots > 1 {
+                            if prev == MenuEntry::Continue as usize {
+                                self.menu.set_right(prev, Box::new(NullView));
+                            }
+                            if curr == MenuEntry::Continue as usize {
+                                let mut map = HashMap::new();
+                                map.insert("disk".to_string(), (info.disk_slot + 1).into());
+                                self.menu.set_right(
+                                    curr,
+                                    Box::new(Label::new(
+                                        Point::zero(),
+                                        self.res.get::<Locale>().ta("ingame-menu-disk", &map),
+                                        Alignment::Right,
+                                        None,
+                                    )),
+                                );
+                            }
                         }
-                        if curr == MenuEntry::Continue as usize {
-                            let mut map = HashMap::new();
-                            map.insert("disk".to_string(), (self.disk_slot + 1).into());
-                            self.menu.set_right(
-                                curr,
-                                Box::new(Label::new(
-                                    Point::zero(),
-                                    self.res.get::<Locale>().ta("ingame-menu-disk", &map),
-                                    Alignment::Right,
-                                    None,
-                                )),
-                            );
+
+                        if let Some(state_slot) = info.state_slot {
+                            if prev == MenuEntry::Save as usize || prev == MenuEntry::Load as usize
+                            {
+                                self.menu.set_right(prev, Box::new(NullView));
+                            }
+                            if curr == MenuEntry::Save as usize || curr == MenuEntry::Load as usize
+                            {
+                                let mut map = HashMap::new();
+                                map.insert("slot".to_string(), state_slot.into());
+                                self.menu.set_right(
+                                    curr,
+                                    Box::new(Label::new(
+                                        Point::zero(),
+                                        self.res.get::<Locale>().ta("ingame-menu-slot", &map),
+                                        Alignment::Right,
+                                        None,
+                                    )),
+                                );
+                            }
                         }
-                    }
-                    if prev == MenuEntry::Save as usize || prev == MenuEntry::Load as usize {
-                        self.menu.set_right(prev, Box::new(NullView));
-                    }
-                    if curr == MenuEntry::Save as usize || curr == MenuEntry::Load as usize {
-                        let mut map = HashMap::new();
-                        map.insert("slot".to_string(), self.state_slot.into());
-                        self.menu.set_right(
-                            curr,
-                            Box::new(Label::new(
-                                Point::zero(),
-                                self.res.get::<Locale>().ta("ingame-menu-slot", &map),
-                                Alignment::Right,
-                                None,
-                            )),
-                        );
                     }
                 }
                 Ok(consumed)
@@ -527,7 +483,7 @@ where
     }
 }
 
-#[derive(Debug, EnumIter, EnumCount, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MenuEntry {
     Continue,
     Save,
@@ -548,6 +504,31 @@ impl MenuEntry {
             MenuEntry::Guide => locale.t("ingame-menu-guide"),
             MenuEntry::Settings => locale.t("ingame-menu-settings"),
             MenuEntry::Quit => locale.t("ingame-menu-quit"),
+        }
+    }
+
+    fn entries(info: &Option<RetroArchInfo>) -> Vec<Self> {
+        match info {
+            Some(RetroArchInfo {
+                state_slot: Some(_),
+                ..
+            }) => vec![
+                MenuEntry::Continue,
+                MenuEntry::Save,
+                MenuEntry::Load,
+                MenuEntry::Reset,
+                MenuEntry::Guide,
+                MenuEntry::Settings,
+                MenuEntry::Quit,
+            ],
+            Some(_) => vec![
+                MenuEntry::Continue,
+                MenuEntry::Reset,
+                MenuEntry::Guide,
+                MenuEntry::Settings,
+                MenuEntry::Quit,
+            ],
+            None => vec![MenuEntry::Continue, MenuEntry::Guide, MenuEntry::Quit],
         }
     }
 }

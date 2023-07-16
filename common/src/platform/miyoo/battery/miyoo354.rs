@@ -1,4 +1,7 @@
+use std::io::Read;
 use std::process::Command;
+use std::time::Duration;
+use wait_timeout::ChildExt;
 
 use anyhow::Result;
 use log::trace;
@@ -30,8 +33,19 @@ impl Miyoo354Battery {
 
 impl Battery for Miyoo354Battery {
     fn update(&mut self) -> Result<()> {
-        let output = Command::new("/customer/app/axp_test").output()?;
-        let output = String::from_utf8(output.stdout)?;
+        let mut child = Command::new("/customer/app/axp_test").spawn()?;
+        let mut stdout = child.stdout.take().unwrap();
+        match child.wait_timeout(Duration::from_millis(100))? {
+            Some(_) => (),
+            None => {
+                child.kill()?;
+                child.wait()?;
+                return Ok(());
+            }
+        }
+        let mut output = Vec::with_capacity(128);
+        stdout.read_to_end(&mut output)?;
+        let output = String::from_utf8(output)?;
         let output: BatteryCommandOutput = serde_json::from_str(&output)?;
         self.percentage = output.battery;
         self.charging = output.charging == 3;

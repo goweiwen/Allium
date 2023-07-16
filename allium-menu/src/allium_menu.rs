@@ -17,7 +17,8 @@ use embedded_graphics::prelude::*;
 use log::warn;
 use type_map::TypeMap;
 
-use crate::view::IngameMenu;
+use crate::retroarch_info::RetroArchInfo;
+use crate::view::ingame_menu::IngameMenu;
 
 #[cfg(unix)]
 use tokio::signal::unix::SignalKind;
@@ -33,12 +34,7 @@ where
 }
 
 impl AlliumMenu<DefaultPlatform> {
-    pub async fn new(
-        mut platform: DefaultPlatform,
-        disk_slot: u8,
-        max_disk_slots: u8,
-        state_slot: u8,
-    ) -> Result<Self> {
+    pub async fn new(mut platform: DefaultPlatform, info: Option<RetroArchInfo>) -> Result<Self> {
         let display = platform.display()?;
         let battery = platform.battery()?;
         let rect = display.bounding_box().into();
@@ -55,15 +51,7 @@ impl AlliumMenu<DefaultPlatform> {
             platform,
             display,
             res: res.clone(),
-            view: IngameMenu::load_or_new(
-                rect,
-                res,
-                battery,
-                disk_slot,
-                max_disk_slots,
-                state_slot,
-            )
-            .await?,
+            view: IngameMenu::load_or_new(rect, res, battery, info).await?,
         })
     }
 

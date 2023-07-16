@@ -39,6 +39,7 @@ pub enum RetroArchCommand {
     DiskPrev,
     GrabMouseToggle,
     MenuToggle,
+    GetInfo,
     GetDiskCount,
     GetDiskSlot,
     SetDiskSlot(u8),
@@ -73,7 +74,7 @@ impl RetroArchCommand {
         );
         socket.send(self.as_str().as_bytes()).await?;
         let mut reply = vec![0; 128];
-        match tokio::time::timeout(Duration::from_secs(1), socket.recv_from(&mut reply)).await {
+        match tokio::time::timeout(Duration::from_millis(250), socket.recv_from(&mut reply)).await {
             Ok(Ok((len, _socket))) => {
                 reply.truncate(len);
                 let reply = String::from_utf8(reply)?;
@@ -86,7 +87,7 @@ impl RetroArchCommand {
             }
             Err(e) => {
                 error!("Timeout receiving from RetroArch: {}", e);
-                Err(e.into())
+                Ok(None)
             }
         }
     }
@@ -123,6 +124,7 @@ impl RetroArchCommand {
             RetroArchCommand::DiskPrev => Cow::Borrowed("DISK_PREV"),
             RetroArchCommand::GrabMouseToggle => Cow::Borrowed("GRAB_MOUSE_TOGGLE"),
             RetroArchCommand::MenuToggle => Cow::Borrowed("MENU_TOGGLE"),
+            RetroArchCommand::GetInfo => Cow::Borrowed("GET_INFO"),
             RetroArchCommand::GetDiskCount => Cow::Borrowed("GET_DISK_COUNT"),
             RetroArchCommand::GetDiskSlot => Cow::Borrowed("GET_DISK_SLOT"),
             RetroArchCommand::SetDiskSlot(slot) => Cow::Owned(format!("SET_DISK_SLOT {slot}")),
