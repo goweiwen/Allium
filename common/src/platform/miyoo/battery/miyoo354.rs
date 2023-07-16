@@ -1,5 +1,4 @@
-use std::io::Read;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::time::Duration;
 use wait_timeout::ChildExt;
 
@@ -33,8 +32,9 @@ impl Miyoo354Battery {
 
 impl Battery for Miyoo354Battery {
     fn update(&mut self) -> Result<()> {
-        let mut child = Command::new("/customer/app/axp_test").spawn()?;
-        let mut stdout = child.stdout.take().unwrap();
+        let mut child = Command::new("/customer/app/axp_test")
+            .stdout(Stdio::piped())
+            .spawn()?;
         match child.wait_timeout(Duration::from_millis(100))? {
             Some(_) => (),
             None => {
@@ -43,10 +43,7 @@ impl Battery for Miyoo354Battery {
                 return Ok(());
             }
         }
-        let mut output = Vec::with_capacity(128);
-        stdout.read_to_end(&mut output)?;
-        let output = String::from_utf8(output)?;
-        let output: BatteryCommandOutput = serde_json::from_str(&output)?;
+        let output: BatteryCommandOutput = serde_json::from_reader(child.stdout.unwrap())?;
         self.percentage = output.battery;
         self.charging = output.charging == 3;
 
