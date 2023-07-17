@@ -64,7 +64,7 @@ impl Color {
                 3 => self.g() % 16,
                 4 => self.b() / 16,
                 5 => self.b() % 16,
-                _ => panic!("invalid color index"),
+                _ => unreachable!(),
             }
         )
     }

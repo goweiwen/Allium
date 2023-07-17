@@ -339,11 +339,13 @@ impl AlliumD<DefaultPlatform> {
 
         self.is_terminating = true;
 
-        let mut say = Command::new("say")
+        Command::new("show").arg("--darken").spawn()?.wait().await?;
+        Command::new("say")
             .arg(self.locale.t("powering-off"))
-            .spawn()?;
-        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-        say.wait().await?;
+            .spawn()?
+            .wait()
+            .await?;
+        tokio::time::sleep(std::time::Duration::from_millis(250)).await;
 
         self.platform.shutdown()?;
 

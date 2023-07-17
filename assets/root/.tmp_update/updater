@@ -48,11 +48,11 @@ fi
 # run migration scripts that haven't been run yet
 for script in "$ROOT"/.allium/migrations/*; do
 	if [ ! -f "$script/.done" ]; then
-		show
+		show -c
 		say "$(cat "$script"/name.txt)"
 		if ! "$script/run.sh"; then
 			# stop everything if migration fails
-			show
+			show -c
 			say "Installation failed. Please reinstall Allium."
 			reboot
 			sleep 10

@@ -7,5 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.71"
+clap = { version = "4.3.12", features = ["derive"] }
 framebuffer = "0.3.1"
 image = { version = "0.24.6", default-features = false, features = ["png", "jpeg", "gif"] }
+common = { path = "../common" }

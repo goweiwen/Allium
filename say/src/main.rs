@@ -1,8 +1,7 @@
 #![warn(clippy::all, rust_2018_idioms)]
 
-use std::env;
-
 use anyhow::Result;
+use clap::Parser;
 use common::{
     display::{color::Color, font::FontTextStyleBuilder, Display},
     platform::{DefaultPlatform, Platform},
@@ -15,25 +14,29 @@ use embedded_graphics::{
     Drawable,
 };
 
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// Text to display
+    text: String,
+
+    /// Whether to draw a box behind the text
+    #[arg(short, long)]
+    bg: bool,
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut args = env::args().skip(1);
-    let text = match args.next() {
-        Some(text) => text,
-        None => {
-            eprintln!("Usage: say <text>");
-            return Ok(());
-        }
-    };
+    let cli = Cli::parse();
 
-    if let Err(e) = say(&text) {
+    if let Err(e) = say(&cli.text, cli.bg) {
         eprintln!("Error: {}", e);
     }
 
     Ok(())
 }
 
-fn say(text: &str) -> Result<()> {
+fn say(text: &str, bg: bool) -> Result<()> {
     let mut platform = DefaultPlatform::new()?;
     let mut display = platform.display()?;
     let styles = Stylesheet::load()?;
@@ -55,17 +58,19 @@ fn say(text: &str) -> Result<()> {
         Alignment::Center,
     );
 
-    let mut rect = text.bounding_box();
-    rect.top_left.x -= 12;
-    rect.top_left.y -= 8;
-    rect.size.width += 24;
-    rect.size.height += 16;
-    RoundedRectangle::new(
-        rect,
-        CornerRadii::new(Size::new_equal((styles.ui_font.size + 8) / 2)),
-    )
-    .into_styled(PrimitiveStyle::with_fill(styles.highlight_color))
-    .draw(&mut display)?;
+    if bg {
+        let mut rect = text.bounding_box();
+        rect.top_left.x -= 12;
+        rect.top_left.y -= 8;
+        rect.size.width += 24;
+        rect.size.height += 16;
+        RoundedRectangle::new(
+            rect,
+            CornerRadii::new(Size::new_equal((styles.ui_font.size + 8) / 2)),
+        )
+        .into_styled(PrimitiveStyle::with_fill(styles.highlight_color))
+        .draw(&mut display)?;
+    }
 
     text.draw(&mut display)?;
     display.flush()?;
