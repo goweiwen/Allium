@@ -208,9 +208,9 @@ where
         let locale = self.res.get::<Locale>();
 
         let mut entries = vec![
-            locale.t("menu-launch"),
-            locale.t("menu-remove-from-recents"),
-            locale.t("menu-repopulate-database"),
+            MenuEntry::Launch(None),
+            MenuEntry::RemoveFromRecents,
+            MenuEntry::RepopulateDatabase,
         ];
 
         let entry = self.entries.get(self.list.selected()).unwrap();
@@ -227,15 +227,14 @@ where
                     let core = game.core.to_owned().unwrap_or_else(|| cores[0].clone());
                     let i = cores.iter().position(|c| c == &core).unwrap_or_default();
 
-                    entries.insert(
-                        1,
-                        locale.ta(
-                            "menu-core",
-                            &[("core".to_string(), core.into())].into_iter().collect(),
-                        ),
-                    );
+                    if let MenuEntry::Launch(ref mut launch_core) = entries[0] {
+                        let console_mapper = self.res.get::<ConsoleMapper>();
+                        *launch_core = Some(console_mapper.get_core_name(&core));
+                    }
 
                     self.core = Some(CoreSelection { core: i, cores });
+                } else {
+                    self.core = None;
                 }
             }
             Entry::App(_) | Entry::Directory(_) => {}
@@ -250,7 +249,7 @@ where
                 (w - 24) * 2 / 3,
                 height,
             ),
-            entries,
+            entries.iter().map(|e| e.text(&locale)).collect(),
             Alignment::Left,
             styles.ui_font.size + SELECTION_MARGIN,
         );
@@ -384,39 +383,27 @@ where
         } else if let Some(menu) = self.menu.as_mut() {
             match event {
                 KeyEvent::Pressed(Key::Left) => {
-                    let selected = menu.selected();
                     if let Some(core) = self.core.as_mut() {
-                        if selected == 1 {
+                        let mut selected = MenuEntry::from_repr(menu.selected());
+                        if let MenuEntry::Launch(ref mut launch_core) = selected {
                             core.core = core.core.saturating_sub(1);
-                            let locale = self.res.get::<Locale>();
-                            menu.set_item(
-                                selected,
-                                locale.ta(
-                                    "menu-core",
-                                    &[("core".to_string(), core.cores[core.core].clone().into())]
-                                        .into_iter()
-                                        .collect(),
-                                ),
-                            )
+                            let console_mapper = self.res.get::<ConsoleMapper>();
+                            *launch_core =
+                                Some(console_mapper.get_core_name(&core.cores[core.core]));
+                            menu.set_item(menu.selected(), selected.text(&self.res.get()));
                         }
                     }
                     Ok(true) // trap tab focus
                 }
                 KeyEvent::Pressed(Key::Right) => {
-                    let selected = menu.selected();
                     if let Some(core) = self.core.as_mut() {
-                        if selected == 1 {
+                        let mut selected = MenuEntry::from_repr(menu.selected());
+                        if let MenuEntry::Launch(ref mut launch_core) = selected {
                             core.core = (core.core + 1).min(core.cores.len() - 1);
-                            let locale = self.res.get::<Locale>();
-                            menu.set_item(
-                                selected,
-                                locale.ta(
-                                    "menu-core",
-                                    &[("core".to_string(), core.cores[core.core].clone().into())]
-                                        .into_iter()
-                                        .collect(),
-                                ),
-                            )
+                            let console_mapper = self.res.get::<ConsoleMapper>();
+                            *launch_core =
+                                Some(console_mapper.get_core_name(&core.cores[core.core]));
+                            menu.set_item(menu.selected(), selected.text(&self.res.get()));
                         }
                     }
                     Ok(true) // trap tab focus
@@ -427,15 +414,9 @@ where
                     Ok(true)
                 }
                 KeyEvent::Pressed(Key::A) => {
-                    let mut selected = menu.selected();
-                    if self.core.is_none() {
-                        selected += 1;
-                    }
+                    let selected = MenuEntry::from_repr(menu.selected());
                     match selected {
-                        0 => {
-                            self.select_entry(commands).await?;
-                        }
-                        1 => {
+                        MenuEntry::Launch(_) => {
                             let entry = self.entries.get_mut(self.list.selected()).unwrap();
                             if let (Some(core), Entry::Game(game)) = (self.core.as_ref(), entry) {
                                 let db = self.res.get::<Database>();
@@ -446,7 +427,7 @@ where
                             self.core = None;
                             self.select_entry(commands).await?;
                         }
-                        2 => {
+                        MenuEntry::RemoveFromRecents => {
                             if let Some(Entry::Game(game)) = self.entries.get(self.list.selected())
                             {
                                 self.res.get::<Database>().reset_game(&game.path)?;
@@ -454,7 +435,7 @@ where
                                 commands.send(Command::Redraw).await?;
                             }
                         }
-                        3 => {
+                        MenuEntry::RepopulateDatabase => {
                             commands.send(Command::Redraw).await?;
                             let toast = self.res.get::<Locale>().t("populating-database");
                             commands.send(Command::Toast(toast, None)).await?;
@@ -464,7 +445,6 @@ where
                                 .await?;
                             commands.send(Command::Redraw).await?;
                         }
-                        _ => unreachable!("invalid menu selection"),
                     }
                     self.menu = None;
                     Ok(true)
@@ -516,5 +496,39 @@ where
 
     fn set_position(&mut self, _point: Point) {
         unimplemented!()
+    }
+}
+
+enum MenuEntry {
+    Launch(Option<String>),
+    RemoveFromRecents,
+    RepopulateDatabase,
+}
+
+impl MenuEntry {
+    fn from_repr(i: usize) -> Self {
+        match i {
+            0 => MenuEntry::Launch(None),
+            1 => MenuEntry::RemoveFromRecents,
+            2 => MenuEntry::RepopulateDatabase,
+            _ => unreachable!("invalid menu entry"),
+        }
+    }
+
+    fn text(&self, locale: &Locale) -> String {
+        match self {
+            MenuEntry::Launch(core) => {
+                if let Some(core) = core.as_deref() {
+                    locale.ta(
+                        "menu-launch-with-core",
+                        &[("core".to_string(), core.into())].into_iter().collect(),
+                    )
+                } else {
+                    locale.t("menu-launch")
+                }
+            }
+            MenuEntry::RemoveFromRecents => locale.t("menu-remove-from-recents"),
+            MenuEntry::RepopulateDatabase => locale.t("menu-repopulate-database"),
+        }
     }
 }

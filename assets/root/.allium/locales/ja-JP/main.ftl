@@ -14,7 +14,7 @@ populating-database = データベースへの入力...
     お茶でも飲んでいいですよ！
 
 menu-launch = 起動
-menu-core = コア:{ $core }
+menu-launch-with-core = { $core }で起動
 menu-remove-from-recents = 最近から削除
 menu-repopulate-database = データベースを再入力
 

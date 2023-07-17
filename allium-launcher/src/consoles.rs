@@ -15,7 +15,6 @@ use crate::entry::game::Game;
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct Console {
     /// The name of the console.
-    #[serde(skip)]
     pub name: String,
     /// If present, takes priority over RetroArch cores.
     #[serde(default)]
@@ -38,10 +37,14 @@ pub struct Console {
 }
 
 #[derive(Debug, Deserialize)]
-struct ConsoleConfig(HashMap<String, Console>);
+struct ConsoleConfig {
+    cores: HashMap<String, String>,
+    consoles: Vec<Console>,
+}
 
 #[derive(Debug, Clone)]
 pub struct ConsoleMapper {
+    cores: HashMap<String, String>,
     consoles: Vec<Console>,
 }
 
@@ -54,6 +57,7 @@ impl Default for ConsoleMapper {
 impl ConsoleMapper {
     pub fn new() -> ConsoleMapper {
         ConsoleMapper {
+            cores: HashMap::new(),
             consoles: Vec::new(),
         }
     }
@@ -68,14 +72,9 @@ impl ConsoleMapper {
         })?;
         let config: ConsoleConfig =
             toml::from_str(&config).context("Failed to parse consoles.toml.")?;
-        self.consoles = config
-            .0
-            .into_iter()
-            .map(|(name, mut core)| {
-                core.name = name;
-                core
-            })
-            .collect();
+
+        self.cores = config.cores;
+        self.consoles = config.consoles;
 
         Ok(())
     }
@@ -181,6 +180,13 @@ impl ConsoleMapper {
         } else {
             None
         })
+    }
+
+    pub fn get_core_name(&self, core: &str) -> String {
+        self.cores
+            .get(core)
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| core.to_string())
     }
 }
 
@@ -289,5 +295,20 @@ mod tests {
         // NXEngine
         assert!(eq("Cave Story/Doukutsu.exe", "Cave Story", "nxengine"));
         assert!(eq("Cave Story (NXENGINE).m3u", "Cave Story", "nxengine"));
+    }
+
+    #[test]
+    fn test_core_names() {
+        env::set_var("ALLIUM_BASE_DIR", "../assets/root/.allium");
+
+        let mut mapper = ConsoleMapper::new();
+        mapper.load_config().unwrap();
+
+        let cores = &mapper.cores;
+        for console in mapper.consoles {
+            for core in console.cores {
+                assert!(cores.contains_key(&core), "Core {} not found", core);
+            }
+        }
     }
 }
