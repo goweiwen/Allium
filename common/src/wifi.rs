@@ -332,6 +332,25 @@ pub fn ntp_sync() -> Result<()> {
                 log::error!("ntp-sync.sh failed: {}", e);
                 e
             })
+            .ok();
+
+        // Reset start time if time changed
+        match crate::game_info::GameInfo::load() {
+            Ok(Some(mut game_info)) => {
+                game_info.start_time = chrono::Utc::now();
+                game_info
+                    .save()
+                    .map_err(|e| {
+                        log::error!("failed to save game info: {}", e);
+                        e
+                    })
+                    .ok();
+            }
+            Ok(None) => {}
+            Err(e) => {
+                log::error!("failed to load game info: {}", e);
+            }
+        }
     });
     Ok(())
 }
