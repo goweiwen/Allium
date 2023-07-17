@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::time::Duration;
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -21,6 +22,7 @@ pub struct Wifi {
     settings: WiFiSettings,
     list: SettingsList,
     has_ip_address: bool,
+    check_ip_delay: Duration,
     button_hints: Row<ButtonHint<String>>,
 }
 
@@ -117,6 +119,7 @@ impl Wifi {
             settings,
             list,
             has_ip_address: false,
+            check_ip_delay: Duration::ZERO,
             button_hints,
         }
     }
@@ -124,16 +127,14 @@ impl Wifi {
 
 #[async_trait(?Send)]
 impl View for Wifi {
-    fn draw(
-        &mut self,
-        display: &mut <DefaultPlatform as Platform>::Display,
-        styles: &Stylesheet,
-    ) -> Result<bool> {
-        let mut drawn = false;
-
-        let locale = self.res.get::<Locale>();
+    fn update(&mut self, dt: Duration) {
         if self.settings.wifi {
             if !self.has_ip_address {
+                if self.check_ip_delay > dt {
+                    self.check_ip_delay -= dt;
+                    return;
+                }
+                self.check_ip_delay = Duration::from_secs(1);
                 // Try to get the IP address if we don't have it yet
                 if let Some(ip_address) = wifi::ip_address() {
                     self.has_ip_address = true;
@@ -147,6 +148,7 @@ impl View for Wifi {
                         )),
                     );
                 } else {
+                    let locale = self.res.get::<Locale>();
                     self.list.set_right(
                         1,
                         Box::new(Label::new(
@@ -170,6 +172,14 @@ impl View for Wifi {
                 )),
             );
         }
+    }
+
+    fn draw(
+        &mut self,
+        display: &mut <DefaultPlatform as Platform>::Display,
+        styles: &Stylesheet,
+    ) -> Result<bool> {
+        let mut drawn = false;
 
         drawn |= self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
         drawn |= self.list.should_draw() && self.list.draw(display, styles)?;
