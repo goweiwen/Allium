@@ -236,10 +236,12 @@ impl View for ColorPicker {
                 }
                 KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
                     state.selected = (state.selected as isize - 1).clamp(0, 5) as usize;
+                    self.dirty = true;
                     Ok(true)
                 }
                 KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
                     state.selected = (state.selected as isize + 1).clamp(0, 5) as usize;
+                    self.dirty = true;
                     Ok(true)
                 }
                 KeyEvent::Pressed(Key::A) => {
