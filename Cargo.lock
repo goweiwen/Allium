@@ -26,15 +26,11 @@ dependencies = [
  "image 0.23.14",
  "lazy_static",
  "log",
- "regex",
- "rusttype",
  "serde",
  "serde_json",
  "simple_logger",
  "strum",
- "sysinfo",
  "tokio",
- "toml",
  "type-map",
 ]
 
@@ -98,7 +94,6 @@ dependencies = [
  "lazy_static",
  "log",
  "regex",
- "rusttype",
  "serde",
  "serde-xml-rs",
  "serde_json",
@@ -120,7 +115,6 @@ dependencies = [
  "embedded-graphics",
  "lazy_static",
  "log",
- "rusttype",
  "serde",
  "serde_json",
  "simple_logger",
@@ -138,11 +132,9 @@ dependencies = [
  "common",
  "console-subscriber",
  "enum-map",
- "futures",
  "lazy_static",
  "log",
  "nix",
- "rusttype",
  "serde",
  "serde_json",
  "simple_logger",
@@ -919,7 +911,6 @@ checksum = "23342abe12aba583913b2e62f22225ff9c950774065e4bfb61a19cd9770fec40"
 dependencies = [
  "futures-channel",
  "futures-core",
- "futures-executor",
  "futures-io",
  "futures-sink",
  "futures-task",
@@ -943,32 +934,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4bca583b7e26f571124fe5b7561d49cb2868d79116cfa0eefce955557c6fee8c"
 
 [[package]]
-name = "futures-executor"
-version = "0.3.28"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ccecee823288125bd88b4d7f565c9e58e41858e47ab72e8ea2d64e93624386e0"
-dependencies = [
- "futures-core",
- "futures-task",
- "futures-util",
-]
-
-[[package]]
 name = "futures-io"
 version = "0.3.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4fff74096e71ed47f8e023204cfd0aa1289cd54ae5430a9523be060cdb849964"
-
-[[package]]
-name = "futures-macro"
-version = "0.3.28"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89ca545a94061b6365f2c7355b4b32bd20df3ff95f02da9329b34ccc3bd6ee72"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.23",
-]
 
 [[package]]
 name = "futures-sink"
@@ -988,16 +957,11 @@ version = "0.3.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26b01e40b772d54cf6c6d721c1d1abd0647a0106a12ecaa1c186273392a69533"
 dependencies = [
- "futures-channel",
  "futures-core",
- "futures-io",
- "futures-macro",
  "futures-sink",
  "futures-task",
- "memchr",
  "pin-project-lite",
  "pin-utils",
- "slab",
 ]
 
 [[package]]
@@ -2178,6 +2142,21 @@ dependencies = [
  "common",
  "framebuffer",
  "image 0.24.6",
+]
+
+[[package]]
+name = "show-hotkeys"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "common",
+ "embedded-graphics",
+ "lazy_static",
+ "log",
+ "simple_logger",
+ "tokio",
+ "type-map",
 ]
 
 [[package]]

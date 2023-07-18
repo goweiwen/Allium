@@ -81,3 +81,6 @@ pub const RECENT_GAMES_LIMIT: i64 = 100;
 
 /// RetroArch network command interface.
 pub const RETROARCH_UDP_SOCKET: &str = "127.0.0.1:55355";
+
+/// Long press duration for the menu button.
+pub const LONG_PRESS_DURATION: Duration = Duration::from_millis(1000);

@@ -4,9 +4,9 @@ tab-games = 游戏
 tab-apps = 应用
 tab-settings = 设置
 
-sort-alphabetical = 排序:A-Z
-sort-last-played = 排序:最后玩
-sort-most-played = 排序:最久玩
+sort-alphabetical = 排序：A-Z
+sort-last-played = 排序：最后玩
+sort-most-played = 排序：最久玩
 sort-search = 搜索
 
 populating-database = 填充数据库...
@@ -87,6 +87,18 @@ ingame-menu-disk = 磁盘{ $disk }
 guide-button-search = 搜索
 guide-button-next = 下一项
 guide-button-prev = 上一项
+
+# Hotkeys
+hotkeys-global = 全局热键：
+hotkeys-screenshot = 屏幕截图
+hotkeys-volume-down = 减小音量
+hotkeys-volume-up = 增大音量
+hotkeys-brightness-down = 降低亮度
+hotkeys-brightness-up = 增加亮度
+
+hotkeys-ingame = 游戏内热键：
+hotkeys-toggle-aspect-ratio = 更改纵横比
+hotkeys-toggle-fps = 切换FPS显示
 
 # Common
 button-back = 返回

@@ -1,13 +1,14 @@
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
+use std::time::Instant;
 
 use anyhow::Result;
 use chrono::{DateTime, Duration, Utc};
 use common::battery::Battery;
 use common::constants::{
     ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_MENU, ALLIUM_SD_ROOT, ALLIUM_VERSION,
-    BATTERY_SHUTDOWN_THRESHOLD, BATTERY_UPDATE_INTERVAL,
+    BATTERY_SHUTDOWN_THRESHOLD, BATTERY_UPDATE_INTERVAL, LONG_PRESS_DURATION,
 };
 use common::display::settings::DisplaySettings;
 use common::locale::{Locale, LocaleSettings};
@@ -43,6 +44,7 @@ pub struct AlliumD<P: Platform> {
     menu: Option<Child>,
     keys: EnumMap<Key, bool>,
     is_menu_pressed_alone: bool,
+    pressed_menu: Instant,
     is_terminating: bool,
     state: AlliumDState,
     locale: Locale,
@@ -132,6 +134,7 @@ impl AlliumD<DefaultPlatform> {
             menu: None,
             keys: EnumMap::default(),
             is_menu_pressed_alone: false,
+            pressed_menu: Instant::now(),
             is_terminating: false,
             state,
             locale,
@@ -218,15 +221,20 @@ impl AlliumD<DefaultPlatform> {
             self.main.id(),
             self.is_ingame()
         );
+
+        // Handle menu key
         match key_event {
             KeyEvent::Pressed(Key::Menu) => {
                 self.is_menu_pressed_alone = true;
+                self.pressed_menu = Instant::now();
             }
             KeyEvent::Pressed(_) => {
                 self.is_menu_pressed_alone = false;
             }
             KeyEvent::Released(_) | KeyEvent::Autorepeat(_) => {}
         }
+
+        // Update self.keys
         match key_event {
             KeyEvent::Pressed(key) => {
                 self.keys[key] = true;
@@ -236,37 +244,48 @@ impl AlliumD<DefaultPlatform> {
             }
             KeyEvent::Autorepeat(_) => {}
         }
-        match key_event {
-            KeyEvent::Pressed(Key::L2) | KeyEvent::Autorepeat(Key::L2) => {
-                if self.keys[Key::Start] {
-                    self.add_brightness(-5)?;
-                } else if self.keys[Key::Select] {
-                    self.add_volume(-1)?
+
+        if self.keys[Key::Menu] {
+            // Global hotkeys
+            match key_event {
+                KeyEvent::Autorepeat(Key::Menu) => {
+                    if self.is_menu_pressed_alone
+                        && self.pressed_menu.elapsed() >= LONG_PRESS_DURATION
+                    {
+                        // Don't show menu
+                        self.is_menu_pressed_alone = false;
+                        #[cfg(unix)]
+                        {
+                            signal(&self.main, Signal::SIGSTOP)?;
+                            if let Some(menu) = self.menu.as_mut() {
+                                signal(menu, Signal::SIGSTOP)?;
+                            }
+                        }
+                        Command::new("show-hotkeys").spawn()?.wait().await?;
+                        #[cfg(unix)]
+                        {
+                            signal(&self.main, Signal::SIGCONT)?;
+                            if let Some(menu) = self.menu.as_mut() {
+                                signal(menu, Signal::SIGCONT)?;
+                            }
+                        }
+                    }
                 }
-            }
-            KeyEvent::Pressed(Key::R2) | KeyEvent::Autorepeat(Key::R2) => {
-                if self.keys[Key::Start] {
+                KeyEvent::Pressed(Key::Up | Key::VolUp)
+                | KeyEvent::Autorepeat(Key::Up | Key::VolUp) => {
                     self.add_brightness(5)?;
-                } else if self.keys[Key::Select] {
-                    self.add_volume(1)?
                 }
-            }
-            KeyEvent::Pressed(Key::VolDown) | KeyEvent::Autorepeat(Key::VolDown) => {
-                if self.keys[Key::Menu] {
+                KeyEvent::Pressed(Key::Down | Key::VolDown)
+                | KeyEvent::Autorepeat(Key::Down | Key::VolDown) => {
                     self.add_brightness(-5)?;
-                } else {
-                    self.add_volume(-1)?
                 }
-            }
-            KeyEvent::Pressed(Key::VolUp) | KeyEvent::Autorepeat(Key::VolUp) => {
-                if self.keys[Key::Menu] {
-                    self.add_brightness(5)?;
-                } else {
-                    self.add_volume(1)?
+                KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
+                    self.add_volume(-1)?;
                 }
-            }
-            KeyEvent::Released(Key::Power) => {
-                if self.keys[Key::Menu] {
+                KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
+                    self.add_volume(1)?;
+                }
+                KeyEvent::Released(Key::Power) => {
                     let game_info = GameInfo::load()?;
                     let name = match game_info.as_ref() {
                         Some(game_info) => game_info.name.as_str(),
@@ -282,35 +301,43 @@ impl AlliumD<DefaultPlatform> {
                         .spawn()?
                         .wait()
                         .await?;
-                } else {
-                    // TODO: suspend
                 }
+                _ => {}
             }
-            KeyEvent::Autorepeat(Key::Power) => {
-                if !self.keys[Key::Menu] {
-                    self.handle_quit().await?;
+        } else {
+            match key_event {
+                KeyEvent::Pressed(Key::VolDown) | KeyEvent::Autorepeat(Key::VolDown) => {
+                    self.add_volume(-1)?
                 }
-            }
-            KeyEvent::Released(Key::Menu) => {
-                if self.is_menu_pressed_alone {
-                    if self.is_ingame()
-                        && self
-                            .keys
-                            .iter()
-                            .all(|(k, pressed)| k == Key::Menu || !pressed)
-                    {
-                        if let Some(game_info) = GameInfo::load()? {
-                            if let Some(menu) = &mut self.menu {
-                                terminate(menu).await?;
-                            } else if game_info.has_menu {
-                                self.menu = Some(Command::new(ALLIUM_MENU.as_path()).spawn()?);
+                KeyEvent::Pressed(Key::VolUp) | KeyEvent::Autorepeat(Key::VolUp) => {
+                    self.add_volume(1)?
+                }
+                KeyEvent::Autorepeat(Key::Power) => {
+                    if !self.keys[Key::Menu] {
+                        self.handle_quit().await?;
+                    }
+                }
+                KeyEvent::Released(Key::Menu) => {
+                    if self.is_menu_pressed_alone {
+                        if self.is_ingame()
+                            && self
+                                .keys
+                                .iter()
+                                .all(|(k, pressed)| k == Key::Menu || !pressed)
+                        {
+                            if let Some(game_info) = GameInfo::load()? {
+                                if let Some(menu) = &mut self.menu {
+                                    terminate(menu).await?;
+                                } else if game_info.has_menu {
+                                    self.menu = Some(Command::new(ALLIUM_MENU.as_path()).spawn()?);
+                                }
                             }
                         }
+                        self.is_menu_pressed_alone = false;
                     }
-                    self.is_menu_pressed_alone = false;
                 }
+                _ => {}
             }
-            _ => {}
         }
 
         Ok(())

@@ -4,9 +4,9 @@ tab-games = ゲーム
 tab-apps = アプリ
 tab-settings = 設定
 
-sort-alphabetical = ソート:A-Z
-sort-last-played = ソート:最近プレイ
-sort-most-played = ソート:プレイ時間
+sort-alphabetical = ソート：A-Z
+sort-last-played = ソート：最近プレイ
+sort-most-played = ソート：プレイ時間
 sort-search = 検索
 
 populating-database = データベースへの入力...
@@ -87,6 +87,18 @@ ingame-menu-disk = ディスク{ $disk }
 guide-button-search = 捜索
 guide-button-next = 次へ
 guide-button-prev = 前へ
+
+# Hotkeys
+hotkeys-global = グローバル・ホットキー：
+hotkeys-screenshot = スクリーンショット
+hotkeys-volume-down = 音量を下げる
+hotkeys-volume-up = 音量を上げる
+hotkeys-brightness-down = 輝度を下げる
+hotkeys-brightness-up = 輝度を上げる
+
+hotkeys-ingame = ゲーム内のホットキー
+hotkeys-toggle-aspect-ratio = アスペクト比
+hotkeys-toggle-fps = FPS表示
 
 # Common
 button-back = 戻る

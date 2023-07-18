@@ -88,6 +88,18 @@ guide-button-search = Search
 guide-button-next = Next
 guide-button-prev = Prev
 
+# Hotkeys
+hotkeys-global = Global Hotkeys:
+hotkeys-screenshot = Screenshot
+hotkeys-volume-down = Volume -
+hotkeys-volume-up = Volume +
+hotkeys-brightness-down = Brightness -
+hotkeys-brightness-up = Brightness +
+
+hotkeys-ingame = Ingame Hotkeys:
+hotkeys-toggle-aspect-ratio = Toggle Aspect Ratio
+hotkeys-toggle-fps = Toggle FPS
+
 # Common
 button-back = Back
 button-confirm = Confirm
