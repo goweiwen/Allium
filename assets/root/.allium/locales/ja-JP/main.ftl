@@ -7,6 +7,7 @@ tab-settings = 設定
 sort-alphabetical = ソート：A-Z
 sort-last-played = ソート：最近プレイ
 sort-most-played = ソート：プレイ時間
+sort-random = ソート：ランダム
 sort-search = 検索
 
 populating-database = データベースへの入力...

@@ -179,6 +179,24 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
         Ok(games)
     }
 
+    /// Selects random games.
+    pub fn select_random(&self, limit: i64) -> Result<Vec<Game>> {
+        let mut stmt = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE id IN (SELECT id FROM games ORDER BY RANDOM() LIMIT ?)")?;
+
+        let rows = stmt.query_map([limit], map_game)?;
+
+        let mut games = Vec::new();
+        for row in rows {
+            games.push(row?);
+        }
+
+        Ok(games)
+    }
+
     /// Search for games by name. The query is a prefix search on words, so "Fi" will match both "Fire Emblem" and "Pokemon Fire Red".
     pub fn search(&self, query: &str, limit: i64) -> Result<Vec<Game>> {
         if query.is_empty() {

@@ -11,6 +11,7 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::{ButtonHint, ButtonIcon, Row, View};
+use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
@@ -137,6 +138,7 @@ pub enum GamesSort {
     Alphabetical(Directory),
     LastPlayed(Directory),
     MostPlayed(Directory),
+    Random(Directory),
 }
 
 impl GamesSort {
@@ -145,6 +147,7 @@ impl GamesSort {
             GamesSort::Alphabetical(d) => d,
             GamesSort::LastPlayed(d) => d,
             GamesSort::MostPlayed(d) => d,
+            GamesSort::Random(d) => d,
         }
     }
 }
@@ -155,6 +158,7 @@ impl Sort for GamesSort {
             GamesSort::Alphabetical(_) => locale.t("sort-alphabetical"),
             GamesSort::LastPlayed(_) => locale.t("sort-last-played"),
             GamesSort::MostPlayed(_) => locale.t("sort-most-played"),
+            GamesSort::Random(_) => locale.t("sort-random"),
         }
     }
 
@@ -162,7 +166,8 @@ impl Sort for GamesSort {
         match self {
             GamesSort::Alphabetical(d) => GamesSort::LastPlayed(d.clone()),
             GamesSort::LastPlayed(d) => GamesSort::MostPlayed(d.clone()),
-            GamesSort::MostPlayed(d) => GamesSort::Alphabetical(d.clone()),
+            GamesSort::MostPlayed(d) => GamesSort::Random(d.clone()),
+            GamesSort::Random(d) => GamesSort::Alphabetical(d.clone()),
         }
     }
 
@@ -171,6 +176,7 @@ impl Sort for GamesSort {
             GamesSort::Alphabetical(_) => GamesSort::Alphabetical(directory),
             GamesSort::LastPlayed(_) => GamesSort::LastPlayed(directory),
             GamesSort::MostPlayed(_) => GamesSort::MostPlayed(directory),
+            GamesSort::Random(_) => GamesSort::Random(directory),
         }
     }
 
@@ -235,6 +241,9 @@ impl Sort for GamesSort {
                 entries.retain(|e| matches!(e, Entry::Directory(_) | Entry::App(_)));
                 entries.sort_unstable();
                 entries.extend(games.into_iter().map(|(game, _)| Entry::Game(game)));
+            }
+            GamesSort::Random(_) => {
+                entries.shuffle(&mut rand::thread_rng());
             }
         }
 

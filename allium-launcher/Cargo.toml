@@ -28,6 +28,7 @@ simple_logger = { version = "4.2.0", default-features = false }
 log = { version = "0.4.19", features = ["release_max_level_info"] }
 image = { version = "0.23", default-features = false, features = ["gif", "jpeg", "png"] }
 serde-xml-rs = "0.6.0"
+rand = "0.8.5"
 
 [dependencies.common]
 path = "../common"

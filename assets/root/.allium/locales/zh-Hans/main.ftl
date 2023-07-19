@@ -7,6 +7,7 @@ tab-settings = 设置
 sort-alphabetical = 排序：A-Z
 sort-last-played = 排序：最后玩
 sort-most-played = 排序：最久玩
+sort-random = 排序：随机
 sort-search = 搜索
 
 populating-database = 填充数据库...
