@@ -20,7 +20,9 @@ use crate::entry::directory::Directory;
 use crate::entry::game::Game;
 use crate::entry::lazy_image::LazyImage;
 use crate::entry::{Entry, Sort};
-use crate::view::entry_list::EntryList;
+use crate::view::entry_list::{EntryList, EntryListState};
+
+pub type RecentsState = EntryListState<RecentsSort>;
 
 #[derive(Debug)]
 pub struct Recents {
@@ -32,12 +34,10 @@ pub struct Recents {
 }
 
 impl Recents {
-    pub fn new(rect: Rect, res: Resources) -> Result<Self> {
-        let Rect { x, y, w, h } = rect;
+    pub fn new(rect: Rect, res: Resources, list: EntryList<RecentsSort>) -> Result<Self> {
+        let Rect { x, y, w: _w, h } = rect;
 
         let styles = res.get::<Stylesheet>();
-
-        let list = EntryList::new(Rect::new(x, y, w, h), res.clone(), RecentsSort::LastPlayed)?;
 
         let button_hints = Row::new(
             Point::new(
@@ -66,6 +66,23 @@ impl Recents {
             button_hints,
             keyboard: None,
         })
+    }
+
+    pub fn load_or_new(rect: Rect, res: Resources, state: Option<RecentsState>) -> Result<Self> {
+        let list = if let Some(state) = state {
+            let selected = state.selected;
+            let mut list = EntryList::load(rect, res.clone(), state)?;
+            list.select(selected);
+            list
+        } else {
+            EntryList::new(rect, res.clone(), RecentsSort::LastPlayed)?
+        };
+
+        Self::new(rect, res, list)
+    }
+
+    pub fn save(&self) -> RecentsState {
+        self.list.save()
     }
 
     pub fn start_search(&mut self) {

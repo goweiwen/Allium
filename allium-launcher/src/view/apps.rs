@@ -4,6 +4,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 
 use common::command::Command;
+use common::constants::ALLIUM_APPS_DIR;
 use common::database::Database;
 use common::geom::{Point, Rect};
 use common::locale::Locale;
@@ -32,11 +33,19 @@ impl Apps {
         Ok(Self { rect, list })
     }
 
-    pub fn load(rect: Rect, res: Resources, state: AppsState) -> Result<Self> {
-        let selected = state.selected;
-
-        let mut list = EntryList::load(rect, res.clone(), state)?;
-        list.select(selected);
+    pub fn load_or_new(rect: Rect, res: Resources, state: Option<AppsState>) -> Result<Self> {
+        let list = if let Some(state) = state {
+            let selected = state.selected;
+            let mut list = EntryList::load(rect, res.clone(), state)?;
+            list.select(selected);
+            list
+        } else {
+            EntryList::new(
+                rect,
+                res.clone(),
+                AppsSort::Alphabetical(Directory::new(ALLIUM_APPS_DIR.clone())),
+            )?
+        };
 
         Self::new(rect, res, list)
     }

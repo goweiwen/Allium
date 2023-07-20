@@ -4,6 +4,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Duration;
 use common::command::Command;
+use common::constants::ALLIUM_GAMES_DIR;
 use common::database::Database;
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
@@ -60,11 +61,19 @@ impl Games {
         })
     }
 
-    pub fn load(rect: Rect, res: Resources, state: GamesState) -> Result<Self> {
-        let selected = state.selected;
-
-        let mut list = EntryList::load(rect, res.clone(), state)?;
-        list.select(selected);
+    pub fn load_or_new(rect: Rect, res: Resources, state: Option<GamesState>) -> Result<Self> {
+        let list = if let Some(state) = state {
+            let selected = state.selected;
+            let mut list = EntryList::load(rect, res.clone(), state)?;
+            list.select(selected);
+            list
+        } else {
+            EntryList::new(
+                rect,
+                res.clone(),
+                GamesSort::Alphabetical(Directory::new(ALLIUM_GAMES_DIR.clone())),
+            )?
+        };
 
         Self::new(rect, res, list)
     }

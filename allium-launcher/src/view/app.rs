@@ -5,7 +5,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use common::battery::Battery;
 use common::command::Command;
-use common::constants::{ALLIUM_APPS_DIR, ALLIUM_GAMES_DIR, ALLIUM_LAUNCHER_STATE};
+use common::constants::ALLIUM_LAUNCHER_STATE;
 use common::display::Display;
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
@@ -17,10 +17,9 @@ use log::{trace, warn};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
-use crate::entry::directory::Directory;
-use crate::view::apps::{AppsSort, AppsState};
-use crate::view::entry_list::EntryList;
-use crate::view::games::{GamesSort, GamesState};
+use crate::view::apps::AppsState;
+use crate::view::games::GamesState;
+use crate::view::recents::RecentsState;
 use crate::view::settings::SettingsState;
 use crate::view::Recents;
 use crate::view::{Apps, Games, Settings};
@@ -28,6 +27,7 @@ use crate::view::{Apps, Games, Settings};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct AppState {
     selected: usize,
+    recents: RecentsState,
     games: GamesState,
     apps: AppsState,
     settings: SettingsState,
@@ -114,21 +114,11 @@ where
             let file = File::open(ALLIUM_LAUNCHER_STATE.as_path())?;
             if let Ok(state) = serde_json::from_reader::<_, AppState>(file) {
                 let views = (
-                    Recents::new(tab_rect, res.clone())?,
-                    Games::load(tab_rect, res.clone(), state.games).unwrap_or_else(|_| {
-                        Games::new(
-                            tab_rect,
-                            res.clone(),
-                            EntryList::new(
-                                tab_rect,
-                                res.clone(),
-                                GamesSort::Alphabetical(Directory::new(ALLIUM_GAMES_DIR.clone())),
-                            )
-                            .unwrap(),
-                        )
-                        .unwrap()
-                    }),
-                    Apps::load(tab_rect, res.clone(), state.apps)?,
+                    Recents::load_or_new(tab_rect, res.clone(), Some(state.recents))?,
+                    Games::load_or_new(tab_rect, res.clone(), Some(state.games)).unwrap_or_else(
+                        |_| Games::load_or_new(tab_rect, res.clone(), None).unwrap(),
+                    ),
+                    Apps::load_or_new(tab_rect, res.clone(), Some(state.apps))?,
                     Settings::new(tab_rect, res.clone(), state.settings)?,
                 );
                 return Self::new(rect, res, views, state.selected, battery);
@@ -138,25 +128,9 @@ where
         }
 
         let views = (
-            Recents::new(tab_rect, res.clone())?,
-            Games::new(
-                tab_rect,
-                res.clone(),
-                EntryList::new(
-                    tab_rect,
-                    res.clone(),
-                    GamesSort::Alphabetical(Directory::new(ALLIUM_GAMES_DIR.clone())),
-                )?,
-            )?,
-            Apps::new(
-                tab_rect,
-                res.clone(),
-                EntryList::new(
-                    tab_rect,
-                    res.clone(),
-                    AppsSort::Alphabetical(Directory::new(ALLIUM_APPS_DIR.clone())),
-                )?,
-            )?,
+            Recents::load_or_new(tab_rect, res.clone(), None)?,
+            Games::load_or_new(tab_rect, res.clone(), None)?,
+            Apps::load_or_new(tab_rect, res.clone(), None)?,
             Settings::new(tab_rect, res.clone(), Default::default())?,
         );
         let selected = 1;
@@ -167,6 +141,7 @@ where
         let file = File::create(ALLIUM_LAUNCHER_STATE.as_path())?;
         let state = AppState {
             selected: self.selected,
+            recents: self.views.0.save(),
             games: self.views.1.save(),
             apps: self.views.2.save(),
             settings: self.views.3.save(),
