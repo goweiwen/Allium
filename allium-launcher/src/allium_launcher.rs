@@ -213,7 +213,7 @@ impl AlliumLauncher<DefaultPlatform> {
                 let database = self.res.get::<Database>();
                 let console_mapper = self.res.get::<ConsoleMapper>();
 
-                database.clear()?;
+                database.delete_all_unplayed_games()?;
 
                 let mut games = database.select_all_games()?;
                 for game in games.iter_mut() {

@@ -327,10 +327,10 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
         Ok(())
     }
 
-    /// Deletes all games that have no play time, play count, or core.
-    pub fn clear(&self) -> Result<()> {
+    /// Deletes all games that have no play time, play count.
+    pub fn delete_all_unplayed_games(&self) -> Result<()> {
         self.conn.as_ref().unwrap().execute(
-            "DELETE FROM games WHERE last_played = 0 AND play_time = 0 AND core = NULL",
+            "DELETE FROM games WHERE last_played = 0 AND play_time = 0",
             [],
         )?;
 
