@@ -430,7 +430,11 @@ where
                         MenuEntry::RemoveFromRecents => {
                             if let Some(Entry::Game(game)) = self.entries.get(self.list.selected())
                             {
-                                self.res.get::<Database>().reset_game(&game.path)?;
+                                if game.path.exists() {
+                                    self.res.get::<Database>().reset_game(&game.path)?;
+                                } else {
+                                    self.res.get::<Database>().delete_game(&game.path)?;
+                                }
                                 self.load_entries()?;
                                 commands.send(Command::Redraw).await?;
                             }
