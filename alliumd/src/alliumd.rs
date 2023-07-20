@@ -191,7 +191,7 @@ impl AlliumD<DefaultPlatform> {
                     _ = sigint.recv() => self.handle_quit().await?,
                     _ = sigterm.recv() => self.handle_quit().await?,
                     _ = battery_interval.tick() => {
-                        info!("updating battery");
+                        trace!("updating battery");
                         if let Err(e) = battery.update() {
                             error!("failed to update battery: {}", e);
                         }
