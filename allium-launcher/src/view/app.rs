@@ -119,7 +119,16 @@ where
                         |_| Games::load_or_new(tab_rect, res.clone(), None).unwrap(),
                     ),
                     Apps::load_or_new(tab_rect, res.clone(), Some(state.apps))?,
-                    Settings::new(tab_rect, res.clone(), state.settings)?,
+                    Settings::new(
+                        tab_rect,
+                        res.clone(),
+                        if state.selected == 3 {
+                            // Only load settings if it was the last selected tab
+                            state.settings
+                        } else {
+                            Default::default()
+                        },
+                    )?,
                 );
                 return Self::new(rect, res, views, state.selected, battery);
             }
