@@ -39,7 +39,6 @@ impl LazyImage {
                 image_path.push(file_name);
                 for ext in &IMAGE_EXTENSIONS {
                     image_path.set_extension(ext);
-                    println!("{:?}", image_path);
                     if image_path.is_file() {
                         image = Some(image_path);
                         break 'image;
