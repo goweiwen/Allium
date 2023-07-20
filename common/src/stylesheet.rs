@@ -83,8 +83,16 @@ impl StylesheetFont {
                     warn!("failed to read font directory: {}", e);
                     return None;
                 }
+
                 let entry = entry.unwrap();
                 let path = entry.path();
+
+                if let Some(name) = path.file_name() {
+                    if name.to_string_lossy().starts_with('.') {
+                        return None;
+                    }
+                }
+
                 if let Some(ext) = path.extension() {
                     if ext == "ttf" || ext == "otf" || ext == "ttc" {
                         return Some(path);
