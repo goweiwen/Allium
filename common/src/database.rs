@@ -151,14 +151,12 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
             .unwrap()
             .prepare("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE last_played > 0 ORDER BY play_time DESC LIMIT ?")?;
 
-        let rows = stmt.query_map([limit], map_game)?;
+        let results = stmt
+            .query_map([limit], map_game)?
+            .filter_map(|r| r.ok())
+            .collect();
 
-        let mut games = Vec::new();
-        for row in rows {
-            games.push(row?);
-        }
-
-        Ok(games)
+        Ok(results)
     }
 
     /// Selects played games sorted by last played first.
@@ -169,14 +167,12 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
             .unwrap()
             .prepare("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE last_played > 0 ORDER BY last_played DESC LIMIT ?")?;
 
-        let rows = stmt.query_map([limit], map_game)?;
+        let results = stmt
+            .query_map([limit], map_game)?
+            .filter_map(|r| r.ok())
+            .collect();
 
-        let mut games = Vec::new();
-        for row in rows {
-            games.push(row?);
-        }
-
-        Ok(games)
+        Ok(results)
     }
 
     /// Selects random games.
@@ -187,14 +183,12 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
             .unwrap()
             .prepare("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE id IN (SELECT id FROM games ORDER BY RANDOM() LIMIT ?)")?;
 
-        let rows = stmt.query_map([limit], map_game)?;
+        let results = stmt
+            .query_map([limit], map_game)?
+            .filter_map(|r| r.ok())
+            .collect();
 
-        let mut games = Vec::new();
-        for row in rows {
-            games.push(row?);
-        }
-
-        Ok(games)
+        Ok(results)
     }
 
     /// Search for games by name. The query is a prefix search on words, so "Fi" will match both "Fire Emblem" and "Pokemon Fire Red".
@@ -207,14 +201,12 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
 
         let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.name MATCH ? LIMIT ?")?;
 
-        let rows = stmt.query_map(params![format!("{}*", query), limit], map_game)?;
+        let results = stmt
+            .query_map(params![format!("{}*", query), limit], map_game)?
+            .filter_map(|r| r.ok())
+            .collect();
 
-        let mut games = Vec::new();
-        for row in rows {
-            games.push(row?);
-        }
-
-        Ok(games)
+        Ok(results)
     }
 
     pub fn select_game(&self, path: &str) -> Result<Option<Game>> {
