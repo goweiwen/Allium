@@ -141,7 +141,7 @@ impl ConsoleMapper {
 
     pub fn launch_game(&self, database: &Database, game: &mut Game) -> Result<Option<Command>> {
         if !game.path.exists() {
-            if let Some(old) = game.resync()? {
+            if let Some(old) = Game::resync(&mut game.path)? {
                 database.update_game_path(&old, &game.path)?;
             }
         }

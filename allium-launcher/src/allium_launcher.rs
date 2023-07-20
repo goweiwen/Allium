@@ -21,6 +21,7 @@ use type_map::TypeMap;
 
 use crate::consoles::ConsoleMapper;
 use crate::entry::directory::Directory;
+use crate::entry::game::Game;
 use crate::view::{App, Toast};
 
 #[derive(Debug)]
@@ -213,6 +214,15 @@ impl AlliumLauncher<DefaultPlatform> {
                 let console_mapper = self.res.get::<ConsoleMapper>();
 
                 database.clear()?;
+
+                let mut games = database.select_all_games()?;
+                for game in games.iter_mut() {
+                    if let Some(old) = Game::resync(&mut game.path)? {
+                        database.update_game_path(&old, &game.path)?;
+                    } else if !game.path.exists() {
+                        database.delete_game(&game.path)?;
+                    }
+                }
 
                 while let Some(dir) = queue.pop_front() {
                     dir.populate_db(&mut queue, &database, &console_mapper)?;

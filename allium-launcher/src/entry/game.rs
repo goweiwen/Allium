@@ -56,13 +56,13 @@ impl Game {
     }
 
     /// Attempts to resync the game path with the games directory. Returns the old path if it changed.
-    pub fn resync(&mut self) -> Result<Option<PathBuf>> {
-        Ok(if self.path.exists() {
+    pub fn resync(path: &mut PathBuf) -> Result<Option<PathBuf>> {
+        Ok(if path.exists() {
             None
-        } else if let Some(name) = self.path.file_name() {
+        } else if let Some(name) = path.file_name() {
             if let Some(game) = find(&ALLIUM_GAMES_DIR, name)? {
                 info!("Resynced game path: {:?}", game);
-                Some(mem::replace(&mut self.path, game))
+                Some(mem::replace(path, game))
             } else {
                 None
             }

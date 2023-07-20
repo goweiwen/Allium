@@ -239,6 +239,19 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
         Ok(results)
     }
 
+    pub fn select_all_games(&self) -> Result<Vec<Game>> {
+        let mut stmt = self.conn.as_ref().unwrap().prepare(
+            "SELECT name, path, image, play_count, play_time, last_played, core FROM games",
+        )?;
+
+        let results = stmt
+            .query_map([], map_game)?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(results)
+    }
+
     /// Increment the play count of a game, inserting a new row if it doesn't exist.
     pub fn increment_play_count(
         &self,
@@ -300,6 +313,16 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
             .as_ref()
             .unwrap()
             .execute("INSERT INTO guides (path, cursor) VALUES (?, ?) ON CONFLICT(path) DO UPDATE SET cursor = ?", params![path.display().to_string(), cursor, cursor])?;
+
+        Ok(())
+    }
+
+    /// Deletes a game from the database.
+    pub fn delete_game(&self, path: &Path) -> Result<()> {
+        self.conn.as_ref().unwrap().execute(
+            "DELETE FROM games WHERE path = ?",
+            [path.display().to_string()],
+        )?;
 
         Ok(())
     }
