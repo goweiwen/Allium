@@ -229,6 +229,13 @@ impl AlliumLauncher<DefaultPlatform> {
                 }
 
                 database.set_has_indexed(true)?;
+
+                self.view.save()?;
+                self.view = App::load_or_new(
+                    self.display.bounding_box().into(),
+                    self.res.clone(),
+                    self.platform.battery()?,
+                )?;
             }
             command => {
                 warn!("unhandled command: {:?}", command);
