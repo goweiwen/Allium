@@ -225,7 +225,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE path = ? LIMIT 1")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE path = ?")?;
 
         let mut results = vec![None; paths.len()];
         for (i, path) in paths.iter().enumerate() {
