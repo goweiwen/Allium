@@ -218,7 +218,9 @@ impl AlliumLauncher<DefaultPlatform> {
                 let mut games = database.select_all_games()?;
                 for game in games.iter_mut() {
                     if let Some(old) = Game::resync(&mut game.path)? {
-                        database.update_game_path(&old, &game.path)?;
+                        if let Err(e) = database.update_game_path(&old, &game.path) {
+                            warn!("failed to update game path: {}", e);
+                        }
                     } else if !game.path.exists() {
                         database.delete_game(&game.path)?;
                     }
