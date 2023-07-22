@@ -172,7 +172,7 @@ impl AlliumD<DefaultPlatform> {
                     if menu.try_wait()?.is_some() {
                         info!("menu process terminated, resuming game");
                         self.menu = None;
-                        RetroArchCommand::PauseToggle.send().await?;
+                        RetroArchCommand::Unpause.send().await?;
                     }
                 }
 

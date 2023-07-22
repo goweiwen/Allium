@@ -37,7 +37,7 @@ async fn main() -> Result<()> {
     });
 
     if info.is_some() {
-        RetroArchCommand::PauseToggle.send().await?;
+        RetroArchCommand::Pause.send().await?;
         tokio::time::sleep(Duration::from_millis(50)).await;
     }
 

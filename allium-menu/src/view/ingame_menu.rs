@@ -211,7 +211,7 @@ where
                 }
             }
             MenuEntry::Settings => {
-                RetroArchCommand::PauseToggle.send().await?;
+                RetroArchCommand::Unpause.send().await?;
                 RetroArchCommand::MenuToggle.send().await?;
                 commands.send(Command::Exit).await?;
             }
