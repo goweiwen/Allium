@@ -103,7 +103,8 @@ impl Directory {
 
             let full_name = game.name.clone();
 
-            let image = match game.image {
+            let image = game.image.or_else(|| game.thumbnail);
+            let image = match image {
                 Some(image) => {
                     let path = self.path.join(image);
                     if path.exists() {

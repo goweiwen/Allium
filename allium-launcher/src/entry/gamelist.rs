@@ -16,8 +16,10 @@ pub struct GameList {
 pub struct Game {
     pub path: PathBuf,
     pub name: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "optional_path_buf_deserializer")]
     pub image: Option<PathBuf>,
+    #[serde(default, deserialize_with = "optional_path_buf_deserializer")]
+    pub thumbnail: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -25,8 +27,21 @@ pub struct Game {
 pub struct Folder {
     pub path: PathBuf,
     pub name: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "optional_path_buf_deserializer")]
     pub image: Option<PathBuf>,
+    #[serde(default, deserialize_with = "optional_path_buf_deserializer")]
+    pub thumbnail: Option<PathBuf>,
+}
+
+fn optional_path_buf_deserializer<'de, D>(d: D) -> Result<Option<PathBuf>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s = String::deserialize(d)?;
+    match &s[..] {
+        "" => Ok(None),
+        _ => Ok(Some(s.parse::<PathBuf>().unwrap())),
+    }
 }
 
 #[cfg(test)]
@@ -40,17 +55,19 @@ mod tests {
             <game>
                 <path>path/to/game</path>
                 <name>Game One</name>
-                <image>path/to/image</image>
+                <image />
+                <thumbnail>path/to/image</thumbnail>
             </game>
             <game>
                 <path>path/to/game</path>
                 <name>Game Two</name>
+                <thumbnail />
                 <image>path/to/image</image>
             </game>
             <game>
                 <path>path/to/game</path>
                 <name>Game Three</name>
-                <image>path/to/image</image>
+                <thumbnail>path/to/image</thumbnail>
             </game>
         </gameList>
         "#;
@@ -58,13 +75,25 @@ mod tests {
         assert_eq!(game_list.games.len(), 3);
         assert_eq!(game_list.games[0].path, PathBuf::from("path/to/game"));
         assert_eq!(game_list.games[0].name, "Game One");
+        assert_eq!(game_list.games[0].image, None);
         assert_eq!(
-            game_list.games[0].image,
+            game_list.games[0].thumbnail,
             Some(PathBuf::from("path/to/image"))
         );
 
         assert_eq!(game_list.games[1].name, "Game Two");
+        assert_eq!(
+            game_list.games[1].image,
+            Some(PathBuf::from("path/to/image"))
+        );
+        assert_eq!(game_list.games[1].thumbnail, None);
+
         assert_eq!(game_list.games[2].name, "Game Three");
+        assert_eq!(game_list.games[2].image, None);
+        assert_eq!(
+            game_list.games[2].thumbnail,
+            Some(PathBuf::from("path/to/image"))
+        );
     }
 
     #[test]
