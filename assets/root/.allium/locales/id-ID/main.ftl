@@ -83,6 +83,7 @@ ingame-menu-settings = Pengaturan
 ingame-menu-guide = Panduan
 ingame-menu-quit = Keluar
 ingame-menu-slot = Slot { $slot }
+ingame-menu-slot-auto = Otomatis
 ingame-menu-disk = Diska { $disk }
 
 guide-button-search = Cari

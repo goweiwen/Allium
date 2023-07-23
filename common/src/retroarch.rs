@@ -46,9 +46,9 @@ pub enum RetroArchCommand {
     GetDiskSlot,
     SetDiskSlot(u8),
     GetStateSlot,
-    SetStateSlot(u8),
-    SaveStateSlot(u8),
-    LoadStateSlot(u8),
+    SetStateSlot(i8),
+    SaveStateSlot(i8),
+    LoadStateSlot(i8),
 }
 
 impl RetroArchCommand {

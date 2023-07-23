@@ -230,6 +230,32 @@ where
         }
         Ok(true)
     }
+
+    fn update_state_slot_label(&mut self, state_slot: i8) {
+        if state_slot == -1 {
+            self.menu.set_right(
+                self.menu.selected(),
+                Box::new(Label::new(
+                    Point::zero(),
+                    self.res.get::<Locale>().t("ingame-menu-slot-auto"),
+                    Alignment::Right,
+                    None,
+                )),
+            );
+        } else {
+            let mut map = HashMap::new();
+            map.insert("slot".to_string(), state_slot.into());
+            self.menu.set_right(
+                self.menu.selected(),
+                Box::new(Label::new(
+                    Point::zero(),
+                    self.res.get::<Locale>().ta("ingame-menu-slot", &map),
+                    Alignment::Right,
+                    None,
+                )),
+            );
+        }
+    }
 }
 
 #[async_trait(?Send)]
@@ -354,41 +380,21 @@ where
             }
 
             // Handle state slot selection
-            if let Some(mut state_slot) = info.state_slot {
+            if let Some(state_slot) = info.state_slot.as_mut() {
                 if selected == MenuEntry::Save as usize || selected == MenuEntry::Load as usize {
                     match event {
                         KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
-                            state_slot = state_slot.saturating_sub(1);
+                            *state_slot = (*state_slot - 1).max(-1);
+                            let state_slot = *state_slot;
                             RetroArchCommand::SetStateSlot(state_slot).send().await?;
-
-                            let mut map = HashMap::new();
-                            map.insert("slot".to_string(), state_slot.into());
-                            self.menu.set_right(
-                                self.menu.selected(),
-                                Box::new(Label::new(
-                                    Point::zero(),
-                                    self.res.get::<Locale>().ta("ingame-menu-slot", &map),
-                                    Alignment::Right,
-                                    None,
-                                )),
-                            );
+                            self.update_state_slot_label(state_slot);
                             return Ok(true);
                         }
                         KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
-                            state_slot = state_slot.saturating_add(1);
+                            *state_slot = state_slot.saturating_add(1);
+                            let state_slot = *state_slot;
                             RetroArchCommand::SetStateSlot(state_slot).send().await?;
-
-                            let mut map = HashMap::new();
-                            map.insert("slot".to_string(), state_slot.into());
-                            self.menu.set_right(
-                                self.menu.selected(),
-                                Box::new(Label::new(
-                                    Point::zero(),
-                                    self.res.get::<Locale>().ta("ingame-menu-slot", &map),
-                                    Alignment::Right,
-                                    None,
-                                )),
-                            );
+                            self.update_state_slot_label(state_slot);
                             return Ok(true);
                         }
                         _ => {}
@@ -436,17 +442,7 @@ where
                             }
                             if curr == MenuEntry::Save as usize || curr == MenuEntry::Load as usize
                             {
-                                let mut map = HashMap::new();
-                                map.insert("slot".to_string(), state_slot.into());
-                                self.menu.set_right(
-                                    curr,
-                                    Box::new(Label::new(
-                                        Point::zero(),
-                                        self.res.get::<Locale>().ta("ingame-menu-slot", &map),
-                                        Alignment::Right,
-                                        None,
-                                    )),
-                                );
+                                self.update_state_slot_label(state_slot);
                             }
                         }
                     }

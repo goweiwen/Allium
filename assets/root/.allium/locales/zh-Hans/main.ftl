@@ -83,6 +83,7 @@ ingame-menu-settings = 设置
 ingame-menu-guide = 指南
 ingame-menu-quit = 退出
 ingame-menu-slot = 槽位{ $slot }
+ingame-menu-slot-auto = 自动
 ingame-menu-disk = 磁盘{ $disk }
 
 guide-button-search = 搜索
