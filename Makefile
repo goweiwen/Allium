@@ -4,6 +4,12 @@ DIST_DIR := dist
 RETROARCH := third-party/RetroArch
 TOOLCHAIN := mholdg16/miyoomini-toolchain:latest
 
+PLATFORM := $(shell uname -m)
+ifeq ($(PLATFORM),arm64)
+  export CROSS_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_IMAGE_TOOLCHAIN = aarch64-unknown-linux-gnu
+  export CROSS_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_IMAGE = goweiwen/cross-with-clang_arm-unknown-linux-gnueabihf:aarch64
+endif
+
 all: static build package-build package-retroarch migrations
 
 simulator-env:

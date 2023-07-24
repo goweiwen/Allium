@@ -1,9 +1,5 @@
 [build]
 default-target = "arm-unknown-linux-gnueabihf"
 
-[build.env]
-
 [target.arm-unknown-linux-gnueabihf]
-image = "ghcr.io/cross-rs/arm-unknown-linux-gnueabihf:main"
-pre-build = ["apt-get update && apt-get install --assume-yes clang libclang-dev"]
-env = { passthrough = ["LIBCLANG_PATH=/usr/lib/llvm-10/lib"] }
+image = "goweiwen/cross-with-clang_arm-unknown-linux-gnueabihf:main"
