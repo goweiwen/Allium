@@ -10,7 +10,7 @@ use common::locale::{Locale, LocaleSettings};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, ButtonIcon, Label, Row, Select, SettingsList, View};
+use common::view::{ButtonHint, ButtonIcon, Row, Select, SettingsList, View};
 
 use tokio::sync::mpsc::Sender;
 
@@ -21,7 +21,6 @@ pub struct Language {
     langs: Vec<String>,
     settings: LocaleSettings,
     list: SettingsList,
-    restart_label: Label<String>,
     button_hints: Row<ButtonHint<String>>,
     has_changed: bool,
 }
@@ -61,16 +60,6 @@ impl Language {
             list.select(state.selected);
         }
 
-        let restart_label = Label::new(
-            Point::new(
-                rect.x + rect.w as i32 - 12,
-                rect.y + rect.h as i32 - 46 - 34,
-            ),
-            locale.t("settings-language-restart-to-apply-changes"),
-            Alignment::Right,
-            None,
-        );
-
         let button_hints = Row::new(
             Point::new(
                 rect.x + rect.w as i32 - 12,
@@ -99,7 +88,6 @@ impl Language {
             langs,
             settings,
             list,
-            restart_label,
             button_hints,
             has_changed: false,
         }
@@ -119,10 +107,6 @@ impl View for Language {
             drawn = true;
         }
 
-        if self.has_changed && self.restart_label.draw(display, styles)? {
-            drawn = true;
-        }
-
         if self.button_hints.should_draw() && self.button_hints.draw(display, styles)? {
             drawn = true;
         }
@@ -131,14 +115,11 @@ impl View for Language {
     }
 
     fn should_draw(&self) -> bool {
-        self.list.should_draw()
-            || self.has_changed && self.restart_label.should_draw()
-            || self.button_hints.should_draw()
+        self.list.should_draw() || self.button_hints.should_draw()
     }
 
     fn set_should_draw(&mut self) {
         self.list.set_should_draw();
-        self.restart_label.set_should_draw();
         self.button_hints.set_should_draw();
     }
 
@@ -182,15 +163,11 @@ impl View for Language {
     }
 
     fn children(&self) -> Vec<&dyn View> {
-        vec![&self.list, &self.restart_label, &self.button_hints]
+        vec![&self.list, &self.button_hints]
     }
 
     fn children_mut(&mut self) -> Vec<&mut dyn View> {
-        vec![
-            &mut self.list,
-            &mut self.restart_label,
-            &mut self.button_hints,
-        ]
+        vec![&mut self.list, &mut self.button_hints]
     }
 
     fn bounding_box(&mut self, _styles: &Stylesheet) -> Rect {

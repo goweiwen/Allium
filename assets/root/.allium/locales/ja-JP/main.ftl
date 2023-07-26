@@ -42,7 +42,6 @@ settings-display-red = 赤
 settings-display-green = 緑
 settings-display-blue = 青
 settings-display-screen-resolution = 画面解像度
-settings-display-restart-to-apply-changes = *変更を適用するにはデバイスを再起動してください。
 
 settings-theme = テーマ
 settings-theme-dark-mode = ダークモード
@@ -61,7 +60,6 @@ settings-theme-button-y-color = ボタンYの色
 
 settings-language = 言語
 settings-language-language = 言語
-settings-language-restart-to-apply-changes = *変更を適用するにはデバイスを再起動してください。
 
 settings-files = ファイル
 

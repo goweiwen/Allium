@@ -42,7 +42,6 @@ settings-display-red = Merah
 settings-display-green = Hijau
 settings-display-blue = Biru
 settings-display-screen-resolution = Resolusi Layar
-settings-display-restart-to-apply-changes = *Restart konsol untuk menerapkan perubahan
 
 settings-theme = Tema
 settings-theme-dark-mode = Mode Gelap
@@ -61,7 +60,6 @@ settings-theme-button-y-color = Warna Tombol Y
 
 settings-language = Bahasa
 settings-language-language = Bahasa
-settings-language-restart-to-apply-changes = *Restart konsol untuk menerapkan perubahan
 
 settings-files = Berkas
 

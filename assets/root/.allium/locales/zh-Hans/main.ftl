@@ -42,7 +42,6 @@ settings-display-red = 红色
 settings-display-green = 绿色
 settings-display-blue = 蓝色
 settings-display-screen-resolution = 屏幕分辨率
-settings-display-restart-to-apply-changes = *重新启动设备以应用更改
 
 settings-theme = 主题
 settings-theme-dark-mode = 暗黑模式
@@ -61,7 +60,6 @@ settings-theme-button-y-color = Y按钮颜色
 
 settings-language = 语言
 settings-language-language = 语言
-settings-language-restart-to-apply-changes = *重新启动设备以应用更改
 
 settings-files = 文件
 

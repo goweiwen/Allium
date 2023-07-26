@@ -42,7 +42,6 @@ settings-display-red = Red
 settings-display-green = Green
 settings-display-blue = Blue
 settings-display-screen-resolution = Screen Resolution
-settings-display-restart-to-apply-changes = *Restart device to apply changes
 
 settings-theme = Theme
 settings-theme-dark-mode = Dark Mode
@@ -61,7 +60,6 @@ settings-theme-button-y-color = Button Y Color
 
 settings-language = Language
 settings-language-language = Language
-settings-language-restart-to-apply-changes = *Restart device to apply changes
 
 settings-files = Files
 
