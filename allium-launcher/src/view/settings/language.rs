@@ -49,7 +49,10 @@ impl Language {
             vec![Box::new(Select::new(
                 Point::zero(),
                 lang,
-                langs.clone(),
+                langs
+                    .iter()
+                    .map(|l| locale.t(&format!("lang-{}", l)))
+                    .collect(),
                 Alignment::Right,
             ))],
             styles.ui_font.size + SELECTION_MARGIN,
