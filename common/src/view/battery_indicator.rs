@@ -101,25 +101,22 @@ where
             .draw(display)?;
 
             // Inner battery outline
-            let percentage = self.battery.percentage();
-            if percentage > 5 {
-                RoundedRectangle::new(
-                    Rect::new(
-                        x + self.point.x - w as i32 + stroke - margin - margin,
-                        y + self.point.y + stroke,
-                        w - 2 * stroke as u32,
-                        h - 2 * stroke as u32,
-                    )
-                    .into(),
-                    CornerRadii::new(Size::new_equal(stroke as u32)),
+            RoundedRectangle::new(
+                Rect::new(
+                    x + self.point.x - w as i32 + stroke - margin - margin,
+                    y + self.point.y + stroke,
+                    w - 2 * stroke as u32,
+                    h - 2 * stroke as u32,
                 )
-                .into_styled(
-                    PrimitiveStyleBuilder::new()
-                        .fill_color(styles.background_color)
-                        .build(),
-                )
-                .draw(display)?;
-            }
+                .into(),
+                CornerRadii::new(Size::new_equal(stroke as u32)),
+            )
+            .into_styled(
+                PrimitiveStyleBuilder::new()
+                    .fill_color(styles.background_color)
+                    .build(),
+            )
+            .draw(display)?;
 
             // Inner battery
             let percentage = self.battery.percentage();
