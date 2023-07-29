@@ -457,6 +457,48 @@ where
             }
         } else {
             match event {
+                KeyEvent::Pressed(Key::L2) => {
+                    let selected = self.list.selected();
+                    let len = self.entries.len();
+                    let mut entries = self
+                        .entries
+                        .iter()
+                        .rev()
+                        .skip(len - selected)
+                        .map(|e| e.name().chars().next());
+                    println!("{:?}", entries.clone().collect::<Vec<_>>());
+                    let Some(char) = entries.next() else {
+                        self.list.select(0);
+                        return Ok(true);
+                    };
+
+                    println!("entries: {:?}, char: {:?}", entries, char);
+                    if let Some(i) = entries.position(|c| c != char) {
+                        self.list.select(selected - i - 1);
+                    } else {
+                        self.list.select(0);
+                    }
+                    Ok(true)
+                }
+                KeyEvent::Pressed(Key::R2) => {
+                    let selected = self.list.selected();
+                    let mut entries = self
+                        .entries
+                        .iter()
+                        .skip(selected)
+                        .map(|e| e.name().chars().next());
+                    let Some(char) = entries.next() else {
+                        self.list.select(self.entries.len() - 1);
+                        return Ok(true);
+                    };
+
+                    if let Some(i) = entries.position(|c| c != char) {
+                        self.list.select(selected + 1 + i);
+                    } else {
+                        self.list.select(self.entries.len() - 1);
+                    }
+                    Ok(true)
+                }
                 KeyEvent::Pressed(Key::B) => {
                     bubble.push_back(Command::CloseView);
                     Ok(true)
