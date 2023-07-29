@@ -87,7 +87,9 @@ impl Locale {
     }
 
     pub fn languages(&self) -> Vec<String> {
-        self.loader.locales().map(|i| i.to_string()).collect()
+        let mut vec: Vec<_> = self.loader.locales().map(|i| i.to_string()).collect();
+        vec.sort_unstable();
+        vec
     }
 }
 
