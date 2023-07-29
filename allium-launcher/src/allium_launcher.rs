@@ -11,11 +11,12 @@ use common::locale::{Locale, LocaleSettings};
 use common::resources::Resources;
 use common::view::View;
 use embedded_graphics::prelude::*;
+use enum_map::EnumMap;
 use log::{info, trace, warn};
 
 use common::database::Database;
 use common::display::Display;
-use common::platform::{DefaultPlatform, Platform};
+use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::stylesheet::Stylesheet;
 use type_map::TypeMap;
 
@@ -71,6 +72,8 @@ impl AlliumLauncher<DefaultPlatform> {
 
         let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 
+        let mut keys: EnumMap<Key, bool> = EnumMap::default();
+
         let mut frame_interval = tokio::time::interval(tokio::time::Duration::from_micros(166_667));
 
         let mut last_frame = Instant::now();
@@ -109,7 +112,20 @@ impl AlliumLauncher<DefaultPlatform> {
                 }
                 event = self.platform.poll() => {
                     let mut bubble = VecDeque::new();
-                    self.view.handle_key_event(event, tx.clone(), &mut bubble).await?;
+                    match event {
+                        KeyEvent::Pressed(key) => {
+                            keys[key] = true;
+                        }
+                        KeyEvent::Released(key) => {
+                            keys[key] = false;
+                        }
+                        KeyEvent::Autorepeat(_) => {}
+                    }
+
+                    // Ignore menu key presses
+                    if !keys[Key::Menu] && !matches!(event, KeyEvent::Released(Key::Menu)) {
+                        self.view.handle_key_event(event, tx.clone(), &mut bubble).await?;
+                    }
                 }
                 else => {}
             }
