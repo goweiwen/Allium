@@ -419,6 +419,7 @@ impl AlliumD<DefaultPlatform> {
     }
 }
 
+#[allow(clippy::needless_pass_by_ref_mut)]
 async fn terminate(child: &mut Child) -> Result<()> {
     #[cfg(unix)]
     signal(child, Signal::SIGTERM)?;

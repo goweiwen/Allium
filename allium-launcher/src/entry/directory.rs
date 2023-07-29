@@ -150,7 +150,7 @@ impl Directory {
         let gamelist = self.path.join("gamelist.xml");
         if gamelist.exists() {
             match self.parse_game_list(&gamelist) {
-                Ok(res) => entries.extend(res.into_iter()),
+                Ok(res) => entries.extend(res),
                 Err(e) => error!("Failed to parse gamelist.xml: {}", e),
             }
         }
@@ -158,7 +158,7 @@ impl Directory {
         let gamelist = self.path.join("miyoogamelist.xml");
         if gamelist.exists() {
             match self.parse_game_list(&gamelist) {
-                Ok(res) => entries.extend(res.into_iter()),
+                Ok(res) => entries.extend(res),
                 Err(e) => error!("Failed to parse gamelist.xml: {}", e),
             }
         }

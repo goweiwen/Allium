@@ -99,7 +99,7 @@ impl View for DateTime {
         let hour = datetime.format("%H").to_string();
         let minute = datetime.format("%M").to_string();
         let second = datetime.format("%S").to_string();
-        let fields = vec![
+        let fields = [
             &year, "-", &month, "-", &day, " ", &hour, ":", &minute, ":", &second,
         ];
         let mut x = self.point.x;
