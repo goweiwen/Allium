@@ -203,28 +203,28 @@ impl Directory {
                 }
                 Err(e) => error!("Failed to parse gamelist.xml: {}", e),
             }
-        }
-
-        let gamelist = self.path.join("miyoogamelist.xml");
-        if should_parse_gamelist(&gamelist)? {
-            match self.parse_game_list(&gamelist) {
-                Ok(res) => {
-                    database.update_games(
-                        &res.iter()
-                            .filter_map(|e| match e {
-                                Entry::Game(game) => Some(NewGame {
-                                    name: game.name.clone(),
-                                    path: game.path.clone(),
-                                    image: game.image.try_image().map(Path::to_path_buf),
-                                    core: game.core.clone(),
-                                }),
-                                Entry::App(_) | Entry::Directory(_) => None,
-                            })
-                            .collect::<Vec<_>>(),
-                    )?;
-                    entries.extend(res);
+        } else {
+            let gamelist = self.path.join("miyoogamelist.xml");
+            if should_parse_gamelist(&gamelist)? {
+                match self.parse_game_list(&gamelist) {
+                    Ok(res) => {
+                        database.update_games(
+                            &res.iter()
+                                .filter_map(|e| match e {
+                                    Entry::Game(game) => Some(NewGame {
+                                        name: game.name.clone(),
+                                        path: game.path.clone(),
+                                        image: game.image.try_image().map(Path::to_path_buf),
+                                        core: game.core.clone(),
+                                    }),
+                                    Entry::App(_) | Entry::Directory(_) => None,
+                                })
+                                .collect::<Vec<_>>(),
+                        )?;
+                        entries.extend(res);
+                    }
+                    Err(e) => error!("Failed to parse gamelist.xml: {}", e),
                 }
-                Err(e) => error!("Failed to parse gamelist.xml: {}", e),
             }
         }
 
