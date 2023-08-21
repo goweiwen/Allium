@@ -7,7 +7,7 @@ use std::{
 
 use anyhow::{anyhow, Result};
 use common::{
-    constants::ALLIUM_GAMES_DIR,
+    constants::{ALLIUM_GAMES_DIR, ALLIUM_SD_ROOT},
     database::{Database, NewGame},
     locale::Locale,
 };
@@ -93,7 +93,7 @@ impl Directory {
         let gamelist: GameList = serde_xml_rs::from_reader(file)?;
 
         let games = gamelist.games.into_iter().filter_map(|game| {
-            let path = self.path.join(&game.path);
+            let path = self.path.join(&game.path).canonicalize().ok()?;
             if !path.exists() {
                 return None;
             }
@@ -110,7 +110,7 @@ impl Directory {
             let image = game.image.or(game.thumbnail);
             let image = match image {
                 Some(image) => {
-                    let path = self.path.join(image);
+                    let path = self.path.join(image).canonicalize().ok()?;
                     if path.exists() {
                         LazyImage::Found(path)
                     } else {
