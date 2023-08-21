@@ -13,7 +13,7 @@ sort-search = Search
 populating-database = Populating database...
     This may take several minutes.
     Go grab a coffee!
-parsing-game-list = Parsing game list...
+populating-games = Populating games... ({ $directory })
 
 menu-launch = Launch
 menu-launch-with-core = Launch with { $core }

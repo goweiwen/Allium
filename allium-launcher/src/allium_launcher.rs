@@ -223,6 +223,18 @@ impl AlliumLauncher<DefaultPlatform> {
                 self.toast = Some(Toast::new(text, duration));
             }
             Command::PopulateDb => {
+                #[cfg(feature = "miyoo")]
+                {
+                    std::process::Command::new("show")
+                        .arg("--clear")
+                        .spawn()?
+                        .wait()?;
+                    std::process::Command::new("say")
+                        .arg(self.res.get::<Locale>().t("populating-database"))
+                        .spawn()?
+                        .wait()?;
+                }
+
                 let mut queue = VecDeque::with_capacity(10);
                 queue.push_back(Directory::new(ALLIUM_GAMES_DIR.clone()));
 
@@ -244,6 +256,26 @@ impl AlliumLauncher<DefaultPlatform> {
                 }
 
                 while let Some(dir) = queue.pop_front() {
+                    #[cfg(feature = "miyoo")]
+                    {
+                        std::process::Command::new("show")
+                            .arg("--clear")
+                            .spawn()?
+                            .wait()?;
+                        let mut map = std::collections::HashMap::new();
+                        map.insert(
+                            "directory".to_string(),
+                            dir.path
+                                .file_name()
+                                .unwrap_or_default()
+                                .to_string_lossy()
+                                .into(),
+                        );
+                        std::process::Command::new("say")
+                            .arg(self.res.get::<Locale>().ta("populating-directory", &map))
+                            .spawn()?
+                            .wait()?;
+                    }
                     dir.populate_db(&mut queue, &database, &console_mapper, &self.res.get())?;
                 }
 

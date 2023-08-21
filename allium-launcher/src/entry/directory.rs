@@ -192,8 +192,17 @@ impl Directory {
                     .arg("--darken")
                     .spawn()?
                     .wait()?;
+                let mut map = std::collections::HashMap::new();
+                map.insert(
+                    "directory".to_string(),
+                    self.path
+                        .file_name()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .into(),
+                );
                 std::process::Command::new("say")
-                    .arg(locale.t("parsing-game-list"))
+                    .arg(locale.ta("populating-games", &map))
                     .spawn()?
                     .wait()?;
             }
@@ -225,8 +234,17 @@ impl Directory {
                         .arg("--darken")
                         .spawn()?
                         .wait()?;
+                    let mut map = std::collections::HashMap::new();
+                    map.insert(
+                        "directory".to_string(),
+                        self.path
+                            .file_name()
+                            .unwrap_or_default()
+                            .to_string_lossy()
+                            .into(),
+                    );
                     std::process::Command::new("say")
-                        .arg(locale.t("parsing-game-list"))
+                        .arg(locale.ta("populating-games", &map))
                         .spawn()?
                         .wait()?;
                 }

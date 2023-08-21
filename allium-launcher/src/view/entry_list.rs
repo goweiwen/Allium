@@ -1,5 +1,4 @@
 use std::collections::VecDeque;
-use std::time::Duration;
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -443,12 +442,25 @@ where
                         }
                         MenuEntry::RepopulateDatabase => {
                             commands.send(Command::Redraw).await?;
-                            let toast = self.res.get::<Locale>().t("populating-database");
-                            commands.send(Command::Toast(toast, None)).await?;
+                            #[cfg(not(feature = "miyoo"))]
+                            {
+                                commands
+                                    .send(Command::Toast(
+                                        self.res.get::<Locale>().t("populating-database"),
+                                        None,
+                                    ))
+                                    .await?;
+                            }
                             commands.send(Command::PopulateDb).await?;
-                            commands
-                                .send(Command::Toast(String::new(), Some(Duration::ZERO)))
-                                .await?;
+                            #[cfg(not(feature = "miyoo"))]
+                            {
+                                commands
+                                    .send(Command::Toast(
+                                        String::new(),
+                                        Some(std::time::Duration::ZERO),
+                                    ))
+                                    .await?;
+                            }
                             commands.send(Command::Redraw).await?;
                         }
                     }
