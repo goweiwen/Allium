@@ -5,7 +5,7 @@ use std::{
 
 use anyhow::{Context, Result};
 use chrono::Duration;
-use log::info;
+use log::{info, trace};
 use rusqlite::{params, Connection, OptionalExtension, Row};
 use rusqlite_migration::{Migrations, M};
 
@@ -100,6 +100,13 @@ CREATE TABLE IF NOT EXISTS key_value (
 M::up("
 ALTER TABLE games ADD COLUMN core TEXT;
 "),
+M::up("
+CREATE TABLE IF NOT EXISTS directories (
+    id INTEGER PRIMARY KEY,
+    path TEXT NOT NULL UNIQUE,
+    gamelist_fingerprint INTEGER
+)
+")
         ])
     }
 
@@ -202,19 +209,39 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
         let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.name MATCH ? LIMIT ?")?;
 
         let results = stmt
-            .query_map(params![format!("{}*", query), limit], map_game)?
+            .query_map(params![format!("\"{}\" * ", query), limit], map_game)?
             .filter_map(|r| r.ok())
             .collect();
 
         Ok(results)
     }
 
-    pub fn select_game(&self, path: &str) -> Result<Option<Game>> {
+    pub fn select_games_in_directory(&self, path: &Path) -> Result<Vec<Game>> {
+        trace!("select_games_in_directory({:?})", path);
+        let conn = self.conn.as_ref().unwrap();
+
+        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.path LIKE ? AND games_fts.path NOT LIKE ?")?;
+
+        let results = stmt
+            .query_map(
+                params![
+                    format!("{}/%", path.display().to_string()),
+                    format!("{}/%/%", path.display().to_string())
+                ],
+                map_game,
+            )?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(results)
+    }
+
+    pub fn select_game(&self, path: &Path) -> Result<Option<Game>> {
         let game = self
             .conn
             .as_ref()
             .unwrap()
-            .query_row("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE path = ? LIMIT 1", [path], map_game)
+            .query_row("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE path = ? LIMIT 1", [path.display().to_string()], map_game)
             .optional()?;
 
         Ok(game)
@@ -337,6 +364,16 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
         Ok(())
     }
 
+    /// Deletes all directories
+    pub fn delete_all_directories(&self) -> Result<()> {
+        self.conn
+            .as_ref()
+            .unwrap()
+            .execute("DELETE FROM directories", [])?;
+
+        Ok(())
+    }
+
     pub fn set_has_indexed(&self, has_indexed: bool) -> Result<()> {
         self
             .conn
@@ -360,6 +397,33 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
             .optional()?;
 
         Ok(matches!(value.as_deref(), Some("1")))
+    }
+
+    pub fn set_gamelist_fingerprint(&self, path: &Path, fingerprint: u64) -> Result<()> {
+        trace!("set_gamelist_fingerprint({:?}, {})", path, fingerprint);
+        self.conn.as_ref().unwrap().execute(
+            "INSERT INTO directories (path, gamelist_fingerprint) VALUES (?, ?) ON CONFLICT(path) DO UPDATE SET gamelist_fingerprint = ?",
+            params![path.display().to_string(), fingerprint, fingerprint],
+        )?;
+
+        Ok(())
+    }
+
+    pub fn get_gamelist_fingerprint(&self, path: &Path) -> Result<Option<u64>> {
+        trace!("get_gamelist_fingerprint({:?})", path);
+        let fingerprint = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .query_row(
+                "SELECT gamelist_fingerprint FROM directories WHERE path = ?",
+                [path.display().to_string()],
+                |row| row.get::<_, Option<u64>>(0),
+            )
+            .optional()?
+            .flatten();
+
+        Ok(fingerprint)
     }
 
     pub fn get_core(&self, path: &Path) -> Result<Option<String>> {
@@ -568,6 +632,65 @@ mod tests {
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].as_ref().map(|g| &g.path), Some(&games[0].path));
         assert_eq!(results[1].as_ref().map(|g| &g.path), None);
+    }
+
+    #[test]
+    fn test_select_games_in_directory() {
+        let database = Database::in_memory().unwrap();
+
+        let games = vec![
+            NewGame {
+                name: "Game One".to_string(),
+                path: PathBuf::from("test_directory/Game One.rom"),
+                image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
+                core: None,
+            },
+            NewGame {
+                name: "Game Two".to_string(),
+                path: PathBuf::from("test_directory/Game Two.rom"),
+                image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
+                core: None,
+            },
+            NewGame {
+                name: "Game Three".to_string(),
+                path: PathBuf::from("different_directory/Game Three.rom"),
+                image: Some(PathBuf::from("different_directory/Imgs/Game Three.png")),
+                core: None,
+            },
+        ];
+
+        database.update_games(&games).unwrap();
+
+        let results = database
+            .select_games_in_directory(Path::new("test_directory"))
+            .unwrap();
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].path, games[0].path);
+        assert_eq!(results[1].path, games[1].path);
+
+        let results = database
+            .select_games_in_directory(Path::new("test_directory/Imgs"))
+            .unwrap();
+        assert_eq!(results.len(), 0);
+
+        let results = database
+            .select_games_in_directory(Path::new("different_directory"))
+            .unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].path, games[2].path);
+
+        let results = database
+            .select_games_in_directory(Path::new("directory"))
+            .unwrap();
+        assert_eq!(results.len(), 0);
+
+        let results = database
+            .select_games_in_directory(Path::new("test"))
+            .unwrap();
+        assert_eq!(results.len(), 0);
+
+        let results = database.select_games_in_directory(Path::new("")).unwrap();
+        assert_eq!(results.len(), 0);
     }
 
     #[test]

@@ -6,6 +6,7 @@ use std::{
 
 use anyhow::Result;
 use common::constants::ALLIUM_GAMES_DIR;
+use common::database::Game as DbGame;
 use log::info;
 use serde::{Deserialize, Serialize};
 
@@ -45,6 +46,34 @@ impl Game {
             name,
             full_name,
             path,
+            image,
+            extension,
+            core: None,
+        }
+    }
+
+    pub fn from_db(game: DbGame) -> Game {
+        let full_name = game
+            .path
+            .file_stem()
+            .and_then(std::ffi::OsStr::to_str)
+            .unwrap_or("")
+            .to_string();
+        let image = match game.image {
+            Some(image) => LazyImage::Found(image),
+            None => LazyImage::Unknown(game.path.clone()),
+        };
+        let extension = game
+            .path
+            .extension()
+            .and_then(std::ffi::OsStr::to_str)
+            .unwrap_or("")
+            .to_string();
+
+        Game {
+            name: game.name,
+            full_name,
+            path: game.path,
             image,
             extension,
             core: None,

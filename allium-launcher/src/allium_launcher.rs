@@ -229,6 +229,7 @@ impl AlliumLauncher<DefaultPlatform> {
                 let database = self.res.get::<Database>();
                 let console_mapper = self.res.get::<ConsoleMapper>();
 
+                database.delete_all_directories()?;
                 database.delete_all_unplayed_games()?;
 
                 let mut games = database.select_all_games()?;

@@ -1,13 +1,16 @@
 use std::{
     collections::{HashSet, VecDeque},
     ffi::OsStr,
-    fs::File,
+    fs::{self, File},
     path::{Path, PathBuf},
 };
 
 use anyhow::{anyhow, Result};
-use common::{constants::ALLIUM_GAMES_DIR, database::Database};
-use log::error;
+use common::{
+    constants::ALLIUM_GAMES_DIR,
+    database::{Database, NewGame},
+};
+use log::{error, trace};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -110,7 +113,7 @@ impl Directory {
                     if path.exists() {
                         LazyImage::Found(path)
                     } else {
-                        LazyImage::Unknown(path)
+                        LazyImage::Unknown(self.path.clone())
                     }
                 }
                 None => LazyImage::Unknown(path.clone()),
@@ -145,23 +148,93 @@ impl Directory {
         database: &Database,
         console_mapper: &ConsoleMapper,
     ) -> Result<Vec<Entry>> {
-        let mut entries = vec![];
+        let mut entries: Vec<Entry> = Vec::with_capacity(64);
+
+        let fingerprint = database.get_gamelist_fingerprint(&self.path)?;
+        let should_parse_gamelist = |path: &Path| -> Result<bool> {
+            if !path.exists() {
+                trace!("File doesn't exist, don't parse.");
+                return Ok(false);
+            }
+
+            if let Some(fingerprint) = fingerprint {
+                let Ok(metadata) = fs::metadata(path) else {
+                    trace!("Failed to get gamelist metadata, don't parse.");
+                    return Ok(false);
+                };
+                let file_size = metadata.len();
+                if file_size == fingerprint {
+                    trace!("Same gamelist size, not parsing.");
+                    return Ok(false);
+                }
+                database.set_gamelist_fingerprint(&self.path, file_size)?;
+                trace!("Different gamelist size, parse gamelist.");
+                Ok(true)
+            } else {
+                trace!("No gamelist fingerprint, parse gamelist.");
+                let Ok(metadata) = fs::metadata(path) else {
+                    trace!("Failed to get gamelist metadata, don't parse.");
+                    return Ok(false);
+                };
+                let file_size = metadata.len();
+                database.set_gamelist_fingerprint(&self.path, file_size)?;
+                Ok(true)
+            }
+        };
 
         let gamelist = self.path.join("gamelist.xml");
-        if gamelist.exists() {
+        if should_parse_gamelist(&gamelist)? {
             match self.parse_game_list(&gamelist) {
-                Ok(res) => entries.extend(res),
+                Ok(res) => {
+                    database.update_games(
+                        &res.iter()
+                            .filter_map(|e| match e {
+                                Entry::Game(game) => Some(NewGame {
+                                    name: game.name.clone(),
+                                    path: game.path.clone(),
+                                    image: game.image.try_image().map(Path::to_path_buf),
+                                    core: game.core.clone(),
+                                }),
+                                Entry::App(_) | Entry::Directory(_) => None,
+                            })
+                            .collect::<Vec<_>>(),
+                    )?;
+                    entries.extend(res);
+                }
                 Err(e) => error!("Failed to parse gamelist.xml: {}", e),
             }
         }
 
         let gamelist = self.path.join("miyoogamelist.xml");
-        if gamelist.exists() {
+        if should_parse_gamelist(&gamelist)? {
             match self.parse_game_list(&gamelist) {
-                Ok(res) => entries.extend(res),
+                Ok(res) => {
+                    database.update_games(
+                        &res.iter()
+                            .filter_map(|e| match e {
+                                Entry::Game(game) => Some(NewGame {
+                                    name: game.name.clone(),
+                                    path: game.path.clone(),
+                                    image: game.image.try_image().map(Path::to_path_buf),
+                                    core: game.core.clone(),
+                                }),
+                                Entry::App(_) | Entry::Directory(_) => None,
+                            })
+                            .collect::<Vec<_>>(),
+                    )?;
+                    entries.extend(res);
+                }
                 Err(e) => error!("Failed to parse gamelist.xml: {}", e),
             }
         }
+
+        entries.extend(
+            database
+                .select_games_in_directory(&self.path)?
+                .into_iter()
+                .map(Game::from_db)
+                .map(Entry::Game),
+        );
 
         entries.extend(
             std::fs::read_dir(&self.path)
@@ -207,7 +280,7 @@ impl Directory {
         let games: Vec<_> = entries
             .into_iter()
             .filter_map(|entry| match entry {
-                Entry::Game(game) => Some(common::database::NewGame {
+                Entry::Game(game) => Some(NewGame {
                     name: game.name,
                     path: game.path,
                     image: game.image.try_image().map(Path::to_path_buf),
