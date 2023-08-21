@@ -189,8 +189,13 @@ impl Sort for GamesSort {
         }
     }
 
-    fn entries(&self, database: &Database, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
-        let mut entries = self.directory().entries(database, console_mapper)?;
+    fn entries(
+        &self,
+        database: &Database,
+        console_mapper: &ConsoleMapper,
+        locale: &Locale,
+    ) -> Result<Vec<Entry>> {
+        let mut entries = self.directory().entries(database, console_mapper, locale)?;
 
         match self {
             GamesSort::Alphabetical(_) => {

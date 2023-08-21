@@ -194,7 +194,9 @@ where
     }
 
     fn load_entries(&mut self) -> Result<()> {
-        self.entries = self.sort.entries(&self.res.get(), &self.res.get())?;
+        self.entries = self
+            .sort
+            .entries(&self.res.get(), &self.res.get(), &self.res.get())?;
         self.list.set_items(
             self.entries.iter().map(|e| e.name().to_string()).collect(),
             false,

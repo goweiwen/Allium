@@ -13,6 +13,7 @@ sort-search = 検索
 populating-database = データベースへの入力...
     数分かかるかもしれません。
     お茶でも飲んでいいですよ！
+parsing-game-list = ゲームリストを解析中...
 
 menu-launch = 起動
 menu-launch-with-core = { $core }で起動

@@ -244,7 +244,7 @@ impl AlliumLauncher<DefaultPlatform> {
                 }
 
                 while let Some(dir) = queue.pop_front() {
-                    dir.populate_db(&mut queue, &database, &console_mapper)?;
+                    dir.populate_db(&mut queue, &database, &console_mapper, &self.res.get())?;
                 }
 
                 database.set_has_indexed(true)?;

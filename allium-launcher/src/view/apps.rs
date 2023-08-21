@@ -137,8 +137,13 @@ impl Sort for AppsSort {
         }
     }
 
-    fn entries(&self, database: &Database, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
-        let mut entries = self.directory().entries(database, console_mapper)?;
+    fn entries(
+        &self,
+        database: &Database,
+        console_mapper: &ConsoleMapper,
+        locale: &Locale,
+    ) -> Result<Vec<Entry>> {
+        let mut entries = self.directory().entries(database, console_mapper, locale)?;
         entries.sort_unstable();
         Ok(entries)
     }

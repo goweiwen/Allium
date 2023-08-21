@@ -13,6 +13,7 @@ sort-search = 搜索
 populating-database = 填充緊數據庫...
     呢個可能要幾分鐘。
     依家去飲杯茶先啦！
+parsing-game-list = 解析緊遊戲列表...
 
 menu-launch = 啟動
 menu-launch-with-core = 啟動（使用{ $core }）

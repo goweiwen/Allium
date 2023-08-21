@@ -244,7 +244,12 @@ impl Sort for RecentsSort {
         unimplemented!();
     }
 
-    fn entries(&self, database: &Database, _console_mapper: &ConsoleMapper) -> Result<Vec<Entry>> {
+    fn entries(
+        &self,
+        database: &Database,
+        _console_mapper: &ConsoleMapper,
+        _locale: &Locale,
+    ) -> Result<Vec<Entry>> {
         let games = match self {
             RecentsSort::LastPlayed => database.select_last_played(RECENT_GAMES_LIMIT),
             RecentsSort::MostPlayed => database.select_most_played(RECENT_GAMES_LIMIT),

@@ -129,5 +129,10 @@ pub trait Sort: Debug + Clone {
     fn button_hint(&self, locale: &Locale) -> String;
     fn next(&self) -> Self;
     fn with_directory(&self, directory: Directory) -> Self;
-    fn entries(&self, database: &Database, console_mapper: &ConsoleMapper) -> Result<Vec<Entry>>;
+    fn entries(
+        &self,
+        database: &Database,
+        console_mapper: &ConsoleMapper,
+        locale: &Locale,
+    ) -> Result<Vec<Entry>>;
 }

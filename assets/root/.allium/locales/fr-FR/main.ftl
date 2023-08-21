@@ -13,6 +13,7 @@ sort-search = Recherche
 populating-database = Génération de la BDD...
     Cette opération peut prendre plusieurs minutes.
     Allez prendre un café !
+parsing-game-list = Analyse de la liste des jeux...
 
 menu-launch = Lancer
 menu-launch-with-core = Lancer avec { $core }

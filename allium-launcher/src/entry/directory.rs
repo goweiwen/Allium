@@ -9,6 +9,7 @@ use anyhow::{anyhow, Result};
 use common::{
     constants::ALLIUM_GAMES_DIR,
     database::{Database, NewGame},
+    locale::Locale,
 };
 use log::{error, trace};
 use serde::{Deserialize, Serialize};
@@ -147,6 +148,7 @@ impl Directory {
         &self,
         database: &Database,
         console_mapper: &ConsoleMapper,
+        #[allow(unused)] locale: &Locale,
     ) -> Result<Vec<Entry>> {
         let mut entries: Vec<Entry> = Vec::with_capacity(64);
 
@@ -184,6 +186,17 @@ impl Directory {
 
         let gamelist = self.path.join("gamelist.xml");
         if should_parse_gamelist(&gamelist)? {
+            #[cfg(feature = "miyoo")]
+            {
+                std::process::Command::new("show")
+                    .arg("--darken")
+                    .spawn()?
+                    .wait()?;
+                std::process::Command::new("say")
+                    .arg(locale.t("parsing-game-list"))
+                    .spawn()?
+                    .wait()?;
+            }
             match self.parse_game_list(&gamelist) {
                 Ok(res) => {
                     database.update_games(
@@ -206,6 +219,17 @@ impl Directory {
         } else {
             let gamelist = self.path.join("miyoogamelist.xml");
             if should_parse_gamelist(&gamelist)? {
+                #[cfg(feature = "miyoo")]
+                {
+                    std::process::Command::new("show")
+                        .arg("--darken")
+                        .spawn()?
+                        .wait()?;
+                    std::process::Command::new("say")
+                        .arg(locale.t("parsing-game-list"))
+                        .spawn()?
+                        .wait()?;
+                }
                 match self.parse_game_list(&gamelist) {
                     Ok(res) => {
                         database.update_games(
@@ -267,8 +291,9 @@ impl Directory {
         queue: &mut VecDeque<Directory>,
         database: &Database,
         console_mapper: &ConsoleMapper,
+        locale: &Locale,
     ) -> Result<()> {
-        let entries = self.entries(database, console_mapper)?;
+        let entries = self.entries(database, console_mapper, locale)?;
 
         for entry in &entries {
             match entry {

@@ -13,6 +13,7 @@ sort-search = Cari
 populating-database = Refresh daftar gim...
     Proses ini butuh beberapa menit.
     Sembari menunggu, ngopi dulu!
+parsing-game-list = Parsing daftar gim...
 
 menu-launch = Mainkan
 menu-launch-with-core = Pilih emulator { $core }
