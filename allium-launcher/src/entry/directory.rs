@@ -225,7 +225,7 @@ impl Directory {
                 }
                 Err(e) => error!("Failed to parse gamelist.xml: {}", e),
             }
-        } else {
+        } else if !gamelist.exists() {
             let gamelist = self.path.join("miyoogamelist.xml");
             if should_parse_gamelist(&gamelist)? {
                 #[cfg(feature = "miyoo")]
