@@ -132,7 +132,9 @@ CREATE TABLE IF NOT EXISTS directories (
     }
 
     pub fn update_games(&self, games: &[NewGame]) -> Result<()> {
-        let mut stmt = self.conn.as_ref().unwrap().prepare(
+        let tx = self.conn.as_ref().unwrap().unchecked_transaction()?; // safe because single-threaded
+
+        let mut stmt = tx.prepare(
             "
 INSERT INTO games (name, path, image, play_count, play_time, last_played, core)
 VALUES (?, ?, ?, 0, 0, 0, ?)
@@ -146,6 +148,10 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
                 game.name, path, image, game.core, game.name, image, game.core
             ])?;
         }
+
+        drop(stmt);
+
+        tx.commit()?;
 
         Ok(())
     }
