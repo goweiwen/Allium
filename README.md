@@ -48,7 +48,7 @@ The SD card layout should look like this:
 - Search games by name
 - Activity tracker
 - [RetroArch for all supported cores](https://github.com/goweiwen/Allium/wiki/Console-Mapper)
-- Volume & Brightness (select/start + l/r) control
+- Volume & Brightness (menu + l/r/u/d) control
 - In-game menu (save, load, reset, access RetroArch menu, [guide](https://github.com/goweiwen/Allium/wiki/In-game-Guide-Walkthrough-Reader), disk changer, quit)
 - Automatic resume when powering off/on
 - Settings page
