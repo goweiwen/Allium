@@ -5,12 +5,12 @@ tab-apps = Apps
 tab-settings = Configuraciones
 
 sort-alphabetical = Orden: A-Z
-sort-last-played = Orden: Reciente
-sort-most-played = Orden: Tiempo de juego
+sort-last-played = Ordenar por: Recientes
+sort-most-played = Ordenar por: Tiempo de juego
 sort-random = Orden: Random
 sort-search = Buscar
 
-populating-database = Creando base...
+populating-database = Creando base de datos...
     Esto puede tomar un tiempo.
     Haz un cafe!
 populating-games = Organizando juegos... ({ $directory })
@@ -18,10 +18,10 @@ populating-games = Organizando juegos... ({ $directory })
 menu-launch = Iniciar
 menu-launch-with-core = Iniciar con { $core }
 menu-remove-from-recents = Remover de Recientes
-menu-repopulate-database = Reorganizando base
+menu-repopulate-database = Reorganizando base de datos
 
 settings-wifi = Wi-Fi
-settings-wifi-wifi-enabled = Wi-Fi Activado
+settings-wifi-wifi-enabled = Wi-Fi
 settings-wifi-ip-address = Direccion IP
 settings-wifi-wifi-network = Nombre de Wi-Fi
 settings-wifi-wifi-password = Contraseña Wi-Fi
@@ -50,14 +50,14 @@ settings-theme-ui-font = Fuente UI
 settings-theme-ui-font-size = Tamaño de fuente UI
 settings-theme-guide-font = Fuente de Guia
 settings-theme-guide-font-size = Tamaño fuente de Guia
-settings-theme-highlight-color = Color Realce
+settings-theme-highlight-color = Realce de color
 settings-theme-foreground-color = Color Principal
 settings-theme-background-color = Color Fondo
-settings-theme-disabled-color = Color para Deshabilitado
-settings-theme-button-a-color = Color Bonto A
-settings-theme-button-b-color = Color Bonto B
-settings-theme-button-x-color = Color Bonto X
-settings-theme-button-y-color = Color Bonto Y
+settings-theme-disabled-color = Color para deshabilitado
+settings-theme-button-a-color = Color Boton A
+settings-theme-button-b-color = Color Boton B
+settings-theme-button-x-color = Color Boton X
+settings-theme-button-y-color = Color Boton Y
 
 settings-language = Idioma
 settings-language-language = Idioma
@@ -67,7 +67,7 @@ settings-files = Archivos
 settings-about = Acerca De.
 settings-about-allium-version = Version Allium
 settings-about-model-name = Modelo
-settings-about-firmware-version = VersionFirmware
+settings-about-firmware-version = Version Firmware
 settings-about-operating-system-version = Version OS
 settings-about-kernel-version = Version Kernel
 settings-about-storage-used = Espacio Utilizado
@@ -82,7 +82,7 @@ ingame-menu-settings = Configuraciones
 ingame-menu-guide = Guia
 ingame-menu-quit = Salir
 ingame-menu-slot = Slot { $slot }
-ingame-menu-slot-auto = Auto
+ingame-menu-slot-auto = Automatico
 ingame-menu-disk = Disco { $disk }
 
 guide-button-search = Buscar
@@ -98,7 +98,7 @@ hotkeys-brightness-down = Brillo -
 hotkeys-brightness-up = Brillo +
 
 hotkeys-ingame = Hotkeys en el juego:
-hotkeys-toggle-aspect-ratio = Cambio relacion de aspecto
+hotkeys-toggle-aspect-ratio = Relacion de aspecto
 hotkeys-toggle-fps = FPS
 
 # Common
