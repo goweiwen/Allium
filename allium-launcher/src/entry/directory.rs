@@ -7,7 +7,7 @@ use std::{
 
 use anyhow::{anyhow, Result};
 use common::{
-    constants::{ALLIUM_GAMES_DIR, ALLIUM_SD_ROOT},
+    constants::ALLIUM_GAMES_DIR,
     database::{Database, NewGame},
     locale::Locale,
 };

@@ -444,12 +444,8 @@ where
                             commands.send(Command::Redraw).await?;
                             #[cfg(not(feature = "miyoo"))]
                             {
-                                commands
-                                    .send(Command::Toast(
-                                        self.res.get::<Locale>().t("populating-database"),
-                                        None,
-                                    ))
-                                    .await?;
+                                let message = self.res.get::<Locale>().t("populating-database");
+                                commands.send(Command::Toast(message, None)).await?;
                             }
                             commands.send(Command::PopulateDb).await?;
                             #[cfg(not(feature = "miyoo"))]
