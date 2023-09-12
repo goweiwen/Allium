@@ -39,7 +39,7 @@ third-party/my283:
 	rm third-party/my283.tar.xz
 
 build: third-party/my283
-	cross build --release --features=miyoo --bin=alliumd --bin=allium-launcher --bin=allium-menu --bin=activity-tracker --bin=screenshot --bin=say --bin=show --bin=show-hotkeys
+	cross build --release --features=miyoo --bin=alliumd --bin=allium-launcher --bin=allium-menu --bin=activity-tracker --bin=screenshot --bin=say --bin=show --bin=show-hotkeys --bin=myctl
 
 package-build:
 	mkdir -p $(DIST_DIR)/.allium/bin
@@ -51,6 +51,7 @@ package-build:
 	rsync -a $(BUILD_DIR)/show $(DIST_DIR)/.tmp_update/bin/
 	rsync -a $(BUILD_DIR)/show-hotkeys $(DIST_DIR)/.tmp_update/bin/
 	rsync -a $(BUILD_DIR)/activity-tracker "$(DIST_DIR)/Apps/Activity Tracker.pak/"
+	rsync -a $(BUILD_DIR)/myctl $(DIST_DIR)/.tmp_update/bin/
 
 MIGRATIONS_DIR := $(DIST_DIR)/.allium/migrations
 migrations: $(MIGRATIONS_DIR)/0000-retroarch-config/retroarch-config.zip $(MIGRATIONS_DIR)/0001-retroarch-core-overrides/retroarch-core-overrides.zip

@@ -40,9 +40,8 @@ else
 fi
 
 # use audioserver to prevent pop-noise
-if [ -f /customer/lib/libpadsp.so ]; then
-	LD_PRELOAD=as_preload.so audioserver_"$MODEL" &
-	export LD_PRELOAD=libpadsp.so
+if [ -f "$ROOT"/.tmp_update/script/start_audioserver.sh ]; then
+	"$ROOT"/.tmp_update/script/start_audioserver.sh
 fi
 
 # run migration scripts that haven't been run yet

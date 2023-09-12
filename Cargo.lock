@@ -503,7 +503,6 @@ dependencies = [
  "embedded-graphics-simulator",
  "enum-map",
  "evdev",
- "ffi",
  "fluent-templates",
  "framebuffer",
  "image 0.23.14",

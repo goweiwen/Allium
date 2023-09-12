@@ -1,3 +1,3 @@
 #!/bin/sh
 DIR=/mnt/SDCARD/RetroArch
-HOME=/mnt/SDCARD/RetroArch exec "$DIR/retroarch" -v -L "$DIR/.retroarch/cores/$1_libretro.so" "$2"
+HOME=/mnt/SDCARD/RetroArch LD_PRELOAD=libpadsp.so exec "$DIR/retroarch" -v -L "$DIR/.retroarch/cores/$1_libretro.so" "$2"
