@@ -1,6 +1,6 @@
 [package]
 name = "activity-tracker"
-version = "0.20.9"
+version = "0.21.0"
 edition = "2021"
 include = ["/src"]
 
