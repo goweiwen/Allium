@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::num::NonZeroU32;
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
@@ -141,20 +142,65 @@ impl View for Image {
 }
 
 fn image(path: &Path, rect: Rect, mode: ImageMode, border_radius: u32) -> Option<RgbaImage> {
-    let mut image = ::image::open(path)
+    let image = ::image::open(path)
         .map_err(|e| error!("Failed to load image at {}: {}", path.display(), e))
         .ok()?;
-    match mode {
-        ImageMode::Raw => {}
+    let mut image = match mode {
+        ImageMode::Raw => image.to_rgba8(),
         ImageMode::Cover => {
-            image = image.resize_to_fill(rect.w, rect.h, image::imageops::FilterType::Nearest);
+            if image.width() == rect.w && image.height() == rect.h {
+                image.to_rgba8()
+            } else {
+                let src_image = fast_image_resize::Image::from_vec_u8(
+                    NonZeroU32::new(image.width())?,
+                    NonZeroU32::new(image.height())?,
+                    image.to_rgba8().into_raw(),
+                    fast_image_resize::PixelType::U8x3,
+                )
+                .map_err(|e| error!("Failed to load image at {}: {}", path.display(), e))
+                .ok()?;
+                let mut dst_image = fast_image_resize::Image::new(
+                    NonZeroU32::new(rect.w)?,
+                    NonZeroU32::new(rect.h)?,
+                    src_image.pixel_type(),
+                );
+                let mut resizer =
+                    fast_image_resize::Resizer::new(fast_image_resize::ResizeAlg::Nearest);
+                resizer
+                    .resize(&src_image.view(), &mut dst_image.view_mut())
+                    .ok()?;
+                RgbaImage::from_raw(rect.w, rect.h, dst_image.into_vec())?
+            }
         }
         ImageMode::Contain => {
-            let new_height = rect.h.min(rect.w * image.height() / image.width());
-            image = image.resize_to_fill(rect.w, new_height, image::imageops::FilterType::Nearest);
+            println!("contain!: {:?}", rect);
+            if image.width() == rect.w && image.height() == rect.h {
+                image.to_rgba8()
+            } else {
+                let new_height = rect.h.min(rect.w * image.height() / image.width());
+                let src_image = fast_image_resize::Image::from_vec_u8(
+                    NonZeroU32::new(image.width())?,
+                    NonZeroU32::new(image.height())?,
+                    image.to_rgba8().into_raw(),
+                    fast_image_resize::PixelType::U8x4,
+                )
+                .map_err(|e| error!("Failed to load image at {}: {}", path.display(), e))
+                .ok()?;
+                let mut dst_image = fast_image_resize::Image::new(
+                    NonZeroU32::new(rect.w)?,
+                    NonZeroU32::new(new_height)?,
+                    src_image.pixel_type(),
+                );
+                let mut resizer =
+                    fast_image_resize::Resizer::new(fast_image_resize::ResizeAlg::Nearest);
+                resizer
+                    .resize(&src_image.view(), &mut dst_image.view_mut())
+                    .ok()?;
+                RgbaImage::from_raw(rect.w, new_height, dst_image.into_vec())?
+            }
         }
-    }
-    let mut image = image.to_rgba8();
+    };
+    println!("image: {:?}", image.dimensions());
     if border_radius != 0 {
         round(&mut image, border_radius);
     }

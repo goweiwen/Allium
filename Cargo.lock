@@ -503,6 +503,7 @@ dependencies = [
  "embedded-graphics-simulator",
  "enum-map",
  "evdev",
+ "fast_image_resize",
  "fluent-templates",
  "framebuffer",
  "image 0.23.14",
@@ -770,6 +771,16 @@ name = "fallible-streaming-iterator"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a"
+
+[[package]]
+name = "fast_image_resize"
+version = "2.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc789a40040e11bbe4ba31ca319406805a12fe3f8d71314bbc4bd076602ad55a"
+dependencies = [
+ "num-traits",
+ "thiserror",
+]
 
 [[package]]
 name = "fdeflate"
