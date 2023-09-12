@@ -611,3 +611,9 @@ patterns = ["VECRTEX"]
 name = "Rick Dangerous"
 cores = ["xrick"]
 patterns = ["XRICK"]
+
+[[consoles]]
+name = "Nintendo DS"
+path = "/mnt/SDCARD/.allium/cores/drastic/launch.sh"
+patterns = ["NDS", "DS"]
+extensions = ["nds"]
