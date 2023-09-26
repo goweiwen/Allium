@@ -164,14 +164,16 @@ impl AlliumLauncher<DefaultPlatform> {
                 #[cfg(not(feature = "miyoo"))]
                 {
                     #[cfg(unix)]
-                    use std::os::unix::process::CommandExt;
-                    process::Command::new("/bin/sh")
-                        .arg("-c")
-                        .arg("make simulator-menu")
-                        .exec();
+                    {
+                        use std::os::unix::process::CommandExt;
+                        process::Command::new("/bin/sh")
+                            .arg("-c")
+                            .arg("make simulator-menu")
+                            .exec();
+                    }
 
                     #[cfg(not(unix))]
-                    process::exit();
+                    process::exit(0);
                 }
             }
             Command::SaveStylesheet(mut styles) => {

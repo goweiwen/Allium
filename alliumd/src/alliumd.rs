@@ -314,6 +314,7 @@ impl AlliumD<DefaultPlatform> {
                 }
                 KeyEvent::Autorepeat(Key::Power) => {
                     if !self.keys[Key::Menu] {
+                        #[cfg(unix)]
                         self.handle_quit().await?;
                     }
                 }
@@ -426,6 +427,7 @@ async fn terminate(child: &mut Child) -> Result<()> {
     #[cfg(not(unix))]
     child.kill().await?;
 
+    #[cfg(unix)]
     if let Err(_e) = tokio::time::timeout(std::time::Duration::from_secs(1), child.wait()).await {
         signal(child, Signal::SIGKILL)?;
     }
