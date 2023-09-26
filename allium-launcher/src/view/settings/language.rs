@@ -50,7 +50,14 @@ impl Language {
                 lang,
                 langs
                     .iter()
-                    .map(|l| locale.t(&format!("lang-{}", l)))
+                    .map(|l| {
+                        let name = locale.t(&format!("lang-{}", l));
+                        if name.is_empty() {
+                            l.clone()
+                        } else {
+                            name
+                        }
+                    })
                     .collect(),
                 Alignment::Right,
             ))],
