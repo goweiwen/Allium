@@ -165,7 +165,13 @@ impl AlliumD<DefaultPlatform> {
             let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())?;
 
             let mut battery_interval = tokio::time::interval(BATTERY_UPDATE_INTERVAL);
+
+            // If battery is charging, suspend.
             let mut battery = self.platform.battery()?;
+            battery.update()?;
+            if battery.charging() {
+                self.handle_suspend().await?;
+            }
 
             loop {
                 if let Some(menu) = self.menu.as_mut() {
