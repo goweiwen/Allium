@@ -30,6 +30,7 @@ pub type DefaultPlatform = mock::MockPlatform;
 pub trait Platform {
     type Display: Display;
     type Battery: Battery + 'static;
+    type SuspendContext;
 
     fn new() -> Result<Self>
     where
@@ -42,6 +43,10 @@ pub trait Platform {
     async fn poll(&mut self) -> KeyEvent;
 
     fn shutdown(&self) -> Result<()>;
+
+    fn suspend(&self) -> Result<Self::SuspendContext>;
+
+    fn unsuspend(&self, ctx: Self::SuspendContext) -> Result<()>;
 
     fn set_volume(&mut self, volume: i32) -> Result<()>;
 

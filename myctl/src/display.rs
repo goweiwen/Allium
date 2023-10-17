@@ -1,52 +1,19 @@
 #![allow(unreachable_code, unused_variables)]
-use anyhow::Result;
+use std::fs::File;
+use std::io::Write;
 
-pub fn set_brightness(brightness: i32) -> Result<()> {
-    todo!();
+use anyhow::{Context, Result};
+
+pub fn blank() -> Result<()> {
+    File::create("/proc/mi_modules/fb/mi_fb0")
+        .context("failed to open mi_fb0")?
+        .write_all(b"GUI_SHOW 0 off")?;
     Ok(())
 }
 
-pub fn get_brightness() -> Result<i32> {
-    todo!();
-    Ok(0)
-}
-
-pub fn set_lumination(lumination: i32) -> Result<()> {
-    todo!();
+pub fn unblank() -> Result<()> {
+    File::create("/proc/mi_modules/fb/mi_fb0")
+        .context("failed to open mi_fb0")?
+        .write_all(b"GUI_SHOW 0 on")?;
     Ok(())
-}
-
-pub fn get_lumination() -> Result<i32> {
-    todo!();
-    Ok(0)
-}
-
-pub fn set_hue(hue: i32) -> Result<()> {
-    todo!();
-    Ok(())
-}
-
-pub fn get_hue() -> Result<i32> {
-    todo!();
-    Ok(0)
-}
-
-pub fn set_saturation(saturation: i32) -> Result<()> {
-    todo!();
-    Ok(())
-}
-
-pub fn get_saturation() -> Result<i32> {
-    todo!();
-    Ok(0)
-}
-
-pub fn set_contrast(contrast: i32) -> Result<()> {
-    todo!();
-    Ok(())
-}
-
-pub fn get_contrast() -> Result<i32> {
-    todo!();
-    Ok(0)
 }

@@ -25,6 +25,10 @@ pub struct MiyooPlatform {
     keys: EvdevKeys,
 }
 
+pub struct SuspendContext {
+    brightness: u8,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum MiyooDeviceModel {
     Miyoo283,
@@ -44,6 +48,7 @@ impl fmt::Display for MiyooDeviceModel {
 impl Platform for MiyooPlatform {
     type Display = FramebufferDisplay;
     type Battery = Box<dyn Battery>;
+    type SuspendContext = SuspendContext;
 
     fn new() -> Result<MiyooPlatform> {
         let model = detect_model();
@@ -82,6 +87,21 @@ impl Platform for MiyooPlatform {
                 }
             }
         }
+        Ok(())
+    }
+
+    fn suspend(&self) -> Result<Self::SuspendContext> {
+        let brightness = screen::get_brightness()?;
+        let ctx = SuspendContext { brightness };
+        screen::set_brightness(0)?;
+        screen::blank(true)?;
+        // TODO: suspend all non-essential processes
+        Ok(ctx)
+    }
+
+    fn unsuspend(&self, ctx: Self::SuspendContext) -> Result<()> {
+        screen::blank(false)?;
+        screen::set_brightness(ctx.brightness)?;
         Ok(())
     }
 

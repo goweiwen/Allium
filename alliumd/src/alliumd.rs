@@ -318,6 +318,12 @@ impl AlliumD<DefaultPlatform> {
                         self.handle_quit().await?;
                     }
                 }
+                KeyEvent::Released(Key::Power) => {
+                    if !self.keys[Key::Menu] {
+                        #[cfg(unix)]
+                        self.handle_suspend().await?;
+                    }
+                }
                 KeyEvent::Released(Key::Menu) => {
                     if self.is_menu_pressed_alone {
                         if self.is_ingame()
@@ -342,6 +348,23 @@ impl AlliumD<DefaultPlatform> {
         }
 
         Ok(())
+    }
+
+    #[cfg(unix)]
+    async fn handle_suspend(&mut self) -> Result<()> {
+        info!("suspending...");
+        #[allow(clippy::let_unit_value)]
+        let ctx = self.platform.suspend()?;
+
+        loop {
+            let event = self.platform.poll().await;
+            if matches!(event, KeyEvent::Released(Key::Power)) {
+                break;
+            }
+        }
+
+        info!("waking up from suspend...");
+        self.platform.unsuspend(ctx)
     }
 
     #[cfg(unix)]

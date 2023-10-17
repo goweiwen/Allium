@@ -18,6 +18,7 @@ pub struct MockPlatform;
 impl Platform for MockPlatform {
     type Display = MockDisplay;
     type Battery = MockBattery;
+    type SuspendContext = ();
 
     fn new() -> Result<MockPlatform> {
         Ok(MockPlatform)
@@ -36,6 +37,14 @@ impl Platform for MockPlatform {
     }
 
     fn shutdown(&self) -> Result<()> {
+        Ok(())
+    }
+
+    fn suspend(&self) -> Result<Self::SuspendContext> {
+        Ok(())
+    }
+
+    fn unsuspend(&self, _ctx: Self::SuspendContext) -> Result<()> {
         Ok(())
     }
 

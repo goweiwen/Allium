@@ -34,6 +34,7 @@ pub struct SimulatorPlatform {
 impl Platform for SimulatorPlatform {
     type Display = SimulatorWindow;
     type Battery = SimulatorBattery;
+    type SuspendContext = ();
 
     fn new() -> Result<SimulatorPlatform> {
         let output_settings = OutputSettingsBuilder::new().scale(1).build();
@@ -95,6 +96,14 @@ impl Platform for SimulatorPlatform {
 
     fn shutdown(&self) -> Result<()> {
         process::exit(0);
+    }
+
+    fn suspend(&self) -> Result<Self::SuspendContext> {
+        Ok(())
+    }
+
+    fn unsuspend(&self, _ctx: Self::SuspendContext) -> Result<()> {
+        Ok(())
     }
 
     fn set_volume(&mut self, _volume: i32) -> Result<()> {
