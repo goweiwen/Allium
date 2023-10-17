@@ -49,7 +49,7 @@ for script in "$ROOT"/.allium/migrations/*; do
 	if [ ! -f "$script/.done" ]; then
 		show -c
 		say "$(cat "$script"/name.txt)"
-		if ! "$script/run.sh"; then
+		if ! "$script/run.sh" > "$script/run.log"; then
 			# stop everything if migration fails
 			show -c
 			say "Installation failed. Please reinstall Allium."

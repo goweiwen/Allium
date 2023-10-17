@@ -54,13 +54,16 @@ package-build:
 	rsync -a $(BUILD_DIR)/myctl $(DIST_DIR)/.tmp_update/bin/
 
 MIGRATIONS_DIR := $(DIST_DIR)/.allium/migrations
-migrations: $(MIGRATIONS_DIR)/0000-retroarch-config/retroarch-config.zip $(MIGRATIONS_DIR)/0001-retroarch-core-overrides/retroarch-core-overrides.zip
+migrations: $(MIGRATIONS_DIR)/0000-retroarch-config/retroarch-config.zip $(MIGRATIONS_DIR)/0001-retroarch-core-overrides/retroarch-core-overrides.zip $(MIGRATIONS_DIR)/0002-drastic/drastic.zip
 
-$(DIST_DIR)/.allium/migrations/0000-retroarch-config/retroarch-config.zip:
+$(MIGRATIONS_DIR)/0000-retroarch-config/retroarch-config.zip:
 	assets/migrations/0000-retroarch-config/package.sh
 
-$(DIST_DIR)/.allium/migrations/0001-retroarch-core-overrides/retroarch-core-overrides.zip:
+$(MIGRATIONS_DIR)/0001-retroarch-core-overrides/retroarch-core-overrides.zip:
 	assets/migrations/0001-retroarch-core-overrides/package.sh
+
+$(MIGRATIONS_DIR)/0002-drastic/drastic.zip:
+	assets/migrations/0002-drastic/package.sh
 
 retroarch: $(RETROARCH)/retroarch
 
