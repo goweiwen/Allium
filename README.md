@@ -51,6 +51,7 @@ The SD card layout should look like this:
 - Volume & Brightness (menu + l/r/u/d) control
 - In-game menu (save, load, reset, access RetroArch menu, [guide](https://github.com/goweiwen/Allium/wiki/In-game-Guide-Walkthrough-Reader), disk changer, quit)
 - Automatic resume when powering off/on
+- Suspend
 - Settings page
     - WiFi (IP Address, NTP, Telnet, FTP)
     - Date, time, timezone
@@ -60,23 +61,23 @@ The SD card layout should look like this:
 
 ## Planned Features
 (roughly in order of priority)
-- Specify default cores for rom
-- Suspend
+- Save state screenshots
 - Favorites
-- WiFi stuff:
-    - OTA update
-    - Metadata/box art scraper
-    - Cloud save sync
-    - Seamless netplay from ingame menu
+- Theme manager
+    - Built-in themes
+    - Save current theme to file
+    - Background images
 - UI improvements:
     - Folder icon
     - Volume indicator
     - Brightness indicator
     - Error toast (e.g. no core found for game)
     - Anti-aliased circles
-- Theme manager
-    - Built-in themes
-    - Save current theme to file
+- WiFi stuff (wifi stuff is deprioritized because I mainly carry a MM without wifi):
+    - OTA update
+    - Metadata/box art scraper
+    - Cloud save sync
+    - Seamless netplay from ingame menu
 
 ## Development
 
@@ -88,10 +89,16 @@ Allium comes with a simulator that can be used for development. The simulator re
 3. [cross](https://github.com/cross-rs/cross): `cargo install cross --git https://github.com/cross-rs/cross` (optional, for cross-compilation)
 
 ### Architecture
-Allium is split into 3 binaries:
+Allium is split into several binaries:
 - `alliumd` (daemon that handles launcher/game/menu launching, vol/brightness hotkeys, poweroff)
 - `allium-launcher` (main menu, including games, recents, settings)
 - `allium-menu` (ingame menu, including guide reader)
+- `activity-tracker` (gui for looking at game activity/playtime)
+- `screenshot`
+- `say` (draws text onto the screen, using Allium's theme settings and exits)
+- `show` (draws an image to screen, or darkens the screen and exits)
+- `show-hotkeys` (draws a list of hotkeys onto the screen and exits)
+- `myctl` (manipulates hardware like volume. This relies on the MM's proprietary libraries.)
 
 Shared code is located in the `common` crate.
 
@@ -120,4 +127,5 @@ Allium is only possible thanks to the Miyoo Mini community, including but not li
 - [Onion team](https://github.com/OnionUI/Onion) (Aemiii91, Schmurtz, Totofaki, and more): Maintaining a sane-defaults RetroArch configuration, and the huge village
 - kebabstorm: [Miyoo Mini resources](https://github.com/anzz1/miyoomini-resources)
 - shauninman: Allium is heavily inspired by [MiniUI](https://github.com/shauninman/MiniUI)'s simplicity and clean design
+- [steward-fu](https://github.com/steward-fu): miraculous DraStic port
 - Early adopters and testers of Allium
