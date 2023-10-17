@@ -361,6 +361,7 @@ impl AlliumD<DefaultPlatform> {
         info!("suspending...");
         #[allow(clippy::let_unit_value)]
         let ctx = self.platform.suspend()?;
+        signal(&self.main, Signal::SIGSTOP)?;
 
         loop {
             let event = self.platform.poll().await;
@@ -370,6 +371,7 @@ impl AlliumD<DefaultPlatform> {
         }
 
         info!("waking up from suspend...");
+        signal(&self.main, Signal::SIGCONT)?;
         self.platform.unsuspend(ctx)
     }
 
