@@ -50,15 +50,13 @@ impl EvdevKeys {
                 EventType::KEY => {
                     let key = event.code();
                     let key: Key = evdev::Key(key).into();
+                    if event.timestamp().elapsed().unwrap() > MAXIMUM_FRAME_TIME {
+                        continue;
+                    }
                     return match event.value() {
                         0 => KeyEvent::Released(key),
                         1 => KeyEvent::Pressed(key),
-                        2 => {
-                            if event.timestamp().elapsed().unwrap() > MAXIMUM_FRAME_TIME {
-                                continue;
-                            }
-                            KeyEvent::Autorepeat(key)
-                        }
+                        2 => KeyEvent::Autorepeat(key),
                         _ => unreachable!(),
                     };
                 }
