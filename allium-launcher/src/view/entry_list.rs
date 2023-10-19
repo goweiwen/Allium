@@ -373,7 +373,7 @@ where
                         Command::CloseView => {
                             self.child = None;
                             self.set_should_draw();
-                            true
+                            false
                         }
                         _ => true,
                     });
