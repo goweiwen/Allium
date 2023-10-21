@@ -1,9 +1,9 @@
 use std::collections::VecDeque;
-use std::hash::{Hash, Hasher};
 
 use anyhow::Result;
+use base32::encode;
 use common::command::Command;
-use common::constants::ALLIUM_SCREENSHOTS_DIR;
+use common::constants::{ALLIUM_SCREENSHOTS_DIR, SAVE_STATE_IMAGE_WIDTH};
 use common::database::Database;
 use common::display::Display;
 use common::game_info::GameInfo;
@@ -15,6 +15,7 @@ use common::stylesheet::Stylesheet;
 use common::view::View;
 use embedded_graphics::prelude::*;
 use log::{info, warn};
+use sha2::{Digest, Sha256};
 use type_map::TypeMap;
 
 use crate::retroarch_info::RetroArchInfo;
@@ -121,16 +122,17 @@ impl AlliumMenu<DefaultPlatform> {
                 if self.display.pop() {
                     self.display.load(self.display.bounding_box().into())?;
                     self.display.flush()?;
-                    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-                    path.hash(&mut hasher);
-                    slot.hash(&mut hasher);
-                    let file_name = format!("{:x}.png", hasher.finish());
+                    let mut hasher = Sha256::new();
+                    hasher.update(path);
+                    hasher.update(slot.to_le_bytes());
+                    let hash = hasher.finalize();
+                    let base32 = encode(base32::Alphabet::Crockford, &hash);
+                    let file_name = format!("{}.png", base32);
                     let path = ALLIUM_SCREENSHOTS_DIR.join(file_name);
                     info!("saving screenshot to {:?}", path);
                     std::process::Command::new("screenshot")
                         .arg(path)
-                        .arg("--rumble=false")
-                        .arg("--width=250")
+                        .arg(format!("--width={}", SAVE_STATE_IMAGE_WIDTH))
                         .spawn()?;
                 }
             }

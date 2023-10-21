@@ -8,7 +8,7 @@ use std::{
 use anyhow::Result;
 use clap::Parser;
 use framebuffer::Framebuffer;
-use image::{Rgb, RgbaImage};
+use image::{Rgb, RgbImage};
 use sysfs_gpio::{Direction, Pin};
 
 #[derive(Parser, Debug)]
@@ -18,7 +18,7 @@ struct Cli {
     path: PathBuf,
 
     /// Whether to vibrate the device
-    #[arg(short, long, default_value = "true")]
+    #[arg(short, long)]
     rumble: bool,
 
     /// Dimensions of the image
@@ -87,7 +87,7 @@ fn screenshot(path: impl AsRef<Path>, width: Option<u32>, height: Option<u32>) -
         );
         let mut resizer = fast_image_resize::Resizer::new(fast_image_resize::ResizeAlg::Nearest);
         resizer.resize(&src_image.view(), &mut dst_image.view_mut())?;
-        let image = RgbaImage::from_raw(width, height, dst_image.into_vec()).unwrap();
+        let image = RgbImage::from_raw(width, height, dst_image.into_vec()).unwrap();
         image.save(path)?;
     } else {
         image.save(path)?;

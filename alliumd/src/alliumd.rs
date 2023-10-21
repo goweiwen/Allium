@@ -304,6 +304,7 @@ impl AlliumD<DefaultPlatform> {
                     );
                     Command::new("screenshot")
                         .arg(ALLIUM_SD_ROOT.join("Screenshots").join(file_name))
+                        .arg("--rumble")
                         .spawn()?
                         .wait()
                         .await?;

@@ -5,9 +5,12 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use async_trait::async_trait;
+use base32::encode;
 use common::battery::Battery;
 use common::command::Command;
-use common::constants::{ALLIUM_MENU_STATE, SELECTION_MARGIN};
+use common::constants::{
+    ALLIUM_MENU_STATE, ALLIUM_SCREENSHOTS_DIR, SAVE_STATE_IMAGE_WIDTH, SELECTION_MARGIN,
+};
 use common::display::Display;
 use common::game_info::GameInfo;
 use common::geom::{Alignment, Point, Rect};
@@ -17,10 +20,12 @@ use common::resources::Resources;
 use common::retroarch::RetroArchCommand;
 use common::stylesheet::Stylesheet;
 use common::view::{
-    BatteryIndicator, ButtonHint, ButtonIcon, Label, NullView, Row, SettingsList, View,
+    BatteryIndicator, ButtonHint, ButtonIcon, Image, ImageMode, Label, NullView, Row, SettingsList,
+    View,
 };
 use log::warn;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use tokio::sync::mpsc::Sender;
 
 use crate::retroarch_info::RetroArchInfo;
@@ -45,6 +50,7 @@ where
     entries: Vec<MenuEntry>,
     retroarch_info: Option<RetroArchInfo>,
     path: PathBuf,
+    image: Image,
     dirty: bool,
 }
 
@@ -78,10 +84,10 @@ where
         let entries = MenuEntry::entries(&retroarch_info);
         let mut menu = SettingsList::new(
             Rect::new(
-                x + 24,
+                x + 12,
                 y + 8 + styles.ui_font.size as i32 + 8,
-                w / 2 - 48,
-                h - 8 - styles.ui_font.size - 8,
+                w - SAVE_STATE_IMAGE_WIDTH - 12 - 12 - 24,
+                h - 8 - ButtonIcon::diameter(&styles) - 8,
             ),
             entries.iter().map(|e| e.as_str(&locale)).collect(),
             entries
@@ -105,6 +111,17 @@ where
                 );
             }
         }
+
+        let mut image = Image::empty(
+            Rect::new(
+                x + w as i32 - SAVE_STATE_IMAGE_WIDTH as i32 - 24,
+                y + 8 + styles.ui_font.size as i32 + 8,
+                SAVE_STATE_IMAGE_WIDTH,
+                h - 8 - styles.ui_font.size - 8 - ButtonIcon::diameter(&styles) - 8,
+            ),
+            ImageMode::Contain,
+        );
+        image.set_border_radius(12);
 
         let button_hints = Row::new(
             Point::new(
@@ -154,6 +171,7 @@ where
             entries,
             retroarch_info,
             path,
+            image,
             dirty: false,
         }
     }
@@ -229,6 +247,12 @@ where
             }
             MenuEntry::Quit => {
                 if self.retroarch_info.is_some() {
+                    commands
+                        .send(Command::SaveStateScreenshot {
+                            path: self.path.canonicalize()?.to_string_lossy().to_string(),
+                            slot: -1,
+                        })
+                        .await?;
                     RetroArchCommand::Quit.send().await?;
                 } else {
                     tokio::process::Command::new("pkill")
@@ -267,6 +291,22 @@ where
                 )),
             );
         }
+
+        let path = self
+            .path
+            .canonicalize()
+            .unwrap()
+            .to_string_lossy()
+            .to_string();
+        let slot = self.retroarch_info.as_ref().unwrap().state_slot.unwrap();
+        let mut hasher = Sha256::new();
+        hasher.update(path);
+        hasher.update(slot.to_le_bytes());
+        let hash = hasher.finalize();
+        let base32 = encode(base32::Alphabet::Crockford, &hash);
+        let file_name = format!("{}.png", base32);
+        let path = ALLIUM_SCREENSHOTS_DIR.join(file_name);
+        self.image.set_path(Some(path));
     }
 }
 
@@ -294,6 +334,7 @@ where
             drawn |= self.battery_indicator.should_draw()
                 && self.battery_indicator.draw(display, styles)?;
             drawn |= self.menu.should_draw() && self.menu.draw(display, styles)?;
+            drawn |= self.image.should_draw() && self.image.draw(display, styles)?;
             drawn |= self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
         }
 
@@ -455,6 +496,8 @@ where
                             if curr == MenuEntry::Save as usize || curr == MenuEntry::Load as usize
                             {
                                 self.update_state_slot_label(state_slot);
+                            } else {
+                                self.image.set_path(None);
                             }
                         }
                     }
