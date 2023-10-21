@@ -86,7 +86,7 @@ impl Platform for SimulatorPlatform {
         Ok(SimulatorWindow {
             window: Rc::clone(&self.window),
             display,
-            saved: None,
+            saved: Vec::new(),
         })
     }
 
@@ -144,7 +144,7 @@ impl Default for SimulatorPlatform {
 pub struct SimulatorWindow {
     window: Rc<RefCell<Window>>,
     display: SimulatorDisplay<Color>,
-    saved: Option<(Vec<u8>, u32)>,
+    saved: Vec<(Vec<u8>, u32)>,
 }
 
 impl Display for SimulatorWindow {
@@ -175,12 +175,12 @@ impl Display for SimulatorWindow {
             .to_rgb_output_image(&OutputSettingsBuilder::new().build());
         let size = image.size();
         let buffer: ImageBuffer<Rgba<u8>, Vec<u8>> = image.as_image_buffer().convert();
-        self.saved = Some((buffer.as_raw().to_vec(), size.width));
+        self.saved.push((buffer.as_raw().to_vec(), size.width));
         Ok(())
     }
 
     fn load(&mut self, mut rect: Rect) -> Result<()> {
-        let Some(saved) = &self.saved else {
+        let Some(saved) = &self.saved.last() else {
             bail!("No saved image");
         };
 
@@ -206,6 +206,11 @@ impl Display for SimulatorWindow {
         image.draw(&mut self.display)?;
 
         Ok(())
+    }
+
+    fn pop(&mut self) -> bool {
+        self.saved.pop();
+        !self.saved.is_empty()
     }
 }
 

@@ -100,6 +100,10 @@ impl Display for MockDisplay {
     fn load(&mut self, _area: Rect) -> Result<()> {
         Ok(())
     }
+
+    fn pop(&mut self) -> bool {
+        true
+    }
 }
 
 impl DrawTarget for MockDisplay {

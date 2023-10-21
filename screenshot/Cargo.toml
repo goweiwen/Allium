@@ -7,6 +7,9 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.71"
+clap = "4.4"
 framebuffer = "0.3.1"
 image = { version = "0.24.6", default-features = false, features = ["png"] }
 sysfs_gpio = "0.6.1"
+fast_image_resize = "2.7"
+log = "0.4"

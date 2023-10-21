@@ -1,6 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 use std::fs;
 use std::fs::File;
+use std::path::PathBuf;
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -42,7 +43,8 @@ where
     child: Option<TextReader>,
     button_hints: Row<ButtonHint<String>>,
     entries: Vec<MenuEntry>,
-    info: Option<RetroArchInfo>,
+    retroarch_info: Option<RetroArchInfo>,
+    path: PathBuf,
     dirty: bool,
 }
 
@@ -55,7 +57,7 @@ where
         state: IngameMenuState,
         res: Resources,
         battery: B,
-        info: Option<RetroArchInfo>,
+        retroarch_info: Option<RetroArchInfo>,
     ) -> Self {
         let Rect { x, y, w, h } = rect;
 
@@ -73,7 +75,7 @@ where
 
         let battery_indicator = BatteryIndicator::new(Point::new(w as i32 - 12, y + 8), battery);
 
-        let entries = MenuEntry::entries(&info);
+        let entries = MenuEntry::entries(&retroarch_info);
         let mut menu = SettingsList::new(
             Rect::new(
                 x + 24,
@@ -88,7 +90,7 @@ where
                 .collect(),
             styles.ui_font.size + SELECTION_MARGIN,
         );
-        if let Some(info) = info.as_ref() {
+        if let Some(info) = retroarch_info.as_ref() {
             if info.max_disk_slots > 1 && !state.is_text_reader_open {
                 let mut map = HashMap::new();
                 map.insert("disk".to_string(), (info.disk_slot + 1).into());
@@ -135,6 +137,8 @@ where
             }
         }
 
+        let path = game_info.path.clone();
+
         drop(game_info);
         drop(locale);
         drop(styles);
@@ -148,7 +152,8 @@ where
             child,
             button_hints,
             entries,
-            info,
+            retroarch_info,
+            path,
             dirty: false,
         }
     }
@@ -190,15 +195,22 @@ where
                 commands.send(Command::Exit).await?;
             }
             MenuEntry::Save => {
-                RetroArchCommand::SaveStateSlot(self.info.as_ref().unwrap().state_slot.unwrap())
-                    .send()
+                let slot = self.retroarch_info.as_ref().unwrap().state_slot.unwrap();
+                RetroArchCommand::SaveStateSlot(slot).send().await?;
+                commands
+                    .send(Command::SaveStateScreenshot {
+                        path: self.path.canonicalize()?.to_string_lossy().to_string(),
+                        slot,
+                    })
                     .await?;
                 commands.send(Command::Exit).await?;
             }
             MenuEntry::Load => {
-                RetroArchCommand::LoadStateSlot(self.info.as_ref().unwrap().state_slot.unwrap())
-                    .send()
-                    .await?;
+                RetroArchCommand::LoadStateSlot(
+                    self.retroarch_info.as_ref().unwrap().state_slot.unwrap(),
+                )
+                .send()
+                .await?;
                 commands.send(Command::Exit).await?;
             }
             MenuEntry::Reset => {
@@ -216,7 +228,7 @@ where
                 commands.send(Command::Exit).await?;
             }
             MenuEntry::Quit => {
-                if self.info.is_some() {
+                if self.retroarch_info.is_some() {
                     RetroArchCommand::Quit.send().await?;
                 } else {
                     tokio::process::Command::new("pkill")
@@ -338,7 +350,7 @@ where
         let selected = self.menu.selected();
 
         // Handle disk slot selection
-        if let Some(info) = self.info.as_mut() {
+        if let Some(info) = self.retroarch_info.as_mut() {
             if info.max_disk_slots > 1 && selected == MenuEntry::Continue as usize {
                 match event {
                     KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
@@ -415,7 +427,7 @@ where
                 let consumed = self.menu.handle_key_event(event, commands, bubble).await?;
                 let curr = self.menu.selected();
                 if consumed && prev != curr {
-                    if let Some(info) = self.info.as_ref() {
+                    if let Some(info) = self.retroarch_info.as_ref() {
                         if info.max_disk_slots > 1 {
                             if prev == MenuEntry::Continue as usize {
                                 self.menu.set_right(prev, Box::new(NullView));

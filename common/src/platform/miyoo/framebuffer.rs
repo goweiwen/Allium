@@ -18,7 +18,7 @@ pub struct Buffer {
 pub struct FramebufferDisplay {
     framebuffer: Buffer,
     iface: Framebuffer,
-    saved: Option<Vec<u8>>,
+    saved: Vec<Vec<u8>>,
 }
 
 impl FramebufferDisplay {
@@ -52,7 +52,7 @@ impl FramebufferDisplay {
                 bytes_per_pixel,
             },
             iface,
-            saved: None,
+            saved: Vec::new(),
         })
     }
 }
@@ -88,12 +88,12 @@ impl Display for FramebufferDisplay {
     }
 
     fn save(&mut self) -> Result<()> {
-        self.saved = Some(self.framebuffer.buffer.clone());
+        self.saved.push(self.framebuffer.buffer.clone());
         Ok(())
     }
 
     fn load(&mut self, mut rect: Rect) -> Result<()> {
-        let Some(ref saved) = self.saved else {
+        let Some(ref saved) = self.saved.last() else {
             bail!("No saved image");
         };
 
@@ -124,6 +124,11 @@ impl Display for FramebufferDisplay {
         }
 
         Ok(())
+    }
+
+    fn pop(&mut self) -> bool {
+        self.saved.pop();
+        !self.saved.is_empty()
     }
 }
 

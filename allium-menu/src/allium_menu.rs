@@ -1,10 +1,10 @@
 use std::collections::VecDeque;
-use std::process;
+use std::hash::{Hash, Hasher};
 
 use anyhow::Result;
 use common::command::Command;
+use common::constants::ALLIUM_SCREENSHOTS_DIR;
 use common::database::Database;
-use common::display::color::Color;
 use common::display::Display;
 use common::game_info::GameInfo;
 use common::geom;
@@ -14,7 +14,7 @@ use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::View;
 use embedded_graphics::prelude::*;
-use log::warn;
+use log::{info, warn};
 use type_map::TypeMap;
 
 use crate::retroarch_info::RetroArchInfo;
@@ -56,12 +56,13 @@ impl AlliumMenu<DefaultPlatform> {
     }
 
     pub async fn run_event_loop(&mut self) -> Result<()> {
+        self.display.save()?;
         {
             let styles = self.res.get::<Stylesheet>();
             self.display
                 .map_pixels(|pixel| pixel.blend(styles.background_color.overlay(pixel), 192))?;
-            self.display.save()?;
         }
+        self.display.save()?;
 
         #[cfg(unix)]
         let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())?;
@@ -106,13 +107,32 @@ impl AlliumMenu<DefaultPlatform> {
         match command {
             Command::Exit => {
                 self.view.save()?;
-                self.display.clear(Color::new(0, 0, 0))?;
-                self.display.flush()?;
-                process::exit(0);
+                if self.display.pop() {
+                    self.display.load(self.display.bounding_box().into())?;
+                    self.display.flush()?;
+                }
+                std::process::exit(0);
             }
             Command::Redraw => {
                 self.display.load(self.display.bounding_box().into())?;
                 self.view.set_should_draw();
+            }
+            Command::SaveStateScreenshot { path, slot } => {
+                if self.display.pop() {
+                    self.display.load(self.display.bounding_box().into())?;
+                    self.display.flush()?;
+                    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+                    path.hash(&mut hasher);
+                    slot.hash(&mut hasher);
+                    let file_name = format!("{:x}.png", hasher.finish());
+                    let path = ALLIUM_SCREENSHOTS_DIR.join(file_name);
+                    info!("saving screenshot to {:?}", path);
+                    std::process::Command::new("screenshot")
+                        .arg(path)
+                        .arg("--rumble=false")
+                        .arg("--width=250")
+                        .spawn()?;
+                }
             }
             command => {
                 warn!("unhandled command: {:?}", command);
