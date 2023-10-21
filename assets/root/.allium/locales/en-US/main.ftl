@@ -70,6 +70,7 @@ settings-about-model-name = Model Name
 settings-about-firmware-version = Firmware Version
 settings-about-operating-system-version = OS Version
 settings-about-kernel-version = Kernel Version
+settings-about-memory-used = Memory Used
 settings-about-unknown-value = Unknown
 
 # Menu

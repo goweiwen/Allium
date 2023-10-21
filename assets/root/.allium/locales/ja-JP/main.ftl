@@ -70,6 +70,7 @@ settings-about-model-name = モデル名
 settings-about-firmware-version = ファームウェアバージョン
 settings-about-operating-system-version = OSバージョン
 settings-about-kernel-version = カーネルバージョン
+settings-about-memory-used = 使用済みメモリ
 settings-about-unknown-value = 不明
 
 # Menu

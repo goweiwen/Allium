@@ -27,7 +27,8 @@ impl About {
 
         let firmware = DefaultPlatform::firmware();
 
-        let sys = sysinfo::System::new();
+        let mut sys = sysinfo::System::new();
+        sys.refresh_memory();
 
         let locale = res.get::<Locale>();
         let styles = res.get::<Stylesheet>();
@@ -45,6 +46,7 @@ impl About {
                 locale.t("settings-about-firmware-version"),
                 locale.t("settings-about-operating-system-version"),
                 locale.t("settings-about-kernel-version"),
+                locale.t("settings-about-memory-used"),
             ],
             vec![
                 Box::new(Label::new(
@@ -73,6 +75,16 @@ impl About {
                     Point::zero(),
                     sys.kernel_version()
                         .unwrap_or_else(|| locale.t("settings-about-unknown-value")),
+                    Alignment::Right,
+                    None,
+                )),
+                Box::new(Label::new(
+                    Point::zero(),
+                    format!(
+                        "{}MB / {}MB",
+                        sys.used_memory() / (1024 * 1024),
+                        sys.total_memory() / (1024 * 1024)
+                    ),
                     Alignment::Right,
                     None,
                 )),
