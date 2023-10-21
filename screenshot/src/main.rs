@@ -85,7 +85,9 @@ fn screenshot(path: impl AsRef<Path>, width: Option<u32>, height: Option<u32>) -
             NonZeroU32::new(height).unwrap(),
             src_image.pixel_type(),
         );
-        let mut resizer = fast_image_resize::Resizer::new(fast_image_resize::ResizeAlg::Nearest);
+        let mut resizer = fast_image_resize::Resizer::new(
+            fast_image_resize::ResizeAlg::Convolution(fast_image_resize::FilterType::Lanczos3),
+        );
         resizer.resize(&src_image.view(), &mut dst_image.view_mut())?;
         let image = RgbImage::from_raw(width, height, dst_image.into_vec()).unwrap();
         image.save(path)?;
