@@ -10,7 +10,7 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::{ButtonHint, ButtonIcon, Label, Row, SettingsList, View};
-use sysinfo::{DiskExt, SystemExt};
+use sysinfo::SystemExt;
 use tokio::sync::mpsc::Sender;
 
 use crate::view::settings::{ChildState, SettingsChild};
@@ -27,9 +27,7 @@ impl About {
 
         let firmware = DefaultPlatform::firmware();
 
-        let mut sys = sysinfo::System::new();
-        sys.refresh_disks_list();
-        let disk = &sys.disks()[1];
+        let sys = sysinfo::System::new();
 
         let locale = res.get::<Locale>();
         let styles = res.get::<Stylesheet>();
@@ -47,7 +45,6 @@ impl About {
                 locale.t("settings-about-firmware-version"),
                 locale.t("settings-about-operating-system-version"),
                 locale.t("settings-about-kernel-version"),
-                locale.t("settings-about-storage-used"),
             ],
             vec![
                 Box::new(Label::new(
@@ -76,16 +73,6 @@ impl About {
                     Point::zero(),
                     sys.kernel_version()
                         .unwrap_or_else(|| locale.t("settings-about-unknown-value")),
-                    Alignment::Right,
-                    None,
-                )),
-                Box::new(Label::new(
-                    Point::zero(),
-                    format!(
-                        "{}GB / {}GB",
-                        (disk.total_space() - disk.available_space()) / (1024 * 1024 * 1024),
-                        disk.total_space() / (1024 * 1024 * 1024)
-                    ),
                     Alignment::Right,
                     None,
                 )),

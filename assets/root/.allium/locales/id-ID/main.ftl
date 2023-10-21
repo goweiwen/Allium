@@ -70,7 +70,6 @@ settings-about-model-name = Model
 settings-about-firmware-version = Versi Firmware
 settings-about-operating-system-version = Versi Sistem Operasi
 settings-about-kernel-version = Versi Kernel
-settings-about-storage-used = Penyimpanan MicroSD terpakai
 settings-about-unknown-value = Tak diketahui
 
 # Menu

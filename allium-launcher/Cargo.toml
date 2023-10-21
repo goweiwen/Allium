@@ -22,7 +22,7 @@ tokio = { version = "1.28.2", features = ["full"] }
 toml = "0.7.4"
 strum = "0.24.1"
 async-trait = "0.1.68"
-sysinfo = "0.29.2"
+sysinfo = "0.29.10"
 type-map = "0.4.0"
 simple_logger = { version = "4.2.0", default-features = false }
 log = { version = "0.4.19", features = ["release_max_level_info"] }

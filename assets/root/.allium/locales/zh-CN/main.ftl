@@ -70,7 +70,6 @@ settings-about-model-name = 型号名称
 settings-about-firmware-version = 固件版本
 settings-about-operating-system-version = 操作系统版本
 settings-about-kernel-version = 内核版本
-settings-about-storage-used = 已使用的存储空间
 settings-about-unknown-value = 未知
 
 # Menu
