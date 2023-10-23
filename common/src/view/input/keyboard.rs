@@ -51,8 +51,8 @@ impl Keyboard {
                 ),
                 ButtonHint::new(
                     Point::zero(),
-                    Key::Select,
-                    locale.t("keyboard-button-shift"),
+                    Key::B,
+                    locale.t("button-back"),
                     Alignment::Right,
                 ),
                 ButtonHint::new(
