@@ -17,6 +17,7 @@ populating-games = ゲームへの入力... ({ $directory })
 
 menu-launch = 起動
 menu-launch-with-core = { $core }で起動
+menu-reset = リセット
 menu-remove-from-recents = 最近から削除
 menu-repopulate-database = データベースを再入力
 

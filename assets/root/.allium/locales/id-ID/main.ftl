@@ -17,6 +17,7 @@ populating-games = Refresh daftar gim... ({ $directory })
 
 menu-launch = Mainkan
 menu-launch-with-core = Pilih emulator { $core }
+menu-reset = Ulangi buka
 menu-remove-from-recents = Hapus dari tab Terakhir
 menu-repopulate-database = Refresh daftar gim di konsol
 

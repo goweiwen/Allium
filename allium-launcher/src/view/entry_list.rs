@@ -164,10 +164,11 @@ where
                     self.child = Some(Box::new(child));
                 }
                 Entry::Game(game) => {
-                    let command = self
-                        .res
-                        .get::<ConsoleMapper>()
-                        .launch_game(&self.res.get(), game)?;
+                    let command = self.res.get::<ConsoleMapper>().launch_game(
+                        &self.res.get(),
+                        game,
+                        false,
+                    )?;
                     if let Some(cmd) = command {
                         commands.send(cmd).await?;
                     }
@@ -210,6 +211,7 @@ where
 
         let mut entries = vec![
             MenuEntry::Launch(None),
+            MenuEntry::Reset,
             MenuEntry::RemoveFromRecents,
             MenuEntry::RepopulateDatabase,
         ];
@@ -428,6 +430,22 @@ where
                             self.core = None;
                             self.select_entry(commands).await?;
                         }
+                        MenuEntry::Reset => {
+                            let entry = self.entries.get_mut(self.list.selected()).unwrap();
+                            match entry {
+                                Entry::Directory(_) | Entry::App(_) => {}
+                                Entry::Game(game) => {
+                                    let command = self.res.get::<ConsoleMapper>().launch_game(
+                                        &self.res.get(),
+                                        game,
+                                        true,
+                                    )?;
+                                    if let Some(cmd) = command {
+                                        commands.send(cmd).await?;
+                                    }
+                                }
+                            }
+                        }
                         MenuEntry::RemoveFromRecents => {
                             if let Some(Entry::Game(game)) = self.entries.get(self.list.selected())
                             {
@@ -557,6 +575,7 @@ where
 
 enum MenuEntry {
     Launch(Option<String>),
+    Reset,
     RemoveFromRecents,
     RepopulateDatabase,
 }
@@ -565,8 +584,9 @@ impl MenuEntry {
     fn from_repr(i: usize) -> Self {
         match i {
             0 => MenuEntry::Launch(None),
-            1 => MenuEntry::RemoveFromRecents,
-            2 => MenuEntry::RepopulateDatabase,
+            1 => MenuEntry::Reset,
+            2 => MenuEntry::RemoveFromRecents,
+            3 => MenuEntry::RepopulateDatabase,
             _ => unreachable!("invalid menu entry"),
         }
     }
@@ -583,6 +603,7 @@ impl MenuEntry {
                     locale.t("menu-launch")
                 }
             }
+            MenuEntry::Reset => locale.t("menu-reset"),
             MenuEntry::RemoveFromRecents => locale.t("menu-remove-from-recents"),
             MenuEntry::RepopulateDatabase => locale.t("menu-repopulate-database"),
         }

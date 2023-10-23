@@ -17,6 +17,7 @@ populating-games = Génération des jeux... ({ $directory })
 
 menu-launch = Lancer
 menu-launch-with-core = Lancer avec { $core }
+menu-reset = Réinitialiser
 menu-remove-from-recents = Supprimer des récents
 menu-repopulate-database = Regénération de la BDD
 

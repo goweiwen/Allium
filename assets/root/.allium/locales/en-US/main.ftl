@@ -17,6 +17,7 @@ populating-games = Populating games... ({ $directory })
 
 menu-launch = Launch
 menu-launch-with-core = Launch with { $core }
+menu-reset = Reset
 menu-remove-from-recents = Remove from Recents
 menu-repopulate-database = Repopulate Database
 

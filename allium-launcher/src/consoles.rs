@@ -139,7 +139,12 @@ impl ConsoleMapper {
         None
     }
 
-    pub fn launch_game(&self, database: &Database, game: &mut Game) -> Result<Option<Command>> {
+    pub fn launch_game(
+        &self,
+        database: &Database,
+        game: &mut Game,
+        disable_savestate_auto_load: bool,
+    ) -> Result<Option<Command>> {
         if !game.path.exists() {
             if let Some(old) = Game::resync(&mut game.path)? {
                 database.update_game_path(&old, &game.path)?;
@@ -167,7 +172,16 @@ impl ConsoleMapper {
                     game.name.clone(),
                     game.path.clone(),
                     image,
-                    ALLIUM_RETROARCH.display().to_string(),
+                    if disable_savestate_auto_load {
+                        ALLIUM_RETROARCH
+                            .parent()
+                            .unwrap()
+                            .join("launch_without_savestate_auto_load.sh")
+                            .display()
+                            .to_string()
+                    } else {
+                        ALLIUM_RETROARCH.display().to_string()
+                    },
                     vec![retroarch_core, game.path.display().to_string()],
                     true,
                 )

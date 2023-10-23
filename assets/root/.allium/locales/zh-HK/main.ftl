@@ -17,6 +17,7 @@ populating-games = 填充緊遊戲... ({ $directory })
 
 menu-launch = 啟動
 menu-launch-with-core = 啟動（使用{ $core }）
+menu-reset = 重置
 menu-remove-from-recents = 從最近中移除
 menu-repopulate-database = 重新填充數據庫
 
