@@ -31,9 +31,13 @@ Allium supports both the Miyoo Mini and Miyoo Mini Plus on the same SD card.
 2. Download the latest release and extract into your SD card. e.g. `E:/`.
 3. Eject the disk (**important!**).
 
-### Update
-1. Download the latest release and extract into your SD card. e.g. `E:/`. When prompted, overwrite existing files.
-2. Eject the disk (**important!**).
+### Updating
+1. Download the latest release and extract these folders into your SD card. e.g. `E:/`:
+    - .allium
+    - .tmp_update
+    - Apps
+    - RetroArch
+3. Eject the disk (**important!**).
 
 ## Features
 - Supports stock/Onion/DotUI SD card layout
