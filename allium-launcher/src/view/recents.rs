@@ -70,10 +70,7 @@ impl Recents {
 
     pub fn load_or_new(rect: Rect, res: Resources, state: Option<RecentsState>) -> Result<Self> {
         let list = if let Some(state) = state {
-            let selected = state.selected;
-            let mut list = EntryList::load(rect, res.clone(), state)?;
-            list.select(selected);
-            list
+            EntryList::load(rect, res.clone(), state)?
         } else {
             EntryList::new(rect, res.clone(), RecentsSort::LastPlayed)?
         };
