@@ -294,7 +294,7 @@ impl View for Keyboard {
                 commands.send(Command::Redraw).await?;
                 return Ok(true);
             }
-            _ => return Ok(false),
+            _ => return Ok(true),
         }
         Ok(true)
     }
