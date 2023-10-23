@@ -170,7 +170,7 @@ impl AlliumD<DefaultPlatform> {
             let mut battery = self.platform.battery()?;
             battery.update()?;
             if battery.charging() {
-                self.handle_suspend().await?;
+                self.handle_charging().await?;
             }
 
             loop {
@@ -355,6 +355,47 @@ impl AlliumD<DefaultPlatform> {
         }
 
         Ok(())
+    }
+
+    #[cfg(unix)]
+    async fn handle_charging(&mut self) -> Result<()> {
+        info!("charging...");
+
+        signal(&self.main, Signal::SIGSTOP)?;
+
+        Command::new("say")
+            .arg(self.locale.t("charging"))
+            .spawn()?
+            .wait()
+            .await?;
+
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+
+        Command::new("show").arg("-c").spawn()?.wait().await?;
+
+        #[allow(clippy::let_unit_value)]
+        let ctx = self.platform.suspend()?;
+
+        let mut battery = self.platform.battery()?;
+
+        loop {
+            tokio::select! {
+                key_event = self.platform.poll() => {
+                    if matches!(key_event, KeyEvent::Released(Key::Power)) {
+                        break;
+                    }
+                }
+                _ = tokio::time::sleep(std::time::Duration::from_secs(1)) => {
+                    battery.update()?;
+                    if !battery.charging() {
+                        self.platform.shutdown();
+                    }
+                }
+            }
+        }
+
+        signal(&self.main, Signal::SIGCONT)?;
+        self.platform.unsuspend(ctx)
     }
 
     #[cfg(unix)]

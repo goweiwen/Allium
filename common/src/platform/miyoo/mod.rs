@@ -95,7 +95,6 @@ impl Platform for MiyooPlatform {
         let ctx = SuspendContext { brightness };
         screen::set_brightness(0)?;
         screen::blank(true)?;
-        // TODO: suspend all non-essential processes
         Ok(ctx)
     }
 
