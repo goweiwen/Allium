@@ -103,7 +103,7 @@ impl Game {
 
 impl Ord for Game {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.full_name.cmp(&other.full_name)
+        self.name.cmp(&other.name)
     }
 }
 
