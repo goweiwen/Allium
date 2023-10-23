@@ -135,4 +135,5 @@ pub trait Sort: Debug + Clone {
         console_mapper: &ConsoleMapper,
         locale: &Locale,
     ) -> Result<Vec<Entry>>;
+    fn preserve_selection(&self) -> bool;
 }

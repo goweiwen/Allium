@@ -287,4 +287,8 @@ impl Sort for RecentsSort {
             })
             .collect())
     }
+
+    fn preserve_selection(&self) -> bool {
+        !matches!(self, RecentsSort::Search(_) | RecentsSort::Random)
+    }
 }

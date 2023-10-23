@@ -147,4 +147,8 @@ impl Sort for AppsSort {
         entries.sort_unstable();
         Ok(entries)
     }
+
+    fn preserve_selection(&self) -> bool {
+        true
+    }
 }

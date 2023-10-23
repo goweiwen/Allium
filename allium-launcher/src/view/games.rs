@@ -263,4 +263,8 @@ impl Sort for GamesSort {
 
         Ok(entries)
     }
+
+    fn preserve_selection(&self) -> bool {
+        !matches!(self, GamesSort::Alphabetical(_) | GamesSort::Random(_))
+    }
 }

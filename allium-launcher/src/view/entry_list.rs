@@ -199,8 +199,9 @@ where
             .entries(&self.res.get(), &self.res.get(), &self.res.get())?;
         self.list.set_items(
             self.entries.iter().map(|e| e.name().to_string()).collect(),
-            true,
+            self.sort.preserve_selection(),
         );
+
         Ok(())
     }
 
