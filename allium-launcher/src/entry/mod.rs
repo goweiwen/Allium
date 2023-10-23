@@ -49,6 +49,7 @@ impl Entry {
             || file_name == "Guides"
             || file_name == "gamelist.xml"
             || file_name == "miyoogamelist.xml"
+            || file_name == "neogeo.zip"
         {
             return Ok(None);
         }
