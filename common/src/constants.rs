@@ -72,6 +72,9 @@ pub const BATTERY_UPDATE_INTERVAL: Duration = Duration::from_secs(10);
 /// The interval at which the clock is updated.
 pub const CLOCK_UPDATE_INTERVAL: Duration = Duration::from_secs(60);
 
+/// How long to wait until the device is considered idle.
+pub const IDLE_TIMEOUT: Duration = Duration::from_secs(5 * 60);
+
 /// The number of items to jump when pressing left/right in a listing.
 pub const LISTING_JUMP_SIZE: i32 = 5;
 

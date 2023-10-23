@@ -8,7 +8,7 @@ use chrono::{DateTime, Duration, Utc};
 use common::battery::Battery;
 use common::constants::{
     ALLIUMD_STATE, ALLIUM_GAME_INFO, ALLIUM_MENU, ALLIUM_SD_ROOT, ALLIUM_VERSION,
-    BATTERY_SHUTDOWN_THRESHOLD, BATTERY_UPDATE_INTERVAL, LONG_PRESS_DURATION,
+    BATTERY_SHUTDOWN_THRESHOLD, BATTERY_UPDATE_INTERVAL, IDLE_TIMEOUT, LONG_PRESS_DURATION,
 };
 use common::display::settings::DisplaySettings;
 use common::locale::{Locale, LocaleSettings};
@@ -164,7 +164,7 @@ impl AlliumD<DefaultPlatform> {
             let mut sigint = tokio::signal::unix::signal(SignalKind::interrupt())?;
             let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())?;
 
-            let mut battery_interval = tokio::time::interval(BATTERY_UPDATE_INTERVAL);
+            let mut battery_interval = Instant::now();
 
             // If battery is charging, suspend.
             let mut battery = self.platform.battery()?;
@@ -182,9 +182,25 @@ impl AlliumD<DefaultPlatform> {
                     }
                 }
 
+                if battery_interval.elapsed() >= BATTERY_UPDATE_INTERVAL {
+                    battery_interval = Instant::now();
+                    trace!("updating battery");
+                    if let Err(e) = battery.update() {
+                        error!("failed to update battery: {}", e);
+                    }
+                    if battery.percentage() <= BATTERY_SHUTDOWN_THRESHOLD && !battery.charging() {
+                        warn!("battery is low, shutting down");
+                        self.handle_quit().await?;
+                    }
+                }
+
                 tokio::select! {
                     key_event = self.platform.poll() => {
                         self.handle_key_event(key_event).await?;
+                    }
+                    _ = tokio::time::sleep(IDLE_TIMEOUT) => {
+                        info!("idle timeout, shutting down");
+                        self.handle_quit().await?;
                     }
                     _ = self.main.wait() => {
                         if !self.is_terminating {
@@ -196,16 +212,6 @@ impl AlliumD<DefaultPlatform> {
                     }
                     _ = sigint.recv() => self.handle_quit().await?,
                     _ = sigterm.recv() => self.handle_quit().await?,
-                    _ = battery_interval.tick() => {
-                        trace!("updating battery");
-                        if let Err(e) = battery.update() {
-                            error!("failed to update battery: {}", e);
-                        }
-                        if battery.percentage() <= BATTERY_SHUTDOWN_THRESHOLD && !battery.charging() {
-                            warn!("battery is low, shutting down");
-                            self.handle_quit().await?;
-                        }
-                    }
                 }
             }
         }
@@ -388,7 +394,7 @@ impl AlliumD<DefaultPlatform> {
                 _ = tokio::time::sleep(std::time::Duration::from_secs(1)) => {
                     battery.update()?;
                     if !battery.charging() {
-                        self.platform.shutdown();
+                        self.platform.shutdown()?;
                     }
                 }
             }
@@ -406,9 +412,16 @@ impl AlliumD<DefaultPlatform> {
         signal(&self.main, Signal::SIGSTOP)?;
 
         loop {
-            let event = self.platform.poll().await;
-            if matches!(event, KeyEvent::Released(Key::Power)) {
-                break;
+            tokio::select! {
+                key_event = self.platform.poll()=> {
+                    if matches!(key_event, KeyEvent::Released(Key::Power)) {
+                        break;
+                    }
+                }
+                _ = tokio::time::sleep(IDLE_TIMEOUT) => {
+                    info!("idle timeout, shutting down");
+                    self.handle_quit().await?;
+                }
             }
         }
 
