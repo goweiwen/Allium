@@ -118,7 +118,7 @@ impl Platform for SimulatorPlatform {
         Ok(())
     }
 
-    fn set_display_settings(&mut self, _settings: &DisplaySettings) -> Result<()> {
+    fn set_display_settings(&mut self, _settings: &mut DisplaySettings) -> Result<()> {
         Ok(())
     }
 

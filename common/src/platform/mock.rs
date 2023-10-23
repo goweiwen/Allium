@@ -60,7 +60,7 @@ impl Platform for MockPlatform {
         Ok(())
     }
 
-    fn set_display_settings(&mut self, _settings: &DisplaySettings) -> Result<()> {
+    fn set_display_settings(&mut self, _settings: &mut DisplaySettings) -> Result<()> {
         Ok(())
     }
 

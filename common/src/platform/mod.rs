@@ -54,7 +54,7 @@ pub trait Platform {
 
     fn set_brightness(&mut self, brightness: u8) -> Result<()>;
 
-    fn set_display_settings(&mut self, settings: &DisplaySettings) -> Result<()>;
+    fn set_display_settings(&mut self, settings: &mut DisplaySettings) -> Result<()>;
 
     fn device_model() -> String;
 

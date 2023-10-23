@@ -151,7 +151,8 @@ impl AlliumD<DefaultPlatform> {
         self.platform.set_brightness(self.state.brightness)?;
 
         info!("loading display settings");
-        DisplaySettings::load()?.apply()?;
+        self.platform
+            .set_display_settings(&mut DisplaySettings::load()?)?;
 
         if DefaultPlatform::has_wifi() {
             info!("wifi detected, loading wifi settings");

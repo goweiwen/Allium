@@ -5,11 +5,14 @@ mod screen;
 mod volume;
 
 use std::fmt;
+use std::fs::File;
+use std::io::Write;
 use std::os::unix::process::CommandExt;
 use std::process::Command;
 
 use anyhow::Result;
 use async_trait::async_trait;
+use log::warn;
 
 use crate::battery::Battery;
 use crate::display::settings::DisplaySettings;
@@ -119,8 +122,43 @@ impl Platform for MiyooPlatform {
         screen::set_brightness(brightness)
     }
 
-    fn set_display_settings(&mut self, settings: &DisplaySettings) -> Result<()> {
-        screen::set_display_settings(settings)
+    fn set_display_settings(&mut self, settings: &mut DisplaySettings) -> Result<()> {
+        if settings.contrast < 10 {
+            settings.contrast = 10;
+        }
+
+        let mut file = match File::create("/proc/mi_modules/mi_disp/mi_disp0") {
+            Ok(file) => file,
+            Err(err) => {
+                warn!("failed to open display settings file: {}", err);
+                return Ok(());
+            }
+        };
+
+        if settings.r < 15 && settings.g < 15 && settings.b < 15 {
+            settings.r = 15;
+            settings.g = 15;
+            settings.b = 15;
+        }
+
+        file.write_all(
+            format!(
+                "csc 0 3 {:.0} {:.0} {:.0} {:.0} 0 0\n",
+                settings.contrast, settings.hue, settings.luminance, settings.saturation,
+            )
+            .as_bytes(),
+        )?;
+        file.write_all(
+            format!(
+                "colortemp 0 0 0 0 {:.0} {:.0} {:.0}\n",
+                settings.b as f32 * 255.0 / 100.0,
+                settings.g as f32 * 255.0 / 100.0,
+                settings.r as f32 * 255.0 / 100.0,
+            )
+            .as_bytes(),
+        )?;
+
+        Ok(())
     }
 
     fn device_model() -> String {

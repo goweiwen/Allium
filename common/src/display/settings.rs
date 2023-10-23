@@ -25,35 +25,6 @@ impl DisplaySettings {
         Self::default()
     }
 
-    pub fn apply(&self) -> Result<()> {
-        let mut file = match File::create("/proc/mi_modules/mi_disp/mi_disp0") {
-            Ok(file) => file,
-            Err(err) => {
-                warn!("failed to open display settings file: {}", err);
-                return Ok(());
-            }
-        };
-
-        file.write_all(
-            format!(
-                "csc 0 3 {:.0} {:.0} {:.0} {:.0} 0 0\n",
-                self.contrast, self.hue, self.luminance, self.saturation,
-            )
-            .as_bytes(),
-        )?;
-        file.write_all(
-            format!(
-                "colortemp 0 0 0 0 {:.0} {:.0} {:.0}\n",
-                self.b as f32 * 255.0 / 100.0,
-                self.g as f32 * 255.0 / 100.0,
-                self.r as f32 * 255.0 / 100.0,
-            )
-            .as_bytes(),
-        )?;
-
-        Ok(())
-    }
-
     pub fn load() -> Result<Self> {
         if ALLIUM_DISPLAY_SETTINGS.exists() {
             debug!("found state, loading from file");

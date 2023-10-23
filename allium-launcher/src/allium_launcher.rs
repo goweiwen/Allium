@@ -190,11 +190,10 @@ impl AlliumLauncher<DefaultPlatform> {
                     self.platform.battery()?,
                 )?;
             }
-            Command::SaveDisplaySettings(settings) => {
+            Command::SaveDisplaySettings(mut settings) => {
                 trace!("saving display settings");
-                settings.apply()?;
+                self.platform.set_display_settings(&mut settings)?;
                 settings.save()?;
-                self.platform.set_display_settings(&settings)?;
             }
             Command::SaveLocaleSettings(settings) => {
                 trace!("saving locale settings");
