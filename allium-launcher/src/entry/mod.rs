@@ -55,7 +55,7 @@ impl Entry {
         }
 
         // Exclude DB
-        const EXCLUDE_EXTENSIONS: [&str; 1] = ["db"];
+        const EXCLUDE_EXTENSIONS: [&str; 2] = ["db", "sbi"];
         if EXCLUDE_EXTENSIONS.contains(&extension.as_str()) {
             return Ok(None);
         }
