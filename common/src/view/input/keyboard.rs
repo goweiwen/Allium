@@ -280,6 +280,10 @@ impl View for Keyboard {
                 bubble.push_back(Command::CloseView);
                 commands.send(Command::Redraw).await?;
             }
+            KeyEvent::Pressed(Key::X) => {
+                self.value.clear();
+                self.dirty = true;
+            }
             KeyEvent::Pressed(Key::Select) => {
                 self.mode = match self.mode {
                     KeyboardMode::Lowercase => KeyboardMode::Uppercase,
