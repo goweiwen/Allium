@@ -133,6 +133,7 @@ impl AlliumMenu<DefaultPlatform> {
                     std::process::Command::new("screenshot")
                         .arg(path)
                         .arg(format!("--width={}", SAVE_STATE_IMAGE_WIDTH))
+                        .arg("--crop")
                         .spawn()?;
                 }
             }

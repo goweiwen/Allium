@@ -8,7 +8,7 @@ use std::{
 use anyhow::Result;
 use clap::Parser;
 use framebuffer::Framebuffer;
-use image::{Rgb, RgbImage};
+use image::{imageops, Pixel, Rgb, RgbImage};
 use sysfs_gpio::{Direction, Pin};
 
 #[derive(Parser, Debug)]
@@ -26,6 +26,10 @@ struct Cli {
     width: Option<u32>,
     #[arg(short, long)]
     height: Option<u32>,
+
+    /// Crop black borders
+    #[arg(short, long)]
+    crop: bool,
 }
 
 fn main() -> Result<()> {
@@ -35,7 +39,7 @@ fn main() -> Result<()> {
         rumble(1)?;
     }
 
-    if let Err(e) = screenshot(cli.path, cli.width, cli.height) {
+    if let Err(e) = screenshot(cli.path, cli.width, cli.height, cli.crop) {
         eprintln!("Error: {}", e);
     }
 
@@ -46,7 +50,12 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn screenshot(path: impl AsRef<Path>, width: Option<u32>, height: Option<u32>) -> Result<()> {
+fn screenshot(
+    path: impl AsRef<Path>,
+    width: Option<u32>,
+    height: Option<u32>,
+    crop: bool,
+) -> Result<()> {
     let fb = Framebuffer::new("/dev/fb0")?;
 
     let x0 = fb.var_screen_info.xoffset as usize;
@@ -64,6 +73,11 @@ fn screenshot(path: impl AsRef<Path>, width: Option<u32>, height: Option<u32>) -
             let pixel = Rgb([frame[i + 2], frame[i + 1], frame[i]]);
             image.put_pixel((w - x - 1) as u32, (h - y - 1) as u32, pixel);
         }
+    }
+
+    if crop {
+        let (x, y, w, h) = dbg!(cropped_bounding_box(&image));
+        image = imageops::crop(&mut image, x, y, w, h).to_image();
     }
 
     let (width, height) = match (width, height) {
@@ -104,4 +118,57 @@ fn rumble(val: u8) -> Result<()> {
     pin.set_direction(Direction::Out)?;
     pin.set_value((val & 1) ^ 1)?;
     Ok(())
+}
+
+fn cropped_bounding_box(image: &RgbImage) -> (u32, u32, u32, u32) {
+    if image.is_empty() {
+        return (0, 0, 0, 0);
+    }
+
+    let mut top = 0;
+    let mut left = 0;
+    let mut right = 0;
+    let mut bottom = 0;
+
+    for y in 0..image.height() {
+        for x in 0..image.width() {
+            let pixel = image.get_pixel(x, y);
+            if pixel.channels() != [0, 0, 0] && top == 0 {
+                top = y;
+                break;
+            }
+        }
+    }
+
+    for y in (0..image.height()).rev() {
+        for x in (0..image.width()).rev() {
+            let pixel = image.get_pixel(x, y);
+            if pixel.channels() != [0, 0, 0] && bottom == 0 {
+                bottom = y;
+                break;
+            }
+        }
+    }
+
+    for x in 0..image.width() {
+        for y in 0..image.height() {
+            let pixel = image.get_pixel(x, y);
+            if pixel.channels() != [0, 0, 0] && left == 0 {
+                left = x;
+                break;
+            }
+        }
+    }
+
+    for x in (0..image.width()).rev() {
+        for y in (0..image.height()).rev() {
+            let pixel = image.get_pixel(x, y);
+            if pixel.channels() != [0, 0, 0] && right == 0 {
+                right = x;
+                break;
+            }
+        }
+    }
+
+    (left, top, right - left, bottom - top)
 }
