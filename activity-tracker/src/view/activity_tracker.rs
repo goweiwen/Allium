@@ -49,14 +49,14 @@ impl ActivityTracker {
                 vec![
                     ButtonHint::new(
                         Point::zero(),
-                        Key::Y,
-                        Sort::MostPlayed.button_hint(&locale),
+                        Key::B,
+                        locale.t("button-back"),
                         Alignment::Right,
                     ),
                     ButtonHint::new(
                         Point::zero(),
-                        Key::B,
-                        locale.t("button-back"),
+                        Key::Y,
+                        Sort::MostPlayed.button_hint(&locale),
                         Alignment::Right,
                     ),
                 ]
@@ -211,8 +211,8 @@ enum Sort {
 impl Sort {
     fn button_hint(&self, locale: &Locale) -> String {
         match self {
-            Sort::LastPlayed => locale.t("recents-sort-last-played"),
-            Sort::MostPlayed => locale.t("recents-sort-most-played"),
+            Sort::LastPlayed => locale.t("sort-last-played"),
+            Sort::MostPlayed => locale.t("sort-most-played"),
         }
     }
 
