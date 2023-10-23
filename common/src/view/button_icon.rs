@@ -56,8 +56,8 @@ impl View for ButtonIcon {
             Key::Down => (styles.disabled_color, ""),
             Key::Left => (styles.disabled_color, ""),
             Key::Right => (styles.disabled_color, ""),
-            Key::Start => (styles.disabled_color, "+"),
-            Key::Select => (styles.disabled_color, "-"),
+            Key::Start => (styles.disabled_color, "START"),
+            Key::Select => (styles.disabled_color, "SELECT"),
             Key::L => (styles.disabled_color, "L"),
             Key::R => (styles.disabled_color, "R"),
             Key::Menu => (styles.disabled_color, "MENU"),
@@ -177,18 +177,6 @@ impl View for ButtonIcon {
                 .draw(display)?;
                 Rect::new(point.x, point.y, diameter, diameter)
             }
-            Key::Start | Key::Select => {
-                RoundedRectangle::with_equal_corners(
-                    Rectangle::new(
-                        Point::new(point.x, point.y + diameter as i32 / 5 + 1).into(),
-                        Size::new(diameter, diameter * 3 / 5),
-                    ),
-                    Size::new_equal(8),
-                )
-                .into_styled(PrimitiveStyle::with_fill(color))
-                .draw(display)?;
-                Rect::new(point.x, point.y, diameter, diameter)
-            }
             Key::L | Key::L2 => {
                 RoundedRectangle::new(
                     Rectangle::new(
@@ -290,8 +278,8 @@ impl View for ButtonIcon {
             Key::Down => "",
             Key::Left => "",
             Key::Right => "",
-            Key::Start => "+",
-            Key::Select => "-",
+            Key::Start => "START",
+            Key::Select => "SELECT",
             Key::L => "L",
             Key::R => "R",
             Key::Menu => "MENU",
