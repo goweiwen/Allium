@@ -29,12 +29,12 @@ pub enum Entry {
 
 impl Entry {
     pub fn new(path: PathBuf, console_mapper: &ConsoleMapper) -> Result<Option<Entry>> {
-        // Don't add hidden files starting with .
+        // Don't add hidden files starting with . or _
         let file_name = match path.file_name().and_then(OsStr::to_str) {
             Some(file_name) => file_name,
             None => return Ok(None),
         };
-        if file_name.starts_with('.') {
+        if file_name.starts_with('.') || file_name.starts_with('_') {
             return Ok(None);
         }
 
