@@ -1,3 +1,4 @@
+lang-de-DE = Deutsch
 lang-en-GB = English (United Kingdom)
 lang-en-US = English (United States)
 lang-es-CO = Español (Latino)
