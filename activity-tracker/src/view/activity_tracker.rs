@@ -172,7 +172,7 @@ impl View for ActivityTracker {
             KeyEvent::Pressed(Key::Y) => {
                 self.sort = self.sort.next();
                 self.button_hints
-                    .get_mut(0)
+                    .get_mut(1)
                     .unwrap()
                     .set_text(self.sort.button_hint(&self.res.get::<Locale>()));
                 self.load_entries()?;
