@@ -31,7 +31,7 @@ pub struct Directory {
 
 impl Ord for Directory {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.full_name.cmp(&other.full_name)
+        self.name.cmp(&other.name)
     }
 }
 
