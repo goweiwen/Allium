@@ -122,6 +122,7 @@ where
             ImageMode::Contain,
         );
         image.set_border_radius(12);
+        image.set_alignment(Alignment::Right);
 
         let button_hints = Row::new(
             Point::new(
