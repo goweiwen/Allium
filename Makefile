@@ -14,6 +14,8 @@ all: static build package-build package-retroarch migrations
 
 simulator-env:
 	mkdir -p assets/simulator
+	mkdir -p assets/simulator/Roms
+	mkdir -p assets/simulator/Apps
 	rsync -ar assets/root/.allium assets/simulator/
 
 simulator-launcher: simulator-env
