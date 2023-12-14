@@ -1,5 +1,3 @@
-#![feature(trait_upcasting)]
-
 mod activity_tracker;
 mod view;
 
