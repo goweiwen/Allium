@@ -152,10 +152,11 @@ impl Image {
                 }
             }
         };
+        let (w, h) = image.dimensions();
         if border_radius != 0 {
+            let border_radius = border_radius.min(w / 2).min(h / 2);
             round(&mut image, border_radius);
         }
-        let (w, h) = image.dimensions();
         let image = if w != rect.w || h != rect.h {
             let mut bg = RgbaImage::new(rect.w, rect.h);
             let x = match self.alignment {
