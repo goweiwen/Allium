@@ -111,16 +111,21 @@ fn short_name(name: &str) -> String {
     lazy_static! {
         static ref NUMBERS_RE: Regex = Regex::new(r"^\d+[.\)]").unwrap();
     }
-    let name = NUMBERS_RE.replace(name, "").to_string();
+    let mut name = NUMBERS_RE.replace(name, "").to_string();
 
     // Remove trailing parenthesis
     lazy_static! {
         static ref PARENTHESIS_RE: Regex = Regex::new(r"[\(\[].+[\)\]]$").unwrap();
     }
-    let name = PARENTHESIS_RE.replace(&name, "").to_string();
+    name = PARENTHESIS_RE.replace(&name, "").to_string();
+
+    // Remove the .p8 extension for .p8.png files
+    if name.ends_with(".p8") {
+        name.truncate(name.len() - 3)
+    }
 
     // Trim whitespaces
-    let name = name.trim().to_owned();
+    name = name.trim().to_owned();
 
     name
 }
