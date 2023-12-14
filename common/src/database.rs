@@ -458,6 +458,18 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
     }
 }
 
+fn map_game(row: &Row<'_>) -> rusqlite::Result<Game> {
+    Ok(Game {
+        name: row.get(0)?,
+        path: PathBuf::from(row.get::<_, String>(1)?),
+        image: row.get::<_, Option<String>>(2)?.map(PathBuf::from),
+        play_count: row.get(3)?,
+        play_time: Duration::seconds(row.get(4)?),
+        last_played: row.get(5)?,
+        core: row.get(6)?,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -730,16 +742,4 @@ mod tests {
 
         Ok(())
     }
-}
-
-fn map_game(row: &Row<'_>) -> rusqlite::Result<Game> {
-    Ok(Game {
-        name: row.get(0)?,
-        path: PathBuf::from(row.get::<_, String>(1)?),
-        image: row.get::<_, Option<String>>(2)?.map(PathBuf::from),
-        play_count: row.get(3)?,
-        play_time: Duration::seconds(row.get(4)?),
-        last_played: row.get(5)?,
-        core: row.get(6)?,
-    })
 }
