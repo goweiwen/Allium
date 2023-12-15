@@ -28,6 +28,8 @@ impl LazyImage {
             Self::NotFound => return None,
         };
 
+        const IMAGE_EXTENSIONS: [&str; 4] = ["png", "jpg", "jpeg", "gif"];
+
         // Search for Imgs folder upwards, recursively
         let mut parent = path.clone();
         let mut image = None;
@@ -35,7 +37,6 @@ impl LazyImage {
         'image: while parent.pop() {
             let mut image_path = parent.join("Imgs");
             if image_path.is_dir() {
-                const IMAGE_EXTENSIONS: [&str; 4] = ["png", "jpg", "jpeg", "gif"];
                 image_path.push(file_name);
                 for ext in &IMAGE_EXTENSIONS {
                     image_path.set_extension(ext);
@@ -58,6 +59,16 @@ impl LazyImage {
                 break;
             }
         }
+
+        // If it is itself an image, use that instead
+        if image.is_none() {
+            if let Some(ext) = path.extension().and_then(std::ffi::OsStr::to_str) {
+                if IMAGE_EXTENSIONS.contains(&ext) {
+                    image = Some(path.clone());
+                }
+            }
+        }
+
         *self = match image {
             Some(image) => Self::Found(image),
             None => Self::NotFound,
