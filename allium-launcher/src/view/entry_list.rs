@@ -77,7 +77,7 @@ where
                 x + w as i32 - IMAGE_WIDTH as i32 - 24,
                 y + 8,
                 IMAGE_WIDTH,
-                h - 8 - 8 - ButtonIcon::diameter(&styles) - 8,
+                h - 8 - 8 - 8 - ButtonIcon::diameter(&styles) - 8,
             ),
             ImageMode::Contain,
         );
