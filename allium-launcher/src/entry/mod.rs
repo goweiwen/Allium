@@ -106,7 +106,12 @@ impl Entry {
     }
 }
 
-fn short_name(name: &str) -> String {
+fn short_name(mut name: &str) -> String {
+    // Remove the .p8 extension for .p8.png files
+    if name.ends_with(".p8") {
+        name = &name[..name.len() - 3]
+    }
+
     // Remove numbers
     lazy_static! {
         static ref NUMBERS_RE: Regex = Regex::new(r"^\d+[.\)]").unwrap();
@@ -118,11 +123,6 @@ fn short_name(name: &str) -> String {
         static ref PARENTHESIS_RE: Regex = Regex::new(r"[\(\[].+[\)\]]$").unwrap();
     }
     name = PARENTHESIS_RE.replace(&name, "").to_string();
-
-    // Remove the .p8 extension for .p8.png files
-    if name.ends_with(".p8") {
-        name.truncate(name.len() - 3)
-    }
 
     // Trim whitespaces
     name = name.trim().to_owned();
