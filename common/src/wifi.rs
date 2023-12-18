@@ -15,6 +15,7 @@ pub struct WiFiSettings {
     pub ssid: String,
     pub password: String,
     pub ntp: bool,
+    pub web_file_browser: bool,
     pub telnet: bool,
     pub ftp: bool,
 }
@@ -26,6 +27,7 @@ impl WiFiSettings {
             ssid: String::new(),
             password: String::new(),
             ntp: false,
+            web_file_browser: false,
             telnet: false,
             ftp: false,
         }
@@ -165,6 +167,16 @@ network={{
         self.ntp = enabled;
         if self.ntp {
             ntp_sync()?;
+        }
+        Ok(())
+    }
+
+    pub fn toggle_web_file_browser(&mut self, enabled: bool) -> Result<()> {
+        self.web_file_browser = enabled;
+        if self.web_file_browser {
+            web_file_browser_on()?;
+        } else {
+            web_file_browser_off()?;
         }
         Ok(())
     }
@@ -351,6 +363,46 @@ pub fn ntp_sync() -> Result<()> {
                 log::error!("failed to load game info: {}", e);
             }
         }
+    });
+    Ok(())
+}
+
+pub fn web_file_browser_on() -> Result<()> {
+    #[cfg(feature = "miyoo")]
+    tokio::spawn(async {
+        Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("dufs-on.sh"))
+            .spawn()
+            .map_err(|e| {
+                log::error!("failed to spawn dufs-on.sh: {}", e);
+                e
+            })
+            .unwrap()
+            .wait()
+            .await
+            .map_err(|e| {
+                log::error!("dufs-on.sh failed: {}", e);
+                e
+            })
+    });
+    Ok(())
+}
+
+pub fn web_file_browser_off() -> Result<()> {
+    #[cfg(feature = "miyoo")]
+    tokio::spawn(async {
+        Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("dufs-off.sh"))
+            .spawn()
+            .map_err(|e| {
+                log::error!("failed to spawn dufs-off.sh: {}", e);
+                e
+            })
+            .unwrap()
+            .wait()
+            .await
+            .map_err(|e| {
+                log::error!("dufs-off.sh failed: {}", e);
+                e
+            })
     });
     Ok(())
 }

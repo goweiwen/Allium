@@ -4,6 +4,8 @@ DIST_DIR := dist
 RETROARCH := third-party/RetroArch
 TOOLCHAIN := mholdg16/miyoomini-toolchain:latest
 
+CROSS_TARGET_TRIPLE := arm-unknown-linux-gnueabihf
+
 PLATFORM := $(shell uname -m)
 ifeq ($(PLATFORM),arm64)
   export CROSS_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_IMAGE_TOOLCHAIN = aarch64-unknown-linux-gnu
@@ -41,7 +43,7 @@ third-party/my283:
 	rm third-party/my283.tar.xz
 
 build: third-party/my283
-	cross build --release --features=miyoo --bin=alliumd --bin=allium-launcher --bin=allium-menu --bin=activity-tracker --bin=screenshot --bin=say --bin=show --bin=show-hotkeys --bin=myctl
+	cross build --release --target=$(CROSS_TARGET_TRIPLE) --features=miyoo --bin=alliumd --bin=allium-launcher --bin=allium-menu --bin=activity-tracker --bin=screenshot --bin=say --bin=show --bin=show-hotkeys --bin=myctl
 
 package-build:
 	mkdir -p $(DIST_DIR)/.allium/bin
@@ -74,6 +76,10 @@ package-retroarch: retroarch
 
 $(RETROARCH)/retroarch:
 	docker run --rm -v /$(ROOT_DIR)/third-party:/root/workspace $(TOOLCHAIN) bash -c "source /root/.bashrc; cd RetroArch; make clean all ADD_NETWORKING=1 PACKAGE_NAME=retroarch"
+
+dufs:
+	cd third-party/dufs && cross build --release --target=$(CROSS_TARGET_TRIPLE)
+	cp "third-party/dufs/target/$(CROSS_TARGET_TRIPLE)/release/dufs" "$(DIST_DIR)/.allium/bin/"
 
 lint:
 	cargo fmt

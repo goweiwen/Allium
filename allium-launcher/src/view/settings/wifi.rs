@@ -48,6 +48,7 @@ impl Wifi {
                 locale.t("settings-wifi-wifi-network"),
                 locale.t("settings-wifi-wifi-password"),
                 locale.t("settings-wifi-ntp-enabled"),
+                locale.t("settings-wifi-web-file-explorer-enabled"),
                 locale.t("settings-wifi-telnet-enabled"),
                 locale.t("settings-wifi-ftp-enabled"),
             ],
@@ -227,8 +228,11 @@ impl View for Wifi {
                             .settings
                             .set_password(val.as_string().unwrap().to_string())?,
                         4 => self.settings.toggle_ntp(val.as_bool().unwrap())?,
-                        5 => self.settings.toggle_telnet(val.as_bool().unwrap())?,
-                        6 => self.settings.toggle_ftp(val.as_bool().unwrap())?,
+                        5 => self
+                            .settings
+                            .toggle_web_file_browser(val.as_bool().unwrap())?,
+                        6 => self.settings.toggle_telnet(val.as_bool().unwrap())?,
+                        7 => self.settings.toggle_ftp(val.as_bool().unwrap())?,
                         _ => unreachable!("Invalid index"),
                     }
                 }

@@ -1,3 +1,6 @@
 [submodule "third-party/RetroArch"]
 	path = third-party/RetroArch
 	url = https://github.com/goweiwen/RetroArch.git
+[submodule "third-party/dufs"]
+	path = third-party/dufs
+	url = https://github.com/sigoden/dufs.git

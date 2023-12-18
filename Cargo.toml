@@ -12,6 +12,9 @@ members = [
     "show",
     "show-hotkeys",
 ]
+exclude = [
+    "third-party/dufs"
+]
 resolver = "2"
 
 # Following: https://github.com/johnthagen/min-sized-rust
