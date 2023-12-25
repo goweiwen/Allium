@@ -78,7 +78,8 @@ impl View for ButtonIcon {
                 self.point.y,
             ),
             Alignment::Right => {
-                embedded_graphics::prelude::Point::new(self.point.x - diameter as i32, self.point.y)
+                let width = self.bounding_box(styles).w;
+                embedded_graphics::prelude::Point::new(self.point.x - width as i32, self.point.y)
             }
         };
 
@@ -261,14 +262,6 @@ impl View for ButtonIcon {
     }
 
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
-        let diameter = Self::diameter(styles);
-        let x = match self.alignment {
-            Alignment::Left => self.point.x,
-            Alignment::Center => self.point.x - (diameter / 2) as i32,
-
-            Alignment::Right => self.point.x - diameter as i32,
-        };
-
         let text = match self.button {
             Key::A => "A",
             Key::B => "B",
@@ -291,60 +284,44 @@ impl View for ButtonIcon {
             Key::Unknown => unimplemented!("unknown button"),
         };
 
-        let point = match self.alignment {
-            Alignment::Left => self.point.into(),
-            Alignment::Center => embedded_graphics::prelude::Point::new(
-                self.point.x - (diameter / 2) as i32,
-                self.point.y,
-            ),
-            Alignment::Right => {
-                embedded_graphics::prelude::Point::new(self.point.x - diameter as i32, self.point.y)
-            }
-        };
-
-        let rect = match self.button {
+        let w = match self.button {
             Key::A
             | Key::B
             | Key::X
             | Key::Y
-            | Key::Start
-            | Key::Select
             | Key::L
             | Key::L2
             | Key::R
+            | Key::R2
             | Key::Up
             | Key::Right
             | Key::Down
-            | Key::Left
-            | Key::R2 => Rect::new(point.x, point.y, diameter, diameter),
+            | Key::Left => Self::diameter(styles),
             _ => {
                 let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
                     .font_fallback(styles.cjk_font.font())
-                    .font_size(diameter * 3 / 4)
+                    .font_size(Self::diameter(styles) * 3 / 4)
                     .text_color(styles.background_color)
                     .build();
                 let text = Text::with_text_style(
                     text,
-                    embedded_graphics::prelude::Point::new(
-                        point.x + 4,
-                        point.y + diameter as i32 / 8,
-                    ),
+                    embedded_graphics::prelude::Point::zero(),
                     text_style,
                     TextStyleBuilder::new()
                         .alignment(Alignment::Center.into())
                         .build(),
                 );
-                let rect = text.bounding_box();
-                Rect::new(
-                    rect.top_left.x - 4,
-                    rect.top_left.y - 2,
-                    rect.size.width + 8,
-                    rect.size.height + 4,
-                )
+                text.bounding_box().size.width + 8
             }
         };
 
-        Rect::new(x, self.point.y - 1, rect.w, rect.h)
+        let x = match self.alignment {
+            Alignment::Left => self.point.x,
+            Alignment::Center => self.point.x - (w / 2) as i32,
+            Alignment::Right => self.point.x - w as i32,
+        };
+
+        Rect::new(x, self.point.y - 1, w, Self::diameter(styles) + 4)
     }
 
     fn set_position(&mut self, point: Point) {

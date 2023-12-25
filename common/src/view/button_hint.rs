@@ -59,8 +59,9 @@ where
 
     fn layout_left(&mut self, styles: &Stylesheet) {
         self.button.set_position(self.point);
+        let width = self.button.bounding_box(styles).w;
         self.label.set_position(Point::new(
-            self.point.x + ButtonIcon::diameter(styles) as i32 + 8,
+            self.point.x + width as i32 + 8,
             self.point.y + 2,
         ));
     }
@@ -132,6 +133,15 @@ where
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
         if !self.has_layout {
             self.layout(styles);
+        }
+
+        if self.label.text() == "Confirm" {
+            dbg!(self.button.bounding_box(styles));
+            dbg!(self.label.bounding_box(styles));
+            dbg!(self
+                .button
+                .bounding_box(styles)
+                .union(&self.label.bounding_box(styles)));
         }
 
         self.button
