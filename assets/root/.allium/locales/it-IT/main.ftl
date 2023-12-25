@@ -12,7 +12,7 @@ sort-search = Cerca
 
 populating-database = Popolamento database...
     Questo potrebbe richiedere diversi minuti.
-    Vai a prendere un caffè!
+    Potete andare a preparare un caffè!
 populating-games = Popolamento giochi... ({ $directory })
 
 menu-launch = Avvia

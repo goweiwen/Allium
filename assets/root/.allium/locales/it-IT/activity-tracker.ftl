@@ -1,3 +1,3 @@
-activity-tracker-title = Tracciamento attivita'
+activity-tracker-title = Tracciamento attività
 
 activity-tracker-play-time = { $hours_decimal } ore
