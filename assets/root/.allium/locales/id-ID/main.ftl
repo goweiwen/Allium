@@ -47,6 +47,7 @@ settings-display-screen-resolution = Resolusi Layar
 
 settings-theme = Tema
 settings-theme-dark-mode = Mode Gelap
+settings-theme-show-battery-level = Persentase Baterai
 settings-theme-ui-font = Huruf sistem
 settings-theme-ui-font-size = Ukuran huruf
 settings-theme-guide-font = Huruf di Panduan

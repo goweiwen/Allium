@@ -58,8 +58,13 @@ where
         battery: B,
     ) -> Result<Self> {
         let Rect { x, y, w, h: _h } = rect;
+        let styles = res.get::<Stylesheet>();
 
-        let battery_indicator = BatteryIndicator::new(Point::new(w as i32 - 12, y + 8), battery);
+        let battery_indicator = BatteryIndicator::new(
+            Point::new(w as i32 - 12, y + 8),
+            battery,
+            styles.show_battery_level,
+        );
 
         let mut tabs = Row::new(
             Point::new(x + 12, y + 8),

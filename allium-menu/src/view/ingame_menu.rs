@@ -79,7 +79,11 @@ where
         );
         name.color(common::stylesheet::StylesheetColor::Highlight);
 
-        let battery_indicator = BatteryIndicator::new(Point::new(w as i32 - 12, y + 8), battery);
+        let battery_indicator = BatteryIndicator::new(
+            Point::new(w as i32 - 12, y + 8),
+            battery,
+            styles.show_battery_level,
+        );
 
         let entries = MenuEntry::entries(&retroarch_info);
         let mut menu = SettingsList::new(

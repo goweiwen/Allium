@@ -47,6 +47,7 @@ settings-display-screen-resolution = Bildschirmauflösung
 
 settings-theme = Design
 settings-theme-dark-mode = Dunkles Design
+settings-theme-show-battery-level = Akkustand anzeigen
 settings-theme-ui-font = UI Schriftart
 settings-theme-ui-font-size = UI Schriftgröße
 settings-theme-guide-font = Schriftart Anleitung

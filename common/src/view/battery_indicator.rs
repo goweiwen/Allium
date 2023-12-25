@@ -17,7 +17,7 @@ use crate::display::Display;
 use crate::geom::{Point, Rect};
 use crate::platform::{DefaultPlatform, KeyEvent, Platform};
 use crate::stylesheet::Stylesheet;
-use crate::view::{Command, View};
+use crate::view::{Command, Label, View};
 
 #[derive(Debug, Clone)]
 pub struct BatteryIndicator<B>
@@ -26,6 +26,7 @@ where
 {
     point: Point,
     last_updated: Instant,
+    label: Option<Label<String>>,
     battery: B,
     dirty: bool,
 }
@@ -34,11 +35,24 @@ impl<B> BatteryIndicator<B>
 where
     B: Battery + 'static,
 {
-    pub fn new(point: Point, mut battery: B) -> Self {
+    pub fn new(point: Point, mut battery: B, show_percentage: bool) -> Self {
         battery.update().unwrap();
+
+        let label = if show_percentage {
+            Some(Label::new(
+                point,
+                format_battery_percentage(battery.charging(), battery.percentage()),
+                crate::geom::Alignment::Right,
+                None,
+            ))
+        } else {
+            None
+        };
+
         Self {
             point,
             last_updated: Instant::now(),
+            label,
             battery,
             dirty: true,
         }
@@ -58,6 +72,12 @@ where
         if let Err(e) = self.battery.update() {
             error!("Failed to update battery: {}", e);
         }
+        if let Some(ref mut label) = self.label {
+            label.set_text(format_battery_percentage(
+                self.battery.charging(),
+                self.battery.percentage(),
+            ));
+        }
         self.dirty = true;
     }
 
@@ -71,15 +91,20 @@ where
         if self.dirty {
             display.load(self.bounding_box(styles))?;
 
+            let label_w = if let Some(ref mut label) = self.label {
+                label.bounding_box(styles).w as i32 + 8
+            } else {
+                0
+            };
             let w = styles.ui_font.size;
             let h = styles.ui_font.size * 3 / 5;
-            let y = styles.ui_font.size as i32 / 6;
+            let y = styles.ui_font.size as i32 / 6 + 1;
             let margin = styles.ui_font.size as i32 * 2 / 28;
             let stroke = styles.ui_font.size as i32 * 3 / 28;
             let x = if self.battery.charging() {
-                -(styles.ui_font.size as i32) * 5 / 7
+                -(styles.ui_font.size as i32) * 5 / 7 - label_w
             } else {
-                -margin
+                -margin - label_w
             };
 
             // Outer battery
@@ -163,20 +188,21 @@ where
                     .fill_color(styles.foreground_color)
                     .build();
 
+                let x = self.point.x - label_w;
                 let size = styles.ui_font.size;
                 Triangle::new(
                     Point::new(
-                        self.point.x + -6 * size as i32 / 40,
+                        x + -6 * size as i32 / 40,
                         self.point.y + 7 * size as i32 / 40,
                     )
                     .into(),
                     Point::new(
-                        self.point.x + -15 * size as i32 / 40,
+                        x + -15 * size as i32 / 40,
                         self.point.y + 20 * size as i32 / 40,
                     )
                     .into(),
                     Point::new(
-                        self.point.x + -9 * size as i32 / 40,
+                        x + -9 * size as i32 / 40,
                         self.point.y + 20 * size as i32 / 40,
                     )
                     .into(),
@@ -185,23 +211,27 @@ where
                 .draw(display)?;
                 Triangle::new(
                     Point::new(
-                        self.point.x + -12 * size as i32 / 40,
+                        x + -12 * size as i32 / 40,
                         self.point.y + 31 * size as i32 / 40,
                     )
                     .into(),
                     Point::new(
-                        self.point.x + -3 * size as i32 / 40,
+                        x + -3 * size as i32 / 40,
                         self.point.y + 18 * size as i32 / 40,
                     )
                     .into(),
                     Point::new(
-                        self.point.x + -9 * size as i32 / 40,
+                        x + -9 * size as i32 / 40,
                         self.point.y + 18 * size as i32 / 40,
                     )
                     .into(),
                 )
                 .into_styled(fill_style)
                 .draw(display)?;
+            }
+
+            if let Some(ref mut label) = self.label {
+                label.draw(display, styles)?;
             }
 
             self.dirty = false;
@@ -217,6 +247,9 @@ where
 
     fn set_should_draw(&mut self) {
         self.dirty = true;
+        if let Some(ref mut label) = self.label {
+            label.set_should_draw()
+        }
     }
 
     async fn handle_key_event(
@@ -237,17 +270,26 @@ where
     }
 
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
-        let w = styles.ui_font.size * 2;
-        let h = w * 3 / 5;
-        Rect::new(
+        let w = styles.ui_font.size * 3;
+        let h = styles.ui_font.size * 6 / 5;
+        let rect = Rect::new(
             self.point.x - w as i32,
             styles.ui_font.size as i32 / 6,
             w,
             h,
-        )
+        );
+        rect
     }
 
     fn set_position(&mut self, point: Point) {
         self.point = point;
+    }
+}
+
+fn format_battery_percentage(charging: bool, percentage: i32) -> String {
+    if charging {
+        String::new()
+    } else {
+        format!("{}%", percentage)
     }
 }

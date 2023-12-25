@@ -47,6 +47,7 @@ settings-display-screen-resolution = Resolución
 
 settings-theme = Tema
 settings-theme-dark-mode = Modo oscuro
+settings-theme-show-battery-level = Porcentaje de batería
 settings-theme-ui-font = Fuente del menú
 settings-theme-ui-font-size = Tamaño de fuente del menú
 settings-theme-guide-font = Fuente para las guías

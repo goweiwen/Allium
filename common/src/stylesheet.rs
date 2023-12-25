@@ -122,6 +122,7 @@ impl StylesheetFont {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Stylesheet {
     pub enable_box_art: bool,
+    pub show_battery_level: bool,
     #[serde(default = "Stylesheet::default_foreground_color")]
     pub foreground_color: Color,
     #[serde(default = "Stylesheet::default_background_color")]
@@ -237,6 +238,10 @@ impl Stylesheet {
         mem::swap(&mut self.button_y_color, &mut self.alt_button_y_color);
     }
 
+    pub fn toggle_battery_percentage(&mut self) {
+        self.show_battery_level = !self.show_battery_level;
+    }
+
     fn patch_ra_config(&self) -> Result<()> {
         let mut file = File::create("/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.cfg")?;
         write!(
@@ -343,6 +348,7 @@ impl Default for Stylesheet {
     fn default() -> Self {
         Self {
             enable_box_art: true,
+            show_battery_level: false,
             foreground_color: Self::default_foreground_color(),
             background_color: Self::default_background_color(),
             highlight_color: Self::default_highlight_color(),

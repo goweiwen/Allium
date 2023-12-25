@@ -36,7 +36,11 @@ where
         let styles = res.get::<Stylesheet>();
         let locale = res.get::<Locale>();
 
-        let battery_indicator = BatteryIndicator::new(Point::new(w as i32 - 12, y + 8), battery);
+        let battery_indicator = BatteryIndicator::new(
+            Point::new(w as i32 - 12, y + 8),
+            battery,
+            styles.show_battery_level,
+        );
 
         let label = Label::new(
             Point::new(x + 12, y + 8),

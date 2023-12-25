@@ -47,6 +47,7 @@ settings-display-screen-resolution = 螢幕分辨率
 
 settings-theme = 主題
 settings-theme-dark-mode = 暗黑模式
+settings-theme-show-battery-level = 顯示電池電量
 settings-theme-ui-font = UI字體
 settings-theme-ui-font-size = UI字體大小
 settings-theme-guide-font = 指南字體

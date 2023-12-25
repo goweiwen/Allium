@@ -54,6 +54,7 @@ impl Theme {
             ),
             vec![
                 locale.t("settings-theme-dark-mode"),
+                locale.t("settings-theme-show-battery-level"),
                 locale.t("settings-theme-ui-font"),
                 locale.t("settings-theme-ui-font-size"),
                 locale.t("settings-theme-guide-font"),
@@ -71,6 +72,11 @@ impl Theme {
                 Box::new(Toggle::new(
                     Point::zero(),
                     stylesheet.background_color.is_dark(),
+                    Alignment::Right,
+                )),
+                Box::new(Toggle::new(
+                    Point::zero(),
+                    stylesheet.show_battery_level,
                     Alignment::Right,
                 )),
                 Box::new(Select::new(
@@ -287,24 +293,25 @@ impl View for Theme {
                                 )),
                             );
                         }
-                        1 => {
+                        1 => self.stylesheet.toggle_battery_percentage(),
+                        2 => {
                             self.stylesheet.ui_font.path =
                                 self.fonts[val.as_int().unwrap() as usize].clone()
                         }
-                        2 => self.stylesheet.ui_font.size = val.as_int().unwrap() as u32,
-                        3 => {
+                        3 => self.stylesheet.ui_font.size = val.as_int().unwrap() as u32,
+                        4 => {
                             self.stylesheet.guide_font.path =
                                 self.fonts[val.as_int().unwrap() as usize].clone()
                         }
-                        4 => self.stylesheet.guide_font.size = val.as_int().unwrap() as u32,
-                        5 => self.stylesheet.highlight_color = val.as_color().unwrap(),
-                        6 => self.stylesheet.foreground_color = val.as_color().unwrap(),
-                        7 => self.stylesheet.background_color = val.as_color().unwrap(),
-                        8 => self.stylesheet.disabled_color = val.as_color().unwrap(),
-                        9 => self.stylesheet.button_a_color = val.as_color().unwrap(),
-                        10 => self.stylesheet.button_b_color = val.as_color().unwrap(),
-                        11 => self.stylesheet.button_x_color = val.as_color().unwrap(),
-                        12 => self.stylesheet.button_y_color = val.as_color().unwrap(),
+                        5 => self.stylesheet.guide_font.size = val.as_int().unwrap() as u32,
+                        6 => self.stylesheet.highlight_color = val.as_color().unwrap(),
+                        7 => self.stylesheet.foreground_color = val.as_color().unwrap(),
+                        8 => self.stylesheet.background_color = val.as_color().unwrap(),
+                        9 => self.stylesheet.disabled_color = val.as_color().unwrap(),
+                        10 => self.stylesheet.button_a_color = val.as_color().unwrap(),
+                        11 => self.stylesheet.button_b_color = val.as_color().unwrap(),
+                        12 => self.stylesheet.button_x_color = val.as_color().unwrap(),
+                        13 => self.stylesheet.button_y_color = val.as_color().unwrap(),
                         _ => unreachable!("Invalid index"),
                     }
 

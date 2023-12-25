@@ -283,7 +283,7 @@ impl SimulatorBattery {
     pub fn new() -> SimulatorBattery {
         SimulatorBattery {
             percentage: 100,
-            charging: true,
+            charging: false,
         }
     }
 }
@@ -298,7 +298,7 @@ impl Battery for SimulatorBattery {
     fn update(&mut self) -> Result<()> {
         trace!("Updating battery");
         if self.percentage > 0 {
-            self.percentage -= 10;
+            self.percentage -= 5
         }
         self.charging = !self.charging;
         Ok(())
