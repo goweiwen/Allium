@@ -5,6 +5,7 @@ lang-es-CO = Español (Latino)
 lang-es-ES = Español (España)
 lang-fr-FR = Français
 lang-id-ID = Bahasa Indonesia
+lang-it-IT = Italiano
 lang-ja-JP = 日本語
 lang-zh-CN = 简体中文
 lang-zh-HK = 繁體中文 (香港)
