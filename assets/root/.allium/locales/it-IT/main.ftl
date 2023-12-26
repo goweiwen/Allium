@@ -6,13 +6,13 @@ tab-settings = Impostazioni
 
 sort-alphabetical = Ordina: A-Z
 sort-last-played = Ordina: Recenti
-sort-most-played = Ordina: Attivit‡
+sort-most-played = Ordina: Attivit√†
 sort-random = Ordina: Casuale
 sort-search = Cerca
 
 populating-database = Popolamento database...
     Questo potrebbe richiedere diversi minuti.
-    Potete andare a preparare un caffË!
+    Potete andare a preparare un caff√®!
 populating-games = Popolamento giochi... ({ $directory })
 
 menu-launch = Avvia
@@ -36,7 +36,7 @@ settings-clock-datetime = Data e Ora
 settings-clock-timezone = Fuso orario
 
 settings-display = Schermo
-settings-display-luminance = Luminosit‡
+settings-display-luminance = Luminosit√†
 settings-display-hue = Tinta
 settings-display-contrast = Contrasto
 settings-display-saturation = Saturazione
@@ -46,7 +46,7 @@ settings-display-blue = Blu
 settings-display-screen-resolution = Risoluzione Schermo
 
 settings-theme = Tema
-settings-theme-dark-mode = Modalit‡ scura
+settings-theme-dark-mode = Modalit√† scura
 settings-theme-show-battery-level = Percentuale Batteria
 settings-theme-ui-font = Font UI
 settings-theme-ui-font-size = Dimensioni Font UI
@@ -96,8 +96,8 @@ hotkeys-global = Pulsanti Globali
 hotkeys-screenshot = Screenshot
 hotkeys-volume-down = Volume -
 hotkeys-volume-up = Volume +
-hotkeys-brightness-down = Luminosit‡ -
-hotkeys-brightness-up = Luminosit‡ +
+hotkeys-brightness-down = Luminosit√† -
+hotkeys-brightness-up = Luminosit√† +
 
 hotkeys-ingame = Pulsanti in Gioco:
 hotkeys-toggle-aspect-ratio = Proporzioni ON/OFF
