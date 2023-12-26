@@ -272,13 +272,13 @@ where
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
         let w = styles.ui_font.size * 3;
         let h = styles.ui_font.size * 6 / 5;
-        let rect = Rect::new(
+
+        Rect::new(
             self.point.x - w as i32,
             styles.ui_font.size as i32 / 6,
             w,
             h,
-        );
-        rect
+        )
     }
 
     fn set_position(&mut self, point: Point) {
