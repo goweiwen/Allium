@@ -11,6 +11,7 @@ use common::{
     database::{Database, NewGame},
     locale::Locale,
 };
+use itertools::Itertools;
 use log::{error, trace};
 use serde::{Deserialize, Serialize};
 
@@ -285,7 +286,8 @@ impl Directory {
                 .filter_map(|entry| match Entry::new(entry.path(), console_mapper) {
                     Ok(Some(entry)) => Some(entry),
                     _ => None,
-                }),
+                })
+                .dedup_by(|a, b| a.name() == b.name()),
         );
 
         let mut uniques = HashSet::new();

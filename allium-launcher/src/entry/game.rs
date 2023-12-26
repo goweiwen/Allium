@@ -1,4 +1,5 @@
 use std::{
+    cmp::Ordering,
     ffi::OsStr,
     fs, mem,
     path::{Path, PathBuf},
@@ -103,7 +104,17 @@ impl Game {
 
 impl Ord for Game {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.name.cmp(&other.name)
+        let cmp = self.name.cmp(&other.name);
+
+        if cmp == Ordering::Equal {
+            match (self.extension.as_str(), other.extension.as_str()) {
+                ("cue", _) => Ordering::Less,
+                (_, "cue") => Ordering::Greater,
+                (a, b) => a.cmp(b),
+            }
+        } else {
+            cmp
+        }
     }
 }
 
