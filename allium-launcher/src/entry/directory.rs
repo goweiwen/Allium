@@ -287,6 +287,7 @@ impl Directory {
                     Ok(Some(entry)) => Some(entry),
                     _ => None,
                 })
+                .sorted()
                 .dedup_by(|a, b| a.name() == b.name()),
         );
 
