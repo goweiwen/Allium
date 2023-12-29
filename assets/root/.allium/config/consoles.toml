@@ -70,7 +70,7 @@ quasi88 = "QUASI88"
 reminiscence = "REminiscence"
 retro8 = "Retro8"
 sameduck = "SameDuck"
-scummvm =  "ScummVM"
+scummvm = "ScummVM"
 sh_launcher = "SH Launcher"
 snes9x = "Snes9x"
 snes9x2002 = "Snes9x 2002"
@@ -104,7 +104,19 @@ extensions = ["sna", "kcr"]
 
 [[consoles]]
 name = "Arcade"
-cores = ["mame2003_plus", "fbneo", "fbalpha2012", "fbalpha2012_cps1", "fbalpha2012_cps2", "fbalpha2012_cps3", "km_mame2003_xtreme", "mame2003_midway", "mame2003", "mame2000", "mba_mini"]
+cores = [
+    "mame2003_plus",
+    "fbneo",
+    "fbalpha2012",
+    "fbalpha2012_cps1",
+    "fbalpha2012_cps2",
+    "fbalpha2012_cps3",
+    "km_mame2003_xtreme",
+    "mame2003_midway",
+    "mame2003",
+    "mame2000",
+    "mba_mini",
+]
 patterns = ["ARCADE"]
 
 [[consoles]]
@@ -161,17 +173,50 @@ extensions = ["ws", "pc2"]
 
 [[consoles]]
 name = "CPS1"
-cores = ["fbalpha2012_cps1", "mame2003_plus", "fbneo", "fbalpha2012", "fbalpha2012_cps1", "km_mame2003_xtreme", "mame2003_midway", "mame2003", "mame2000", "mba_mini"]
+cores = [
+    "fbalpha2012_cps1",
+    "mame2003_plus",
+    "fbneo",
+    "fbalpha2012",
+    "fbalpha2012_cps1",
+    "km_mame2003_xtreme",
+    "mame2003_midway",
+    "mame2003",
+    "mame2000",
+    "mba_mini",
+]
 patterns = ["CPS1"]
 
 [[consoles]]
 name = "CPS2"
-cores = ["fbalpha2012_cps2", "mame2003_plus", "fbneo", "fbalpha2012", "fbalpha2012_cps2", "km_mame2003_xtreme", "mame2003_midway", "mame2003", "mame2000", "mba_mini"]
+cores = [
+    "fbalpha2012_cps2",
+    "mame2003_plus",
+    "fbneo",
+    "fbalpha2012",
+    "fbalpha2012_cps2",
+    "km_mame2003_xtreme",
+    "mame2003_midway",
+    "mame2003",
+    "mame2000",
+    "mba_mini",
+]
 patterns = ["CPS2"]
 
 [[consoles]]
 name = "CPS3"
-cores = ["fbalpha2012_cps3", "mame2003_plus", "fbneo", "fbalpha2012", "fbalpha2012_cps3", "km_mame2003_xtreme", "mame2003_midway", "mame2003", "mame2000", "mba_mini"]
+cores = [
+    "fbalpha2012_cps3",
+    "mame2003_plus",
+    "fbneo",
+    "fbalpha2012",
+    "fbalpha2012_cps3",
+    "km_mame2003_xtreme",
+    "mame2003_midway",
+    "mame2003",
+    "mame2000",
+    "mba_mini",
+]
 patterns = ["CPS3"]
 
 [[consoles]]
@@ -261,7 +306,7 @@ extensions = [
 name = "MSX"
 cores = ["bluemsx", "fmsx"]
 patterns = ["MSX"]
-extensions = ["mx1", "mx2" ]
+extensions = ["mx1", "mx2"]
 
 [[consoles]]
 name = "SuperGrafx"
@@ -335,7 +380,15 @@ extensions = ["st"]
 
 [[consoles]]
 name = "SNES"
-cores = ["mednafen_supafaust", "snes9x", "snes9x2010", "snes9x2005", "snes9x2005_plus", "snes9x2002", "chimerasnes"]
+cores = [
+    "mednafen_supafaust",
+    "snes9x",
+    "snes9x2010",
+    "snes9x2005",
+    "snes9x2005_plus",
+    "snes9x2002",
+    "chimerasnes",
+]
 patterns = ["SFC", "SNES"]
 extensions = ["sfc", "smc", "swc", "fig"]
 
@@ -583,3 +636,9 @@ name = "Nintendo DS"
 path = "/mnt/SDCARD/.allium/cores/drastic/launch.sh"
 patterns = ["NDS", "DS"]
 extensions = ["nds"]
+
+[[consoles]]
+name = "Movies"
+path = "/mnt/SDCARD/.allium/cores/ffplay/launch.sh"
+patterns = ["MEDIA", "Movies"]
+extensions = ["3g2", "3gp", "aac", "avi", "flv", "m4a", "m4a", "mkv", "mj2", "mov", "mp3", "mp4", "mpeg", "ogg", "oss", "wav", "webm"]

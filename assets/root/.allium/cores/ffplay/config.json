@@ -1,0 +1,12 @@
+{
+"label":"Videos",
+"icon":"icon.png",
+"iconsel":"",
+"launch":"launch.sh",
+"rompath":"../../Media/Videos",
+"imgpath":"../../Media/Videos/Imgs",
+"useswap":0,
+"shortname":0,
+"hidebios":0,
+"extlist":""
+}
