@@ -48,7 +48,7 @@ impl Wifi {
                 locale.t("settings-wifi-wifi-network"),
                 locale.t("settings-wifi-wifi-password"),
                 locale.t("settings-wifi-ntp-enabled"),
-                locale.t("settings-wifi-web-file-explorer-enabled"),
+                locale.t("settings-wifi-web-file-explorer"),
                 locale.t("settings-wifi-telnet-enabled"),
                 locale.t("settings-wifi-ftp-enabled"),
             ],
