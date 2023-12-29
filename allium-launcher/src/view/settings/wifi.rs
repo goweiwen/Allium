@@ -77,6 +77,11 @@ impl Wifi {
                 Box::new(Toggle::new(Point::zero(), settings.ntp, Alignment::Right)),
                 Box::new(Toggle::new(
                     Point::zero(),
+                    settings.web_file_browser,
+                    Alignment::Right,
+                )),
+                Box::new(Toggle::new(
+                    Point::zero(),
                     settings.telnet,
                     Alignment::Right,
                 )),
