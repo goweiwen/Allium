@@ -27,6 +27,7 @@ settings-wifi-ip-address = IP地址
 settings-wifi-wifi-network = Wi-Fi网络名称
 settings-wifi-wifi-password = Wi-Fi密码
 settings-wifi-ntp-enabled = NTP启用
+settings-wifi-web-file-explorer = Web文件浏览器
 settings-wifi-telnet-enabled = Telnet启用
 settings-wifi-ftp-enabled = FTP启用
 settings-wifi-connecting= 连接中...

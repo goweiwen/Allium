@@ -27,6 +27,7 @@ settings-wifi-ip-address = IP Address
 settings-wifi-wifi-network = Nama Wi-Fi
 settings-wifi-wifi-password = Sandi Wi-Fi
 settings-wifi-ntp-enabled = NTP
+settings-wifi-web-file-explorer = Penjelajah Berkas Web
 settings-wifi-telnet-enabled = Telnet
 settings-wifi-ftp-enabled = FTP
 settings-wifi-connecting= Menyambungkan...

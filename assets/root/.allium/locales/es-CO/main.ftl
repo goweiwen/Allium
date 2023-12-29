@@ -27,6 +27,7 @@ settings-wifi-ip-address = Direccion IP
 settings-wifi-wifi-network = Nombre de Wi-Fi
 settings-wifi-wifi-password = Contraseña Wi-Fi
 settings-wifi-ntp-enabled = NTP Activado
+settings-wifi-web-file-explorer = Explorador de archivos web
 settings-wifi-telnet-enabled = Telnet Activado
 settings-wifi-ftp-enabled = FTP Activado
 settings-wifi-connecting= Conectando...
