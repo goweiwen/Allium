@@ -515,7 +515,7 @@ async fn terminate(child: &mut Child) -> Result<()> {
     child.kill().await?;
 
     #[cfg(unix)]
-    if let Err(_e) = tokio::time::timeout(std::time::Duration::from_secs(1), child.wait()).await {
+    if let Err(_e) = tokio::time::timeout(std::time::Duration::from_secs(5), child.wait()).await {
         signal(child, Signal::SIGKILL)?;
     }
     Ok(())
