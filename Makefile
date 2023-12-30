@@ -12,7 +12,7 @@ ifeq ($(PLATFORM),arm64)
   export CROSS_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_IMAGE = goweiwen/cross-with-clang_arm-unknown-linux-gnueabihf:aarch64
 endif
 
-all: static build package-build package-retroarch migrations
+all: static build package-build package-retroarch dufs migrations
 
 simulator-env:
 	mkdir -p assets/simulator
