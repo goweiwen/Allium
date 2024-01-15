@@ -1,0 +1,20 @@
+[package]
+name = "allium"
+version = "0.1.0"
+authors = ["Goh Wei Wen <goweiwen@gmail.com>"]
+edition = "2021"
+build = "build.rs"
+
+[[bin]]
+name = "allium"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.79"
+linuxfb = "0.3.1"
+log = "0.4.20"
+slint = { version = "1.3.2", default-features = false, features = ["compat-1-2", "std", "renderer-software"] }
+
+[build-dependencies]
+slint-build = "1.3.2"
