@@ -12,39 +12,38 @@ ifeq ($(PLATFORM),arm64)
   export CROSS_TARGET_ARM_UNKNOWN_LINUX_GNUEABIHF_IMAGE = goweiwen/cross-with-clang_arm-unknown-linux-gnueabihf:aarch64
 endif
 
-all: static build package-build package-retroarch dufs migrations
+.PHONY: all
+all: dist build package-build $(DIST_DIR)/RetroArch/retroarch $(DIST_DIR)/.allium/bin/dufs migrations
 
-simulator-env:
-	mkdir -p assets/simulator
-	mkdir -p assets/simulator/Roms
-	mkdir -p assets/simulator/Apps
-	rsync -ar assets/root/.allium assets/simulator/
-
-simulator-launcher: simulator-env
-	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_DATABASE=assets/simulator/allium.db ALLIUM_BASE_DIR=assets/simulator/.allium ALLIUM_SD_ROOT=assets/simulator cargo run --features=simulator --bin allium-launcher
-
-simulator-menu: simulator-env
-	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_DATABASE=assets/simulator/allium.db ALLIUM_BASE_DIR=assets/simulator/.allium ALLIUM_SD_ROOT=assets/simulator cargo run --features=simulator --bin allium-menu
-
-simulator: simulator-env
-	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_DATABASE=assets/simulator/allium.db ALLIUM_BASE_DIR=assets/simulator/.allium ALLIUM_SD_ROOT=assets/simulator cargo run --bin $(bin) --features=simulator $(args)
-
+.PHONY: clean
 clean:
 	rm -r $(DIST_DIR)
 	rm -f $(RETROARCH)/retroarch
 
-static:
+simulator-env:
+	mkdir -p simulator
+	mkdir -p simulator/Roms
+	mkdir -p simulator/Apps
+	rsync -ar static/.allium simulator/
+
+.PHONY: simulator
+simulator: simulator-env
+	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_DATABASE=simulator/allium.db ALLIUM_BASE_DIR=simulator/.allium ALLIUM_SD_ROOT=simulator cargo run --bin $(bin) --features=simulator $(args)
+
+dist:
 	mkdir -p $(DIST_DIR)
-	rsync -a --exclude='.gitkeep' assets/root/. $(DIST_DIR)
+	rsync -a --exclude='.gitkeep' static/. $(DIST_DIR)
 
 third-party/my283:
 	wget -O third-party/my283.tar.xz https://github.com/shauninman/miyoomini-toolchain-buildroot/raw/main/support/my283.tar.xz
 	cd third-party/ && tar xf my283.tar.xz
 	rm third-party/my283.tar.xz
 
+.PHONY: build
 build: third-party/my283
 	cross build --release --target=$(CROSS_TARGET_TRIPLE) --features=miyoo --bin=alliumd --bin=allium-launcher --bin=allium-menu --bin=activity-tracker --bin=screenshot --bin=say --bin=show --bin=show-hotkeys --bin=myctl
 
+.PHONY: package-build
 package-build:
 	mkdir -p $(DIST_DIR)/.allium/bin
 	rsync -a $(BUILD_DIR)/alliumd $(DIST_DIR)/.allium/bin/
@@ -58,40 +57,44 @@ package-build:
 	rsync -a $(BUILD_DIR)/myctl $(DIST_DIR)/.tmp_update/bin/
 
 MIGRATIONS_DIR := $(DIST_DIR)/.allium/migrations
+.PHONY: migrations
 migrations: $(MIGRATIONS_DIR)/0000-retroarch-config/retroarch-config.zip $(MIGRATIONS_DIR)/0001-retroarch-core-overrides/retroarch-core-overrides.zip $(MIGRATIONS_DIR)/0002-drastic-1.7/drastic.zip
 
 $(MIGRATIONS_DIR)/0000-retroarch-config/retroarch-config.zip:
-	assets/migrations/0000-retroarch-config/package.sh
+	migrations/0000-retroarch-config/package.sh
 
 $(MIGRATIONS_DIR)/0001-retroarch-core-overrides/retroarch-core-overrides.zip:
-	assets/migrations/0001-retroarch-core-overrides/package.sh
+	migrations/0001-retroarch-core-overrides/package.sh
 
 $(MIGRATIONS_DIR)/0002-drastic-1.7/drastic.zip:
-	assets/migrations/0002-drastic-1.7/package.sh
+	migrations/0002-drastic-1.7/package.sh
 
+.PHONY: retroarch
 retroarch: $(RETROARCH)/retroarch
 
-package-retroarch: retroarch
+$(DIST_DIR)/RetroArch/retroarch: $(RETROARCH)/retroarch
 	rsync -a $(RETROARCH)/retroarch "$(DIST_DIR)/RetroArch"
 
 $(RETROARCH)/retroarch:
 	docker run --rm -v /$(ROOT_DIR)/third-party:/root/workspace $(TOOLCHAIN) bash -c "source /root/.bashrc; cd RetroArch; make clean all ADD_NETWORKING=1 PACKAGE_NAME=retroarch"
 
-dufs:
+$(DIST_DIR)/.allium/bin/dufs:
 	cd third-party/dufs && cross build --release --target=$(CROSS_TARGET_TRIPLE)
 	cp "third-party/dufs/target/$(CROSS_TARGET_TRIPLE)/release/dufs" "$(DIST_DIR)/.allium/bin/"
 
+.PHONY: lint
 lint:
 	cargo fmt
 	cargo clippy --fix --allow-dirty --allow-staged --all-targets
 
+.PHONY: bump-version
 bump-version: lint
 	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" allium-launcher/Cargo.toml
 	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" allium-menu/Cargo.toml
 	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" alliumd/Cargo.toml
 	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" activity-tracker/Cargo.toml
 	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" common/Cargo.toml
-	echo "v$(version)" > assets/root/.allium/version.txt
+	echo "v$(version)" > static/.allium/version.txt
 	cargo check
 	git add allium-launcher/Cargo.toml
 	git add allium-menu/Cargo.toml
@@ -99,6 +102,6 @@ bump-version: lint
 	git add activity-tracker/Cargo.toml
 	git add common/Cargo.toml
 	git add Cargo.lock
-	git add assets/root/.allium/version.txt
+	git add static/.allium/version.txt
 	git commit -m "chore: bump version to v$(version)"
 	git tag "v$(version)" -a

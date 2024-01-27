@@ -240,7 +240,7 @@ mod tests {
 
     #[test]
     fn test_config() {
-        env::set_var("ALLIUM_BASE_DIR", "../assets/root/.allium");
+        env::set_var("ALLIUM_BASE_DIR", "../static/.allium");
 
         let mut mapper = ConsoleMapper::new();
         mapper.load_config().unwrap();
@@ -313,7 +313,7 @@ mod tests {
 
     #[test]
     fn test_core_names() {
-        env::set_var("ALLIUM_BASE_DIR", "../assets/root/.allium");
+        env::set_var("ALLIUM_BASE_DIR", "../static/.allium");
 
         let mut mapper = ConsoleMapper::new();
         mapper.load_config().unwrap();

@@ -1,7 +1,7 @@
 /target
 /dist
-/assets/simulator/*
-!/assets/simulator/bg-*.png
+/simulator/*
+!/simulator/bg-*.png
 !.gitkeep
 SDL2.dll
 .DS_Store

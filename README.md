@@ -105,10 +105,10 @@ Shared code is located in the `common` crate.
 There is no simulator for `alliumd` (no UI, only logic).
 ```
 # Run main menu (allium-launcher)
-make simulator-launcher
+make simulator bin=allium-launcher
 
 # Run ingame menu (allium-menu)
-make simulator-menu
+make simulator bin=allium-menu
 ```
 
 ### Building
