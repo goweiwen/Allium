@@ -1,5 +1,6 @@
 #![deny(clippy::all)]
 #![warn(rust_2018_idioms)]
+#![feature(trait_upcasting)]
 
 mod allium_launcher;
 mod consoles;
