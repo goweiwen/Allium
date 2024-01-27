@@ -64,6 +64,7 @@ where
         let locale = res.get::<Locale>();
 
         let battery_indicator = BatteryIndicator::new(
+            res.clone(),
             Point::new(w as i32 - 12, y + 8),
             battery,
             styles.show_battery_level,

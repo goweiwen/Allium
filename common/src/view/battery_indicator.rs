@@ -16,6 +16,7 @@ use crate::constants::BATTERY_UPDATE_INTERVAL;
 use crate::display::Display;
 use crate::geom::{Point, Rect};
 use crate::platform::{DefaultPlatform, KeyEvent, Platform};
+use crate::resources::Resources;
 use crate::stylesheet::Stylesheet;
 use crate::view::{Command, Label, View};
 
@@ -35,16 +36,19 @@ impl<B> BatteryIndicator<B>
 where
     B: Battery + 'static,
 {
-    pub fn new(point: Point, mut battery: B, show_percentage: bool) -> Self {
+    pub fn new(res: Resources, point: Point, mut battery: B, show_percentage: bool) -> Self {
         battery.update().unwrap();
 
         let label = if show_percentage {
-            Some(Label::new(
+            let styles = res.get::<Stylesheet>();
+            let mut label = Label::new(
                 point,
                 format_battery_percentage(battery.charging(), battery.percentage()),
                 crate::geom::Alignment::Right,
                 None,
-            ))
+            );
+            label.font_size(styles.status_bar_font_size);
+            Some(label)
         } else {
             None
         };
@@ -96,13 +100,15 @@ where
             } else {
                 0
             };
-            let w = styles.ui_font.size;
-            let h = styles.ui_font.size * 3 / 5;
+            let w = (styles.ui_font.size as f32 * styles.status_bar_font_size) as u32;
+            let h = ((styles.ui_font.size * 3) as f32 * styles.status_bar_font_size / 5.0) as u32;
             let y = styles.ui_font.size as i32 / 6 + 1;
             let margin = styles.ui_font.size as i32 * 2 / 28;
             let stroke = styles.ui_font.size as i32 * 3 / 28;
             let x = if self.battery.charging() {
-                -(styles.ui_font.size as i32) * 5 / 7 - label_w
+                ((-(styles.ui_font.size as i32) * 5) as f32 * styles.status_bar_font_size / 7.0)
+                    as i32
+                    - label_w
             } else {
                 -margin - label_w
             };
@@ -116,29 +122,13 @@ where
                     h,
                 )
                 .into(),
-                CornerRadii::new(Size::new_equal(stroke as u32)),
+                CornerRadii::new(Size::new_equal(stroke as u32 * 2)),
             )
             .into_styled(
                 PrimitiveStyleBuilder::new()
-                    .fill_color(styles.foreground_color)
-                    .build(),
-            )
-            .draw(display)?;
-
-            // Inner battery outline
-            RoundedRectangle::new(
-                Rect::new(
-                    x + self.point.x - w as i32 + stroke - margin - margin,
-                    y + self.point.y + stroke,
-                    w - 2 * stroke as u32,
-                    h - 2 * stroke as u32,
-                )
-                .into(),
-                CornerRadii::new(Size::new_equal(stroke as u32)),
-            )
-            .into_styled(
-                PrimitiveStyleBuilder::new()
-                    .fill_color(styles.background_color)
+                    .stroke_color(styles.foreground_color)
+                    .stroke_alignment(embedded_graphics::primitives::StrokeAlignment::Inside)
+                    .stroke_width(stroke as u32)
                     .build(),
             )
             .draw(display)?;
@@ -189,21 +179,21 @@ where
                     .build();
 
                 let x = self.point.x - label_w;
-                let size = styles.ui_font.size;
+                let size = styles.ui_font.size as f32 * styles.status_bar_font_size;
                 Triangle::new(
                     Point::new(
-                        x + -6 * size as i32 / 40,
-                        self.point.y + 7 * size as i32 / 40,
+                        x + (-6.0 * size / 40.0) as i32,
+                        self.point.y + (7.0 * size / 40.0) as i32,
                     )
                     .into(),
                     Point::new(
-                        x + -15 * size as i32 / 40,
-                        self.point.y + 20 * size as i32 / 40,
+                        x + (-15.0 * size / 40.0) as i32,
+                        self.point.y + (20.0 * size / 40.0) as i32,
                     )
                     .into(),
                     Point::new(
-                        x + -9 * size as i32 / 40,
-                        self.point.y + 20 * size as i32 / 40,
+                        x + (-9.0 * size / 40.0) as i32,
+                        self.point.y + (20.0 * size / 40.0) as i32,
                     )
                     .into(),
                 )
@@ -211,18 +201,18 @@ where
                 .draw(display)?;
                 Triangle::new(
                     Point::new(
-                        x + -12 * size as i32 / 40,
-                        self.point.y + 31 * size as i32 / 40,
+                        x + (-12.0 * size / 40.0) as i32,
+                        self.point.y + (31.0 * size / 40.0) as i32,
                     )
                     .into(),
                     Point::new(
-                        x + -3 * size as i32 / 40,
-                        self.point.y + 18 * size as i32 / 40,
+                        x + (-3.0 * size / 40.0) as i32,
+                        self.point.y + (18.0 * size / 40.0) as i32,
                     )
                     .into(),
                     Point::new(
-                        x + -9 * size as i32 / 40,
-                        self.point.y + 18 * size as i32 / 40,
+                        x + (-9.0 * size / 40.0) as i32,
+                        self.point.y + (18.0 * size / 40.0) as i32,
                     )
                     .into(),
                 )
@@ -270,8 +260,8 @@ where
     }
 
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
-        let w = styles.ui_font.size * 3;
-        let h = styles.ui_font.size * 6 / 5;
+        let w = ((styles.ui_font.size * 3) as f32 * styles.status_bar_font_size) as u32;
+        let h = ((styles.ui_font.size * 6) as f32 * styles.status_bar_font_size / 5.0) as u32;
 
         Rect::new(
             self.point.x - w as i32,

@@ -1,18 +1,20 @@
 use std::collections::VecDeque;
+use std::path::Path;
 use std::process;
 use std::time::Instant;
 
 use anyhow::Result;
 use common::command::Command;
-use common::constants::ALLIUM_GAMES_DIR;
+use common::constants::{ALLIUM_GAMES_DIR, ALLIUM_SD_ROOT};
 use common::display::color::Color;
 use common::geom;
 use common::locale::{Locale, LocaleSettings};
 use common::resources::Resources;
 use common::view::View;
+use embedded_graphics::image::ImageRaw;
 use embedded_graphics::prelude::*;
 use enum_map::EnumMap;
-use log::{info, trace, warn};
+use log::{error, info, trace, warn};
 
 use common::database::Database;
 use common::display::Display;
@@ -62,8 +64,19 @@ impl AlliumLauncher<DefaultPlatform> {
     }
 
     pub async fn run_event_loop(&mut self) -> Result<()> {
-        self.display
-            .clear(self.res.get::<Stylesheet>().background_color)?;
+        {
+            let styles = self.res.get::<Stylesheet>();
+
+            if let Some(wallpaper) = styles.wallpaper.as_deref() {
+                let path = ALLIUM_SD_ROOT.join(wallpaper);
+                if let Err(e) = set_wallpaper(&mut self.display, &path) {
+                    error!("Failed to set wallpaper: {}", e);
+                }
+            }
+
+            self.display.clear(styles.background_color)?;
+        }
+
         self.display.save()?;
 
         #[cfg(unix)]
@@ -180,8 +193,23 @@ impl AlliumLauncher<DefaultPlatform> {
                 trace!("saving stylesheet");
                 styles.load_fonts()?;
                 styles.save()?;
-                self.display.clear(styles.background_color)?;
-                self.display.save()?;
+
+                {
+                    let old_styles = self.res.get::<Stylesheet>();
+                    if old_styles.wallpaper != styles.wallpaper
+                        || old_styles.background_color != styles.background_color
+                    {
+                        if let Some(wallpaper) = styles.wallpaper.as_deref() {
+                            let path = ALLIUM_SD_ROOT.join(wallpaper);
+                            if let Err(e) = set_wallpaper(&mut self.display, &path) {
+                                error!("Failed to set wallpaper: {}", e);
+                            }
+                        }
+                        self.display.clear(styles.background_color)?;
+                        self.display.save()?;
+                    }
+                }
+
                 self.res.insert(*styles);
                 self.view.save()?;
                 self.view = App::load_or_new(
@@ -295,4 +323,24 @@ impl AlliumLauncher<DefaultPlatform> {
         }
         Ok(())
     }
+}
+
+fn set_wallpaper(display: &mut impl Display, path: &Path) -> Result<()> {
+    if !path.exists() {
+        return Ok(());
+    }
+
+    let rect = display.bounding_box().size;
+
+    let image = ::image::open(path)?;
+    let image = image.resize_to_fill(
+        rect.width,
+        rect.height,
+        image::imageops::FilterType::Lanczos3,
+    );
+    let image = image.into_rgba8();
+    let image: ImageRaw<'_, Color> = ImageRaw::new(&image, rect.width);
+    let image = embedded_graphics::image::Image::new(&image, display.bounding_box().top_left);
+    image.draw(display)?;
+    Ok(())
 }

@@ -15,12 +15,14 @@ use crate::view::{Command, Label, View};
 pub struct Percentage {
     point: Point,
     value: i32,
+    min: i32,
+    max: i32,
     label: Label<String>,
     edit_state: Option<i32>,
 }
 
 impl Percentage {
-    pub fn new(point: Point, value: i32, alignment: Alignment) -> Self {
+    pub fn new(point: Point, value: i32, min: i32, max: i32, alignment: Alignment) -> Self {
         let label = Label::new(
             Point::new(point.x, point.y),
             format!("{}%", value),
@@ -31,6 +33,8 @@ impl Percentage {
         Self {
             point,
             value,
+            min,
+            max,
             label,
             edit_state: None,
         }
@@ -73,22 +77,22 @@ impl View for Percentage {
         if let Some(value) = &mut self.edit_state {
             match event {
                 KeyEvent::Pressed(Key::Up) | KeyEvent::Autorepeat(Key::Up) => {
-                    *value = (*value + 1).clamp(0, 100);
+                    *value = (*value + 1).clamp(self.min, self.max);
                     self.label.set_text(format!("{}%", *value));
                     return Ok(true);
                 }
                 KeyEvent::Pressed(Key::Down) | KeyEvent::Autorepeat(Key::Down) => {
-                    *value = (*value - 1).clamp(0, 100);
+                    *value = (*value - 1).clamp(self.min, self.max);
                     self.label.set_text(format!("{}%", *value));
                     return Ok(true);
                 }
                 KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
-                    *value = (*value - 5).clamp(0, 100);
+                    *value = (*value - 5).clamp(self.min, self.max);
                     self.label.set_text(format!("{}%", *value));
                     return Ok(true);
                 }
                 KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
-                    *value = (*value + 5).clamp(0, 100);
+                    *value = (*value + 5).clamp(self.min, self.max);
                     self.label.set_text(format!("{}%", *value));
                     return Ok(true);
                 }

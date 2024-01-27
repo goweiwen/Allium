@@ -64,9 +64,6 @@ impl View for ColorPicker {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        if !self.dirty {
-            return Ok(false);
-        }
         self.dirty = false;
 
         let color = self
@@ -99,20 +96,17 @@ impl View for ColorPicker {
             .font_fallback(styles.cjk_font.font())
             .font_size(styles.ui_font.size)
             .text_color(styles.foreground_color)
-            .background_color(self.background_color.to_color(styles))
             .build();
 
         let focused_style = FontTextStyleBuilder::new(styles.ui_font.font())
             .font_size(styles.ui_font.size)
             .text_color(styles.foreground_color)
-            .background_color(styles.highlight_color)
             .draw_background()
             .build();
 
         let selected_style = FontTextStyleBuilder::new(styles.ui_font.font())
             .font_size(styles.ui_font.size)
             .text_color(styles.foreground_color)
-            .background_color(styles.highlight_color)
             .underline()
             .draw_background()
             .build();
@@ -120,7 +114,7 @@ impl View for ColorPicker {
         match self.alignment {
             Alignment::Right => {
                 let mut x = self.point.x - w as i32 - 12;
-                for i in (0..6).rev() {
+                for i in (0..8).rev() {
                     let c = color.char(i);
                     let text = Text::with_alignment(
                         &c,
@@ -201,6 +195,13 @@ impl View for ColorPicker {
                             (state.value.b() - state.value.b() % 16)
                                 + (state.value.b() as i8 % 16 + 1).rem_euclid(16) as u8,
                         ),
+                        6 => state
+                            .value
+                            .with_a((state.value.a() as i32 + 16).rem_euclid(256) as u8),
+                        7 => state.value.with_a(
+                            (state.value.a() - state.value.a() % 16)
+                                + (state.value.a() as i8 % 16 + 1).rem_euclid(16) as u8,
+                        ),
                         _ => unreachable!(),
                     };
                     self.dirty = true;
@@ -229,18 +230,25 @@ impl View for ColorPicker {
                             (state.value.b() - state.value.b() % 16)
                                 + (state.value.b() as i8 % 16 - 1).rem_euclid(16) as u8,
                         ),
+                        6 => state
+                            .value
+                            .with_a((state.value.a() as i32 - 16).rem_euclid(256) as u8),
+                        7 => state.value.with_a(
+                            (state.value.a() - state.value.a() % 16)
+                                + (state.value.a() as i8 % 16 - 1).rem_euclid(16) as u8,
+                        ),
                         _ => unreachable!(),
                     };
                     self.dirty = true;
                     Ok(true)
                 }
                 KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
-                    state.selected = (state.selected as isize - 1).clamp(0, 5) as usize;
+                    state.selected = (state.selected as isize - 1).clamp(0, 7) as usize;
                     self.dirty = true;
                     Ok(true)
                 }
                 KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
-                    state.selected = (state.selected as isize + 1).clamp(0, 5) as usize;
+                    state.selected = (state.selected as isize + 1).clamp(0, 7) as usize;
                     self.dirty = true;
                     Ok(true)
                 }
@@ -285,7 +293,7 @@ impl View for ColorPicker {
             .build();
 
         let mut x = self.point.x - 30 - 12;
-        for i in (0..6).rev() {
+        for i in (0..8).rev() {
             let c = self.value.char(i);
             let text = Text::with_alignment(
                 &c,

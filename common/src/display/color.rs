@@ -54,6 +54,11 @@ impl Color {
         Self((b as u32) << 8 | self.0 & 0xFFFF00FF)
     }
 
+    #[inline]
+    pub fn with_a(&self, a: u8) -> Self {
+        Self((a as u32) << 0 | self.0 & 0xFFFFFF00)
+    }
+
     pub fn char(&self, i: usize) -> String {
         format!(
             "{:X}",
@@ -64,6 +69,8 @@ impl Color {
                 3 => self.g() % 16,
                 4 => self.b() / 16,
                 5 => self.b() % 16,
+                6 => self.a() / 16,
+                7 => self.a() % 16,
                 _ => unreachable!(),
             }
         )
@@ -99,8 +106,12 @@ impl Color {
 
 impl Serialize for Color {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let (r, g, b) = (self.r(), self.g(), self.b());
-        let hex = format!("#{:02x}{:02x}{:02x}", r, g, b);
+        let (r, g, b, a) = (self.r(), self.g(), self.b(), self.a());
+        let hex = if a < 255 {
+            format!("#{:02x}{:02x}{:02x}{:02x}", r, g, b, a)
+        } else {
+            format!("#{:02x}{:02x}{:02x}", r, g, b)
+        };
         serializer.serialize_str(&hex)
     }
 }
@@ -112,7 +123,12 @@ impl<'de> Deserialize<'de> for Color {
         let r = u8::from_str_radix(&hex[0..2], 16).map_err(serde::de::Error::custom)?;
         let g = u8::from_str_radix(&hex[2..4], 16).map_err(serde::de::Error::custom)?;
         let b = u8::from_str_radix(&hex[4..6], 16).map_err(serde::de::Error::custom)?;
-        Ok(Color::new(r, g, b))
+        Ok(if hex.len() == 8 {
+            let a = u8::from_str_radix(&hex[6..8], 16).map_err(serde::de::Error::custom)?;
+            Color::rgba(r, g, b, a)
+        } else {
+            Color::new(r, g, b)
+        })
     }
 }
 

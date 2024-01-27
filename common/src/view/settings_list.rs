@@ -151,6 +151,8 @@ impl View for SettingsList {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
+        let mut drawn = false;
+
         if self.dirty {
             if !self.has_layout {
                 for i in 0..self.visible_count() {
@@ -163,79 +165,59 @@ impl View for SettingsList {
                 }
             }
 
-            if let Some(color) = self.background_color {
-                let mut rect = self
-                    .children_mut()
-                    .iter_mut()
-                    .map(|v| v.bounding_box(styles))
-                    .reduce(|acc, r| acc.union(&r))
+            display.load(self.bounding_box(styles))?;
+
+            if !self.focused {
+                let left = self
+                    .left
+                    .get_mut(self.selected - self.top)
+                    .map(|s| s.bounding_box(styles))
                     .unwrap_or_default();
-                rect.x -= 12;
-                rect.w += 24;
-                rect.y -= 4;
-                rect.h += 8;
-                RoundedRectangle::new(
-                    rect.into(),
-                    CornerRadii::new(Size::new_equal((styles.ui_font.size + 8) / 2)),
-                )
-                .into_styled(PrimitiveStyle::with_fill(color.to_color(styles)))
-                .draw(display)?;
-            } else {
-                display.load(self.bounding_box(styles))?;
-            }
+                let right = self
+                    .right
+                    .get_mut(self.selected)
+                    .map(|s| s.bounding_box(styles))
+                    .unwrap_or_default();
 
-            let left = self
-                .left
-                .get_mut(self.selected - self.top)
-                .map(|s| s.bounding_box(styles))
-                .unwrap_or_default();
-            let right = self
-                .right
-                .get_mut(self.selected)
-                .map(|s| s.bounding_box(styles))
-                .unwrap_or_default();
+                // Highlight Background
+                if right.w != 0 && right.h != 0 {
+                    let rect = left.union(&right);
+                    RoundedRectangle::with_equal_corners(
+                        Rectangle::new(
+                            embedded_graphics::prelude::Point::new(self.rect.x, rect.y - 4),
+                            Size::new(self.rect.w, rect.h + 8),
+                        ),
+                        Size::new_equal(rect.h),
+                    )
+                    .into_styled(PrimitiveStyle::with_fill(
+                        styles.highlight_color.with_a(128),
+                    ))
+                    .draw(display)?;
+                }
 
-            // Highlight Background
-            if right.w != 0 && right.h != 0 {
-                let rect = left.union(&right);
+                // Highlight
+                let rect = if self.focused { right } else { left };
                 RoundedRectangle::with_equal_corners(
                     Rectangle::new(
-                        embedded_graphics::prelude::Point::new(self.rect.x, rect.y - 4),
-                        Size::new(self.rect.w, rect.h + 8),
+                        embedded_graphics::prelude::Point::new(rect.x - 12, rect.y - 4),
+                        Size::new(rect.w + 24, rect.h + 8),
                     ),
                     Size::new_equal(rect.h),
                 )
-                .into_styled(PrimitiveStyle::with_fill(
-                    styles.highlight_color.blend(styles.background_color, 128),
-                ))
+                .into_styled(PrimitiveStyle::with_fill(styles.highlight_color))
                 .draw(display)?;
+
+                for (i, left) in self.left.iter_mut().enumerate() {
+                    left.set_should_draw();
+                    let right = &mut self.right[self.top + i];
+                    right.set_should_draw();
+                }
             }
-
-            // Highlight
-            let rect = if self.focused { right } else { left };
-            RoundedRectangle::with_equal_corners(
-                Rectangle::new(
-                    embedded_graphics::prelude::Point::new(rect.x - 12, rect.y - 4),
-                    Size::new(rect.w + 24, rect.h + 8),
-                ),
-                Size::new_equal(rect.h),
-            )
-            .into_styled(PrimitiveStyle::with_fill(styles.highlight_color))
-            .draw(display)?;
-
-            for (i, left) in self.left.iter_mut().enumerate() {
-                left.set_should_draw();
-                let right = &mut self.right[self.top + i];
-                right.set_should_draw();
-            }
-
-            self.dirty = false;
         }
 
-        let mut drawn = false;
         for (i, left) in self.left.iter_mut().enumerate() {
             let mut drawn_left = false;
-            if left.should_draw() && left.draw(display, styles)? {
+            if (left.should_draw() || self.focused) && left.draw(display, styles)? {
                 drawn = true;
                 drawn_left = true;
             }
@@ -264,7 +246,7 @@ impl View for SettingsList {
                     Size::new_equal(rect.h),
                 )
                 .into_styled(PrimitiveStyle::with_fill(
-                    styles.highlight_color.blend(styles.background_color, 128),
+                    styles.highlight_color.with_a(128),
                 ))
                 .draw(display)?;
             }
@@ -282,7 +264,7 @@ impl View for SettingsList {
 
             left.draw(display, styles)?;
             right.draw(display, styles)?;
-            drawn = true
+            drawn = true;
         }
 
         Ok(drawn)

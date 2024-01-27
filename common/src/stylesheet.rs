@@ -121,6 +121,7 @@ impl StylesheetFont {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Stylesheet {
+    pub wallpaper: Option<PathBuf>,
     pub enable_box_art: bool,
     pub show_battery_level: bool,
     #[serde(default = "Stylesheet::default_foreground_color")]
@@ -147,6 +148,8 @@ pub struct Stylesheet {
     pub cjk_font: StylesheetFont,
     #[serde(default = "Stylesheet::default_title_font_size")]
     pub title_font_size: f32,
+    #[serde(default = "Stylesheet::default_status_bar_font_size")]
+    pub status_bar_font_size: f32,
     #[serde(default = "Stylesheet::default_button_hint_font_size")]
     pub button_hint_font_size: f32,
     #[serde(default = "Stylesheet::default_alt_foreground_color")]
@@ -272,6 +275,11 @@ rgui_particle_color = "0xFF{highlight:X}"
     }
 
     #[inline]
+    fn default_status_bar_font_size() -> f32 {
+        1.0
+    }
+
+    #[inline]
     fn default_button_hint_font_size() -> f32 {
         1.0
     }
@@ -283,7 +291,7 @@ rgui_particle_color = "0xFF{highlight:X}"
 
     #[inline]
     fn default_background_color() -> Color {
-        Color::new(0, 0, 0)
+        Color::rgba(0, 0, 0, 0)
     }
 
     #[inline]
@@ -360,6 +368,7 @@ rgui_particle_color = "0xFF{highlight:X}"
 impl Default for Stylesheet {
     fn default() -> Self {
         Self {
+            wallpaper: None,
             enable_box_art: true,
             show_battery_level: false,
             foreground_color: Self::default_foreground_color(),
@@ -374,6 +383,7 @@ impl Default for Stylesheet {
             guide_font: StylesheetFont::guide_font(),
             cjk_font: StylesheetFont::cjk_font(),
             title_font_size: Self::default_title_font_size(),
+            status_bar_font_size: Self::default_status_bar_font_size(),
             button_hint_font_size: Self::default_button_hint_font_size(),
             alt_foreground_color: Self::default_alt_foreground_color(),
             alt_background_color: Self::default_alt_background_color(),
