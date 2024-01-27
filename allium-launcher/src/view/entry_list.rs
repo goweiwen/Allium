@@ -97,6 +97,7 @@ where
             let locale = res.get::<Locale>();
 
             button_hints.push(ButtonHint::new(
+                res.clone(),
                 Point::zero(),
                 Key::A,
                 locale.t("button-select"),
@@ -104,6 +105,7 @@ where
             ));
             if S::HAS_BUTTON_HINTS {
                 button_hints.push(ButtonHint::new(
+                    res.clone(),
                     Point::zero(),
                     Key::Y,
                     sort.button_hint(&locale),

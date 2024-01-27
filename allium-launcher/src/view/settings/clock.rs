@@ -160,6 +160,7 @@ impl Clock {
                 rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
             ),
             vec![ButtonHint::new(
+                res.clone(),
                 Point::zero(),
                 Key::B,
                 locale.t("button-back"),

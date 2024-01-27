@@ -165,12 +165,14 @@ impl Theme {
             ),
             vec![
                 ButtonHint::new(
+                    res.clone(),
                     Point::zero(),
                     Key::A,
                     locale.t("button-edit"),
                     Alignment::Right,
                 ),
                 ButtonHint::new(
+                    res.clone(),
                     Point::zero(),
                     Key::B,
                     locale.t("button-back"),

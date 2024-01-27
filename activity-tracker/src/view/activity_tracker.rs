@@ -48,12 +48,14 @@ impl ActivityTracker {
                 let locale = res.get::<Locale>();
                 vec![
                     ButtonHint::new(
+                        res.clone(),
                         Point::zero(),
                         Key::B,
                         locale.t("button-back"),
                         Alignment::Right,
                     ),
                     ButtonHint::new(
+                        res.clone(),
                         Point::zero(),
                         Key::Y,
                         Sort::MostPlayed.button_hint(&locale),

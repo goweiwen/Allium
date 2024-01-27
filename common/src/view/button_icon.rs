@@ -36,7 +36,7 @@ impl ButtonIcon {
     }
 
     pub fn diameter(styles: &Stylesheet) -> u32 {
-        styles.ui_font.size
+        (styles.ui_font.size as f32 * styles.button_hint_font_size) as u32
     }
 }
 

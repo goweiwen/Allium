@@ -44,6 +44,7 @@ impl Games {
             {
                 let locale = res.get::<Locale>();
                 vec![ButtonHint::new(
+                    res.clone(),
                     Point::zero(),
                     Key::X,
                     locale.t("sort-search"),

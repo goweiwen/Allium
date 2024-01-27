@@ -44,18 +44,21 @@ impl Keyboard {
             ),
             vec![
                 ButtonHint::new(
+                    res.clone(),
                     Point::zero(),
                     Key::Start,
                     locale.t("button-confirm"),
                     Alignment::Right,
                 ),
                 ButtonHint::new(
+                    res.clone(),
                     Point::zero(),
                     Key::B,
                     locale.t("button-back"),
                     Alignment::Right,
                 ),
                 ButtonHint::new(
+                    res.clone(),
                     Point::zero(),
                     Key::R,
                     locale.t("keyboard-button-backspace"),

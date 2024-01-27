@@ -8,6 +8,7 @@ use tokio::sync::mpsc::Sender;
 use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use crate::resources::Resources;
 use crate::stylesheet::Stylesheet;
 use crate::view::{ButtonIcon, Command, Label, View};
 
@@ -28,8 +29,10 @@ impl<S> ButtonHint<S>
 where
     S: AsRef<str> + PartialEq + Send,
 {
-    pub fn new(point: Point, button: Key, text: S, alignment: Alignment) -> Self {
-        let label = Label::new(Point::zero(), text, alignment, None);
+    pub fn new(res: Resources, point: Point, button: Key, text: S, alignment: Alignment) -> Self {
+        let styles = res.get::<Stylesheet>();
+        let mut label = Label::new(Point::zero(), text, alignment, None);
+        label.font_size(styles.button_hint_font_size);
         let button = ButtonIcon::new(Point::zero(), button, alignment);
 
         Self {

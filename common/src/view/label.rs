@@ -36,6 +36,7 @@ where
     truncated_text: Option<String>,
     color: StylesheetColor,
     background_color: StylesheetColor,
+    font_size: f32,
     scrolling: Option<Scrolling>,
     dirty: bool,
 }
@@ -57,6 +58,7 @@ where
             truncated_text: None,
             color: StylesheetColor::Foreground,
             background_color: StylesheetColor::Background,
+            font_size: 1.0,
             scrolling: None,
             dirty: true,
         }
@@ -96,6 +98,11 @@ where
         self
     }
 
+    pub fn font_size(&mut self, font_size: f32) -> &mut Self {
+        self.font_size = font_size;
+        self
+    }
+
     fn layout(&mut self, styles: &Stylesheet) {
         if self.truncated_text.is_some() {
             return;
@@ -105,7 +112,7 @@ where
 
         let text_style = FontTextStyleBuilder::<Color>::new(styles.ui_font.font())
             .font_fallback(styles.cjk_font.font())
-            .font_size(styles.ui_font.size)
+            .font_size((styles.ui_font.size as f32 * self.font_size) as u32)
             .build();
 
         let mut text = Text::with_alignment(
@@ -225,7 +232,7 @@ where
             .font_fallback(styles.cjk_font.font())
             .text_color(self.color.to_color(styles))
             .background_color(self.background_color.to_color(styles))
-            .font_size(styles.ui_font.size)
+            .font_size((styles.ui_font.size as f32 * self.font_size) as u32)
             .build();
 
         if self.truncated_text.is_none() {
@@ -273,7 +280,7 @@ where
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
         let text_style = FontTextStyleBuilder::<Color>::new(styles.ui_font.font())
             .font_fallback(styles.cjk_font.font())
-            .font_size(styles.ui_font.size)
+            .font_size((styles.ui_font.size as f32 * self.font_size) as u32)
             .build();
 
         let mut rect: Rect = Text::with_alignment(

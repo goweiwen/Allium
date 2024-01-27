@@ -38,11 +38,13 @@ pub struct App<B>
 where
     B: Battery + 'static,
 {
+    res: Resources,
     rect: Rect,
     battery_indicator: BatteryIndicator<B>,
     views: (Recents, Games, Apps, Settings),
     selected: usize,
     tabs: Row<Label<String>>,
+    title: Label<String>,
     dirty: bool,
 }
 
@@ -59,6 +61,7 @@ where
     ) -> Result<Self> {
         let Rect { x, y, w, h: _h } = rect;
         let styles = res.get::<Stylesheet>();
+        let locale = res.get::<Locale>();
 
         let battery_indicator = BatteryIndicator::new(
             Point::new(w as i32 - 12, y + 8),
@@ -69,7 +72,6 @@ where
         let mut tabs = Row::new(
             Point::new(x + 12, y + 8),
             {
-                let locale = res.get::<Locale>();
                 vec![
                     Label::new(
                         Point::zero(),
@@ -94,12 +96,25 @@ where
             .unwrap()
             .color(StylesheetColor::Highlight);
 
+        let mut title = Label::new(
+            Point::new(x + 24, y + 8),
+            title(&locale, selected),
+            Alignment::Left,
+            None,
+        );
+        title.font_size(styles.title_font_size);
+
+        drop(styles);
+        drop(locale);
+
         Ok(Self {
+            res,
             rect,
             views,
             selected,
             battery_indicator,
             tabs,
+            title,
             dirty: true,
         })
     }
@@ -107,11 +122,12 @@ where
     pub fn load_or_new(rect: Rect, res: Resources, battery: B) -> Result<Self> {
         let tab_rect = {
             let styles = res.get::<Stylesheet>();
+            let font_size = (styles.ui_font.size as f32 * styles.title_font_size) as u32;
             Rect::new(
                 rect.x,
-                rect.y + styles.ui_font.size as i32 + 8,
+                rect.y + font_size as i32 + 8,
                 rect.w,
-                rect.h - styles.ui_font.size - 8,
+                rect.h - font_size - 8,
             )
         };
 
@@ -196,6 +212,7 @@ where
             .get_mut(self.selected)
             .unwrap()
             .color(StylesheetColor::Highlight);
+        self.title.set_text(self.title());
     }
 
     fn next(&mut self) {
@@ -218,6 +235,10 @@ where
         self.views.0.search(query)?;
         Ok(())
     }
+
+    fn title(&self) -> String {
+        title(&self.res.get::<Locale>(), self.selected)
+    }
 }
 
 #[async_trait(?Send)]
@@ -236,17 +257,15 @@ where
         }
 
         let mut drawn = false;
-        if self.battery_indicator.should_draw() && self.battery_indicator.draw(display, styles)? {
-            drawn = true;
-        }
+        drawn |=
+            self.battery_indicator.should_draw() && self.battery_indicator.draw(display, styles)?;
+        drawn |= self.title.should_draw() && self.title.draw(display, styles)?;
+        drawn |= self.view().should_draw() && self.view_mut().draw(display, styles)?;
 
-        if self.tabs.should_draw() && self.tabs.draw(display, styles)? {
-            drawn = true;
-        }
+        // if self.tabs.should_draw() && self.tabs.draw(display, styles)? {
+        //     drawn = true;
+        // }
 
-        if self.view().should_draw() && self.view_mut().draw(display, styles)? {
-            drawn = true;
-        }
         Ok(drawn)
     }
 
@@ -311,5 +330,15 @@ where
 
     fn set_position(&mut self, _point: Point) {
         unimplemented!()
+    }
+}
+
+fn title(locale: &Locale, selected: usize) -> String {
+    match selected {
+        0 => locale.t("tab-recents"),
+        1 => locale.t("tab-games"),
+        2 => locale.t("tab-apps"),
+        3 => locale.t("tab-settings"),
+        _ => unreachable!(),
     }
 }

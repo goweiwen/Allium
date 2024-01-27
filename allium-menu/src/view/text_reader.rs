@@ -63,12 +63,14 @@ impl TextReader {
             ),
             vec![
                 ButtonHint::new(
+                    res.clone(),
                     Point::zero(),
                     Key::X,
                     locale.t("guide-button-search"),
                     Alignment::Right,
                 ),
                 ButtonHint::new(
+                    res.clone(),
                     Point::zero(),
                     Key::B,
                     locale.t("button-back"),
@@ -220,12 +222,14 @@ impl TextReader {
         if self.button_hints.children().len() <= 2 {
             let locale = self.res.get::<Locale>();
             self.button_hints.push(ButtonHint::new(
+                self.res.clone(),
                 Point::zero(),
                 Key::L2,
                 locale.t("guide-next"),
                 Alignment::Right,
             ));
             self.button_hints.push(ButtonHint::new(
+                self.res.clone(),
                 Point::zero(),
                 Key::R2,
                 locale.t("guide-prev"),
@@ -250,12 +254,14 @@ impl TextReader {
         if self.button_hints.children().len() <= 2 {
             let locale = self.res.get::<Locale>();
             self.button_hints.push(ButtonHint::new(
+                self.res.clone(),
                 Point::zero(),
                 Key::L,
                 locale.t("guide-next"),
                 Alignment::Right,
             ));
             self.button_hints.push(ButtonHint::new(
+                self.res.clone(),
                 Point::zero(),
                 Key::R,
                 locale.t("guide-prev"),

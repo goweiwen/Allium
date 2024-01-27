@@ -145,7 +145,10 @@ pub struct Stylesheet {
     pub guide_font: StylesheetFont,
     #[serde(skip, default = "StylesheetFont::cjk_font")]
     pub cjk_font: StylesheetFont,
-
+    #[serde(default = "Stylesheet::default_title_font_size")]
+    pub title_font_size: f32,
+    #[serde(default = "Stylesheet::default_button_hint_font_size")]
+    pub button_hint_font_size: f32,
     #[serde(default = "Stylesheet::default_alt_foreground_color")]
     alt_foreground_color: Color,
     #[serde(default = "Stylesheet::default_alt_background_color")]
@@ -264,6 +267,16 @@ rgui_particle_color = "0xFF{highlight:X}"
     }
 
     #[inline]
+    fn default_title_font_size() -> f32 {
+        1.3
+    }
+
+    #[inline]
+    fn default_button_hint_font_size() -> f32 {
+        1.0
+    }
+
+    #[inline]
     fn default_foreground_color() -> Color {
         Color::new(255, 255, 255)
     }
@@ -360,6 +373,8 @@ impl Default for Stylesheet {
             ui_font: StylesheetFont::ui_font(),
             guide_font: StylesheetFont::guide_font(),
             cjk_font: StylesheetFont::cjk_font(),
+            title_font_size: Self::default_title_font_size(),
+            button_hint_font_size: Self::default_button_hint_font_size(),
             alt_foreground_color: Self::default_alt_foreground_color(),
             alt_background_color: Self::default_alt_background_color(),
             alt_highlight_color: Self::default_alt_highlight_color(),
