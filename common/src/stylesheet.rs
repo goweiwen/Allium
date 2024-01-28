@@ -265,6 +265,21 @@ impl Stylesheet {
         self.show_battery_level = !self.show_battery_level;
     }
 
+    #[inline]
+    pub fn tab_font_size(&self) -> f32 {
+        self.ui_font.size as f32 * self.tab_font_size
+    }
+
+    #[inline]
+    pub fn button_hint_font_size(&self) -> f32 {
+        self.ui_font.size as f32 * self.button_hint_font_size
+    }
+
+    #[inline]
+    pub fn status_bar_font_size(&self) -> f32 {
+        self.ui_font.size as f32 * self.status_bar_font_size
+    }
+
     fn patch_ra_config(&self) -> Result<()> {
         let mut file = File::create("/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.cfg")?;
         write!(

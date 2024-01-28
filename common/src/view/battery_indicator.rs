@@ -100,15 +100,13 @@ where
             } else {
                 0
             };
-            let w = (styles.ui_font.size as f32 * styles.status_bar_font_size) as u32;
-            let h = ((styles.ui_font.size * 3) as f32 * styles.status_bar_font_size / 5.0) as u32;
+            let w = styles.status_bar_font_size() as u32;
+            let h = (styles.status_bar_font_size() * 3.0 / 5.0) as u32;
             let y = styles.ui_font.size as i32 / 6 + 1;
             let margin = styles.ui_font.size as i32 * 2 / 28;
             let stroke = styles.ui_font.size as i32 * 3 / 28;
             let x = if self.battery.charging() {
-                ((-(styles.ui_font.size as i32) * 5) as f32 * styles.status_bar_font_size / 7.0)
-                    as i32
-                    - label_w
+                (-styles.status_bar_font_size() * 5.0 / 7.0) as i32 - label_w
             } else {
                 -margin - label_w
             };
@@ -179,7 +177,7 @@ where
                     .build();
 
                 let x = self.point.x - label_w;
-                let size = styles.ui_font.size as f32 * styles.status_bar_font_size;
+                let size = styles.status_bar_font_size();
                 Triangle::new(
                     Point::new(
                         x + (-6.0 * size / 40.0) as i32,
@@ -260,8 +258,8 @@ where
     }
 
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
-        let w = ((styles.ui_font.size * 3) as f32 * styles.status_bar_font_size) as u32;
-        let h = ((styles.ui_font.size * 6) as f32 * styles.status_bar_font_size / 5.0) as u32;
+        let w = (styles.status_bar_font_size() * 3.0) as u32;
+        let h = (styles.status_bar_font_size() * 6.0 / 5.0) as u32;
 
         Rect::new(
             self.point.x - w as i32,
