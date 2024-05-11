@@ -97,6 +97,7 @@ impl Theme {
                     stylesheet.ui_font.size as i32,
                     20,
                     60,
+                    i32::to_string,
                     Alignment::Right,
                 )),
                 Box::new(Select::new(
@@ -113,6 +114,7 @@ impl Theme {
                     stylesheet.guide_font.size as i32,
                     20,
                     60,
+                    i32::to_string,
                     Alignment::Right,
                 )),
                 Box::new(Percentage::new(

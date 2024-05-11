@@ -12,20 +12,34 @@ use crate::stylesheet::Stylesheet;
 use crate::view::{Command, Label, View};
 
 #[derive(Debug, Clone)]
-pub struct Number {
+pub struct Number<Formatter>
+where
+    Formatter: Fn(&i32) -> String,
+{
     point: Point,
     value: i32,
     min: i32,
     max: i32,
+    formatter: Formatter,
     label: Label<String>,
     edit_state: Option<i32>,
 }
 
-impl Number {
-    pub fn new(point: Point, value: i32, min: i32, max: i32, alignment: Alignment) -> Self {
+impl<Formatter> Number<Formatter>
+where
+    Formatter: Fn(&i32) -> String,
+{
+    pub fn new(
+        point: Point,
+        value: i32,
+        min: i32,
+        max: i32,
+        formatter: Formatter,
+        alignment: Alignment,
+    ) -> Self {
         let label = Label::new(
             Point::new(point.x, point.y),
-            format!("{}", value),
+            formatter(&value),
             alignment,
             None,
         );
@@ -35,6 +49,7 @@ impl Number {
             value,
             min,
             max,
+            formatter,
             label,
             edit_state: None,
         }
@@ -51,7 +66,10 @@ impl Number {
 }
 
 #[async_trait(?Send)]
-impl View for Number {
+impl<Formatter> View for Number<Formatter>
+where
+    Formatter: Fn(&i32) -> String,
+{
     fn draw(
         &mut self,
         display: &mut <DefaultPlatform as Platform>::Display,
@@ -78,22 +96,22 @@ impl View for Number {
             match event {
                 KeyEvent::Pressed(Key::Up) | KeyEvent::Autorepeat(Key::Up) => {
                     *value = (*value + 1).clamp(self.min, self.max);
-                    self.label.set_text(format!("{}", *value));
+                    self.label.set_text((self.formatter)(value));
                     return Ok(true);
                 }
                 KeyEvent::Pressed(Key::Down) | KeyEvent::Autorepeat(Key::Down) => {
                     *value = (*value - 1).clamp(self.min, self.max);
-                    self.label.set_text(format!("{}", *value));
+                    self.label.set_text((self.formatter)(value));
                     return Ok(true);
                 }
                 KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
                     *value = (*value - 5).clamp(self.min, self.max);
-                    self.label.set_text(format!("{}", *value));
+                    self.label.set_text((self.formatter)(value));
                     return Ok(true);
                 }
                 KeyEvent::Pressed(Key::Right) | KeyEvent::Autorepeat(Key::Right) => {
                     *value = (*value + 5).clamp(self.min, self.max);
-                    self.label.set_text(format!("{}", *value));
+                    self.label.set_text((self.formatter)(value));
                     return Ok(true);
                 }
                 KeyEvent::Pressed(Key::A) => {

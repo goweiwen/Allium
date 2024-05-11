@@ -12,6 +12,7 @@ use common::constants::{
 };
 use common::display::settings::DisplaySettings;
 use common::locale::{Locale, LocaleSettings};
+use common::power::{PowerButtonAction, PowerSettings};
 use common::retroarch::RetroArchCommand;
 use common::wifi::WiFiSettings;
 use enum_map::EnumMap;
@@ -48,6 +49,7 @@ pub struct AlliumD<P: Platform> {
     is_terminating: bool,
     state: AlliumDState,
     locale: Locale,
+    power_settings: PowerSettings,
 }
 
 impl AlliumDState {
@@ -127,6 +129,7 @@ impl AlliumD<DefaultPlatform> {
         let state = AlliumDState::load()?;
         let main = spawn_main()?;
         let locale = Locale::new(&LocaleSettings::load()?.lang);
+        let power_settings = PowerSettings::load()?;
 
         Ok(AlliumD {
             platform,
@@ -138,6 +141,7 @@ impl AlliumD<DefaultPlatform> {
             is_terminating: false,
             state,
             locale,
+            power_settings,
         })
     }
 
@@ -195,13 +199,21 @@ impl AlliumD<DefaultPlatform> {
                     }
                 }
 
+                let auto_sleep_duration = match self.power_settings.auto_sleep_duration_minutes {
+                    0 => std::time::Duration::MAX, // disabled
+                    t => std::time::Duration::new(t as u64 * 60, 0),
+                };
                 tokio::select! {
                     key_event = self.platform.poll() => {
                         self.handle_key_event(key_event).await?;
                     }
-                    _ = tokio::time::sleep(IDLE_TIMEOUT) => {
-                        info!("idle timeout, shutting down");
-                        self.handle_quit().await?;
+                    _ = tokio::time::sleep(auto_sleep_duration) => {
+                        if !self.power_settings.auto_sleep_when_charging && battery.charging() {
+                            info!("battery charging, don't auto sleep");
+                        } else {
+                            info!("idle timeout, shutting down");
+                            self.handle_quit().await?;
+                        }
                     }
                     _ = self.main.wait() => {
                         if !self.is_terminating {
@@ -335,7 +347,11 @@ impl AlliumD<DefaultPlatform> {
                 KeyEvent::Released(Key::Power) => {
                     if !self.keys[Key::Menu] {
                         #[cfg(unix)]
-                        self.handle_suspend().await?;
+                        match self.power_settings.power_button_action {
+                            PowerButtonAction::Suspend => self.handle_suspend().await?,
+                            PowerButtonAction::Shutdown => self.handle_quit().await?,
+                            PowerButtonAction::Nothing => {}
+                        }
                     }
                 }
                 KeyEvent::Released(Key::Menu) => {

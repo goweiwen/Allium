@@ -44,6 +44,7 @@ lazy_static! {
     pub static ref ALLIUM_STYLESHEET: PathBuf = ALLIUM_BASE_DIR.join("state/stylesheet.json");
     pub static ref ALLIUM_DISPLAY_SETTINGS: PathBuf = ALLIUM_BASE_DIR.join("state/display.json");
     pub static ref ALLIUM_LOCALE_SETTINGS: PathBuf = ALLIUM_BASE_DIR.join("state/locale.json");
+    pub static ref ALLIUM_POWER_SETTINGS: PathBuf = ALLIUM_BASE_DIR.join("state/power.json");
     pub static ref ALLIUM_WIFI_SETTINGS: PathBuf = ALLIUM_BASE_DIR.join("state/wifi.json");
     pub static ref ALLIUM_TIMEZONE: PathBuf = ALLIUM_BASE_DIR.join("state/timezone");
 

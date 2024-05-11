@@ -2,6 +2,7 @@ mod about;
 mod clock;
 mod display;
 mod language;
+mod power;
 mod theme;
 mod wifi;
 
@@ -10,6 +11,7 @@ use crate::view::settings::clock::Clock;
 use self::about::About;
 use self::display::Display;
 use self::language::Language;
+use self::power::Power;
 use self::theme::Theme;
 use self::wifi::Wifi;
 
@@ -75,6 +77,7 @@ impl Settings {
             labels.push(locale.t("settings-wifi"));
         }
         labels.push(locale.t("settings-clock"));
+        labels.push(locale.t("settings-power"));
         labels.push(locale.t("settings-display"));
         labels.push(locale.t("settings-theme"));
         labels.push(locale.t("settings-language"));
@@ -96,10 +99,11 @@ impl Settings {
             match selected {
                 0 => Some(Box::new(Wifi::new(rect, res.clone(), Some(child)))),
                 1 => Some(Box::new(Clock::new(rect, res.clone(), Some(child)))),
-                2 => Some(Box::new(Display::new(rect, res.clone(), Some(child)))),
-                3 => Some(Box::new(Theme::new(rect, res.clone(), Some(child)))),
-                4 => Some(Box::new(Language::new(rect, res.clone(), Some(child)))),
-                5 => Some(Box::new(About::new(rect, res.clone(), Some(child)))),
+                2 => Some(Box::new(Power::new(rect, res.clone(), Some(child)))),
+                3 => Some(Box::new(Display::new(rect, res.clone(), Some(child)))),
+                4 => Some(Box::new(Theme::new(rect, res.clone(), Some(child)))),
+                5 => Some(Box::new(Language::new(rect, res.clone(), Some(child)))),
+                6 => Some(Box::new(About::new(rect, res.clone(), Some(child)))),
                 _ => None,
             }
         } else {
@@ -159,10 +163,11 @@ impl Settings {
         match selected {
             0 => self.child = Some(Box::new(Wifi::new(self.rect, self.res.clone(), None))),
             1 => self.child = Some(Box::new(Clock::new(self.rect, self.res.clone(), None))),
-            2 => self.child = Some(Box::new(Display::new(self.rect, self.res.clone(), None))),
-            3 => self.child = Some(Box::new(Theme::new(self.rect, self.res.clone(), None))),
-            4 => self.child = Some(Box::new(Language::new(self.rect, self.res.clone(), None))),
-            5 => self.child = Some(Box::new(About::new(self.rect, self.res.clone(), None))),
+            2 => self.child = Some(Box::new(Power::new(self.rect, self.res.clone(), None))),
+            3 => self.child = Some(Box::new(Display::new(self.rect, self.res.clone(), None))),
+            4 => self.child = Some(Box::new(Theme::new(self.rect, self.res.clone(), None))),
+            5 => self.child = Some(Box::new(Language::new(self.rect, self.res.clone(), None))),
+            6 => self.child = Some(Box::new(About::new(self.rect, self.res.clone(), None))),
             _ => unreachable!("Invalid index"),
         }
         self.dirty = true;

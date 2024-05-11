@@ -68,6 +68,15 @@ settings-theme-button-y-color = Button Y Color
 settings-language = Language
 settings-language-language = Language
 
+settings-power = Power
+settings-power-power-button-action = Power Button Action
+settings-power-power-button-action-suspend = Suspend
+settings-power-power-button-action-shutdown = Shutdown
+settings-power-power-button-action-nothing = Nothing
+settings-power-auto-sleep-when-charging = Auto Sleep When Charging
+settings-power-auto-sleep-duration-minutes = Auto Sleep Duration (Minutes)
+settings-power-auto-sleep-duration-disabled = Disabled
+
 settings-files = Files
 
 settings-about = About

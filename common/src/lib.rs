@@ -10,6 +10,7 @@ pub mod game_info;
 pub mod geom;
 pub mod locale;
 pub mod platform;
+pub mod power;
 pub mod resources;
 pub mod retroarch;
 pub mod stylesheet;
