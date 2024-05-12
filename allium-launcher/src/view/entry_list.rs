@@ -213,7 +213,7 @@ where
         let styles = self.res.get::<Stylesheet>();
         let locale = self.res.get::<Locale>();
 
-        let mut entries = vec![
+        let mut entries = [
             MenuEntry::Launch(None),
             MenuEntry::Reset,
             MenuEntry::RemoveFromRecents,

@@ -56,7 +56,7 @@ impl Color {
 
     #[inline]
     pub fn with_a(&self, a: u8) -> Self {
-        Self((a as u32) << 0 | self.0 & 0xFFFFFF00)
+        Self((a as u32) | self.0 & 0xFFFFFF00)
     }
 
     pub fn char(&self, i: usize) -> String {

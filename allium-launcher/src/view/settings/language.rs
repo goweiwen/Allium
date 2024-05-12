@@ -146,9 +146,10 @@ impl View for Language {
             while let Some(command) = bubble.pop_front() {
                 if let Command::ValueChanged(i, val) = command {
                     match i {
-                        0 => {
-                            self.settings.lang = self.langs[val.as_int().unwrap() as usize].clone()
-                        }
+                        0 => self
+                            .settings
+                            .lang
+                            .clone_from(&self.langs[val.as_int().unwrap() as usize]),
                         _ => unreachable!("Invalid index"),
                     }
 

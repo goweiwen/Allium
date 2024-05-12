@@ -75,7 +75,7 @@ impl ScrollList {
             return;
         }
 
-        self.items[index] = item.clone();
+        self.items[index].clone_from(&item);
         self.children[index - self.top].set_text(item);
         self.dirty = true;
     }

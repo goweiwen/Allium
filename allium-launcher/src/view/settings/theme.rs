@@ -351,15 +351,17 @@ impl View for Theme {
                             );
                         }
                         1 => self.stylesheet.toggle_battery_percentage(),
-                        2 => {
-                            self.stylesheet.ui_font.path =
-                                self.fonts[val.as_int().unwrap() as usize].clone()
-                        }
+                        2 => self
+                            .stylesheet
+                            .ui_font
+                            .path
+                            .clone_from(&self.fonts[val.as_int().unwrap() as usize]),
                         3 => self.stylesheet.ui_font.size = val.as_int().unwrap() as u32,
-                        4 => {
-                            self.stylesheet.guide_font.path =
-                                self.fonts[val.as_int().unwrap() as usize].clone()
-                        }
+                        4 => self
+                            .stylesheet
+                            .guide_font
+                            .path
+                            .clone_from(&self.fonts[val.as_int().unwrap() as usize]),
                         5 => self.stylesheet.guide_font.size = val.as_int().unwrap() as u32,
                         6 => self.stylesheet.tab_font_size = val.as_int().unwrap() as f32 / 100.0,
                         7 => {

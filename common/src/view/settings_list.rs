@@ -3,9 +3,7 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 use embedded_graphics::prelude::Size;
-use embedded_graphics::primitives::{
-    CornerRadii, Primitive, PrimitiveStyle, Rectangle, RoundedRectangle,
-};
+use embedded_graphics::primitives::{Primitive, PrimitiveStyle, Rectangle, RoundedRectangle};
 use embedded_graphics::Drawable;
 use tokio::sync::mpsc::Sender;
 
