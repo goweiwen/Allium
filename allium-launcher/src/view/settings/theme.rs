@@ -60,13 +60,15 @@ impl Theme {
                 locale.t("settings-theme-ui-font-size"),
                 locale.t("settings-theme-guide-font"),
                 locale.t("settings-theme-guide-font-size"),
-                locale.t("settings-theme-title-font-size"),
+                locale.t("settings-theme-tab-font-size"),
                 locale.t("settings-theme-status-bar-font-size"),
                 locale.t("settings-theme-button-hint-font-size"),
                 locale.t("settings-theme-highlight-color"),
                 locale.t("settings-theme-foreground-color"),
                 locale.t("settings-theme-background-color"),
                 locale.t("settings-theme-disabled-color"),
+                locale.t("settings-theme-tab-color"),
+                locale.t("settings-theme-tab-selected-color"),
                 locale.t("settings-theme-button-a-color"),
                 locale.t("settings-theme-button-b-color"),
                 locale.t("settings-theme-button-x-color"),
@@ -119,7 +121,7 @@ impl Theme {
                 )),
                 Box::new(Percentage::new(
                     Point::zero(),
-                    (stylesheet.title_font_size * 100.0) as i32,
+                    (stylesheet.tab_font_size * 100.0) as i32,
                     50,
                     200,
                     Alignment::Right,
@@ -156,6 +158,16 @@ impl Theme {
                 Box::new(ColorPicker::new(
                     Point::zero(),
                     stylesheet.disabled_color,
+                    Alignment::Right,
+                )),
+                Box::new(ColorPicker::new(
+                    Point::zero(),
+                    stylesheet.tab_color,
+                    Alignment::Right,
+                )),
+                Box::new(ColorPicker::new(
+                    Point::zero(),
+                    stylesheet.tab_selected_color,
                     Alignment::Right,
                 )),
                 Box::new(ColorPicker::new(
@@ -293,7 +305,7 @@ impl View for Theme {
                                 13,
                                 Box::new(ColorPicker::new(
                                     Point::zero(),
-                                    self.stylesheet.button_a_color,
+                                    self.stylesheet.tab_color,
                                     Alignment::Right,
                                 )),
                             );
@@ -301,7 +313,7 @@ impl View for Theme {
                                 14,
                                 Box::new(ColorPicker::new(
                                     Point::zero(),
-                                    self.stylesheet.button_b_color,
+                                    self.stylesheet.tab_selected_color,
                                     Alignment::Right,
                                 )),
                             );
@@ -309,12 +321,28 @@ impl View for Theme {
                                 15,
                                 Box::new(ColorPicker::new(
                                     Point::zero(),
-                                    self.stylesheet.button_x_color,
+                                    self.stylesheet.button_a_color,
                                     Alignment::Right,
                                 )),
                             );
                             self.list.set_right(
                                 16,
+                                Box::new(ColorPicker::new(
+                                    Point::zero(),
+                                    self.stylesheet.button_b_color,
+                                    Alignment::Right,
+                                )),
+                            );
+                            self.list.set_right(
+                                17,
+                                Box::new(ColorPicker::new(
+                                    Point::zero(),
+                                    self.stylesheet.button_x_color,
+                                    Alignment::Right,
+                                )),
+                            );
+                            self.list.set_right(
+                                18,
                                 Box::new(ColorPicker::new(
                                     Point::zero(),
                                     self.stylesheet.button_y_color,
@@ -333,7 +361,7 @@ impl View for Theme {
                                 self.fonts[val.as_int().unwrap() as usize].clone()
                         }
                         5 => self.stylesheet.guide_font.size = val.as_int().unwrap() as u32,
-                        6 => self.stylesheet.title_font_size = val.as_int().unwrap() as f32 / 100.0,
+                        6 => self.stylesheet.tab_font_size = val.as_int().unwrap() as f32 / 100.0,
                         7 => {
                             self.stylesheet.status_bar_font_size =
                                 val.as_int().unwrap() as f32 / 100.0
@@ -346,10 +374,12 @@ impl View for Theme {
                         10 => self.stylesheet.foreground_color = val.as_color().unwrap(),
                         11 => self.stylesheet.background_color = val.as_color().unwrap(),
                         12 => self.stylesheet.disabled_color = val.as_color().unwrap(),
-                        13 => self.stylesheet.button_a_color = val.as_color().unwrap(),
-                        14 => self.stylesheet.button_b_color = val.as_color().unwrap(),
-                        15 => self.stylesheet.button_x_color = val.as_color().unwrap(),
-                        16 => self.stylesheet.button_y_color = val.as_color().unwrap(),
+                        13 => self.stylesheet.tab_color = val.as_color().unwrap(),
+                        14 => self.stylesheet.tab_selected_color = val.as_color().unwrap(),
+                        15 => self.stylesheet.button_a_color = val.as_color().unwrap(),
+                        16 => self.stylesheet.button_b_color = val.as_color().unwrap(),
+                        17 => self.stylesheet.button_x_color = val.as_color().unwrap(),
+                        18 => self.stylesheet.button_y_color = val.as_color().unwrap(),
                         _ => unreachable!("Invalid index"),
                     }
 

@@ -228,9 +228,8 @@ where
                         let off_y = off_y as i32 + bb.min.y;
                         // There's still a possibility that the glyph clips the boundaries of the bitmap
                         if off_x >= 0 && off_x < width && off_y >= 0 && off_y < height {
-                            let text_a = (v * 255.0) as u8;
-
                             let text_color = text_color.into();
+                            let text_a = (v * text_color.a() as f32) as u8;
                             let text_r = text_color.r();
                             let text_g = text_color.g();
                             let text_b = text_color.b();

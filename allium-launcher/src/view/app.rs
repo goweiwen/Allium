@@ -38,13 +38,12 @@ pub struct App<B>
 where
     B: Battery + 'static,
 {
-    res: Resources,
     rect: Rect,
     battery_indicator: BatteryIndicator<B>,
     views: (Recents, Games, Apps, Settings),
     selected: usize,
     tabs: Row<Label<String>>,
-    title: Label<String>,
+    // title: Label<String>,
     dirty: bool,
 }
 
@@ -73,7 +72,7 @@ where
         let mut tabs = Row::new(
             Point::new(x + 12, y + 8),
             {
-                vec![
+                let mut tabs = vec![
                     Label::new(
                         Point::zero(),
                         locale.t("tab-recents"),
@@ -88,34 +87,38 @@ where
                         Alignment::Left,
                         None,
                     ),
-                ]
+                ];
+                for tab in tabs.iter_mut() {
+                    tab.color(StylesheetColor::Tab);
+                    tab.font_size(styles.tab_font_size);
+                }
+                tabs
             },
             Alignment::Left,
             12,
         );
         tabs.get_mut(selected)
             .unwrap()
-            .color(StylesheetColor::Highlight);
+            .color(StylesheetColor::TabSelected);
 
-        let mut title = Label::new(
-            Point::new(x + 24, y + 8),
-            title(&locale, selected),
-            Alignment::Left,
-            None,
-        );
-        title.font_size(styles.title_font_size);
+        // let mut title = Label::new(
+        //     Point::new(x + 24, y + 8),
+        //     title(&locale, selected),
+        //     Alignment::Left,
+        //     None,
+        // );
+        // title.font_size(styles.tab_font_size);
 
         drop(styles);
         drop(locale);
 
         Ok(Self {
-            res,
             rect,
             views,
             selected,
             battery_indicator,
             tabs,
-            title,
+            // title,
             dirty: true,
         })
     }
@@ -123,7 +126,7 @@ where
     pub fn load_or_new(rect: Rect, res: Resources, battery: B) -> Result<Self> {
         let tab_rect = {
             let styles = res.get::<Stylesheet>();
-            let font_size = (styles.ui_font.size as f32 * styles.title_font_size) as u32;
+            let font_size = (styles.ui_font.size as f32 * styles.tab_font_size) as u32;
             Rect::new(
                 rect.x,
                 rect.y + font_size as i32 + 8,
@@ -205,15 +208,15 @@ where
         self.tabs
             .get_mut(self.selected)
             .unwrap()
-            .color(StylesheetColor::Foreground);
+            .color(StylesheetColor::Tab);
         self.selected = selected;
         self.view_mut().set_should_draw();
         self.set_should_draw();
         self.tabs
             .get_mut(self.selected)
             .unwrap()
-            .color(StylesheetColor::Highlight);
-        self.title.set_text(self.title());
+            .color(StylesheetColor::TabSelected);
+        // self.title.set_text(self.title());
     }
 
     fn next(&mut self) {
@@ -237,9 +240,9 @@ where
         Ok(())
     }
 
-    fn title(&self) -> String {
-        title(&self.res.get::<Locale>(), self.selected)
-    }
+    // fn title(&self) -> String {
+    //     title(&self.res.get::<Locale>(), self.selected)
+    // }
 }
 
 #[async_trait(?Send)]
@@ -260,12 +263,12 @@ where
         let mut drawn = false;
         drawn |=
             self.battery_indicator.should_draw() && self.battery_indicator.draw(display, styles)?;
-        drawn |= self.title.should_draw() && self.title.draw(display, styles)?;
+        // drawn |= self.title.should_draw() && self.title.draw(display, styles)?;
         drawn |= self.view().should_draw() && self.view_mut().draw(display, styles)?;
 
-        // if self.tabs.should_draw() && self.tabs.draw(display, styles)? {
-        //     drawn = true;
-        // }
+        if self.tabs.should_draw() && self.tabs.draw(display, styles)? {
+            drawn = true;
+        }
 
         Ok(drawn)
     }
@@ -334,12 +337,12 @@ where
     }
 }
 
-fn title(locale: &Locale, selected: usize) -> String {
-    match selected {
-        0 => locale.t("tab-recents"),
-        1 => locale.t("tab-games"),
-        2 => locale.t("tab-apps"),
-        3 => locale.t("tab-settings"),
-        _ => unreachable!(),
-    }
-}
+// fn title(locale: &Locale, selected: usize) -> String {
+//     match selected {
+//         0 => locale.t("tab-recents"),
+//         1 => locale.t("tab-games"),
+//         2 => locale.t("tab-apps"),
+//         3 => locale.t("tab-settings"),
+//         _ => unreachable!(),
+//     }
+// }

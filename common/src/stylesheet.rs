@@ -19,6 +19,8 @@ pub enum StylesheetColor {
     Background,
     Highlight,
     Disabled,
+    Tab,
+    TabSelected,
     ButtonA,
     ButtonB,
     ButtonX,
@@ -33,6 +35,8 @@ impl StylesheetColor {
             Self::Background => stylesheet.background_color,
             Self::Highlight => stylesheet.highlight_color,
             Self::Disabled => stylesheet.disabled_color,
+            Self::Tab => stylesheet.tab_color,
+            Self::TabSelected => stylesheet.tab_selected_color,
             Self::ButtonA => stylesheet.button_a_color,
             Self::ButtonB => stylesheet.button_b_color,
             Self::ButtonX => stylesheet.button_x_color,
@@ -132,6 +136,10 @@ pub struct Stylesheet {
     pub highlight_color: Color,
     #[serde(default = "Stylesheet::default_disabled_color")]
     pub disabled_color: Color,
+    #[serde(default = "Stylesheet::default_tab_color")]
+    pub tab_color: Color,
+    #[serde(default = "Stylesheet::default_tab_selected_color")]
+    pub tab_selected_color: Color,
     #[serde(default = "Stylesheet::default_button_a_color")]
     pub button_a_color: Color,
     #[serde(default = "Stylesheet::default_button_b_color")]
@@ -146,8 +154,8 @@ pub struct Stylesheet {
     pub guide_font: StylesheetFont,
     #[serde(skip, default = "StylesheetFont::cjk_font")]
     pub cjk_font: StylesheetFont,
-    #[serde(default = "Stylesheet::default_title_font_size")]
-    pub title_font_size: f32,
+    #[serde(default = "Stylesheet::default_tab_font_size")]
+    pub tab_font_size: f32,
     #[serde(default = "Stylesheet::default_status_bar_font_size")]
     pub status_bar_font_size: f32,
     #[serde(default = "Stylesheet::default_button_hint_font_size")]
@@ -160,6 +168,10 @@ pub struct Stylesheet {
     alt_highlight_color: Color,
     #[serde(default = "Stylesheet::default_alt_disabled_color")]
     alt_disabled_color: Color,
+    #[serde(default = "Stylesheet::default_alt_tab_color")]
+    alt_tab_color: Color,
+    #[serde(default = "Stylesheet::default_alt_tab_selected_color")]
+    alt_tab_selected_color: Color,
     #[serde(default = "Stylesheet::default_alt_button_a_color")]
     alt_button_a_color: Color,
     #[serde(default = "Stylesheet::default_alt_button_b_color")]
@@ -238,6 +250,11 @@ impl Stylesheet {
         mem::swap(&mut self.background_color, &mut self.alt_background_color);
         mem::swap(&mut self.highlight_color, &mut self.alt_highlight_color);
         mem::swap(&mut self.disabled_color, &mut self.alt_disabled_color);
+        mem::swap(&mut self.tab_color, &mut self.alt_tab_color);
+        mem::swap(
+            &mut self.tab_selected_color,
+            &mut self.alt_tab_selected_color,
+        );
         mem::swap(&mut self.button_a_color, &mut self.alt_button_a_color);
         mem::swap(&mut self.button_b_color, &mut self.alt_button_b_color);
         mem::swap(&mut self.button_x_color, &mut self.alt_button_x_color);
@@ -254,7 +271,7 @@ impl Stylesheet {
             file,
             r#"rgui_entry_normal_color = "0xFF{foreground:X}"
 rgui_entry_hover_color = "0xFF{highlight:X}"
-rgui_title_color = "0xFF{highlight:X}"
+rgui_tab_color = "0xFF{highlight:X}"
 rgui_bg_dark_color = "0xFF{background:X}"
 rgui_bg_light_color = "0xFF{background:X}"
 rgui_border_dark_color = "0xFF{background:X}"
@@ -270,8 +287,8 @@ rgui_particle_color = "0xFF{highlight:X}"
     }
 
     #[inline]
-    fn default_title_font_size() -> f32 {
-        1.3
+    fn default_tab_font_size() -> f32 {
+        1.0
     }
 
     #[inline]
@@ -302,6 +319,16 @@ rgui_particle_color = "0xFF{highlight:X}"
     #[inline]
     fn default_disabled_color() -> Color {
         Color::new(88, 91, 112)
+    }
+
+    #[inline]
+    fn default_tab_color() -> Color {
+        Color::rgba(255, 255, 255, 112)
+    }
+
+    #[inline]
+    fn default_tab_selected_color() -> Color {
+        Color::new(255, 255, 255)
     }
 
     #[inline]
@@ -345,6 +372,16 @@ rgui_particle_color = "0xFF{highlight:X}"
     }
 
     #[inline]
+    fn default_alt_tab_color() -> Color {
+        Color::rgba(41, 44, 60, 112)
+    }
+
+    #[inline]
+    fn default_alt_tab_selected_color() -> Color {
+        Color::new(41, 44, 60)
+    }
+
+    #[inline]
     fn default_alt_button_a_color() -> Color {
         Color::new(243, 139, 168)
     }
@@ -375,6 +412,8 @@ impl Default for Stylesheet {
             background_color: Self::default_background_color(),
             highlight_color: Self::default_highlight_color(),
             disabled_color: Self::default_disabled_color(),
+            tab_color: Self::default_tab_color(),
+            tab_selected_color: Self::default_tab_selected_color(),
             button_a_color: Self::default_button_a_color(),
             button_b_color: Self::default_button_b_color(),
             button_x_color: Self::default_button_x_color(),
@@ -382,13 +421,15 @@ impl Default for Stylesheet {
             ui_font: StylesheetFont::ui_font(),
             guide_font: StylesheetFont::guide_font(),
             cjk_font: StylesheetFont::cjk_font(),
-            title_font_size: Self::default_title_font_size(),
+            tab_font_size: Self::default_tab_font_size(),
             status_bar_font_size: Self::default_status_bar_font_size(),
             button_hint_font_size: Self::default_button_hint_font_size(),
             alt_foreground_color: Self::default_alt_foreground_color(),
             alt_background_color: Self::default_alt_background_color(),
             alt_highlight_color: Self::default_alt_highlight_color(),
             alt_disabled_color: Self::default_alt_disabled_color(),
+            alt_tab_color: Self::default_alt_tab_color(),
+            alt_tab_selected_color: Self::default_alt_tab_selected_color(),
             alt_button_a_color: Self::default_alt_button_a_color(),
             alt_button_b_color: Self::default_alt_button_b_color(),
             alt_button_x_color: Self::default_alt_button_x_color(),

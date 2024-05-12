@@ -35,7 +35,6 @@ where
     width: Option<u32>,
     truncated_text: Option<String>,
     color: StylesheetColor,
-    background_color: StylesheetColor,
     font_size: f32,
     scrolling: Option<Scrolling>,
     dirty: bool,
@@ -57,7 +56,6 @@ where
             width,
             truncated_text: None,
             color: StylesheetColor::Foreground,
-            background_color: StylesheetColor::Background,
             font_size: 1.0,
             scrolling: None,
             dirty: true,
@@ -231,7 +229,6 @@ where
         let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
             .font_fallback(styles.cjk_font.font())
             .text_color(self.color.to_color(styles))
-            .background_color(self.background_color.to_color(styles))
             .font_size((styles.ui_font.size as f32 * self.font_size) as u32)
             .build();
 
