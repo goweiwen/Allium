@@ -1,0 +1,75 @@
+---
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    ignore: []
+    open-pull-requests-limit: 2
+  - package-ecosystem: "cargo"
+    directory: "/activity-tracker/Cargo.toml"
+    schedule:
+      interval: "daily"
+    ignore: []
+    open-pull-requests-limit: 2
+  - package-ecosystem: "cargo"
+    directory: "/allium-launcher/Cargo.toml"
+    schedule:
+      interval: "daily"
+    ignore: []
+    open-pull-requests-limit: 2
+  - package-ecosystem: "cargo"
+    directory: "/allium-menu/Cargo.toml"
+    schedule:
+      interval: "daily"
+    ignore: []
+    open-pull-requests-limit: 2
+  - package-ecosystem: "cargo"
+    directory: "/alliumd/Cargo.toml"
+    schedule:
+      interval: "daily"
+    ignore: []
+    open-pull-requests-limit: 2
+  - package-ecosystem: "cargo"
+    directory: "/common/Cargo.toml"
+    schedule:
+      interval: "daily"
+    ignore: []
+    open-pull-requests-limit: 2
+  - package-ecosystem: "cargo"
+    directory: "/ffi/Cargo.toml"
+    schedule:
+      interval: "daily"
+    ignore: []
+    open-pull-requests-limit: 2
+  - package-ecosystem: "cargo"
+    directory: "/myctl/Cargo.toml"
+    schedule:
+      interval: "daily"
+    ignore: []
+    open-pull-requests-limit: 2
+  - package-ecosystem: "cargo"
+    directory: "/say/Cargo.toml"
+    schedule:
+      interval: "daily"
+    ignore: []
+    open-pull-requests-limit: 2
+  - package-ecosystem: "cargo"
+    directory: "/screenshot/Cargo.toml"
+    schedule:
+      interval: "daily"
+    ignore: []
+    open-pull-requests-limit: 2
+  - package-ecosystem: "cargo"
+    directory: "/show-hotkeys/Cargo.toml"
+    schedule:
+      interval: "daily"
+    ignore: []
+    open-pull-requests-limit: 2
+  - package-ecosystem: "cargo"
+    directory: "/show/Cargo.toml"
+    schedule:
+      interval: "daily"
+    ignore: []
+    open-pull-requests-limit: 2
