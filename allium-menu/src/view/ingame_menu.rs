@@ -303,7 +303,7 @@ where
         let path = self
             .path
             .canonicalize()
-            .unwrap()
+            .unwrap_or_default()
             .to_string_lossy()
             .to_string();
         let slot = self.retroarch_info.as_ref().unwrap().state_slot.unwrap();
