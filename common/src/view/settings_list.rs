@@ -10,7 +10,7 @@ use tokio::sync::mpsc::Sender;
 use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
-use crate::stylesheet::{Stylesheet, StylesheetColor};
+use crate::stylesheet::Stylesheet;
 use crate::view::{Command, Label, View};
 
 /// A listing of selectable entries. Assumes that all entries have the same size.
@@ -23,7 +23,6 @@ pub struct SettingsList {
     entry_height: u32,
     top: usize,
     selected: usize,
-    background_color: Option<StylesheetColor>,
     focused: bool,
     dirty: bool,
     has_layout: bool,
@@ -45,7 +44,6 @@ impl SettingsList {
             top: 0,
             selected: 0,
             focused: false,
-            background_color: None,
             dirty: true,
             has_layout: false,
         };
@@ -53,11 +51,6 @@ impl SettingsList {
         this.set_items(left, right);
 
         this
-    }
-
-    pub fn set_background_color(&mut self, color: Option<StylesheetColor>) {
-        self.background_color = color;
-        self.dirty = true;
     }
 
     pub fn set_items(&mut self, left: Vec<String>, right: Vec<Box<dyn View>>) {
@@ -149,8 +142,6 @@ impl View for SettingsList {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        let mut drawn = false;
-
         if self.dirty {
             if !self.has_layout {
                 for i in 0..self.visible_count() {
@@ -165,57 +156,58 @@ impl View for SettingsList {
 
             display.load(self.bounding_box(styles))?;
 
-            if !self.focused {
-                let left = self
-                    .left
-                    .get_mut(self.selected - self.top)
-                    .map(|s| s.bounding_box(styles))
-                    .unwrap_or_default();
-                let right = self
-                    .right
-                    .get_mut(self.selected)
-                    .map(|s| s.bounding_box(styles))
-                    .unwrap_or_default();
+            let left = self
+                .left
+                .get_mut(self.selected - self.top)
+                .map(|s| s.bounding_box(styles))
+                .unwrap_or_default();
+            let right = self
+                .right
+                .get_mut(self.selected)
+                .map(|s| s.bounding_box(styles))
+                .unwrap_or_default();
 
-                // Highlight Background
-                if right.w != 0 && right.h != 0 {
-                    let rect = left.union(&right);
-                    RoundedRectangle::with_equal_corners(
-                        Rectangle::new(
-                            embedded_graphics::prelude::Point::new(self.rect.x, rect.y - 4),
-                            Size::new(self.rect.w, rect.h + 8),
-                        ),
-                        Size::new_equal(rect.h),
-                    )
-                    .into_styled(PrimitiveStyle::with_fill(
-                        styles.highlight_color.with_a(128),
-                    ))
-                    .draw(display)?;
-                }
-
-                // Highlight
-                let rect = if self.focused { right } else { left };
+            // Highlight Background
+            if right.w != 0 && right.h != 0 {
+                let rect = left.union(&right);
                 RoundedRectangle::with_equal_corners(
                     Rectangle::new(
-                        embedded_graphics::prelude::Point::new(rect.x - 12, rect.y - 4),
-                        Size::new(rect.w + 24, rect.h + 8),
+                        embedded_graphics::prelude::Point::new(self.rect.x, rect.y - 4),
+                        Size::new(self.rect.w, rect.h + 8),
                     ),
                     Size::new_equal(rect.h),
                 )
-                .into_styled(PrimitiveStyle::with_fill(styles.highlight_color))
+                .into_styled(PrimitiveStyle::with_fill(
+                    styles.highlight_color.with_a(128),
+                ))
                 .draw(display)?;
-
-                for (i, left) in self.left.iter_mut().enumerate() {
-                    left.set_should_draw();
-                    let right = &mut self.right[self.top + i];
-                    right.set_should_draw();
-                }
             }
+
+            // Highlight
+            let rect = if self.focused { right } else { left };
+            RoundedRectangle::with_equal_corners(
+                Rectangle::new(
+                    embedded_graphics::prelude::Point::new(rect.x - 12, rect.y - 4),
+                    Size::new(rect.w + 24, rect.h + 8),
+                ),
+                Size::new_equal(rect.h),
+            )
+            .into_styled(PrimitiveStyle::with_fill(styles.highlight_color))
+            .draw(display)?;
+
+            for (i, left) in self.left.iter_mut().enumerate() {
+                left.set_should_draw();
+                let right = &mut self.right[self.top + i];
+                right.set_should_draw();
+            }
+
+            self.dirty = false;
         }
 
+        let mut drawn = false;
         for (i, left) in self.left.iter_mut().enumerate() {
             let mut drawn_left = false;
-            if (left.should_draw() || self.focused) && left.draw(display, styles)? {
+            if left.should_draw() && left.draw(display, styles)? {
                 drawn = true;
                 drawn_left = true;
             }
