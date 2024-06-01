@@ -301,7 +301,7 @@ impl AlliumLauncher<DefaultPlatform> {
                                 .into(),
                         );
                         std::process::Command::new("say")
-                            .arg(self.res.get::<Locale>().ta("populating-directory", &map))
+                            .arg(self.res.get::<Locale>().ta("populating-games", &map))
                             .spawn()?
                             .wait()?;
                     }
