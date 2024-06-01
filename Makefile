@@ -30,6 +30,7 @@ simulator-env:
 simulator: simulator-env
 	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_DATABASE=simulator/allium.db ALLIUM_BASE_DIR=simulator/.allium ALLIUM_SD_ROOT=simulator cargo run --bin $(bin) --features=simulator $(args)
 
+.PHONY: dist
 dist:
 	mkdir -p $(DIST_DIR)
 	rsync -a --exclude='.gitkeep' static/. $(DIST_DIR)
