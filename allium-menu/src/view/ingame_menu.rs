@@ -71,13 +71,12 @@ where
         let locale = res.get::<Locale>();
         let styles = res.get::<Stylesheet>();
 
-        let mut name = Label::new(
+        let name = Label::new(
             Point::new(x + 12, y + 8),
             game_info.name.clone(),
             Alignment::Left,
             None,
         );
-        name.color(common::stylesheet::StylesheetColor::Highlight);
 
         let battery_indicator = BatteryIndicator::new(
             res.clone(),
