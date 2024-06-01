@@ -90,7 +90,7 @@ where
         let mut menu = SettingsList::new(
             Rect::new(
                 x + 12,
-                y + 8 + styles.ui_font.size as i32 + 8,
+                y + 8 + ButtonIcon::diameter(&styles) as i32 + 8,
                 w - SAVE_STATE_IMAGE_WIDTH - 12 - 12 - 24,
                 h - 8 - ButtonIcon::diameter(&styles) - 8,
             ),
