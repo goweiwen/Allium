@@ -323,6 +323,6 @@ impl Sort for GamesSort {
     }
 
     fn preserve_selection(&self) -> bool {
-        !matches!(self, GamesSort::Alphabetical(_) | GamesSort::Random(_))
+        false
     }
 }

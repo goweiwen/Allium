@@ -149,6 +149,6 @@ impl Sort for AppsSort {
     }
 
     fn preserve_selection(&self) -> bool {
-        true
+        false
     }
 }

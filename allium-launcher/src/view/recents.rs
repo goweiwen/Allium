@@ -292,6 +292,6 @@ impl Sort for RecentsSort {
     }
 
     fn preserve_selection(&self) -> bool {
-        !matches!(self, RecentsSort::Search(_) | RecentsSort::Random)
+        false
     }
 }
