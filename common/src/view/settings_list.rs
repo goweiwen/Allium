@@ -228,6 +228,7 @@ impl View for SettingsList {
             // Highlight Background
             if right_rect.w != 0 && right_rect.h != 0 {
                 let rect = left_rect.union(&right_rect);
+                display.load(Rect::new(rect.x - 12, rect.y - 4, rect.w + 24, rect.h + 8))?;
                 RoundedRectangle::with_equal_corners(
                     Rectangle::new(
                         embedded_graphics::prelude::Point::new(self.rect.x, rect.y - 4),

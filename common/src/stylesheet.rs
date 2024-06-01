@@ -323,7 +323,7 @@ rgui_particle_color = "0xFF{highlight:X}"
 
     #[inline]
     fn default_background_color() -> Color {
-        Color::rgba(0, 0, 0, 0)
+        Color::new(0, 0, 0)
     }
 
     #[inline]
