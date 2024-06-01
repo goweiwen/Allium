@@ -473,7 +473,10 @@ where
             }
             event => {
                 let prev = self.menu.selected();
-                let consumed = self.menu.handle_key_event(event, commands, bubble).await?;
+                let consumed = self
+                    .menu
+                    .handle_key_event(event, commands.clone(), bubble)
+                    .await?;
                 let curr = self.menu.selected();
                 if consumed && prev != curr {
                     if let Some(info) = self.retroarch_info.as_ref() {
@@ -509,6 +512,9 @@ where
                             }
                         }
                     }
+                }
+                if !consumed && matches!(event, KeyEvent::Pressed(Key::B)) {
+                    commands.send(Command::Exit).await?;
                 }
                 Ok(consumed)
             }
