@@ -152,7 +152,7 @@ impl ConsoleMapper {
         }
 
         let image = game.image().map(Path::to_path_buf);
-        database.increment_play_count(&game.name, game.path.as_path(), image.as_deref())?;
+        database.increment_play_count(&game.clone().into())?;
 
         let core = self.get_console(game.path.as_path());
         Ok(if let Some(console) = core {

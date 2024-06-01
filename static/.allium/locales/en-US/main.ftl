@@ -7,6 +7,8 @@ tab-settings = Settings
 sort-alphabetical = Sort: A-Z
 sort-last-played = Sort: Recent
 sort-most-played = Sort: Playtime
+sort-rating = Sort: Rating
+sort-release-date = Sort: Release Date
 sort-random = Sort: Random
 sort-search = Search
 

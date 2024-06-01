@@ -16,7 +16,7 @@ miyoo = ["evdev", "framebuffer", "sysfs_gpio"]
 [dependencies]
 anyhow = "1.0.70"
 async-trait = "0.1.68"
-chrono = { version = "0.4.26", features = ["serde"] }
+chrono = { version = "0.4.29", features = ["serde"] }
 embedded-graphics = "0.8.0"
 enum-map = "2.5.0"
 fluent-templates = { git = "https://github.com/goweiwen/fluent-templates", branch = "ignore", version = "0.8.0", features = ["walkdir"], default-features = false }
@@ -25,7 +25,7 @@ itertools = "0.10.5"
 lazy_static = "1.4.0"
 log = { version = "0.4.19", features = ["release_max_level_info"] }
 nix = "0.23"
-rusqlite = { version = "0.31", features = ["bundled"] }
+rusqlite = { version = "0.31", features = ["bundled", "chrono"] }
 rusqlite_migration = "1.0.2"
 rusttype = "0.9.3"
 serde = { version = "1.0.163", features = ["derive"] }
@@ -42,4 +42,3 @@ fast_image_resize = "2.7.3"
 [target.'cfg(target_arch = "arm")'.dependencies]
 evdev = { version = "0.12.1", features = ["tokio"], optional = true }
 framebuffer = { version = "0.3.1", optional = true }
-

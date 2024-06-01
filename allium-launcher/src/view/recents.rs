@@ -284,6 +284,8 @@ impl Sort for RecentsSort {
                     image,
                     extension,
                     core: game.core,
+                    rating: game.rating,
+                    release_date: game.release_date,
                 })
             })
             .collect())

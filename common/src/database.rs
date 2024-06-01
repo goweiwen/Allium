@@ -4,7 +4,7 @@ use std::{
 };
 
 use anyhow::{Context, Result};
-use chrono::Duration;
+use chrono::{Duration, NaiveDate};
 use log::{info, trace};
 use rusqlite::{params, Connection, OptionalExtension, Row};
 use rusqlite_migration::{Migrations, M};
@@ -16,7 +16,7 @@ pub struct Database {
     conn: Option<Rc<Connection>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Game {
     pub name: String,
     pub path: PathBuf,
@@ -25,14 +25,18 @@ pub struct Game {
     pub play_time: Duration,
     pub last_played: i64,
     pub core: Option<String>,
+    pub rating: Option<u8>,
+    pub release_date: Option<NaiveDate>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NewGame {
     pub name: String,
     pub path: PathBuf,
     pub image: Option<PathBuf>,
     pub core: Option<String>,
+    pub rating: Option<u8>,
+    pub release_date: Option<NaiveDate>,
 }
 
 impl Database {
@@ -63,7 +67,7 @@ impl Database {
 
     pub fn migrations<'a>() -> Migrations<'a> {
         Migrations::new(vec![
-M::up("
+        M::up("
 CREATE TABLE IF NOT EXISTS games (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
@@ -73,7 +77,7 @@ CREATE TABLE IF NOT EXISTS games (
     play_time INTEGER NOT NULL,
     last_played INTEGER NOT NULL
 );"),
-M::up("
+        M::up("
 CREATE VIRTUAL TABLE games_fts USING fts5(name, path, content='games', content_rowid='id');
 
 CREATE TRIGGER games_fts_ai AFTER INSERT ON games BEGIN
@@ -86,28 +90,41 @@ CREATE TRIGGER games_fts_au AFTER UPDATE ON games BEGIN
     INSERT INTO games_fts(games_fts, rowid, name, path) VALUES ('delete', old.id, old.name, old.path);
     INSERT INTO games_fts(rowid, name, path) VALUES (new.id, new.name, new.path);
 END;"),
-M::up("
+        M::up("
 CREATE TABLE IF NOT EXISTS guides (
     id INTEGER PRIMARY KEY,
     path TEXT NOT NULL UNIQUE,
     cursor INTEGER NOT NULL
 );"),
-M::up("
+        M::up("
 CREATE TABLE IF NOT EXISTS key_value (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );"),
-M::up("
+        M::up("
 ALTER TABLE games ADD COLUMN core TEXT;
 "),
-M::up("
+        M::up("
 CREATE TABLE IF NOT EXISTS directories (
     id INTEGER PRIMARY KEY,
     path TEXT NOT NULL UNIQUE,
     gamelist_fingerprint INTEGER
-)
-")
-        ])
+);"),
+        M::up("
+ALTER TABLE games ADD COLUMN rating INTEGER;
+ALTER TABLE games ADD COLUMN release_date STRING;
+CREATE TABLE IF NOT EXISTS genres (
+    id INTEGER PRIMARY KEY,
+    genre STRING
+);
+CREATE TABLE IF NOT EXISTS game_genres (
+    game_id INTEGER,
+    genre_id INTEGER,
+    FOREIGN KEY (game_id) REFERENCES games(id),
+    FOREIGN KEY (genre_id) REFERENCES genres(id),
+    PRIMARY KEY (game_id, genre_id)
+);")
+                ])
     }
 
     pub fn reset_game(&self, path: &Path) -> Result<()> {
@@ -136,16 +153,26 @@ CREATE TABLE IF NOT EXISTS directories (
 
         let mut stmt = tx.prepare(
             "
-INSERT INTO games (name, path, image, play_count, play_time, last_played, core)
-VALUES (?, ?, ?, 0, 0, 0, ?)
-ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
+INSERT INTO games (name, path, image, play_count, play_time, last_played, core, rating, release_date)
+VALUES (?, ?, ?, 0, 0, 0, ?, ?, ?)
+ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, release_date = ?",
         )?;
 
         for game in games {
             let path = game.path.display().to_string();
             let image = game.image.as_ref().map(|p| p.display().to_string());
             stmt.execute(params![
-                game.name, path, image, game.core, game.name, image, game.core
+                game.name,
+                path,
+                image,
+                game.core,
+                game.rating,
+                game.release_date,
+                game.name,
+                image,
+                game.core,
+                game.rating,
+                game.release_date,
             ])?;
         }
 
@@ -162,7 +189,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE last_played > 0 ORDER BY play_time DESC LIMIT ?")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date FROM games WHERE last_played > 0 ORDER BY play_time DESC LIMIT ?")?;
 
         let results = stmt
             .query_map([limit], map_game)?
@@ -178,7 +205,39 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE last_played > 0 ORDER BY last_played DESC LIMIT ?")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date FROM games WHERE last_played > 0 ORDER BY last_played DESC LIMIT ?")?;
+
+        let results = stmt
+            .query_map([limit], map_game)?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(results)
+    }
+
+    /// Selects played games sorted by highest rating first.
+    pub fn select_by_rating(&self, limit: i64) -> Result<Vec<Game>> {
+        let mut stmt = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date FROM games ORDER BY rating DESC LIMIT ?")?;
+
+        let results = stmt
+            .query_map([limit], map_game)?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(results)
+    }
+
+    /// Selects played games sorted by release date (earliest first).
+    pub fn select_by_release_date(&self, limit: i64) -> Result<Vec<Game>> {
+        let mut stmt = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date FROM games ORDER BY release_date DESC LIMIT ?")?;
 
         let results = stmt
             .query_map([limit], map_game)?
@@ -194,7 +253,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE id IN (SELECT id FROM games ORDER BY RANDOM() LIMIT ?)")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date FROM games WHERE id IN (SELECT id FROM games ORDER BY RANDOM() LIMIT ?)")?;
 
         let results = stmt
             .query_map([limit], map_game)?
@@ -212,7 +271,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
 
         let conn = self.conn.as_ref().unwrap();
 
-        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.name MATCH ? LIMIT ?")?;
+        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core, rating, release_date FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.name MATCH ? LIMIT ?")?;
 
         let results = stmt
             .query_map(params![format!("\"{}\" * ", query), limit], map_game)?
@@ -226,7 +285,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
         trace!("select_games_in_directory({:?})", path);
         let conn = self.conn.as_ref().unwrap();
 
-        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.path LIKE ? AND games_fts.path NOT LIKE ?")?;
+        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core, rating, release_date FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.path LIKE ? AND games_fts.path NOT LIKE ?")?;
 
         let results = stmt
             .query_map(
@@ -247,7 +306,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
             .conn
             .as_ref()
             .unwrap()
-            .query_row("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE path = ? LIMIT 1", [path.display().to_string()], map_game)
+            .query_row("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date FROM games WHERE path = ? LIMIT 1", [path.display().to_string()], map_game)
             .optional()?;
 
         Ok(game)
@@ -258,7 +317,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core FROM games WHERE path = ?")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date FROM games WHERE path = ?")?;
 
         let mut results = vec![None; paths.len()];
         for (i, path) in paths.iter().enumerate() {
@@ -274,7 +333,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
 
     pub fn select_all_games(&self) -> Result<Vec<Game>> {
         let mut stmt = self.conn.as_ref().unwrap().prepare(
-            "SELECT name, path, image, play_count, play_time, last_played, core FROM games",
+            "SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date FROM games",
         )?;
 
         let results = stmt
@@ -286,31 +345,28 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?",
     }
 
     /// Increment the play count of a game, inserting a new row if it doesn't exist.
-    pub fn increment_play_count(
-        &self,
-        name: &str,
-        path: &Path,
-        image: Option<&Path>,
-    ) -> Result<()> {
+    pub fn increment_play_count(&self, game: &NewGame) -> Result<()> {
         self.conn.as_ref().unwrap().execute(
             "
-INSERT INTO games (name, path, image, play_count, play_time, last_played, core)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT INTO games (name, path, image, play_count, play_time, last_played, core, rating, release_date)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
             params![
-                name,
-                path.display().to_string(),
-                image.map(|p| p.display().to_string()),
+                game.name,
+                game.path.display().to_string(),
+                game.image.as_ref().map(|p| p.display().to_string()),
                 1,
                 0,
                 0,
-                None::<String>,
+                game.core,
+                game.rating,
+                game.release_date
             ],
         )?;
 
         self.conn.as_ref().unwrap().execute(
             "UPDATE games SET last_played = (SELECT MAX(last_played) FROM games) + 1 WHERE path = ?",
-        [path.display().to_string()])?;
+        [game.path.display().to_string()])?;
 
         Ok(())
     }
@@ -467,6 +523,8 @@ fn map_game(row: &Row<'_>) -> rusqlite::Result<Game> {
         play_time: Duration::seconds(row.get(4)?),
         last_played: row.get(5)?,
         core: row.get(6)?,
+        rating: row.get(7)?,
+        release_date: row.get(8)?,
     })
 }
 
@@ -489,24 +547,22 @@ mod tests {
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
                 core: None,
+                rating: None,
+                release_date: None,
             },
             NewGame {
                 name: "Game Two".to_string(),
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
                 core: None,
+                rating: None,
+                release_date: None,
             },
         ];
 
         database.update_games(&games).unwrap();
 
-        database
-            .increment_play_count(
-                &games[1].name,
-                games[1].path.as_path(),
-                games[1].image.as_deref(),
-            )
-            .unwrap();
+        database.increment_play_count(&games[1]).unwrap();
         database
             .add_play_time(games[1].path.as_path(), Duration::seconds(1))
             .unwrap();
@@ -514,13 +570,7 @@ mod tests {
         assert_eq!(most_played.len(), 1);
         assert_eq!(most_played[0].path, games[1].path);
 
-        database
-            .increment_play_count(
-                &games[0].name,
-                games[0].path.as_path(),
-                games[0].image.as_deref(),
-            )
-            .unwrap();
+        database.increment_play_count(&games[0]).unwrap();
         database
             .add_play_time(games[0].path.as_path(), Duration::seconds(2))
             .unwrap();
@@ -540,41 +590,125 @@ mod tests {
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
                 core: None,
+                rating: None,
+                release_date: None,
             },
             NewGame {
                 name: "Game Two".to_string(),
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
                 core: None,
+                rating: None,
+                release_date: None,
             },
         ];
 
         database.update_games(&games).unwrap();
 
         for _ in 0..2 {
-            database
-                .increment_play_count(
-                    &games[1].name,
-                    games[1].path.as_path(),
-                    games[1].image.as_deref(),
-                )
-                .unwrap();
+            database.increment_play_count(&games[1]).unwrap();
         }
         let last_played = database.select_last_played(2).unwrap();
         assert_eq!(last_played.len(), 1);
         assert_eq!(last_played[0].path, games[1].path);
 
-        database
-            .increment_play_count(
-                &games[0].name,
-                games[0].path.as_path(),
-                games[0].image.as_deref(),
-            )
-            .unwrap();
+        database.increment_play_count(&games[0]).unwrap();
         let last_played = database.select_last_played(2).unwrap();
         assert_eq!(last_played.len(), 2);
         assert_eq!(last_played[0].path, games[0].path);
         assert_eq!(last_played[1].path, games[1].path);
+    }
+
+    #[test]
+    fn test_by_rating() {
+        let database = Database::in_memory().unwrap();
+
+        let games = vec![
+            NewGame {
+                name: "Game One".to_string(),
+                path: PathBuf::from("test_directory/Game One.rom"),
+                image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
+                core: None,
+                rating: Some(5),
+                release_date: None,
+            },
+            NewGame {
+                name: "Game Two".to_string(),
+                path: PathBuf::from("test_directory/Game Two.rom"),
+                image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
+                core: None,
+                rating: Some(9),
+                release_date: None,
+            },
+        ];
+
+        database.update_games(&games).unwrap();
+
+        let by_rating = database.select_by_rating(2).unwrap();
+        assert_eq!(by_rating.len(), 2);
+        assert_eq!(by_rating[0].path, games[1].path);
+        assert_eq!(by_rating[1].path, games[0].path);
+
+        database
+            .update_games(&[NewGame {
+                name: "Game Two".to_string(),
+                path: PathBuf::from("test_directory/Game Two.rom"),
+                image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
+                core: None,
+                rating: Some(1),
+                release_date: None,
+            }])
+            .unwrap();
+        let by_rating = database.select_by_rating(2).unwrap();
+        assert_eq!(by_rating.len(), 2);
+        assert_eq!(by_rating[0].path, games[0].path);
+        assert_eq!(by_rating[1].path, games[1].path);
+    }
+
+    #[test]
+    fn test_by_release_date() {
+        let database = Database::in_memory().unwrap();
+
+        let games = vec![
+            NewGame {
+                name: "Game One".to_string(),
+                path: PathBuf::from("test_directory/Game One.rom"),
+                image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
+                core: None,
+                rating: None,
+                release_date: Some(NaiveDate::from_ymd_opt(2023, 1, 1).unwrap()),
+            },
+            NewGame {
+                name: "Game Two".to_string(),
+                path: PathBuf::from("test_directory/Game Two.rom"),
+                image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
+                core: None,
+                rating: None,
+                release_date: Some(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()),
+            },
+        ];
+
+        database.update_games(&games).unwrap();
+
+        let by_release_date = database.select_by_release_date(2).unwrap();
+        assert_eq!(by_release_date.len(), 2);
+        assert_eq!(by_release_date[0].path, games[1].path);
+        assert_eq!(by_release_date[1].path, games[0].path);
+
+        database
+            .update_games(&[NewGame {
+                name: "Game Two".to_string(),
+                path: PathBuf::from("test_directory/Game Two.rom"),
+                image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
+                core: None,
+                rating: None,
+                release_date: Some(NaiveDate::from_ymd_opt(2022, 1, 1).unwrap()),
+            }])
+            .unwrap();
+        let by_release_date = database.select_by_release_date(2).unwrap();
+        assert_eq!(by_release_date.len(), 2);
+        assert_eq!(by_release_date[0].path, games[0].path);
+        assert_eq!(by_release_date[1].path, games[1].path);
     }
 
     #[test]
@@ -587,12 +721,16 @@ mod tests {
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
                 core: None,
+                rating: None,
+                release_date: None,
             },
             NewGame {
                 name: "Game Two".to_string(),
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
                 core: None,
+                rating: None,
+                release_date: None,
             },
         ];
 
@@ -621,12 +759,16 @@ mod tests {
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
                 core: None,
+                rating: None,
+                release_date: None,
             },
             NewGame {
                 name: "Game Two".to_string(),
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
                 core: None,
+                rating: None,
+                release_date: None,
             },
         ];
 
@@ -662,18 +804,24 @@ mod tests {
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
                 core: None,
+                rating: None,
+                release_date: None,
             },
             NewGame {
                 name: "Game Two".to_string(),
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
                 core: None,
+                rating: None,
+                release_date: None,
             },
             NewGame {
                 name: "Game Three".to_string(),
                 path: PathBuf::from("different_directory/Game Three.rom"),
                 image: Some(PathBuf::from("different_directory/Imgs/Game Three.png")),
                 core: None,
+                rating: None,
+                release_date: None,
             },
         ];
 
@@ -721,12 +869,16 @@ mod tests {
                 path: PathBuf::from("test_directory/Game One.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
                 core: None,
+                rating: None,
+                release_date: None,
             },
             NewGame {
                 name: "Game Two".to_string(),
                 path: PathBuf::from("test_directory/Game Two.rom"),
                 image: Some(PathBuf::from("test_directory/Imgs/Game Two.png")),
                 core: None,
+                rating: None,
+                release_date: None,
             },
         ];
 

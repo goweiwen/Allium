@@ -2,6 +2,7 @@ use std::{
     collections::{HashSet, VecDeque},
     ffi::OsStr,
     fs::{self, File},
+    io::Read,
     path::{Path, PathBuf},
 };
 
@@ -90,8 +91,20 @@ impl Directory {
     }
 
     fn parse_game_list(&self, game_list: &Path) -> Result<Vec<Entry>> {
-        let file = File::open(game_list)?;
-        let gamelist: GameList = serde_xml_rs::from_reader(file)?;
+        let mut file = File::open(game_list)?;
+        let mut s = String::with_capacity(1024);
+        file.read_to_string(&mut s)?;
+        let gamelist: GameList = match serde_xml_rs::from_str(&s) {
+            Ok(gamelist) => gamelist,
+            Err(serde_xml_rs::Error::Syntax { .. }) => {
+                // Some scrapers produce ill-formed XML where ampersands (&) are not escaped,
+                // so we try to failover to replacing them to &amp;
+                // (https://github.com/RReverser/serde-xml-rs/issues/106)
+                s = s.replace('&', "&amp;");
+                serde_xml_rs::from_str(&s)?
+            }
+            Err(e) => return Err(e.into()),
+        };
 
         let games = gamelist.games.into_iter().filter_map(|game| {
             let path = self.path.join(&game.path).canonicalize().ok()?;
@@ -128,6 +141,8 @@ impl Directory {
                 image,
                 extension,
                 core: None,
+                rating: game.rating.map(|x| (x * 10.0) as u8),
+                release_date: game.release_date.map(|d| d.date()),
             }))
         });
 
@@ -217,6 +232,8 @@ impl Directory {
                                     path: game.path.clone(),
                                     image: game.image.try_image().map(Path::to_path_buf),
                                     core: game.core.clone(),
+                                    rating: game.rating,
+                                    release_date: game.release_date,
                                 }),
                                 Entry::App(_) | Entry::Directory(_) => None,
                             })
@@ -224,7 +241,11 @@ impl Directory {
                     )?;
                     entries.extend(res);
                 }
-                Err(e) => error!("Failed to parse gamelist.xml: {}", e),
+                Err(e) => error!(
+                    "Failed to parse gamelist.xml: {:#} ({})",
+                    e,
+                    gamelist.to_string_lossy()
+                ),
             }
         } else if !gamelist.exists() {
             let gamelist = self.path.join("miyoogamelist.xml");
@@ -259,6 +280,8 @@ impl Directory {
                                         path: game.path.clone(),
                                         image: game.image.try_image().map(Path::to_path_buf),
                                         core: game.core.clone(),
+                                        rating: game.rating,
+                                        release_date: game.release_date,
                                     }),
                                     Entry::App(_) | Entry::Directory(_) => None,
                                 })
@@ -266,7 +289,11 @@ impl Directory {
                         )?;
                         entries.extend(res);
                     }
-                    Err(e) => error!("Failed to parse gamelist.xml: {}", e),
+                    Err(e) => error!(
+                        "Failed to parse miyoogamelist.xml: {:#} ({})",
+                        e,
+                        gamelist.to_string_lossy()
+                    ),
                 }
             }
         }
@@ -331,6 +358,8 @@ impl Directory {
                     path: game.path,
                     image: game.image.try_image().map(Path::to_path_buf),
                     core: game.core,
+                    rating: game.rating,
+                    release_date: game.release_date,
                 }),
                 _ => None,
             })

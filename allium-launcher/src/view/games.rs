@@ -1,8 +1,8 @@
+use std::cmp::Reverse;
 use std::collections::VecDeque;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use chrono::Duration;
 use common::command::Command;
 use common::constants::ALLIUM_GAMES_DIR;
 use common::database::Database;
@@ -148,6 +148,8 @@ pub enum GamesSort {
     Alphabetical(Directory),
     LastPlayed(Directory),
     MostPlayed(Directory),
+    Rating(Directory),
+    ReleaseDate(Directory),
     Random(Directory),
 }
 
@@ -157,6 +159,8 @@ impl GamesSort {
             GamesSort::Alphabetical(d) => d,
             GamesSort::LastPlayed(d) => d,
             GamesSort::MostPlayed(d) => d,
+            GamesSort::Rating(d) => d,
+            GamesSort::ReleaseDate(d) => d,
             GamesSort::Random(d) => d,
         }
     }
@@ -168,6 +172,8 @@ impl Sort for GamesSort {
             GamesSort::Alphabetical(_) => locale.t("sort-alphabetical"),
             GamesSort::LastPlayed(_) => locale.t("sort-last-played"),
             GamesSort::MostPlayed(_) => locale.t("sort-most-played"),
+            GamesSort::Rating(_) => locale.t("sort-rating"),
+            GamesSort::ReleaseDate(_) => locale.t("sort-release-date"),
             GamesSort::Random(_) => locale.t("sort-random"),
         }
     }
@@ -176,7 +182,9 @@ impl Sort for GamesSort {
         match self {
             GamesSort::Alphabetical(d) => GamesSort::LastPlayed(d.clone()),
             GamesSort::LastPlayed(d) => GamesSort::MostPlayed(d.clone()),
-            GamesSort::MostPlayed(d) => GamesSort::Random(d.clone()),
+            GamesSort::MostPlayed(d) => GamesSort::Rating(d.clone()),
+            GamesSort::Rating(d) => GamesSort::ReleaseDate(d.clone()),
+            GamesSort::ReleaseDate(d) => GamesSort::Random(d.clone()),
             GamesSort::Random(d) => GamesSort::Alphabetical(d.clone()),
         }
     }
@@ -186,6 +194,8 @@ impl Sort for GamesSort {
             GamesSort::Alphabetical(_) => GamesSort::Alphabetical(directory),
             GamesSort::LastPlayed(_) => GamesSort::LastPlayed(directory),
             GamesSort::MostPlayed(_) => GamesSort::MostPlayed(directory),
+            GamesSort::Rating(_) => GamesSort::Rating(directory),
+            GamesSort::ReleaseDate(_) => GamesSort::ReleaseDate(directory),
             GamesSort::Random(_) => GamesSort::Random(directory),
         }
     }
@@ -223,7 +233,7 @@ impl Sort for GamesSort {
 
                 let mut games = games.into_iter().zip(db_games).collect::<Vec<_>>();
                 games.sort_unstable_by_key(|(_, db_game)| {
-                    db_game.as_ref().map(|g| -g.last_played).unwrap_or_default()
+                    db_game.as_ref().map(|g| Reverse(g.last_played))
                 });
                 entries.retain(|e| matches!(e, Entry::Directory(_) | Entry::App(_)));
                 entries.sort_unstable();
@@ -248,10 +258,57 @@ impl Sort for GamesSort {
 
                 let mut games = games.into_iter().zip(db_games).collect::<Vec<_>>();
                 games.sort_unstable_by_key(|(_, db_game)| {
-                    db_game
-                        .as_ref()
-                        .map(|g| -g.play_time)
-                        .unwrap_or(Duration::zero())
+                    db_game.as_ref().map(|g| Reverse(g.play_time))
+                });
+                entries.retain(|e| matches!(e, Entry::Directory(_) | Entry::App(_)));
+                entries.sort_unstable();
+                entries.extend(games.into_iter().map(|(game, _)| Entry::Game(game)));
+            }
+            GamesSort::Rating(_) => {
+                let mut games = Vec::with_capacity(entries.len());
+                let mut i = 0;
+                while i < entries.len() {
+                    if matches!(entries[i], Entry::Game(_)) {
+                        match entries.remove(i) {
+                            Entry::Game(game) => games.push(game),
+                            _ => unreachable!(),
+                        }
+                    } else {
+                        i += 1;
+                    }
+                }
+
+                let db_games = database
+                    .select_games(&games.iter().map(|g| g.path.as_path()).collect::<Vec<_>>())?;
+
+                let mut games = games.into_iter().zip(db_games).collect::<Vec<_>>();
+                games.sort_unstable_by_key(|(_, db_game)| {
+                    db_game.as_ref().map(|g| Reverse(g.rating))
+                });
+                entries.retain(|e| matches!(e, Entry::Directory(_) | Entry::App(_)));
+                entries.sort_unstable();
+                entries.extend(games.into_iter().map(|(game, _)| Entry::Game(game)));
+            }
+            GamesSort::ReleaseDate(_) => {
+                let mut games = Vec::with_capacity(entries.len());
+                let mut i = 0;
+                while i < entries.len() {
+                    if matches!(entries[i], Entry::Game(_)) {
+                        match entries.remove(i) {
+                            Entry::Game(game) => games.push(game),
+                            _ => unreachable!(),
+                        }
+                    } else {
+                        i += 1;
+                    }
+                }
+
+                let db_games = database
+                    .select_games(&games.iter().map(|g| g.path.as_path()).collect::<Vec<_>>())?;
+
+                let mut games = games.into_iter().zip(db_games).collect::<Vec<_>>();
+                games.sort_unstable_by_key(|(_, db_game)| {
+                    db_game.as_ref().map(|g| Reverse(g.release_date))
                 });
                 entries.retain(|e| matches!(e, Entry::Directory(_) | Entry::App(_)));
                 entries.sort_unstable();

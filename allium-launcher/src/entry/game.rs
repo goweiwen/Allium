@@ -6,8 +6,9 @@ use std::{
 };
 
 use anyhow::Result;
+use chrono::NaiveDate;
 use common::constants::ALLIUM_GAMES_DIR;
-use common::database::Game as DbGame;
+use common::database::{Game as DbGame, NewGame};
 use log::info;
 use serde::{Deserialize, Serialize};
 
@@ -27,6 +28,10 @@ pub struct Game {
     pub extension: String,
     /// The core to use for this game. If None, the default core will be used.
     pub core: Option<String>,
+    /// Rating from 0 to 10, used to sort.
+    pub rating: Option<u8>,
+    /// Release date of the game, used to sort.
+    pub release_date: Option<NaiveDate>,
 }
 
 impl Game {
@@ -50,6 +55,8 @@ impl Game {
             image,
             extension,
             core: None,
+            rating: None,
+            release_date: None,
         }
     }
 
@@ -77,7 +84,9 @@ impl Game {
             path: game.path,
             image,
             extension,
-            core: None,
+            core: game.core,
+            rating: game.rating,
+            release_date: game.release_date,
         }
     }
 
@@ -121,6 +130,20 @@ impl Ord for Game {
 impl PartialOrd for Game {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+impl From<Game> for NewGame {
+    fn from(mut game: Game) -> NewGame {
+        let image = game.image().map(Path::to_path_buf);
+        NewGame {
+            name: game.name,
+            path: game.path,
+            image,
+            core: game.core,
+            rating: game.rating,
+            release_date: game.release_date,
+        }
     }
 }
 
