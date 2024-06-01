@@ -23,7 +23,8 @@ pub struct Game {
     pub thumbnail: Option<PathBuf>,
     #[serde(default, rename = "genre", deserialize_with = "genre_deserializer")]
     pub genres: Vec<String>,
-    pub rating: Option<f32>,
+    #[serde(default, deserialize_with = "rating_deserializer")]
+    pub rating: Option<u8>,
     #[serde(
         default,
         rename = "releasedate",
@@ -60,6 +61,14 @@ where
 {
     let s = String::deserialize(d)?;
     Ok(s.split(',').map(str::trim).map(str::to_string).collect())
+}
+
+fn rating_deserializer<'de, D>(d: D) -> Result<Option<u8>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s = String::deserialize(d)?;
+    Ok(s.parse::<f32>().map(|rating| (rating * 10.0) as u8).ok())
 }
 
 fn optional_naivedatetime_deserializer<'de, D>(d: D) -> Result<Option<NaiveDateTime>, D::Error>
@@ -102,7 +111,7 @@ mod tests {
             </game>
         </gameList>
         "#;
-        let game_list: GameList = serde_xml_rs::from_str(xml).unwrap();
+        let game_list: GameList = quick_xml::de::from_str(xml).unwrap();
         assert_eq!(game_list.games.len(), 3);
         assert_eq!(game_list.games[0].path, PathBuf::from("path/to/game"));
         assert_eq!(game_list.games[0].name, "Game One");
@@ -115,7 +124,7 @@ mod tests {
             game_list.games[0].genres,
             vec!["Strategy".to_string(), "Action".to_string()]
         );
-        assert_eq!(game_list.games[0].rating, Some(0.9));
+        assert_eq!(game_list.games[0].rating, Some(9));
         assert_eq!(
             game_list.games[0].release_date,
             Some(
@@ -152,7 +161,7 @@ mod tests {
             </folder>
         </gameList>
         "#;
-        let game_list: GameList = serde_xml_rs::from_str(xml).unwrap();
+        let game_list: GameList = quick_xml::de::from_str(xml).unwrap();
 
         assert_eq!(game_list.folders.len(), 1);
         assert_eq!(game_list.folders[0].path, PathBuf::from("path/to/game"));
@@ -165,20 +174,20 @@ mod tests {
 
     #[test]
     fn test_ampersand() {
-        let xml = r#"
-        <gameList>
-            <game>
-                <path>./Lilo & Stitch 2 - Haemsterviel Havoc (USA).zip</path>
-                <name>Disney's Lilo & Stitch 2: Hamsterviel Havoc</name>
-                <image />
-                <thumbnail>./Imgs/covers/Lilo & Stitch 2 - Haemsterviel Havoc (USA).png</thumbnail>
-                <genre>Platform</genre>
-                <rating>0.8</rating>
-                <releasedate>20050721T000000</releasedate>
-            </game>
-        </gameList>
-        "#;
-        let xml = &xml.replace('&', "&amp;");
-        let _: GameList = serde_xml_rs::from_str(dbg!(xml)).unwrap();
+        let s = include_str!("test/gamelist.xml");
+        let s = &s.replace('&', "&amp;");
+        let _: GameList = match quick_xml::de::from_str(s) {
+            Ok(gamelist) => gamelist,
+            Err(quick_xml::DeError::InvalidXml(quick_xml::Error::EscapeError(
+                quick_xml::escape::EscapeError::UnterminatedEntity(..),
+            ))) => {
+                // Some scrapers produce ill-formed XML where ampersands (&) are not escaped,
+                // so we try to failover to replacing them to &amp;
+                // (https://github.com/RReverser/serde-xml-rs/issues/106)
+                let s = s.replace('&', "&amp;");
+                quick_xml::de::from_str(&s).unwrap()
+            }
+            Err(e) => panic!("{:?}", e),
+        };
     }
 }

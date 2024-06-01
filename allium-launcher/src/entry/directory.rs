@@ -94,14 +94,16 @@ impl Directory {
         let mut file = File::open(game_list)?;
         let mut s = String::with_capacity(1024);
         file.read_to_string(&mut s)?;
-        let gamelist: GameList = match serde_xml_rs::from_str(&s) {
+        let gamelist: GameList = match quick_xml::de::from_str(&s) {
             Ok(gamelist) => gamelist,
-            Err(serde_xml_rs::Error::Syntax { .. }) => {
+            Err(quick_xml::DeError::InvalidXml(quick_xml::Error::EscapeError(
+                quick_xml::escape::EscapeError::UnterminatedEntity(..),
+            ))) => {
                 // Some scrapers produce ill-formed XML where ampersands (&) are not escaped,
                 // so we try to failover to replacing them to &amp;
                 // (https://github.com/RReverser/serde-xml-rs/issues/106)
                 s = s.replace('&', "&amp;");
-                serde_xml_rs::from_str(&s)?
+                quick_xml::de::from_str(&s)?
             }
             Err(e) => return Err(e.into()),
         };
@@ -141,7 +143,7 @@ impl Directory {
                 image,
                 extension,
                 core: None,
-                rating: game.rating.map(|x| (x * 10.0) as u8),
+                rating: game.rating,
                 release_date: game.release_date.map(|d| d.date()),
             }))
         });
