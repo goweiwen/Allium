@@ -581,9 +581,9 @@ impl MenuEntry {
                 MenuEntry::Continue,
                 MenuEntry::Save,
                 MenuEntry::Load,
-                MenuEntry::Reset,
                 MenuEntry::Guide,
                 MenuEntry::Settings,
+                MenuEntry::Reset,
                 MenuEntry::Quit,
             ],
             Some(_) => vec![
