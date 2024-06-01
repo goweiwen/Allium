@@ -504,7 +504,6 @@ where
                         return Ok(true);
                     };
 
-                    println!("entries: {:?}, char: {:?}", entries, char);
                     if let Some(i) = entries.position(|c| c != char) {
                         self.list.select(selected - i - 1);
                     } else {

@@ -139,12 +139,9 @@ where
         }
 
         if self.label.text() == "Confirm" {
-            dbg!(self.button.bounding_box(styles));
-            dbg!(self.label.bounding_box(styles));
-            dbg!(self
-                .button
+            self.button
                 .bounding_box(styles)
-                .union(&self.label.bounding_box(styles)));
+                .union(&self.label.bounding_box(styles));
         }
 
         self.button
