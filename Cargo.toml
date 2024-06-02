@@ -1,16 +1,16 @@
 [workspace]
 members = [
-    "common",
-    "alliumd",
-    "allium-launcher",
-    "allium-menu",
-    "activity-tracker",
-    "ffi",
-    "myctl",
-    "say",
-    "screenshot",
-    "show",
-    "show-hotkeys",
+    "crates/common",
+    "crates/alliumd",
+    "crates/allium-launcher",
+    "crates/allium-menu",
+    "crates/activity-tracker",
+    "crates/ffi",
+    "crates/myctl",
+    "crates/say",
+    "crates/screenshot",
+    "crates/show",
+    "crates/show-hotkeys",
 ]
 exclude = [
     "third-party/dufs"

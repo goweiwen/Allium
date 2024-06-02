@@ -9,7 +9,7 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
     let bindings = bindgen::Builder::default()
-        .header("../third-party/my283/usr/include/mi_ao.h")
+        .header("../../third-party/my283/usr/include/mi_ao.h")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .generate()
         .expect("Unable to generate bindings");
