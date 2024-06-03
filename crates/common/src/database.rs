@@ -125,6 +125,27 @@ ALTER TABLE games ADD COLUMN developer STRING;
 ALTER TABLE games ADD COLUMN publisher STRING;
 ALTER TABLE games ADD COLUMN genres STRING NOT NULL DEFAULT '[]';
 "),
+        M::up("
+CREATE TEMP TABLE games_fts_backup AS SELECT * FROM games_fts;
+DROP TABLE IF EXISTS games_fts;
+CREATE VIRTUAL TABLE games_fts USING fts5(name, path, developer, publisher, content='games', content_rowid='id');
+INSERT INTO games_fts (rowid, name, path) SELECT rowid, name, path FROM games_fts_backup;
+
+DROP TRIGGER IF EXISTS games_fts_ai;
+CREATE TRIGGER games_fts_ai AFTER INSERT ON games BEGIN
+    INSERT INTO games_fts(rowid, name, path, developer, publisher) VALUES (new.id, new.name, new.path, new.developer, new.publisher);
+END;
+
+DROP TRIGGER IF EXISTS games_fts_ad;
+CREATE TRIGGER games_fts_ad AFTER DELETE ON games BEGIN
+    INSERT INTO games_fts(games_fts, rowid, name, path, developer, publisher) VALUES ('delete', old.id, old.name, old.path, old.developer, old.publisher);
+END;
+
+DROP TRIGGER IF EXISTS games_fts_au;
+CREATE TRIGGER games_fts_au AFTER UPDATE ON games BEGIN
+    INSERT INTO games_fts(games_fts, rowid, name, path, developer, publisher) VALUES ('delete', old.id, old.name, old.path, old.developer, old.publisher);
+    INSERT INTO games_fts(rowid, name, path, developer, publisher) VALUES (new.id, new.name, new.path, new.developer, new.publisher);
+END;"),
                 ])
     }
 
@@ -279,10 +300,12 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
 
         let conn = self.conn.as_ref().unwrap();
 
-        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.name MATCH ? LIMIT ?")?;
+        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core, rating, release_date, games.developer, games.publisher, genres FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts MATCH ? LIMIT ?")?;
 
+        let query =
+            format!("name:\"{query}\" * OR developer:\"{query}\" * OR publisher:\"{query}\" *");
         let results = stmt
-            .query_map(params![format!("\"{}\" * ", query), limit], map_game)?
+            .query_map(params![query, limit], map_game)?
             .filter_map(|r| r.ok())
             .collect();
 
@@ -293,7 +316,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
         trace!("select_games_in_directory({:?})", path);
         let conn = self.conn.as_ref().unwrap();
 
-        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.path LIKE ? AND games_fts.path NOT LIKE ?")?;
+        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core, rating, release_date, games.developer, games.publisher, genres FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.path LIKE ? AND games_fts.path NOT LIKE ?")?;
 
         let results = stmt
             .query_map(
@@ -775,8 +798,8 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: None,
-                developer: None,
-                publisher: None,
+                developer: Some("Square Enix".to_string()),
+                publisher: Some("Nintendo".to_string()),
                 genres: Vec::new(),
             },
         ];
@@ -794,6 +817,12 @@ mod tests {
 
         let results = database.search("Ga", 100).unwrap();
         assert_eq!(results[0].path, games[0].path);
+
+        let results = database.search("square enix", 100).unwrap();
+        assert_eq!(results[0].path, games[1].path);
+
+        let results = database.search("nintendo", 100).unwrap();
+        assert_eq!(results[0].path, games[1].path);
     }
 
     #[test]
@@ -981,7 +1010,6 @@ mod tests {
 
         db.update_games(&games).unwrap();
         let game = db.select_game(&games[0].path)?.unwrap();
-        dbg!(&game);
         assert_eq!(
             game.genres,
             vec!["Action".to_string(), "Adventure".to_string()]
