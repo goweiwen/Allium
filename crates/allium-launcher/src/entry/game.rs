@@ -32,6 +32,12 @@ pub struct Game {
     pub rating: Option<u8>,
     /// Release date of the game, used to sort.
     pub release_date: Option<NaiveDate>,
+    /// Developer of the game.
+    pub developer: Option<String>,
+    /// Publisher of the game.
+    pub publisher: Option<String>,
+    /// List of genres of the game.
+    pub genres: Vec<String>,
 }
 
 impl Game {
@@ -57,6 +63,9 @@ impl Game {
             core: None,
             rating: None,
             release_date: None,
+            developer: None,
+            publisher: None,
+            genres: Vec::new(),
         }
     }
 
@@ -87,6 +96,9 @@ impl Game {
             core: game.core,
             rating: game.rating,
             release_date: game.release_date,
+            developer: game.developer,
+            publisher: game.publisher,
+            genres: game.genres,
         }
     }
 
@@ -143,6 +155,9 @@ impl From<Game> for NewGame {
             core: game.core,
             rating: game.rating,
             release_date: game.release_date,
+            developer: game.developer,
+            publisher: game.publisher,
+            genres: game.genres,
         }
     }
 }

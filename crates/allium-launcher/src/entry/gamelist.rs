@@ -21,8 +21,6 @@ pub struct Game {
     pub image: Option<PathBuf>,
     #[serde(default, deserialize_with = "optional_path_buf_deserializer")]
     pub thumbnail: Option<PathBuf>,
-    #[serde(default, rename = "genre", deserialize_with = "genre_deserializer")]
-    pub genres: Vec<String>,
     #[serde(default, deserialize_with = "rating_deserializer")]
     pub rating: Option<u8>,
     #[serde(
@@ -31,6 +29,10 @@ pub struct Game {
         deserialize_with = "optional_naivedatetime_deserializer"
     )]
     pub release_date: Option<NaiveDateTime>,
+    pub developer: Option<String>,
+    pub publisher: Option<String>,
+    #[serde(default, rename = "genre", deserialize_with = "genre_deserializer")]
+    pub genres: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

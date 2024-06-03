@@ -286,6 +286,9 @@ impl Sort for RecentsSort {
                     core: game.core,
                     rating: game.rating,
                     release_date: game.release_date,
+                    developer: game.developer,
+                    publisher: game.publisher,
+                    genres: game.genres,
                 })
             })
             .collect())

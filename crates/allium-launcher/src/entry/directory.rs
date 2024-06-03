@@ -145,6 +145,9 @@ impl Directory {
                 core: None,
                 rating: game.rating,
                 release_date: game.release_date.map(|d| d.date()),
+                developer: game.developer,
+                publisher: game.publisher,
+                genres: game.genres,
             }))
         });
 
@@ -236,6 +239,9 @@ impl Directory {
                                     core: game.core.clone(),
                                     rating: game.rating,
                                     release_date: game.release_date,
+                                    developer: game.developer.clone(),
+                                    publisher: game.publisher.clone(),
+                                    genres: game.genres.clone(),
                                 }),
                                 Entry::App(_) | Entry::Directory(_) => None,
                             })
@@ -284,6 +290,9 @@ impl Directory {
                                         core: game.core.clone(),
                                         rating: game.rating,
                                         release_date: game.release_date,
+                                        developer: game.developer.clone(),
+                                        publisher: game.publisher.clone(),
+                                        genres: game.genres.clone(),
                                     }),
                                     Entry::App(_) | Entry::Directory(_) => None,
                                 })
@@ -362,6 +371,9 @@ impl Directory {
                     core: game.core,
                     rating: game.rating,
                     release_date: game.release_date,
+                    developer: game.developer,
+                    publisher: game.publisher,
+                    genres: game.genres,
                 }),
                 _ => None,
             })

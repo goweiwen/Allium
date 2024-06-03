@@ -3,7 +3,20 @@
 <path>./Test & Test.gba</path>
 <name>Test & Test</name>
 <thumbnail>./Imgs/covers/Test & Test.jpg</thumbnail>
-<rating/>
+<rating>0.8</rating>
 <releasedate>20020228T000000</releasedate>
+<developer>Developer</developer>
+<publisher>Publisher</publisher>
+<genres>Action, Adventure</genres>
+</game>
+<game>
+<path/>
+<name/>
+<thumbnail/>
+<rating/>
+<releasedate/>
+<developer/>
+<publisher/>
+<genres/>
 </game>
 </gameList>

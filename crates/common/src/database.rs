@@ -27,6 +27,9 @@ pub struct Game {
     pub core: Option<String>,
     pub rating: Option<u8>,
     pub release_date: Option<NaiveDate>,
+    pub developer: Option<String>,
+    pub publisher: Option<String>,
+    pub genres: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -37,6 +40,9 @@ pub struct NewGame {
     pub core: Option<String>,
     pub rating: Option<u8>,
     pub release_date: Option<NaiveDate>,
+    pub developer: Option<String>,
+    pub publisher: Option<String>,
+    pub genres: Vec<String>,
 }
 
 impl Database {
@@ -113,17 +119,12 @@ CREATE TABLE IF NOT EXISTS directories (
         M::up("
 ALTER TABLE games ADD COLUMN rating INTEGER;
 ALTER TABLE games ADD COLUMN release_date STRING;
-CREATE TABLE IF NOT EXISTS genres (
-    id INTEGER PRIMARY KEY,
-    genre STRING
-);
-CREATE TABLE IF NOT EXISTS game_genres (
-    game_id INTEGER,
-    genre_id INTEGER,
-    FOREIGN KEY (game_id) REFERENCES games(id),
-    FOREIGN KEY (genre_id) REFERENCES genres(id),
-    PRIMARY KEY (game_id, genre_id)
-);")
+"),
+        M::up("
+ALTER TABLE games ADD COLUMN developer STRING;
+ALTER TABLE games ADD COLUMN publisher STRING;
+ALTER TABLE games ADD COLUMN genres STRING NOT NULL DEFAULT '[]';
+"),
                 ])
     }
 
@@ -153,14 +154,15 @@ CREATE TABLE IF NOT EXISTS game_genres (
 
         let mut stmt = tx.prepare(
             "
-INSERT INTO games (name, path, image, play_count, play_time, last_played, core, rating, release_date)
-VALUES (?, ?, ?, 0, 0, 0, ?, ?, ?)
-ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, release_date = ?",
+INSERT INTO games (name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres)
+VALUES (?, ?, ?, 0, 0, 0, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, release_date = ?, developer = ?, publisher = ?, genres = ?",
         )?;
 
         for game in games {
             let path = game.path.display().to_string();
             let image = game.image.as_ref().map(|p| p.display().to_string());
+            let genres = serde_json::to_string(&game.genres)?;
             stmt.execute(params![
                 game.name,
                 path,
@@ -168,11 +170,17 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
                 game.core,
                 game.rating,
                 game.release_date,
+                game.developer,
+                game.publisher,
+                genres,
                 game.name,
                 image,
                 game.core,
                 game.rating,
                 game.release_date,
+                game.developer,
+                game.publisher,
+                genres,
             ])?;
         }
 
@@ -189,7 +197,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date FROM games WHERE last_played > 0 ORDER BY play_time DESC LIMIT ?")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres FROM games WHERE last_played > 0 ORDER BY play_time DESC LIMIT ?")?;
 
         let results = stmt
             .query_map([limit], map_game)?
@@ -205,7 +213,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date FROM games WHERE last_played > 0 ORDER BY last_played DESC LIMIT ?")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres FROM games WHERE last_played > 0 ORDER BY last_played DESC LIMIT ?")?;
 
         let results = stmt
             .query_map([limit], map_game)?
@@ -221,7 +229,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date FROM games ORDER BY rating DESC LIMIT ?")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres FROM games ORDER BY rating DESC LIMIT ?")?;
 
         let results = stmt
             .query_map([limit], map_game)?
@@ -237,7 +245,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date FROM games ORDER BY release_date DESC LIMIT ?")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres FROM games ORDER BY release_date DESC LIMIT ?")?;
 
         let results = stmt
             .query_map([limit], map_game)?
@@ -253,7 +261,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date FROM games WHERE id IN (SELECT id FROM games ORDER BY RANDOM() LIMIT ?)")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres FROM games WHERE id IN (SELECT id FROM games ORDER BY RANDOM() LIMIT ?)")?;
 
         let results = stmt
             .query_map([limit], map_game)?
@@ -271,7 +279,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
 
         let conn = self.conn.as_ref().unwrap();
 
-        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core, rating, release_date FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.name MATCH ? LIMIT ?")?;
+        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.name MATCH ? LIMIT ?")?;
 
         let results = stmt
             .query_map(params![format!("\"{}\" * ", query), limit], map_game)?
@@ -285,7 +293,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
         trace!("select_games_in_directory({:?})", path);
         let conn = self.conn.as_ref().unwrap();
 
-        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core, rating, release_date FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.path LIKE ? AND games_fts.path NOT LIKE ?")?;
+        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.path LIKE ? AND games_fts.path NOT LIKE ?")?;
 
         let results = stmt
             .query_map(
@@ -306,7 +314,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
             .conn
             .as_ref()
             .unwrap()
-            .query_row("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date FROM games WHERE path = ? LIMIT 1", [path.display().to_string()], map_game)
+            .query_row("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres FROM games WHERE path = ? LIMIT 1", [path.display().to_string()], map_game)
             .optional()?;
 
         Ok(game)
@@ -317,7 +325,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date FROM games WHERE path = ?")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres FROM games WHERE path = ?")?;
 
         let mut results = vec![None; paths.len()];
         for (i, path) in paths.iter().enumerate() {
@@ -333,7 +341,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
 
     pub fn select_all_games(&self) -> Result<Vec<Game>> {
         let mut stmt = self.conn.as_ref().unwrap().prepare(
-            "SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date FROM games",
+            "SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres FROM games",
         )?;
 
         let results = stmt
@@ -525,6 +533,9 @@ fn map_game(row: &Row<'_>) -> rusqlite::Result<Game> {
         core: row.get(6)?,
         rating: row.get(7)?,
         release_date: row.get(8)?,
+        developer: row.get(9)?,
+        publisher: row.get(10)?,
+        genres: serde_json::from_str(&row.get::<_, String>(11)?).unwrap(),
     })
 }
 
@@ -549,6 +560,9 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: None,
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
             NewGame {
                 name: "Game Two".to_string(),
@@ -557,6 +571,9 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: None,
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
         ];
 
@@ -592,6 +609,9 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: None,
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
             NewGame {
                 name: "Game Two".to_string(),
@@ -600,6 +620,9 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: None,
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
         ];
 
@@ -631,6 +654,9 @@ mod tests {
                 core: None,
                 rating: Some(5),
                 release_date: None,
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
             NewGame {
                 name: "Game Two".to_string(),
@@ -639,6 +665,9 @@ mod tests {
                 core: None,
                 rating: Some(9),
                 release_date: None,
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
         ];
 
@@ -657,6 +686,9 @@ mod tests {
                 core: None,
                 rating: Some(1),
                 release_date: None,
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             }])
             .unwrap();
         let by_rating = database.select_by_rating(2).unwrap();
@@ -677,6 +709,9 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: Some(NaiveDate::from_ymd_opt(2023, 1, 1).unwrap()),
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
             NewGame {
                 name: "Game Two".to_string(),
@@ -685,6 +720,9 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: Some(NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()),
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
         ];
 
@@ -703,6 +741,9 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: Some(NaiveDate::from_ymd_opt(2022, 1, 1).unwrap()),
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             }])
             .unwrap();
         let by_release_date = database.select_by_release_date(2).unwrap();
@@ -723,6 +764,9 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: None,
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
             NewGame {
                 name: "Game Two".to_string(),
@@ -731,6 +775,9 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: None,
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
         ];
 
@@ -761,6 +808,9 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: None,
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
             NewGame {
                 name: "Game Two".to_string(),
@@ -769,6 +819,9 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: None,
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
         ];
 
@@ -806,6 +859,9 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: None,
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
             NewGame {
                 name: "Game Two".to_string(),
@@ -814,6 +870,9 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: None,
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
             NewGame {
                 name: "Game Three".to_string(),
@@ -822,6 +881,9 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: None,
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
         ];
 
@@ -871,6 +933,9 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: None,
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
             NewGame {
                 name: "Game Two".to_string(),
@@ -879,6 +944,9 @@ mod tests {
                 core: None,
                 rating: None,
                 release_date: None,
+                developer: None,
+                publisher: None,
+                genres: Vec::new(),
             },
         ];
 
@@ -891,6 +959,43 @@ mod tests {
 
         let core = db.get_core(&games[0].path)?;
         assert_eq!(core, Some("CORE".to_string()));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_set_genres() -> Result<()> {
+        let db = Database::in_memory().unwrap();
+
+        let mut games = vec![NewGame {
+            name: "Game One".to_string(),
+            path: PathBuf::from("test_directory/Game One.rom"),
+            image: Some(PathBuf::from("test_directory/Imgs/Game One.png")),
+            core: None,
+            rating: None,
+            release_date: None,
+            developer: None,
+            publisher: None,
+            genres: vec!["Action".to_string(), "Adventure".to_string()],
+        }];
+
+        db.update_games(&games).unwrap();
+        let game = db.select_game(&games[0].path)?.unwrap();
+        dbg!(&game);
+        assert_eq!(
+            game.genres,
+            vec!["Action".to_string(), "Adventure".to_string()]
+        );
+
+        games[0].genres = Vec::new();
+        db.update_games(&games).unwrap();
+        let game = db.select_game(&games[0].path)?.unwrap();
+        assert!(game.genres.is_empty());
+
+        games[0].genres = vec!["Puzzle".to_string()];
+        db.update_games(&games).unwrap();
+        let game = db.select_game(&games[0].path)?.unwrap();
+        assert_eq!(game.genres, vec!["Puzzle".to_string()]);
 
         Ok(())
     }
