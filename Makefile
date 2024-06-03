@@ -77,7 +77,7 @@ $(DIST_DIR)/RetroArch/retroarch: $(RETROARCH)/retroarch
 	rsync -a $(RETROARCH)/retroarch "$(DIST_DIR)/RetroArch"
 
 $(RETROARCH)/retroarch:
-	docker run --rm -v /$(ROOT_DIR)/third-party:/root/workspace $(TOOLCHAIN) bash -c "source /root/.bashrc; cd RetroArch; make clean all ADD_NETWORKING=1 PACKAGE_NAME=retroarch"
+	docker run --rm -v /$(ROOT_DIR)/third-party:/root/workspace $(TOOLCHAIN) bash -c "source /root/.bashrc; cd RetroArch; make clean all MIYOO354=1 PACKAGE_NAME=retroarch"
 
 $(DIST_DIR)/.allium/bin/dufs:
 	cd third-party/dufs && cross build --release --target=$(CROSS_TARGET_TRIPLE)
