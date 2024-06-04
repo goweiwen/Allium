@@ -1,0 +1,5 @@
+[build]
+default-target = "arm-unknown-linux-gnueabihf"
+
+[target.arm-unknown-linux-gnueabihf]
+image = "goweiwen/cross-with-clang_arm-unknown-linux-gnueabihf:main"

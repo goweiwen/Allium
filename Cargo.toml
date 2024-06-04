@@ -1,5 +1,5 @@
 [package]
-name = "allium-iced"
+name = "allium"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,3 +11,9 @@ iced_wgpu = { git = "https://github.com/iced-rs/iced.git" }
 iced_runtime = { git = "https://github.com/iced-rs/iced.git" }
 iced_renderer = { git = "https://github.com/iced-rs/iced.git" }
 iced_core = { git = "https://github.com/iced-rs/iced.git" }
+minifb = "0.27.0"
+bytemuck = "1.16.0"
+tiny-skia = "0.11.4"
+framebuffer = "0.3.1"
+simple_logger = "5.0.0"
+log = "0.4.21"
