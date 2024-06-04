@@ -1,0 +1,13 @@
+[package]
+name = "allium-iced"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+iced = { git = "https://github.com/iced-rs/iced.git" }
+iced_graphics = { git = "https://github.com/iced-rs/iced.git" }
+iced_tiny_skia = { git = "https://github.com/iced-rs/iced.git" }
+iced_wgpu = { git = "https://github.com/iced-rs/iced.git" }
+iced_runtime = { git = "https://github.com/iced-rs/iced.git" }
+iced_renderer = { git = "https://github.com/iced-rs/iced.git" }
+iced_core = { git = "https://github.com/iced-rs/iced.git" }

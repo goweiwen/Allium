@@ -1,0 +1,42 @@
+use iced::widget::{button, column, text, Column};
+use iced::Alignment;
+
+type Element<'a, Message> = iced_core::Element<'a, Message, iced::Theme, iced_tiny_skia::Renderer>;
+
+#[derive(Default)]
+pub struct Counter {
+    value: i64,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Message {
+    Increment,
+    Decrement,
+}
+
+impl Counter {
+    pub fn new() -> Self {
+        Self { value: 0 }
+    }
+
+    pub fn update(&mut self, message: Message) {
+        match message {
+            Message::Increment => {
+                self.value += 1;
+            }
+            Message::Decrement => {
+                self.value -= 1;
+            }
+        }
+    }
+
+    pub fn view(&self) -> impl Into<Element<Message>> {
+        column![
+            button("Increment").on_press(Message::Increment),
+            text(self.value).size(50),
+            button("Decrement").on_press(Message::Decrement)
+        ]
+        .padding(20)
+        .align_items(Alignment::Center)
+    }
+}
