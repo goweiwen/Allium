@@ -1,33 +1,15 @@
-use std::collections::VecDeque;
-use std::path::Path;
-use std::process;
-use std::time::Instant;
-
 use anyhow::Result;
-use common::constants::{ALLIUM_GAMES_DIR, ALLIUM_SD_ROOT};
-use common::locale::{Locale, LocaleSettings};
-use common::resources::Resources;
-use embedded_graphics::image::ImageRaw;
-use embedded_graphics::prelude::*;
 use enum_map::EnumMap;
-use log::{error, info, trace, warn};
 
-use common::database::Database;
-use common::platform::{DefaultPlatform, Display, Key, KeyEvent, Platform};
-use type_map::TypeMap;
-
-use crate::consoles::ConsoleMapper;
-use crate::entry::directory::Directory;
-use crate::entry::game::Game;
-use crate::view::{App, Toast};
+use crate::platform::Platform;
 
 #[derive(Debug)]
-pub struct AlliumLauncher<P: Platform> {
+pub struct App<P: Platform> {
     platform: P,
     display: P::Display,
 }
 
-impl<P: Platform> AlliumLauncher<P> {
+impl<P: Platform> App<P> {
     pub fn new(mut platform: P) -> Result<Self> {
         let display = platform.display()?;
         let battery = platform.battery()?;

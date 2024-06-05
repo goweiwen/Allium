@@ -5,8 +5,6 @@ use std::time::Duration;
 
 use lazy_static::lazy_static;
 
-use crate::geom::Size;
-
 pub const ALLIUM_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 lazy_static! {

@@ -31,6 +31,13 @@ rand = "0.8.5"
 enum-map = "2.6.0"
 itertools = "0.12.0"
 quick-xml = { version = "0.31.0", features = ["serde", "serialize"] }
+iced = { git = "https://github.com/iced-rs/iced.git" }
+iced_graphics = { git = "https://github.com/iced-rs/iced.git" }
+iced_tiny_skia = { git = "https://github.com/iced-rs/iced.git" }
+iced_wgpu = { git = "https://github.com/iced-rs/iced.git" }
+iced_runtime = { git = "https://github.com/iced-rs/iced.git" }
+iced_renderer = { git = "https://github.com/iced-rs/iced.git" }
+iced_core = { git = "https://github.com/iced-rs/iced.git" }
 
 [dependencies.common]
 path = "../common"

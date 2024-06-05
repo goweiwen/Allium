@@ -1,12 +1,8 @@
 use anyhow::Result;
 use async_trait::async_trait;
-use embedded_graphics::prelude::*;
 
 use crate::battery::Battery;
-use crate::display::color::Color;
-use crate::display::settings::DisplaySettings;
-use crate::display::Display;
-use crate::geom::Rect;
+use crate::platform::Display;
 use crate::platform::{KeyEvent, Platform};
 
 pub const SCREEN_WIDTH: u32 = 640;
@@ -18,7 +14,6 @@ pub struct MockPlatform;
 impl Platform for MockPlatform {
     type Display = MockDisplay;
     type Battery = MockBattery;
-    type SuspendContext = ();
 
     fn new() -> Result<MockPlatform> {
         Ok(MockPlatform)
@@ -37,30 +32,6 @@ impl Platform for MockPlatform {
     }
 
     fn shutdown(&self) -> Result<()> {
-        Ok(())
-    }
-
-    fn suspend(&self) -> Result<Self::SuspendContext> {
-        Ok(())
-    }
-
-    fn unsuspend(&self, _ctx: Self::SuspendContext) -> Result<()> {
-        Ok(())
-    }
-
-    fn set_volume(&mut self, _volume: i32) -> Result<()> {
-        Ok(())
-    }
-
-    fn get_brightness(&self) -> Result<u8> {
-        Ok(50)
-    }
-
-    fn set_brightness(&mut self, _brightness: u8) -> Result<()> {
-        Ok(())
-    }
-
-    fn set_display_settings(&mut self, _settings: &mut DisplaySettings) -> Result<()> {
         Ok(())
     }
 
@@ -86,43 +57,7 @@ impl Default for MockPlatform {
 pub struct MockDisplay;
 
 impl Display for MockDisplay {
-    fn map_pixels<F>(&mut self, _f: F) -> Result<()>
-    where
-        F: FnMut(Color) -> Color,
-    {
-        Ok(())
-    }
-
-    fn save(&mut self) -> Result<()> {
-        Ok(())
-    }
-
-    fn load(&mut self, _area: Rect) -> Result<()> {
-        Ok(())
-    }
-
-    fn pop(&mut self) -> bool {
-        true
-    }
-}
-
-impl DrawTarget for MockDisplay {
-    type Color = Color;
-
-    type Error = anyhow::Error;
-
-    fn draw_iter<I>(&mut self, _pixels: I) -> Result<()>
-    where
-        I: IntoIterator<Item = Pixel<Self::Color>>,
-    {
-        Ok(())
-    }
-}
-
-impl OriginDimensions for MockDisplay {
-    fn size(&self) -> Size {
-        Size::new(SCREEN_WIDTH, SCREEN_HEIGHT)
-    }
+    fn draw(&mut self, pixels: &[u32]) -> Result<()> {}
 }
 
 pub struct MockBattery;

@@ -43,7 +43,7 @@ impl EvdevKeys {
         })
     }
 
-    pub async fn poll(&mut self) -> KeyEvent {
+    pub async fn next(&mut self) -> KeyEvent {
         loop {
             let event = self.events.next_event().await.unwrap();
             match event.event_type() {

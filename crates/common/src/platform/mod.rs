@@ -11,10 +11,7 @@ use async_trait::async_trait;
 use enum_map::Enum;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    battery::Battery,
-    display::{settings::DisplaySettings, Display},
-};
+use crate::battery::Battery;
 
 #[cfg(feature = "miyoo")]
 pub type DefaultPlatform = miyoo::MiyooPlatform;
@@ -30,13 +27,10 @@ pub type DefaultPlatform = mock::MockPlatform;
 pub trait Platform {
     type Display: Display;
     type Battery: Battery + 'static;
-    type SuspendContext;
 
     fn new() -> Result<Self>
     where
         Self: Sized;
-
-    fn display(&mut self) -> Result<Self::Display>;
 
     fn battery(&self) -> Result<Self::Battery>;
 
@@ -44,23 +38,26 @@ pub trait Platform {
 
     fn shutdown(&self) -> Result<()>;
 
-    fn suspend(&self) -> Result<Self::SuspendContext>;
-
-    fn unsuspend(&self, ctx: Self::SuspendContext) -> Result<()>;
-
-    fn set_volume(&mut self, volume: i32) -> Result<()>;
-
-    fn get_brightness(&self) -> Result<u8>;
-
-    fn set_brightness(&mut self, brightness: u8) -> Result<()>;
-
-    fn set_display_settings(&mut self, settings: &mut DisplaySettings) -> Result<()>;
-
     fn device_model() -> String;
 
     fn firmware() -> String;
 
     fn has_wifi() -> bool;
+}
+
+pub trait Suspend: Platform {
+    type SuspendContext;
+    fn suspend(&self) -> Result<Self::SuspendContext>;
+    fn unsuspend(&self, ctx: Self::SuspendContext) -> Result<()>;
+}
+
+pub trait Volume: Platform {
+    fn set_volume(&mut self, volume: i32) -> Result<()>;
+}
+
+pub trait Brightness: Platform {
+    fn get_brightness(&self) -> Result<u8>;
+    fn set_brightness(&mut self, brightness: u8) -> Result<()>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -91,4 +88,8 @@ pub enum Key {
     VolDown,
     VolUp,
     Unknown,
+}
+
+pub trait Display {
+    fn draw(&mut self, buffer: &[u32]) -> Result<()>;
 }

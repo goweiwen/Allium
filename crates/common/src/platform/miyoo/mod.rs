@@ -1,4 +1,5 @@
 mod battery;
+mod display;
 mod evdev;
 mod framebuffer;
 mod screen;

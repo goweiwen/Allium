@@ -433,18 +433,18 @@ pub fn ip_address() -> Option<String> {
         let output = String::from_utf8(output.stdout).ok()?;
         let ip_address = output.split_whitespace().last().map(|s| s.to_string());
 
-        return ip_address.and_then(|addr| {
+        ip_address.and_then(|addr| {
             addr.split('.')
                 .all(|octet| octet.parse::<u8>().is_ok())
                 .then_some(addr)
-        });
+        })
     }
 
     #[cfg(feature = "simulator")]
     {
-        return Some("127.0.0.1".to_string());
+        Some("127.0.0.1".to_string())
     }
 
     #[cfg(not(any(feature = "miyoo", feature = "simulator")))]
-    return None;
+    None
 }
