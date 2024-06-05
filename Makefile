@@ -90,18 +90,18 @@ lint:
 
 .PHONY: bump-version
 bump-version: lint
-	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" allium-launcher/Cargo.toml
-	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" allium-menu/Cargo.toml
-	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" alliumd/Cargo.toml
-	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" activity-tracker/Cargo.toml
-	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" common/Cargo.toml
+	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" crates/allium-launcher/Cargo.toml
+	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" crates/allium-menu/Cargo.toml
+	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" crates/alliumd/Cargo.toml
+	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" crates/activity-tracker/Cargo.toml
+	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" crates/common/Cargo.toml
 	echo "v$(version)" > static/.allium/version.txt
 	cargo check
-	git add allium-launcher/Cargo.toml
-	git add allium-menu/Cargo.toml
-	git add alliumd/Cargo.toml
-	git add activity-tracker/Cargo.toml
-	git add common/Cargo.toml
+	git add crates/allium-launcher/Cargo.toml
+	git add crates/allium-menu/Cargo.toml
+	git add crates/alliumd/Cargo.toml
+	git add crates/activity-tracker/Cargo.toml
+	git add crates/common/Cargo.toml
 	git add Cargo.lock
 	git add static/.allium/version.txt
 	git commit -m "chore: bump version to v$(version)"
