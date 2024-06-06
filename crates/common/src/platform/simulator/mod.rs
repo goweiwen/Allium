@@ -6,7 +6,6 @@ use std::process;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use log::debug;
 use minifb::{Window, WindowOptions};
 use tokio::sync::mpsc::{channel, Receiver};
 

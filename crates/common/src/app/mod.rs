@@ -6,7 +6,7 @@ use iced::{mouse::Cursor, program, Event, Point, Rectangle, Size};
 use iced_core::clipboard;
 use iced_graphics::Viewport;
 use iced_runtime::{user_interface, UserInterface};
-use log::{debug, info, trace};
+use log::{info, trace};
 use tiny_skia::{Mask, PixmapMut};
 use tokio::time::Interval;
 
@@ -66,7 +66,7 @@ where
         tokio::time::interval(tokio::time::Duration::from_secs_f64(1.0 / 60.0));
     frame_interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
-    let mut events = Vec::new();
+    let mut events;
     loop {
         tokio::select! {
             _ = sigterm.recv() => {
@@ -85,7 +85,7 @@ where
         );
 
         // Update the user interface
-        let (_, mut event_statuses) = user_interface.update(
+        let (_, event_statuses) = user_interface.update(
             &events,
             cursor,
             &mut renderer,
@@ -125,7 +125,7 @@ where
         );
 
         // Flush rendering operations...
-        platform.draw(cast_slice(pixels.as_ref().data()));
+        platform.draw(cast_slice(pixels.as_ref().data()))?;
     }
 }
 
@@ -145,6 +145,6 @@ async fn poll_until(platform: &mut impl Platform, interval: &mut Interval) -> Ve
             return events;
         }
     }
-    return events;
+    events
     // }
 }

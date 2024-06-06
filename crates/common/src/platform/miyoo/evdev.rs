@@ -2,7 +2,7 @@ use anyhow::Result;
 use evdev::{Device, EventStream, EventType};
 
 use crate::constants::MAXIMUM_FRAME_TIME;
-use crate::platform::{Key, KeyEvent};
+use crate::input::{Key, KeyEvent};
 
 impl From<evdev::Key> for Key {
     fn from(value: evdev::Key) -> Self {
@@ -43,24 +43,21 @@ impl EvdevKeys {
         })
     }
 
-    pub async fn next(&mut self) -> KeyEvent {
+    pub async fn poll(&mut self) -> KeyEvent {
         loop {
             let event = self.events.next_event().await.unwrap();
-            match event.event_type() {
-                EventType::KEY => {
-                    let key = event.code();
-                    let key: Key = evdev::Key(key).into();
-                    if event.timestamp().elapsed().unwrap() > MAXIMUM_FRAME_TIME {
-                        continue;
-                    }
-                    return match event.value() {
-                        0 => KeyEvent::Released(key),
-                        1 => KeyEvent::Pressed(key),
-                        2 => KeyEvent::Autorepeat(key),
-                        _ => unreachable!(),
-                    };
+            if event.event_type() == EventType::KEY {
+                let key = event.code();
+                let key: Key = evdev::Key(key).into();
+                if event.timestamp().elapsed().unwrap() > MAXIMUM_FRAME_TIME {
+                    continue;
                 }
-                _ => {}
+                return match event.value() {
+                    0 => KeyEvent::Released(key),
+                    1 => KeyEvent::Pressed(key),
+                    2 => KeyEvent::Autorepeat(key),
+                    _ => unreachable!(),
+                };
             }
         }
     }

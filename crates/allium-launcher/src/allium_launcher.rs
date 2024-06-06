@@ -1,8 +1,7 @@
 use common::app::{Element, Renderer, Theme};
 use iced::program::{Title, Update, View};
-use iced::widget::{button, column, text, Column};
-use iced::Alignment;
-use serde::{Deserialize, Serialize};
+use iced::widget::{button, column, text};
+use iced::{Alignment, Command};
 
 #[derive(Debug, Default)]
 pub struct State {
@@ -24,7 +23,7 @@ impl Title<State> for AlliumLauncher {
 }
 
 impl Update<State, Message> for AlliumLauncher {
-    fn update(&self, state: &mut State, message: Message) {
+    fn update(&self, state: &mut State, message: Message) -> impl Into<Command<Message>> {
         match message {
             Message::Increment => {
                 state.value += 1;

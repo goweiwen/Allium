@@ -1,63 +1,46 @@
 mod battery;
 mod display;
 mod evdev;
-mod framebuffer;
 mod hardware;
+mod lcd;
 mod screen;
 mod volume;
 
-use std::fmt;
 use std::fs::File;
 use std::io::Write;
 use std::os::unix::process::CommandExt;
-use std::process::Command;
 
 use anyhow::Result;
 use async_trait::async_trait;
 use log::warn;
 
 use crate::battery::Battery;
-use crate::display::settings::DisplaySettings;
-use crate::platform::miyoo::evdev::EvdevKeys;
-use crate::platform::miyoo::framebuffer::FramebufferDisplay;
+use crate::platform::{Brightness, Suspend, Volume};
 use crate::platform::{Display, KeyEvent, Platform};
 
 use self::battery::{Miyoo283Battery, Miyoo354Battery};
+use self::display::FramebufferDisplay;
+use self::evdev::EvdevKeys;
+use self::hardware::MiyooDeviceModel;
+use self::lcd::DisplaySettings;
 
 pub struct MiyooPlatform {
+    display: FramebufferDisplay,
     model: MiyooDeviceModel,
     keys: EvdevKeys,
-}
-
-pub struct SuspendContext {
-    brightness: u8,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum MiyooDeviceModel {
-    Miyoo283,
-    Miyoo354,
-}
-
-impl fmt::Display for MiyooDeviceModel {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            MiyooDeviceModel::Miyoo283 => write!(f, "Miyoo Mini (MY283)"),
-            MiyooDeviceModel::Miyoo354 => write!(f, "Miyoo Mini+ (MY354)"),
-        }
-    }
 }
 
 #[async_trait(?Send)]
 impl Platform for MiyooPlatform {
     type Display = FramebufferDisplay;
     type Battery = Box<dyn Battery>;
-    type SuspendContext = SuspendContext;
 
     fn new() -> Result<MiyooPlatform> {
+        let display = FramebufferDisplay::new();
         let model = hardware::detect_model();
 
         Ok(MiyooPlatform {
+            display,
             model,
             keys: EvdevKeys::new()?,
         })
@@ -65,10 +48,6 @@ impl Platform for MiyooPlatform {
 
     async fn poll(&mut self) -> KeyEvent {
         self.keys.poll().await
-    }
-
-    fn display(&mut self) -> Result<FramebufferDisplay> {
-        FramebufferDisplay::new()
     }
 
     fn battery(&self) -> Result<Box<dyn Battery>> {
@@ -94,6 +73,35 @@ impl Platform for MiyooPlatform {
         Ok(())
     }
 
+    fn device_model() -> String {
+        hardware::detect_model().to_string()
+    }
+
+    fn firmware() -> String {
+        hardware::detect_firmware()
+    }
+
+    fn has_wifi() -> bool {
+        match hardware::detect_model() {
+            MiyooDeviceModel::Miyoo283 => false,
+            MiyooDeviceModel::Miyoo354 => true,
+        }
+    }
+}
+
+impl Display for MiyooPlatform {
+    fn draw(&mut self, buffer: &[u32]) -> Result<()> {
+        self.display.draw(buffer)
+    }
+}
+
+pub struct SuspendContext {
+    brightness: u8,
+}
+
+impl Suspend for MiyooPlatform {
+    type SuspendContext = SuspendContext;
+
     fn suspend(&self) -> Result<Self::SuspendContext> {
         let brightness = screen::get_brightness()?;
         let ctx = SuspendContext { brightness };
@@ -107,14 +115,18 @@ impl Platform for MiyooPlatform {
         screen::set_brightness(ctx.brightness)?;
         Ok(())
     }
+}
 
+impl Volume for MiyooPlatform {
     fn set_volume(&mut self, volume: i32) -> Result<()> {
         match self.model {
             MiyooDeviceModel::Miyoo283 => Ok(()),
             MiyooDeviceModel::Miyoo354 => volume::set_volume(volume),
         }
     }
+}
 
+impl Brightness for MiyooPlatform {
     fn get_brightness(&self) -> Result<u8> {
         screen::get_brightness()
     }
@@ -122,7 +134,9 @@ impl Platform for MiyooPlatform {
     fn set_brightness(&mut self, brightness: u8) -> Result<()> {
         screen::set_brightness(brightness)
     }
+}
 
+impl MiyooPlatform {
     fn set_display_settings(&mut self, settings: &mut DisplaySettings) -> Result<()> {
         if settings.contrast < 10 {
             settings.contrast = 10;
@@ -160,21 +174,6 @@ impl Platform for MiyooPlatform {
         )?;
 
         Ok(())
-    }
-
-    fn device_model() -> String {
-        hardware::detect_model().to_string()
-    }
-
-    fn firmware() -> String {
-        hardware::detect_firmware()
-    }
-
-    fn has_wifi() -> bool {
-        match detect_model() {
-            MiyooDeviceModel::Miyoo283 => false,
-            MiyooDeviceModel::Miyoo354 => true,
-        }
     }
 }
 

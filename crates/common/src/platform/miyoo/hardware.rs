@@ -1,4 +1,21 @@
-fn detect_model() -> MiyooDeviceModel {
+use std::{fmt, process::Command};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MiyooDeviceModel {
+    Miyoo283,
+    Miyoo354,
+}
+
+impl fmt::Display for MiyooDeviceModel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            MiyooDeviceModel::Miyoo283 => write!(f, "Miyoo Mini (MY283)"),
+            MiyooDeviceModel::Miyoo354 => write!(f, "Miyoo Mini+ (MY354)"),
+        }
+    }
+}
+
+pub fn detect_model() -> MiyooDeviceModel {
     if std::path::Path::new("/customer/app/axp_test").exists() {
         MiyooDeviceModel::Miyoo354
     } else {
@@ -6,7 +23,7 @@ fn detect_model() -> MiyooDeviceModel {
     }
 }
 
-fn detect_firmware() -> String {
+pub fn detect_firmware() -> String {
     let stdout = Command::new("/etc/fw_printenv").output().unwrap().stdout;
     let stdout = std::str::from_utf8(&stdout).unwrap();
     parse_firmware(stdout).to_string()
@@ -14,8 +31,8 @@ fn detect_firmware() -> String {
 
 fn parse_firmware(data: &str) -> &str {
     for line in data.lines() {
-        if line.starts_with("miyoo_version=") {
-            return &line[14..];
+        if let Some(firmware) = line.strip_prefix("miyoo_version=") {
+            return firmware;
         }
     }
     ""

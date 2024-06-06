@@ -1,7 +1,6 @@
-use log::debug;
 use tokio::sync::mpsc::Sender;
 
-use crate::platform::{Key, KeyEvent};
+use crate::input::{Key, KeyEvent};
 
 pub struct SimulatorInput {
     tx: Sender<KeyEvent>,
@@ -14,7 +13,7 @@ impl SimulatorInput {
 }
 
 impl minifb::InputCallback for SimulatorInput {
-    fn add_char(&mut self, uni_char: u32) {}
+    fn add_char(&mut self, _uni_char: u32) {}
 
     fn set_key_state(&mut self, key: minifb::Key, state: bool) {
         let tx = self.tx.clone();

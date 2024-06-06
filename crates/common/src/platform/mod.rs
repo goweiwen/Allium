@@ -10,7 +10,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 
 use crate::battery::Battery;
-use crate::input::{Key, KeyEvent};
+use crate::input::KeyEvent;
 
 #[cfg(feature = "miyoo")]
 pub type DefaultPlatform = miyoo::MiyooPlatform;

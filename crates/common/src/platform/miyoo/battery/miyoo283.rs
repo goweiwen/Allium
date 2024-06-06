@@ -87,7 +87,7 @@ impl Battery for Miyoo283Battery {
 
 #[inline]
 fn read_adc_value(mut value: i32) -> i32 {
-    let mut adc_config = AdcConfig {
+    let adc_config = AdcConfig {
         _channel: 0,
         adc_value: 0,
     };
@@ -100,7 +100,7 @@ fn read_adc_value(mut value: i32) -> i32 {
         }
     };
 
-    if let Err(e) = unsafe { sar_set_channel_read_value(sar_fd.as_raw_fd(), &mut adc_config) } {
+    if let Err(e) = unsafe { sar_set_channel_read_value(sar_fd.as_raw_fd(), &adc_config) } {
         error!("Failed to read /dev/sar: {}", e);
         return value;
     }
