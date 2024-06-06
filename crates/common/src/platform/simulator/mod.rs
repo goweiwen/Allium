@@ -6,9 +6,9 @@ use std::process;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use crossbeam::channel::{unbounded, Receiver};
 use log::debug;
 use minifb::{Window, WindowOptions};
+use tokio::sync::mpsc::{channel, Receiver};
 
 use crate::platform::simulator::input::SimulatorInput;
 use crate::platform::{Display, KeyEvent, Platform};
@@ -35,9 +35,8 @@ impl Platform for SimulatorPlatform {
             SCREEN_HEIGHT as usize,
             WindowOptions::default(),
         )?;
-        debug!("showing window");
 
-        let (tx, rx) = unbounded();
+        let (tx, rx) = channel(128);
         let input = SimulatorInput::new(tx);
         window.set_input_callback(Box::new(input));
 
@@ -50,7 +49,7 @@ impl Platform for SimulatorPlatform {
     }
 
     async fn poll(&mut self) -> KeyEvent {
-        self.inputs.recv().unwrap()
+        self.inputs.recv().await.unwrap()
     }
 
     fn battery(&self) -> Result<SimulatorBattery> {

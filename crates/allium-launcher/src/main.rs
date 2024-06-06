@@ -12,7 +12,7 @@ use crate::allium_launcher::AlliumLauncher;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    SimpleLogger::new().init().unwrap();
+    SimpleLogger::new().env().init().unwrap();
 
     let app = AlliumLauncher {};
     let style = Stylesheet::default();

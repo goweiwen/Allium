@@ -1,4 +1,5 @@
-use crossbeam::channel::Sender;
+use log::debug;
+use tokio::sync::mpsc::Sender;
 
 use crate::platform::{Key, KeyEvent};
 
@@ -16,12 +17,15 @@ impl minifb::InputCallback for SimulatorInput {
     fn add_char(&mut self, uni_char: u32) {}
 
     fn set_key_state(&mut self, key: minifb::Key, state: bool) {
-        let key = key.into();
-        let event = match state {
-            true => KeyEvent::Pressed(key),
-            false => KeyEvent::Released(key),
-        };
-        self.tx.send(event).unwrap()
+        let tx = self.tx.clone();
+        tokio::spawn(async move {
+            let key = key.into();
+            let event = match state {
+                true => KeyEvent::Pressed(key),
+                false => KeyEvent::Released(key),
+            };
+            tx.send(event).await.unwrap();
+        });
     }
 }
 

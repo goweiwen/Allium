@@ -6,7 +6,7 @@ use iced::{mouse::Cursor, program, Event, Point, Rectangle, Size};
 use iced_core::clipboard;
 use iced_graphics::Viewport;
 use iced_runtime::{user_interface, UserInterface};
-use log::info;
+use log::{debug, info, trace};
 use tiny_skia::{Mask, PixmapMut};
 use tokio::time::Interval;
 
@@ -97,7 +97,6 @@ where
                 println!("Ignored event: {:?}", events[i]);
             }
         }
-        events.clear();
 
         // Draw the user interface
         let _ = user_interface.draw(
@@ -132,17 +131,20 @@ where
 
 async fn poll_until(platform: &mut impl Platform, interval: &mut Interval) -> Vec<Event> {
     let mut events = Vec::new();
-    let mut tick = Box::pin(interval.tick());
-    loop {
-        tokio::select! {
-            event = platform.poll() => {
-                if let Some(event) = event.into() {
-                    events.push(event);
-                }
-            }
-            _ = &mut tick => {
-                return events;
+    // loop {
+    trace!("poll");
+    tokio::select! {
+        event = platform.poll() => {
+            trace!("key");
+            if let Some(event) = event.into() {
+                events.push(event);
             }
         }
+        _ = interval.tick() => {
+            trace!("tick");
+            return events;
+        }
     }
+    return events;
+    // }
 }
