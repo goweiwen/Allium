@@ -33,6 +33,7 @@ lazy_static! {
 
     // Config
     pub static ref ALLIUM_CONFIG_CONSOLES: PathBuf = ALLIUM_BASE_DIR.join("config/consoles.toml");
+    pub static ref ALLIUM_CONFIG_CORES: PathBuf = ALLIUM_BASE_DIR.join("config/cores.toml");
 
     // State
     pub static ref ALLIUMD_STATE: PathBuf = ALLIUM_BASE_DIR.join("state/alliumd.json");

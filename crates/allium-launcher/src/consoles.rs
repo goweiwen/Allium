@@ -1,3 +1,4 @@
+use std::fmt;
 use std::path::PathBuf;
 use std::{collections::HashMap, path::Path};
 
@@ -7,10 +8,12 @@ use common::database::Database;
 use common::game_info::GameInfo;
 use serde::Deserialize;
 
-use common::constants::{ALLIUM_CONFIG_CONSOLES, ALLIUM_RETROARCH};
+use common::constants::{ALLIUM_CONFIG_CONSOLES, ALLIUM_CONFIG_CORES, ALLIUM_RETROARCH};
 use log::{debug, trace};
 
 use crate::entry::game::Game;
+
+type CoreName = String;
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct Console {
@@ -21,7 +24,7 @@ pub struct Console {
     pub path: Option<PathBuf>,
     /// List of RetroArch cores to use. First is default.
     #[serde(default)]
-    pub cores: Vec<String>,
+    pub cores: Vec<CoreName>,
     /// Folder/file names to match against. If the folder/file matches exactly OR contains a parenthesized string that matches exactly, this core will be used.
     /// e.g. "GBA" matches "GBA", "Game Boy Advance (GBA)"
     #[serde(default)]
@@ -38,13 +41,30 @@ pub struct Console {
 
 #[derive(Debug, Deserialize)]
 struct ConsoleConfig {
-    cores: HashMap<String, String>,
     consoles: Vec<Console>,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+pub struct Core {
+    pub name: String,
+    #[serde(default)]
+    pub swap: bool,
+}
+
+impl fmt::Display for Core {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.name)
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct CoresConfig {
+    cores: HashMap<CoreName, Core>,
 }
 
 #[derive(Debug, Clone)]
 pub struct ConsoleMapper {
-    cores: HashMap<String, String>,
+    cores: HashMap<CoreName, Core>,
     consoles: Vec<Console>,
 }
 
@@ -63,18 +83,26 @@ impl ConsoleMapper {
     }
 
     pub fn load_config(&mut self) -> Result<()> {
-        let config = std::fs::read_to_string(ALLIUM_CONFIG_CONSOLES.as_path()).map_err(|e| {
+        let consoles = std::fs::read_to_string(ALLIUM_CONFIG_CONSOLES.as_path()).map_err(|e| {
             anyhow!(
                 "Failed to load consoles config: {:?}, {}",
                 &*ALLIUM_CONFIG_CONSOLES,
                 e
             )
         })?;
-        let config: ConsoleConfig =
-            toml::from_str(&config).context("Failed to parse consoles.toml.")?;
+        let consoles: ConsoleConfig =
+            toml::from_str(&consoles).context("Failed to parse consoles.toml.")?;
+        self.consoles = consoles.consoles;
 
-        self.cores = config.cores;
-        self.consoles = config.consoles;
+        let cores = std::fs::read_to_string(ALLIUM_CONFIG_CORES.as_path()).map_err(|e| {
+            anyhow!(
+                "Failed to load cores config: {:?}, {}",
+                &*ALLIUM_CONFIG_CORES,
+                e
+            )
+        })?;
+        let cores: CoresConfig = toml::from_str(&cores).context("Failed to parse cores.toml.")?;
+        self.cores = cores.cores;
 
         Ok(())
     }
