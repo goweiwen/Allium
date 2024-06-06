@@ -3,22 +3,18 @@
 #![feature(trait_upcasting)]
 
 mod allium_launcher;
-mod consoles;
-mod entry;
-mod view;
 
 use anyhow::Result;
-
-use allium_launcher::AlliumLauncher;
-use common::platform::{DefaultPlatform, Platform};
+use common::style::Stylesheet;
 use simple_logger::SimpleLogger;
+
+use crate::allium_launcher::AlliumLauncher;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     SimpleLogger::new().init().unwrap();
 
-    let platform = DefaultPlatform::new()?;
-    let mut app = AlliumLauncher::new(platform)?;
-    app.run_event_loop().await?;
-    Ok(())
+    let app = AlliumLauncher {};
+    let style = Stylesheet::default();
+    common::app::run(app, style).await
 }

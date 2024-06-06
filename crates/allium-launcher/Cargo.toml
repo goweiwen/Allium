@@ -28,7 +28,6 @@ simple_logger = { version = "4.2.0", default-features = false }
 log = { version = "0.4.19", features = ["release_max_level_info"] }
 image = { version = "0.23", default-features = false, features = ["gif", "jpeg", "png"] }
 rand = "0.8.5"
-enum-map = "2.6.0"
 itertools = "0.12.0"
 quick-xml = { version = "0.31.0", features = ["serde", "serialize"] }
 iced = { git = "https://github.com/iced-rs/iced.git" }

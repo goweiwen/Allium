@@ -47,3 +47,4 @@ iced_wgpu = { git = "https://github.com/iced-rs/iced.git" }
 iced_runtime = { git = "https://github.com/iced-rs/iced.git" }
 iced_renderer = { git = "https://github.com/iced-rs/iced.git" }
 iced_core = { git = "https://github.com/iced-rs/iced.git" }
+tiny-skia = "0.11.4"

@@ -7,10 +7,11 @@ use std::process;
 use anyhow::Result;
 use async_trait::async_trait;
 use crossbeam::channel::{unbounded, Receiver};
+use log::debug;
 use minifb::{Window, WindowOptions};
 
 use crate::platform::simulator::input::SimulatorInput;
-use crate::platform::{KeyEvent, Platform};
+use crate::platform::{Display, KeyEvent, Platform};
 use battery::SimulatorBattery;
 use display::SimulatorDisplay;
 
@@ -18,6 +19,7 @@ pub const SCREEN_WIDTH: u32 = 640;
 pub const SCREEN_HEIGHT: u32 = 480;
 
 pub struct SimulatorPlatform {
+    display: SimulatorDisplay,
     inputs: Receiver<KeyEvent>,
 }
 
@@ -33,14 +35,18 @@ impl Platform for SimulatorPlatform {
             SCREEN_HEIGHT as usize,
             WindowOptions::default(),
         )?;
+        debug!("showing window");
 
         let (tx, rx) = unbounded();
         let input = SimulatorInput::new(tx);
         window.set_input_callback(Box::new(input));
 
-        let window = SimulatorDisplay::new(window);
+        let display = SimulatorDisplay::new(window);
 
-        Ok(Self { inputs: rx })
+        Ok(Self {
+            display,
+            inputs: rx,
+        })
     }
 
     async fn poll(&mut self) -> KeyEvent {
@@ -71,5 +77,11 @@ impl Platform for SimulatorPlatform {
 impl Default for SimulatorPlatform {
     fn default() -> Self {
         Self::new().unwrap()
+    }
+}
+
+impl Display for SimulatorPlatform {
+    fn draw(&mut self, buffer: &[u32]) -> Result<()> {
+        self.display.draw(buffer)
     }
 }

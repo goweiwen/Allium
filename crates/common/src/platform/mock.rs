@@ -2,8 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 
 use crate::battery::Battery;
-use crate::platform::Display;
-use crate::platform::{KeyEvent, Platform};
+use crate::platform::{Display, KeyEvent, Platform};
 
 pub const SCREEN_WIDTH: u32 = 640;
 pub const SCREEN_HEIGHT: u32 = 480;
@@ -21,10 +20,6 @@ impl Platform for MockPlatform {
 
     async fn poll(&mut self) -> KeyEvent {
         std::future::pending().await
-    }
-
-    fn display(&mut self) -> Result<Self::Display> {
-        Ok(MockDisplay)
     }
 
     fn battery(&self) -> Result<Self::Battery> {
@@ -57,7 +52,9 @@ impl Default for MockPlatform {
 pub struct MockDisplay;
 
 impl Display for MockDisplay {
-    fn draw(&mut self, pixels: &[u32]) -> Result<()> {}
+    fn draw(&mut self, _pixels: &[u32]) -> Result<()> {
+        Ok(())
+    }
 }
 
 pub struct MockBattery;

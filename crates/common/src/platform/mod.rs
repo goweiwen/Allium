@@ -8,10 +8,9 @@ mod simulator;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use enum_map::Enum;
-use serde::{Deserialize, Serialize};
 
 use crate::battery::Battery;
+use crate::input::{Key, KeyEvent};
 
 #[cfg(feature = "miyoo")]
 pub type DefaultPlatform = miyoo::MiyooPlatform;
@@ -58,36 +57,6 @@ pub trait Volume: Platform {
 pub trait Brightness: Platform {
     fn get_brightness(&self) -> Result<u8>;
     fn set_brightness(&mut self, brightness: u8) -> Result<()>;
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum KeyEvent {
-    Pressed(Key),
-    Released(Key),
-    Autorepeat(Key),
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
-pub enum Key {
-    Up,
-    Down,
-    Left,
-    Right,
-    A,
-    B,
-    X,
-    Y,
-    Start,
-    Select,
-    L,
-    R,
-    Menu,
-    L2,
-    R2,
-    Power,
-    VolDown,
-    VolUp,
-    Unknown,
 }
 
 pub trait Display {

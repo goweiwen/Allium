@@ -1,56 +1,49 @@
-use std::collections::VecDeque;
-use std::path::Path;
-use std::process;
-use std::time::Instant;
+use common::app::{Element, Renderer, Theme};
+use iced::program::{Title, Update, View};
+use iced::widget::{button, column, text, Column};
+use iced::Alignment;
+use serde::{Deserialize, Serialize};
 
-use anyhow::Result;
-use common::constants::{ALLIUM_GAMES_DIR, ALLIUM_SD_ROOT};
-use common::locale::{Locale, LocaleSettings};
-use common::resources::Resources;
-use embedded_graphics::image::ImageRaw;
-use embedded_graphics::prelude::*;
-use enum_map::EnumMap;
-use log::{error, info, trace, warn};
-
-use common::database::Database;
-use common::platform::{DefaultPlatform, Display, Key, KeyEvent, Platform};
-use type_map::TypeMap;
-
-use crate::consoles::ConsoleMapper;
-use crate::entry::directory::Directory;
-use crate::entry::game::Game;
-use crate::view::{App, Toast};
-
-#[derive(Debug)]
-pub struct AlliumLauncher<P: Platform> {
-    platform: P,
-    display: P::Display,
+#[derive(Debug, Default)]
+pub struct State {
+    value: i64,
 }
 
-impl<P: Platform> AlliumLauncher<P> {
-    pub fn new(mut platform: P) -> Result<Self> {
-        let display = platform.display()?;
-        let battery = platform.battery()?;
+#[derive(Debug, Clone, Copy)]
+pub enum Message {
+    Increment,
+    Decrement,
+}
 
-        Ok(AlliumLauncher { platform, display })
+pub struct AlliumLauncher;
+
+impl Title<State> for AlliumLauncher {
+    fn title(&self, _state: &State) -> String {
+        "Allium".to_string()
     }
+}
 
-    pub async fn run_event_loop(&mut self) -> ! {
-        let mut keys: EnumMap<Key, bool> = EnumMap::default();
-
-        let mut frame_interval =
-            tokio::time::interval(tokio::time::Duration::from_micros(1000.0 / 60.0)); // 60 fps
-        frame_interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-
-        let events: Vec<Event> = Vec::new();
-        loop {
-            tokio::select! {
-                _ = frame_interval.tick() => {}
-                event = self.platform.poll() => {
-                    events.push(event);
-                }
+impl Update<State, Message> for AlliumLauncher {
+    fn update(&self, state: &mut State, message: Message) {
+        match message {
+            Message::Increment => {
+                state.value += 1;
             }
-            let events = self.platform.poll().await;
+            Message::Decrement => {
+                state.value -= 1;
+            }
         }
+    }
+}
+
+impl<'a> View<'a, State, Message, Theme, Renderer> for AlliumLauncher {
+    fn view(&self, state: &'a State) -> impl Into<Element<'a, Message>> {
+        column![
+            button("Increment").on_press(Message::Increment),
+            text(state.value).size(50),
+            button("Decrement").on_press(Message::Decrement)
+        ]
+        .padding(20.0)
+        .align_items(Alignment::Center)
     }
 }
