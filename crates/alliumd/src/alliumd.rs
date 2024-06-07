@@ -437,7 +437,10 @@ impl AlliumD<DefaultPlatform> {
                 }
                 _ = tokio::time::sleep(IDLE_TIMEOUT) => {
                     info!("idle timeout, shutting down");
+                    signal(&self.main, Signal::SIGCONT)?;
+                    self.platform.unsuspend(ctx)?;
                     self.handle_quit().await?;
+                    return Ok(());
                 }
             }
         }
