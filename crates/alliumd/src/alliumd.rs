@@ -99,7 +99,7 @@ impl AlliumDState {
     }
 }
 
-fn spawn_main() -> Result<Child> {
+async fn spawn_main() -> Result<Child> {
     #[cfg(feature = "miyoo")]
     return Ok(match GameInfo::load()? {
         Some(mut game_info) => {
@@ -124,10 +124,10 @@ fn spawn_main() -> Result<Child> {
 }
 
 impl AlliumD<DefaultPlatform> {
-    pub fn new() -> Result<AlliumD<DefaultPlatform>> {
+    pub async fn new() -> Result<AlliumD<DefaultPlatform>> {
         let platform = DefaultPlatform::new()?;
         let state = AlliumDState::load()?;
-        let main = spawn_main()?;
+        let main = spawn_main().await?;
         let locale = Locale::new(&LocaleSettings::load()?.lang);
         let power_settings = PowerSettings::load()?;
 
@@ -220,7 +220,7 @@ impl AlliumD<DefaultPlatform> {
                             info!("main process terminated, recording play time");
                             self.update_play_time()?;
                             GameInfo::delete()?;
-                            self.main = spawn_main()?;
+                            self.main = spawn_main().await?;
                         }
                     }
                     _ = sigint.recv() => self.handle_quit().await?,

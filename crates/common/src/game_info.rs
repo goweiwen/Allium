@@ -6,9 +6,10 @@ use std::{
 
 use anyhow::Result;
 use chrono::{DateTime, Duration, Utc};
+use log::debug;
 use serde::{Deserialize, Serialize};
 
-use crate::constants::{ALLIUM_GAMES_DIR, ALLIUM_GAME_INFO};
+use crate::constants::{ALLIUM_GAMES_DIR, ALLIUM_GAME_INFO, ALLIUM_SCRIPTS_DIR};
 
 #[derive(Debug, Serialize, Deserialize)]
 /// Information about a game. Used to restore a game after a restart, and to calculate playtime.
@@ -23,6 +24,8 @@ pub struct GameInfo {
     pub args: Vec<String>,
     /// Do we enable the menu? Currently only enabled if RetroArch is used.
     pub has_menu: bool,
+    /// Whether swap should be enabled.
+    pub needs_swap: bool,
     /// Path to the image.
     pub image: Option<PathBuf>,
     /// Path to the guide text file.
@@ -39,6 +42,7 @@ impl Default for GameInfo {
             command: String::new(),
             args: Vec::new(),
             has_menu: false,
+            needs_swap: false,
             image: None,
             guide: None,
             start_time: Utc::now(),
@@ -55,6 +59,7 @@ impl GameInfo {
         command: String,
         args: Vec<String>,
         has_menu: bool,
+        needs_swap: bool,
     ) -> Self {
         let guide = find_guide(&path);
 
@@ -64,6 +69,7 @@ impl GameInfo {
             command,
             args,
             has_menu,
+            needs_swap,
             image,
             guide,
             start_time: Utc::now(),
@@ -74,11 +80,17 @@ impl GameInfo {
     pub fn load() -> Result<Option<Self>> {
         Ok(if ALLIUM_GAME_INFO.exists() {
             let file = File::open(ALLIUM_GAME_INFO.as_path())?;
-            let game_info = serde_json::from_reader(file);
-            if game_info.is_err() {
+            let Ok(game_info) = serde_json::from_reader::<_, Self>(file) else {
                 fs::remove_file(ALLIUM_GAME_INFO.as_path())?;
+                return Ok(None);
+            };
+            if game_info.needs_swap() {
+                debug!("enabling swap");
+                Command::new(ALLIUM_SCRIPTS_DIR.join("swap-on.sh"))
+                    .spawn()?
+                    .wait()?;
             }
-            game_info.ok()
+            Some(game_info)
         } else {
             None
         })
@@ -109,6 +121,11 @@ impl GameInfo {
     /// How long the game has been running.
     pub fn play_time(&self) -> Duration {
         Utc::now().signed_duration_since(self.start_time)
+    }
+
+    /// Whether swap should be enabled.
+    pub fn needs_swap(&self) -> bool {
+        self.needs_swap
     }
 }
 

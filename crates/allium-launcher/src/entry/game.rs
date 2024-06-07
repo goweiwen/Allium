@@ -12,7 +12,10 @@ use common::database::{Game as DbGame, NewGame};
 use log::info;
 use serde::{Deserialize, Serialize};
 
-use crate::entry::{lazy_image::LazyImage, short_name};
+use crate::{
+    consoles::CoreName,
+    entry::{lazy_image::LazyImage, short_name},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Game {
@@ -27,7 +30,7 @@ pub struct Game {
     /// Extension of the game file.
     pub extension: String,
     /// The core to use for this game. If None, the default core will be used.
-    pub core: Option<String>,
+    pub core: Option<CoreName>,
     /// Rating from 0 to 10, used to sort.
     pub rating: Option<u8>,
     /// Release date of the game, used to sort.

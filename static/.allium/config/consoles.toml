@@ -313,7 +313,7 @@ extensions = ["p8", "png"]
 
 [[consoles]]
 name = "Ports Collection"
-path = "/mnt/SDCARD/.allium/cores/pak/launch.sh"
+cores = ["native"]
 patterns = ["PORTS", "SH", "NATIVE"]
 extensions = ["port"]
 
@@ -535,12 +535,11 @@ patterns = ["XRICK"]
 
 [[consoles]]
 name = "Nintendo DS"
-path = "/mnt/SDCARD/.allium/cores/drastic/launch.sh"
+cores = ["drastic"]
 patterns = ["NDS", "DS"]
 extensions = ["nds"]
 
 [[consoles]]
 name = "Movies"
-path = "/mnt/SDCARD/.allium/cores/ffplay/launch.sh"
 patterns = ["MEDIA", "Movies"]
 extensions = ["3g2", "3gp", "aac", "avi", "flv", "m4a", "m4a", "mkv", "mj2", "mov", "mp3", "mp4", "mpeg", "ogg", "oss", "wav", "webm"]

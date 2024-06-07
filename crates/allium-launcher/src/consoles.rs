@@ -9,20 +9,17 @@ use common::game_info::GameInfo;
 use serde::Deserialize;
 
 use common::constants::{ALLIUM_CONFIG_CONSOLES, ALLIUM_CONFIG_CORES, ALLIUM_RETROARCH};
-use log::{debug, trace};
+use log::{debug, error, trace};
 
 use crate::entry::game::Game;
 
-type CoreName = String;
+pub type CoreName = String;
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct Console {
     /// The name of the console.
     pub name: String,
-    /// If present, takes priority over RetroArch cores.
-    #[serde(default)]
-    pub path: Option<PathBuf>,
-    /// List of RetroArch cores to use. First is default.
+    /// List of cores to use. First is default.
     #[serde(default)]
     pub cores: Vec<CoreName>,
     /// Folder/file names to match against. If the folder/file matches exactly OR contains a parenthesized string that matches exactly, this core will be used.
@@ -46,9 +43,23 @@ struct ConsoleConfig {
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct Core {
+    /// Name of core for display.
     pub name: String,
+    /// The kind of core: RetroArch, Path
+    #[serde(flatten)]
+    pub core: CoreType,
+    /// Whether swap should be enabled.
     #[serde(default)]
     pub swap: bool,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum CoreType {
+    /// Name of the RetroArch core.
+    RetroArch(String),
+    /// Path of launch script.
+    Path(PathBuf),
 }
 
 impl fmt::Display for Core {
@@ -182,46 +193,54 @@ impl ConsoleMapper {
         let image = game.image().map(Path::to_path_buf);
         database.increment_play_count(&game.clone().into())?;
 
-        let core = self.get_console(game.path.as_path());
-        Ok(if let Some(console) = core {
-            let game_info = if let Some(ref path) = console.path {
-                GameInfo::new(
-                    game.name.clone(),
-                    game.path.clone(),
-                    image,
-                    path.display().to_string(),
-                    vec![game.path.display().to_string()],
-                    false,
-                )
-            } else if let Some(retroarch_core) =
-                game.core.clone().or_else(|| console.cores.first().cloned())
-            {
-                GameInfo::new(
-                    game.name.clone(),
-                    game.path.clone(),
-                    image,
-                    if disable_savestate_auto_load {
-                        ALLIUM_RETROARCH
-                            .parent()
-                            .unwrap()
-                            .join("launch_without_savestate_auto_load.sh")
-                            .display()
-                            .to_string()
-                    } else {
-                        ALLIUM_RETROARCH.display().to_string()
-                    },
-                    vec![retroarch_core, game.path.display().to_string()],
-                    true,
-                )
-            } else {
-                bail!("Console \"{}\" has no path or cores.", console.name);
-            };
-            debug!("Saving game info: {:?}", game_info);
-            game_info.save()?;
-            Some(Command::Exec(game_info.command()))
-        } else {
-            None
-        })
+        let console = self.get_console(game.path.as_path());
+        let Some(console) = console else {
+            bail!(
+                "Console for game \"{}\" does not exist.",
+                game.path.to_string_lossy()
+            );
+        };
+        let Some(core_name) = game.core.as_ref().or_else(|| console.cores.first()) else {
+            return Ok(None);
+        };
+        let Some(core) = self.cores.get(core_name) else {
+            error!("Core \"{}\" does not exist.", core_name);
+            return Ok(None);
+        };
+        let game_info = match &core.core {
+            CoreType::RetroArch(libretro_core) => GameInfo::new(
+                game.name.clone(),
+                game.path.clone(),
+                core_name.clone(),
+                image,
+                if disable_savestate_auto_load {
+                    ALLIUM_RETROARCH
+                        .parent()
+                        .unwrap()
+                        .join("launch_without_savestate_auto_load.sh")
+                        .display()
+                        .to_string()
+                } else {
+                    ALLIUM_RETROARCH.display().to_string()
+                },
+                vec![libretro_core.to_string(), game.path.display().to_string()],
+                true,
+                core.swap,
+            ),
+            CoreType::Path(path) => GameInfo::new(
+                game.name.clone(),
+                game.path.clone(),
+                core_name.clone(),
+                image,
+                path.to_string_lossy().to_string(),
+                vec![game.path.display().to_string()],
+                false,
+                core.swap,
+            ),
+        };
+        debug!("Saving game info: {:?}", game_info);
+        game_info.save()?;
+        Ok(Some(Command::Exec(game_info.command())))
     }
 
     pub fn get_core_name(&self, core: &str) -> String {
@@ -246,7 +265,6 @@ mod tests {
             patterns: vec!["POKE".to_string(), "PKM".to_string()],
             extensions: vec!["gb".to_string(), "gbc".to_string()],
             cores: vec![],
-            path: None,
             file_name: vec![],
         }];
 

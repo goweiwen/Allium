@@ -1,295 +1,403 @@
+[cores.drastic]
+path = "/mnt/SDCARD/.allium/cores/drastic/launch.sh"
+name = "DraStic"
+
+[cores.ffplay]
+path = "/mnt/SDCARD/.allium/cores/ffplay/launch.sh"
+name = "FFPlay"
+
+[cores.native]
+path = "/mnt/SDCARD/.allium/cores/pak/launch.sh"
+name = "Native"
+
 [cores."dosbox_pure_0.9.7"]
+retroarch = "dosbox_pure_0.9.7"
 name = "DOSBox Pure 0.9.7"
 
 [cores.a5200]
+retroarch = "a5200"
 name = "A5200"
 
 [cores.atari800]
+retroarch = "atari800"
 name = "Atari 800"
 
 [cores.bluemsx]
+retroarch = "bluemsx"
 name = "blueMSX"
 
 [cores.bsnes]
+retroarch = "bsnes"
 name = "bsnes"
 
 [cores.chailove]
+retroarch = "chailove"
 name = "ChaiLove"
 
 [cores.chimerasnes]
+retroarch = "chimerasnes"
 name = "ChimeraSNES"
 
 [cores.crocods]
+retroarch = "crocods"
 name = "CrocoDS"
 
 [cores.daphne]
+retroarch = "daphne"
 name = "Daphne"
 
 [cores.dosbox_pure]
+retroarch = "dosbox_pure"
 name = "DOSBox Pure"
 
 [cores.easyrpg]
+retroarch = "easyrpg"
 name = "EasyRPG"
 
 [cores.ecwolf]
+retroarch = "ecwolf"
 name = "ECWolf"
 
 [cores.fake08]
+retroarch = "fake08"
 name = "FAKE-08"
 
 [cores.fbalpha2012]
+retroarch = "fbalpha2012"
 name = "FinalBurn Alpha 2012"
 swap = true
 
 [cores.fbalpha2012_cps1]
+retroarch = "fbalpha2012_cps1"
 name = "FBA 2012 CPS1"
 swap = true
 
 [cores.fbalpha2012_cps2]
+retroarch = "fbalpha2012_cps2"
 name = "FBA 2012 CPS2"
 swap = true
 
 [cores.fbalpha2012_cps3]
+retroarch = "fbalpha2012_cps3"
 name = "FBA 2012 CPS3"
 swap = true
 
 [cores.fbalpha2012_neogeo]
+retroarch = "fbalpha2012_neogeo"
 name = "FBA 2012 NeoGeo"
 swap = true
 
 [cores.fbneo]
+retroarch = "fbneo"
 name = "FinalBurn Neo"
 swap = true
 
 [cores.fceumm]
+retroarch = "fceumm"
 name = "FCEUmm"
 
 [cores.fmsx]
+retroarch = "fmsx"
 name = "fMSX"
 
 [cores.freechaf]
+retroarch = "freechaf"
 name = "FreeChaF"
 
 [cores.freeintv]
+retroarch = "freeintv"
 name = "FreeIntv"
 
 [cores.fuse]
+retroarch = "fuse"
 name = "Fuse"
 
 [cores.gambatte]
+retroarch = "gambatte"
 name = "Gambatte"
 
 [cores.gearboy]
+retroarch = "gearboy"
 name = "Gearboy"
 
 [cores.gearsystem]
+retroarch = "gearsystem"
 name = "Gearsystem"
 
 [cores.genesis_plus_gx]
+retroarch = "genesis_plus_gx"
 name = "Genesis Plus GX"
 
 [cores.gme]
+retroarch = "gme"
 name = "Game Music Emu"
 
 [cores.gpsp]
+retroarch = "gpsp"
 name = "gpSP"
 
 [cores.gw]
+retroarch = "gw"
 name = "Game & Watch"
 
 [cores.handy]
+retroarch = "handy"
 name = "Handy"
 
 [cores.hatari]
+retroarch = "hatari"
 name = "Hatari"
 
 [cores.km_mame2003_xtreme]
+retroarch = "km_mame2003_xtreme"
 name = "MAME 2003 Xtreme"
 
 [cores.lutro]
+retroarch = "lutro"
 name = "Lutro"
 
 [cores.mame2000]
+retroarch = "mame2000"
 name = "MAME 2000"
 
 [cores.mame2003]
+retroarch = "mame2003"
 name = "MAME 2003"
 
 [cores.mame2003_midway]
+retroarch = "mame2003_midway"
 name = "MAME 2003 Midway"
 
 [cores.mame2003_plus]
+retroarch = "mame2003_plus"
 name = "MAME 2003-Plus"
 
 [cores.mba_mini]
+retroarch = "mba_mini"
 name = "M.B.A mini"
 
 [cores.mednafen_lynx]
+retroarch = "mednafen_lynx"
 name = "Beetle Lynx"
 
 [cores.mednafen_ngp]
+retroarch = "mednafen_ngp"
 name = "Beetle NeoGeo Pocket"
 
 [cores.mednafen_pce_fast]
+retroarch = "mednafen_pce_fast"
 name = "Beetle PCE FAST"
 
 [cores.mednafen_pcfx]
+retroarch = "mednafen_pcfx"
 name = "Beetle PC-FX"
 
 [cores.mednafen_supafaust]
+retroarch = "mednafen_supafaust"
 name = "Beetle Supafaust"
 
 [cores.mednafen_supergrafx]
+retroarch = "mednafen_supergrafx"
 name = "Beetle SuperGrafx"
 
 [cores.mednafen_vb]
+retroarch = "mednafen_vb"
 name = "Beetle VB"
 
 [cores.mednafen_wswan]
+retroarch = "mednafen_wswan"
 name = "Beetle Cygne"
 
 [cores.mgba]
+retroarch = "mgba"
 name = "mGBA"
 swap = true
 
 [cores.mu]
+retroarch = "mu"
 name = "mu"
 
 [cores.nekop2]
+retroarch = "nekop2"
 name = "Neko Project II"
 
 [cores.neocd]
+retroarch = "neocd"
 name = "NeoCD"
 
 [cores.nestopia]
+retroarch = "nestopia"
 name = "Nestopia"
 
 [cores.np2kai]
+retroarch = "np2kai"
 name = "Neko Project II Kai"
 
 [cores.numero]
+retroarch = "numero"
 name = "Numero"
 
 [cores.nxengine]
+retroarch = "nxengine"
 name = "NXEngine"
 
 [cores.o2em]
+retroarch = "o2em"
 name = "O2EM"
 
 [cores.opera]
+retroarch = "opera"
 name = "Opera"
 
 [cores.pcsx_rearmed]
+retroarch = "pcsx_rearmed"
 name = "PCSX ReARMed"
 
 [cores.picodrive]
+retroarch = "picodrive"
 name = "PicoDrive"
 
 [cores.pokemini]
+retroarch = "pokemini"
 name = "PokeMini"
 
 [cores.potator]
+retroarch = "potator"
 name = "Potator"
 
 [cores.prboom]
+retroarch = "prboom"
 name = "PRBoom"
 
 [cores.prosystem]
+retroarch = "prosystem"
 name = "ProSystem"
 
 [cores.puae]
+retroarch = "puae"
 name = "PUAE"
 
 [cores.puae2021]
+retroarch = "puae2021"
 name = "PUAE 2021"
 
 [cores.px68k]
+retroarch = "px68k"
 name = "PX68k"
 
 [cores.quasi88]
+retroarch = "quasi88"
 name = "QUASI88"
 
 [cores.reminiscence]
+retroarch = "reminiscence"
 name = "REminiscence"
 
 [cores.retro8]
+retroarch = "retro8"
 name = "Retro8"
 
 [cores.sameduck]
+retroarch = "sameduck"
 name = "SameDuck"
 
 [cores.scummvm]
+retroarch = "scummvm"
 name = "ScummVM"
+swap = true
 
 [cores.sh_launcher]
+retroarch = "sh_launcher"
 name = "SH Launcher"
 
 [cores.snes9x]
+retroarch = "snes9x"
 name = "Snes9x"
 
 [cores.snes9x2002]
+retroarch = "snes9x2002"
 name = "Snes9x 2002"
 
 [cores.snes9x2005]
+retroarch = "snes9x2005"
 name = "Snes9x 2005"
 
 [cores.snes9x2005_plus]
+retroarch = "snes9x2005_plus"
 name = "Snes9x 2005 Plus"
 
 [cores.snes9x2010]
+retroarch = "snes9x2010"
 name = "Snes9x 2010"
 
 [cores.stella2014]
+retroarch = "stella2014"
 name = "Stella 2014"
 
 [cores.tgbdual]
+retroarch = "tgbdual"
 name = "TGB Dual"
 
 [cores.theodore]
+retroarch = "theodore"
 name = "Theodore"
 
 [cores.tic80]
+retroarch = "tic80"
 name = "TIC-80"
 
 [cores.tyrquake]
+retroarch = "tyrquake"
 name = "TyrQuake"
 
 [cores.uae4arm]
+retroarch = "uae4arm"
 name = "UAE4ARM"
 
 [cores.uw8]
+retroarch = "uw8"
 name = "uw8"
 
 [cores.uzem]
+retroarch = "uzem"
 name = "Uzem"
 
 [cores.vba_next]
+retroarch = "vba_next"
 name = "VBA Next"
 
 [cores.vbam]
+retroarch = "vbam"
 name = "VBA-M"
 
 [cores.vecx]
+retroarch = "vecx"
 name = "VecX"
 
 [cores.vemulator]
+retroarch = "vemulator"
 name = "VEmulator"
 
 [cores.vice_x64]
+retroarch = "vice_x64"
 name = "VICE x64"
 
 [cores.vice_xvic]
+retroarch = "vice_xvic"
 name = "VICE xvic"
 
 [cores.virtualjaguar]
+retroarch = "virtualjaguar"
 name = "Virtual Jaguar"
 
 [cores.x1]
+retroarch = "x1"
 name = "X1"
 
 [cores.xrick]
+retroarch = "xrick"
 name = "XRick"
 
 [cores.zx81]
+retroarch = "zx81"
 name = "ZX81"
-
