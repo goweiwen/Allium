@@ -118,12 +118,13 @@ impl AlliumMenu<DefaultPlatform> {
                 self.display.load(self.display.bounding_box().into())?;
                 self.view.set_should_draw();
             }
-            Command::SaveStateScreenshot { path, slot } => {
+            Command::SaveStateScreenshot { path, core, slot } => {
                 if self.display.pop() {
                     self.display.load(self.display.bounding_box().into())?;
                     self.display.flush()?;
                     let mut hasher = Sha256::new();
                     hasher.update(path);
+                    hasher.update(core);
                     hasher.update(slot.to_le_bytes());
                     let hash = hasher.finalize();
                     let base32 = encode(base32::Alphabet::Crockford, &hash);

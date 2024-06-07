@@ -225,6 +225,7 @@ where
                 commands
                     .send(Command::SaveStateScreenshot {
                         path: self.path.canonicalize()?.to_string_lossy().to_string(),
+                        core: self.res.get::<GameInfo>().core.clone(),
                         slot,
                     })
                     .await?;
@@ -257,6 +258,7 @@ where
                     commands
                         .send(Command::SaveStateScreenshot {
                             path: self.path.canonicalize()?.to_string_lossy().to_string(),
+                            core: self.res.get::<GameInfo>().core.clone(),
                             slot: -1,
                         })
                         .await?;
@@ -306,14 +308,28 @@ where
             .to_string_lossy()
             .to_string();
         let slot = self.retroarch_info.as_ref().unwrap().state_slot.unwrap();
+
         let mut hasher = Sha256::new();
-        hasher.update(path);
+        hasher.update(&path);
+        hasher.update(&self.res.get::<GameInfo>().core);
         hasher.update(slot.to_le_bytes());
         let hash = hasher.finalize();
         let base32 = encode(base32::Alphabet::Crockford, &hash);
         let file_name = format!("{}.png", base32);
-        let path = ALLIUM_SCREENSHOTS_DIR.join(file_name);
-        self.image.set_path(Some(path));
+        let mut screenshot_path = ALLIUM_SCREENSHOTS_DIR.join(file_name);
+
+        // Previously, the hash did not include the core name. We try looking for that path as well.
+        if !screenshot_path.exists() {
+            let mut hasher = Sha256::new();
+            hasher.update(&path);
+            hasher.update(slot.to_le_bytes());
+            let hash = hasher.finalize();
+            let base32 = encode(base32::Alphabet::Crockford, &hash);
+            let file_name = format!("{}.png", base32);
+            screenshot_path = ALLIUM_SCREENSHOTS_DIR.join(file_name);
+        }
+
+        self.image.set_path(Some(screenshot_path));
     }
 }
 

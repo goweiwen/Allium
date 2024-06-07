@@ -20,7 +20,11 @@ pub enum Command {
     Search(String),
     Toast(String, Option<Duration>),
     PopulateDb,
-    SaveStateScreenshot { path: String, slot: i8 },
+    SaveStateScreenshot {
+        path: String,
+        core: String,
+        slot: i8,
+    },
 }
 
 #[derive(Debug, Clone)]

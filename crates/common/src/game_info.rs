@@ -16,8 +16,10 @@ use crate::constants::{ALLIUM_GAMES_DIR, ALLIUM_GAME_INFO, ALLIUM_SCRIPTS_DIR};
 pub struct GameInfo {
     /// Display name of the game.
     pub name: String,
-    /// Path to the game rom.
+    /// Path to the game rom. This is used to generate the screenshot name.
     pub path: PathBuf,
+    /// Core used to run the game. This is used to generate the screenshot name.
+    pub core: String,
     /// Command to run the core.
     pub command: String,
     /// Arguments to pass to the core to run the game.
@@ -39,6 +41,7 @@ impl Default for GameInfo {
         Self {
             name: String::new(),
             path: PathBuf::new(),
+            core: String::new(),
             command: String::new(),
             args: Vec::new(),
             has_menu: false,
@@ -52,9 +55,11 @@ impl Default for GameInfo {
 
 impl GameInfo {
     /// Create a new GameInfo object.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         name: String,
         path: PathBuf,
+        core: String,
         image: Option<PathBuf>,
         command: String,
         args: Vec<String>,
@@ -66,6 +71,7 @@ impl GameInfo {
         Self {
             name,
             path,
+            core,
             command,
             args,
             has_menu,
