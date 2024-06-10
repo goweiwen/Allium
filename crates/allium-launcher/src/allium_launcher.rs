@@ -1,8 +1,10 @@
 use common::app::widgets::button;
-use common::app::{Element, Renderer, Theme};
+use common::app::{Element, Gamepad, Renderer, Theme};
+use common::input::Key;
 use iced::program::{Title, Update, View};
 use iced::widget::{column, text};
 use iced::{Alignment, Command};
+use log::debug;
 
 #[derive(Debug, Default)]
 pub struct State {
@@ -11,8 +13,20 @@ pub struct State {
 
 #[derive(Debug, Clone, Copy)]
 pub enum Message {
+    KeyPressed(Key),
+    KeyReleased(Key),
     Increment,
     Decrement,
+}
+
+impl Gamepad for Message {
+    fn key_press(key: common::input::Key) -> Self {
+        Self::KeyPressed(key)
+    }
+
+    fn key_release(key: common::input::Key) -> Self {
+        Self::KeyReleased(key)
+    }
 }
 
 pub struct AlliumLauncher;
@@ -25,6 +39,7 @@ impl Title<State> for AlliumLauncher {
 
 impl Update<State, Message> for AlliumLauncher {
     fn update(&self, state: &mut State, message: Message) -> impl Into<Command<Message>> {
+        debug!("message: {:?}", message);
         match message {
             Message::Increment => {
                 state.value += 1;
@@ -32,6 +47,10 @@ impl Update<State, Message> for AlliumLauncher {
             Message::Decrement => {
                 state.value -= 1;
             }
+            Message::KeyPressed(_) => {
+                state.value += 1;
+            }
+            Message::KeyReleased(_) => (),
         }
     }
 }

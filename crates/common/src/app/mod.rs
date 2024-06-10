@@ -3,7 +3,7 @@ pub mod widgets;
 
 use anyhow::Result;
 use bytemuck::{cast_slice, cast_slice_mut};
-use iced::{mouse::Cursor, program, Event, Point, Rectangle, Size};
+use iced::{mouse::Cursor, program, Point, Rectangle, Size};
 use iced_core::clipboard;
 use iced_graphics::Viewport;
 use iced_runtime::{user_interface, UserInterface};
@@ -11,6 +11,7 @@ use log::{info, trace};
 use tiny_skia::{Mask, PixmapMut};
 use tokio::time::Interval;
 
+use crate::input::Key;
 use crate::platform::{DefaultPlatform, Display, Platform};
 
 pub type Element<'a, Message> =
@@ -27,6 +28,7 @@ where
         + 'static,
     State: Default,
     Theme: Default,
+    Message: Gamepad,
     Style: crate::style::Style + Default,
 {
     fonts::load_fonts();
@@ -41,7 +43,6 @@ where
     let window_size = Size::new(640.0, 480.0);
     let mut clipboard = clipboard::Null;
 
-    let mut messages = Vec::new();
     let theme = Theme::default();
 
     let cursor = Cursor::Unavailable;
@@ -67,14 +68,15 @@ where
         tokio::time::interval(tokio::time::Duration::from_secs_f64(1.0 / 60.0));
     frame_interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
-    let mut events;
+    let events = Vec::new();
+    let mut messages;
     loop {
         tokio::select! {
             _ = sigterm.recv() => {
                 std::process::exit(0);
             }
             e = poll_until(&mut platform, &mut frame_interval) => {
-                events = e;
+                messages = e;
             }
         }
 
@@ -130,27 +132,35 @@ where
     }
 }
 
-async fn poll_until(platform: &mut impl Platform, interval: &mut Interval) -> Vec<Event> {
-    let mut events = Vec::new();
+async fn poll_until<Message: Gamepad>(
+    platform: &mut impl Platform,
+    interval: &mut Interval,
+) -> Vec<Message> {
+    let mut messages = Vec::new();
     // loop {
     trace!("poll");
     tokio::select! {
         event = platform.poll() => {
             trace!("key");
-            if let Some(event) = event.into() {
-                events.push(event);
+            if let Some(event) = event.into_message() {
+                messages.push(event);
             }
         }
         _ = interval.tick() => {
             trace!("tick");
-            return events;
+            return messages;
         }
     }
-    events
+    messages
     // }
 }
 
 trait Focus {
-    fn focus() -> Self {}
-    fn unfocus() -> Self {}
+    fn focus() -> Self;
+    fn unfocus() -> Self;
+}
+
+pub trait Gamepad {
+    fn key_press(key: Key) -> Self;
+    fn key_release(key: Key) -> Self;
 }
