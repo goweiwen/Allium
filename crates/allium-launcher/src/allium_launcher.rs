@@ -1,6 +1,7 @@
+use common::app::widgets::button;
 use common::app::{Element, Renderer, Theme};
 use iced::program::{Title, Update, View};
-use iced::widget::{button, column, text};
+use iced::widget::{column, text};
 use iced::{Alignment, Command};
 
 #[derive(Debug, Default)]

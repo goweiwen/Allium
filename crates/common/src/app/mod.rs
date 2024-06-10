@@ -1,4 +1,5 @@
 mod fonts;
+pub mod widgets;
 
 use anyhow::Result;
 use bytemuck::{cast_slice, cast_slice_mut};
@@ -147,4 +148,9 @@ async fn poll_until(platform: &mut impl Platform, interval: &mut Interval) -> Ve
     }
     events
     // }
+}
+
+trait Focus {
+    fn focus() -> Self {}
+    fn unfocus() -> Self {}
 }
