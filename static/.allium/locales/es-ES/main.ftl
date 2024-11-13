@@ -7,6 +7,8 @@ tab-settings = Ajustes
 sort-alphabetical = Orden: A-Z
 sort-last-played = Orden: Recientes
 sort-most-played = Orden: Más jugados
+sort-rating = Orden: Valoración
+sort-release-date = Orden: Fecha
 sort-random = Orden: Aleatorio
 sort-search = Buscar
 
@@ -64,10 +66,18 @@ settings-theme-button-y-color = Color Boton Y
 
 settings-language = Idioma
 settings-language-language = Idioma
+settings-power = Energía
+settings-power-power-button-action = Función del botón de encendido
+settings-power-power-button-action-suspend = Suspender
+settings-power-power-button-action-shutdown = Apagar
+settings-power-power-button-action-nothing = Nada
+settings-power-auto-sleep-when-charging = Auto hibernar durante la carga
+settings-power-auto-sleep-duration-minutes = Tiempo para hibernar (Minutos)
+settings-power-auto-sleep-duration-disabled = Desactivado
 
 settings-files = Archivos
 
-settings-about = Acerca De.
+settings-about = Acerca de
 settings-about-allium-version = Versión de Allium
 settings-about-model-name = Modelo
 settings-about-firmware-version = Versión Firmware
