@@ -389,7 +389,7 @@ extensions = ["ngp", "ngc"]
 name = "PlayStation"
 cores = ["pcsx_rearmed"]
 patterns = ["PSX", "PS", "PS1"]
-extensions = ["mdf", "pbp", "toc", "cbn"]
+extensions = ["mdf", "pbp", "toc", "cbn", "chd"]
 
 [[consoles]]
 name = "TIC-80"
