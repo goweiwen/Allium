@@ -156,6 +156,39 @@ impl From<Rect> for embedded_graphics::primitives::Rectangle {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SupportedResolution {
+    Resolution640x480,
+    Resolution750x560,
+}
+
+impl SupportedResolution {
+    pub fn from_size(size: Size) -> Self {
+        match (size.w, size.h) {
+            (750, 560) => Self::Resolution750x560,
+            _ => Self::Resolution640x480, // fallback to 640x480 for any other resolution
+        }
+    }
+
+    pub fn width(&self) -> u32 {
+        match self {
+            Self::Resolution640x480 => 640,
+            Self::Resolution750x560 => 750,
+        }
+    }
+
+    pub fn height(&self) -> u32 {
+        match self {
+            Self::Resolution640x480 => 480,
+            Self::Resolution750x560 => 560,
+        }
+    }
+
+    pub fn size(&self) -> Size {
+        Size::new(self.width(), self.height())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Alignment {
     Left,
     Center,

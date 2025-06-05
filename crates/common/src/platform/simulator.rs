@@ -20,11 +20,15 @@ use crate::battery::Battery;
 use crate::display::color::Color;
 use crate::display::settings::DisplaySettings;
 use crate::display::Display;
-use crate::geom::Rect;
+use crate::geom::{Rect, SupportedResolution};
 use crate::platform::{Key, KeyEvent, Platform};
 
-pub const SCREEN_WIDTH: u32 = 640;
-pub const SCREEN_HEIGHT: u32 = 480;
+fn get_simulator_resolution() -> SupportedResolution {
+    match std::env::var("ALLIUM_SIMULATOR_RESOLUTION").as_deref() {
+        Ok("750x560") => SupportedResolution::Resolution750x560,
+        _ => SupportedResolution::Resolution640x480,
+    }
+}
 
 pub struct SimulatorPlatform {
     window: Rc<RefCell<Window>>,
@@ -76,12 +80,18 @@ impl Platform for SimulatorPlatform {
     }
 
     fn display(&mut self) -> Result<SimulatorWindow> {
-        let display = SimulatorDisplay::load_png("simulator/bg-640x480.png").unwrap_or_else(|_| {
-            SimulatorDisplay::with_default_color(
-                Size::new(SCREEN_WIDTH, SCREEN_HEIGHT),
-                Color::new(0, 0, 0),
-            )
+        let resolution = get_simulator_resolution();
+        let size = Size::new(resolution.width(), resolution.height());
+        
+        let background_file = match resolution {
+            SupportedResolution::Resolution750x560 => "simulator/bg-750x560.png",
+            SupportedResolution::Resolution640x480 => "simulator/bg-640x480.png",
+        };
+        
+        let display = SimulatorDisplay::load_png(background_file).unwrap_or_else(|_| {
+            SimulatorDisplay::with_default_color(size, Color::new(0, 0, 0))
         });
+        
         Ok(SimulatorWindow {
             window: Rc::clone(&self.window),
             display,

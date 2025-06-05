@@ -20,6 +20,7 @@ clean:
 	rm -r $(DIST_DIR)
 	rm -f $(RETROARCH)/retroarch
 
+.PHONY: simulator-env
 simulator-env:
 	mkdir -p simulator
 	mkdir -p simulator/Roms
@@ -27,8 +28,15 @@ simulator-env:
 	rsync -ar static/.allium simulator/
 
 .PHONY: simulator
-simulator: simulator-env
-	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_DATABASE=simulator/allium.db ALLIUM_BASE_DIR=simulator/.allium ALLIUM_SD_ROOT=simulator cargo run --bin $(bin) --features=simulator $(args)
+simulator: simulator-env simulator-640x480
+
+.PHONY: simulator-640x480
+simulator-640x480: simulator-env
+	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_DATABASE=simulator/allium.db ALLIUM_BASE_DIR=simulator/.allium ALLIUM_SD_ROOT=simulator ALLIUM_SIMULATOR_RESOLUTION=640x480 cargo run --bin $(bin) --features=simulator $(args)
+
+.PHONY: simulator-750x560
+simulator-750x560: simulator-env
+	RUST_LOG=trace RUST_BACKTRACE=1 ALLIUM_DATABASE=simulator/allium.db ALLIUM_BASE_DIR=simulator/.allium ALLIUM_SD_ROOT=simulator ALLIUM_SIMULATOR_RESOLUTION=750x560 cargo run --bin $(bin) --features=simulator $(args)
 
 .PHONY: dist
 dist:

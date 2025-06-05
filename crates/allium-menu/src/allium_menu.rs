@@ -45,7 +45,8 @@ impl AlliumMenu<DefaultPlatform> {
         res.insert(GameInfo::load()?.unwrap_or_default());
         res.insert(Stylesheet::load()?);
         res.insert(Locale::new(&LocaleSettings::load()?.lang));
-        res.insert(Into::<geom::Size>::into(display.size()));
+        let display_size = Into::<geom::Size>::into(display.size());
+        res.insert(geom::SupportedResolution::from_size(display_size));
         let res = Resources::new(res);
 
         Ok(AlliumMenu {

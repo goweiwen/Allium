@@ -7,7 +7,7 @@ use common::constants::SELECTION_MARGIN;
 
 use common::display::settings::DisplaySettings;
 use common::display::Display as DisplayTrait;
-use common::geom::{Alignment, Point, Rect, Size};
+use common::geom::{Alignment, Point, Rect, SupportedResolution};
 use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
@@ -56,8 +56,8 @@ impl Display {
                 Box::new(Label::new(
                     Point::zero(),
                     {
-                        let size = res.get::<Size>();
-                        format!("{}x{}", size.w, size.h)
+                        let size = res.get::<SupportedResolution>();
+                        format!("{}x{}", size.width(), size.height())
                     },
                     Alignment::Right,
                     None,
