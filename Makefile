@@ -64,13 +64,17 @@ package-build:
 
 MIGRATIONS_DIR := $(DIST_DIR)/.allium/migrations
 .PHONY: migrations
-migrations: $(MIGRATIONS_DIR)/0000-retroarch-config/retroarch-config.zip $(MIGRATIONS_DIR)/0001-retroarch-core-overrides/retroarch-core-overrides.zip
+migrations: $(MIGRATIONS_DIR)/0000-retroarch-config/retroarch-config.zip $(MIGRATIONS_DIR)/0001-retroarch-core-overrides/retroarch-core-overrides.zip $(MIGRATIONS_DIR)/0002-move-screenshots/.done
 
 $(MIGRATIONS_DIR)/0000-retroarch-config/retroarch-config.zip:
 	migrations/0000-retroarch-config/package.sh
 
 $(MIGRATIONS_DIR)/0001-retroarch-core-overrides/retroarch-core-overrides.zip:
 	migrations/0001-retroarch-core-overrides/package.sh
+
+$(MIGRATIONS_DIR)/0002-move-screenshots/.done:
+	migrations/0002-move-screenshots/package.sh
+	touch $(MIGRATIONS_DIR)/0002-move-screenshots/.done
 
 .PHONY: retroarch
 retroarch: $(RETROARCH)/retroarch
