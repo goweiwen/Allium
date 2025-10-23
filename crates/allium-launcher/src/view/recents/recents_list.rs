@@ -293,6 +293,7 @@ impl Sort for RecentsSort {
                     publisher: game.publisher,
                     genres: game.genres,
                     favorite: game.favorite,
+                    screenshot_path: game.screenshot_path,
                 })
             })
             .collect())

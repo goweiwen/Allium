@@ -1,6 +1,5 @@
 use std::borrow::Cow;
 use std::collections::{HashMap, VecDeque};
-use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::Result;
@@ -37,7 +36,6 @@ pub struct RecentsCarousel {
     rect: Rect,
     res: Resources,
     games: Vec<Game>,
-    screenshot_paths: Vec<Option<PathBuf>>,
     selected: usize,
     screenshot: Image,
     game_name: Label<String>,
@@ -50,7 +48,7 @@ impl RecentsCarousel {
     pub fn new(rect: Rect, res: Resources, state: RecentsCarouselState) -> Result<Self> {
         let Rect { x, y, w, h } = rect;
 
-        let (games, screenshot_paths) = Self::load_games(&res)?;
+        let games = Self::load_games(&res)?;
         let selected = state.selected.min(games.len().saturating_sub(1));
 
         let styles = res.get::<Stylesheet>();
@@ -92,7 +90,6 @@ impl RecentsCarousel {
             rect,
             res,
             games,
-            screenshot_paths,
             selected,
             screenshot,
             game_name,
@@ -111,12 +108,11 @@ impl RecentsCarousel {
         Self::new(rect, res, state)
     }
 
-    fn load_games(res: &Resources) -> Result<(Vec<Game>, Vec<Option<PathBuf>>)> {
+    fn load_games(res: &Resources) -> Result<Vec<Game>> {
         let database = res.get::<Database>();
         let db_games = database.select_last_played(RECENT_GAMES_LIMIT)?;
 
         let mut games = Vec::new();
-        let mut screenshot_paths = Vec::new();
 
         for game in db_games {
             let extension = game
@@ -131,8 +127,6 @@ impl RecentsCarousel {
                 game.image.clone(),
             );
             
-            screenshot_paths.push(game.screenshot_path.clone());
-            
             games.push(Game {
                 name: game.name.clone(),
                 full_name: game.name,
@@ -146,10 +140,11 @@ impl RecentsCarousel {
                 publisher: game.publisher,
                 genres: game.genres,
                 favorite: game.favorite,
+                screenshot_path: game.screenshot_path,
             });
         }
 
-        Ok((games, screenshot_paths))
+        Ok(games)
     }
 
     fn update_current_game(&mut self) -> Result<()> {
@@ -161,9 +156,8 @@ impl RecentsCarousel {
         }
 
         let game = &self.games[self.selected];
-        let screenshot_path = self.screenshot_paths.get(self.selected).and_then(|p| p.clone());
         
-        self.screenshot.set_path(screenshot_path);
+        self.screenshot.set_path(game.screenshot_path.clone());
         self.screenshot.set_should_draw();
         self.game_name.set_text(game.name.clone());
         

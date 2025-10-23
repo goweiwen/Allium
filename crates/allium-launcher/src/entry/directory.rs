@@ -146,6 +146,7 @@ impl Directory {
                 publisher: game.publisher,
                 genres: game.genres,
                 favorite: false,
+                screenshot_path: None,
             }))
         });
 

@@ -43,6 +43,8 @@ pub struct Game {
     pub genres: Vec<String>,
     /// Whether the game is marked as a favorite.
     pub favorite: bool,
+    /// Path to the save state screenshot.
+    pub screenshot_path: Option<PathBuf>,
 }
 
 impl Game {
@@ -72,6 +74,7 @@ impl Game {
             publisher: None,
             genres: Vec::new(),
             favorite: false,
+            screenshot_path: None,
         }
     }
 
@@ -106,6 +109,7 @@ impl Game {
             publisher: game.publisher,
             genres: game.genres,
             favorite: game.favorite,
+            screenshot_path: game.screenshot_path,
         }
     }
 
