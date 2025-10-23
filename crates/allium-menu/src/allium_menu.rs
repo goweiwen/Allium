@@ -122,7 +122,7 @@ impl AlliumMenu<DefaultPlatform> {
                 if self.display.pop() {
                     self.display.load(self.display.bounding_box().into())?;
                     self.display.flush()?;
-                    
+
                     let mut hasher = Sha256::new();
                     hasher.update(&path);
                     hasher.update(&core);
@@ -130,16 +130,18 @@ impl AlliumMenu<DefaultPlatform> {
                     let hash = hasher.finalize();
                     let base32 = encode(base32::Alphabet::Crockford, &hash);
                     let file_name = format!("{}.png", base32);
-                    
+
                     std::fs::create_dir_all(&*ALLIUM_SCREENSHOTS_DIR).ok();
-                    
+
                     let screenshot_path = ALLIUM_SCREENSHOTS_DIR.join(&file_name);
                     info!("saving screenshot to {:?}", screenshot_path);
-                    
+
                     let database = self.res.get::<Database>();
                     let game_path = std::path::Path::new(&path);
-                    database.update_screenshot_path(game_path, Some(&screenshot_path)).ok();
-                    
+                    database
+                        .update_screenshot_path(game_path, Some(&screenshot_path))
+                        .ok();
+
                     std::process::Command::new("screenshot")
                         .arg(screenshot_path)
                         .arg(format!("--width={}", SAVE_STATE_IMAGE_WIDTH))

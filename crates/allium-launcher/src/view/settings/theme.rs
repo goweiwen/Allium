@@ -364,7 +364,10 @@ impl View for Theme {
                         }
                         1 => self.stylesheet.toggle_battery_percentage(),
                         2 => self.stylesheet.toggle_clock(),
-                        3 => self.stylesheet.use_recents_carousel = !self.stylesheet.use_recents_carousel,
+                        3 => {
+                            self.stylesheet.use_recents_carousel =
+                                !self.stylesheet.use_recents_carousel
+                        }
                         4 => self
                             .stylesheet
                             .ui_font

@@ -69,7 +69,11 @@ impl RecentsList {
         })
     }
 
-    pub fn load_or_new(rect: Rect, res: Resources, state: Option<RecentsListState>) -> Result<Self> {
+    pub fn load_or_new(
+        rect: Rect,
+        res: Resources,
+        state: Option<RecentsListState>,
+    ) -> Result<Self> {
         let list = if let Some(state) = state {
             EntryList::load(rect, res.clone(), state)?
         } else {

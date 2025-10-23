@@ -166,7 +166,11 @@ ALTER TABLE games ADD COLUMN screenshot_path TEXT;
         Ok(())
     }
 
-    pub fn update_screenshot_path(&self, game_path: &Path, screenshot_path: Option<&Path>) -> Result<()> {
+    pub fn update_screenshot_path(
+        &self,
+        game_path: &Path,
+        screenshot_path: Option<&Path>,
+    ) -> Result<()> {
         self.conn.as_ref().unwrap().execute(
             "UPDATE games SET screenshot_path = ? WHERE path = ?",
             params![

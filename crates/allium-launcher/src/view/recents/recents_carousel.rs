@@ -57,18 +57,13 @@ impl RecentsCarousel {
         let ui_font_size = styles.ui_font.size as i32;
         let bottom_area_height = (y_margin * 3) + (ui_font_size * 2);
         let screenshot_height = h.saturating_sub(bottom_area_height as u32);
-        
-        let mut screenshot = Image::empty(
-            Rect::new(x, y, w, screenshot_height),
-            ImageMode::Contain,
-        );
+
+        let mut screenshot =
+            Image::empty(Rect::new(x, y, w, screenshot_height), ImageMode::Contain);
         screenshot.set_alignment(Alignment::Center);
 
         let game_name = Label::new(
-            Point::new(
-                x + w as i32 / 2,
-                y + screenshot_height as i32 + y_margin,
-            ),
+            Point::new(x + w as i32 / 2, y + screenshot_height as i32 + y_margin),
             String::new(),
             Alignment::Center,
             None,
@@ -103,7 +98,11 @@ impl RecentsCarousel {
         Ok(carousel)
     }
 
-    pub fn load_or_new(rect: Rect, res: Resources, state: Option<RecentsCarouselState>) -> Result<Self> {
+    pub fn load_or_new(
+        rect: Rect,
+        res: Resources,
+        state: Option<RecentsCarouselState>,
+    ) -> Result<Self> {
         let state = state.unwrap_or_default();
         Self::new(rect, res, state)
     }
@@ -121,12 +120,10 @@ impl RecentsCarousel {
                 .and_then(|e| e.to_str())
                 .unwrap_or_default()
                 .to_owned();
-            
-            let image = crate::entry::lazy_image::LazyImage::from_path(
-                &game.path,
-                game.image.clone(),
-            );
-            
+
+            let image =
+                crate::entry::lazy_image::LazyImage::from_path(&game.path, game.image.clone());
+
             games.push(Game {
                 name: game.name.clone(),
                 full_name: game.name,
@@ -156,11 +153,11 @@ impl RecentsCarousel {
         }
 
         let game = &self.games[self.selected];
-        
+
         self.screenshot.set_path(game.screenshot_path.clone());
         self.screenshot.set_should_draw();
         self.game_name.set_text(game.name.clone());
-        
+
         let locale = self.res.get::<Locale>();
         let mut args = HashMap::new();
         args.insert(Cow::from("current"), (self.selected + 1).into());
@@ -217,10 +214,10 @@ impl RecentsCarousel {
 
     async fn launch_game(&mut self, commands: Sender<Command>) -> Result<()> {
         if let Some(game) = self.games.get_mut(self.selected) {
-            let command = self
-                .res
-                .get::<ConsoleMapper>()
-                .launch_game(&self.res.get(), game, false)?;
+            let command =
+                self.res
+                    .get::<ConsoleMapper>()
+                    .launch_game(&self.res.get(), game, false)?;
             if let Some(cmd) = command {
                 commands.send(cmd).await?;
             }
