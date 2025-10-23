@@ -145,11 +145,14 @@ impl View for Image {
         display: &mut <DefaultPlatform as Platform>::Display,
         _styles: &Stylesheet,
     ) -> Result<bool> {
-        if self.image.is_none()
+        let image_loaded = if self.image.is_none()
             && let Some(ref path) = self.path
         {
             self.image = self.image(path, self.rect, self.mode, self.border_radius);
-        }
+            self.image.is_some()
+        } else {
+            self.image.is_some()
+        };
 
         display.load(self.rect)?;
         if let Some(ref image) = self.image {
@@ -159,7 +162,7 @@ impl View for Image {
             image.draw(display)?;
         }
 
-        self.dirty = false;
+        self.dirty = !image_loaded && self.path.is_some();
         Ok(true)
     }
 

@@ -164,6 +164,7 @@ impl RecentsCarousel {
         let screenshot_path = self.screenshot_paths.get(self.selected).and_then(|p| p.clone());
         
         self.screenshot.set_path(screenshot_path);
+        self.screenshot.set_should_draw();
         self.game_name.set_text(game.name.clone());
         
         let locale = self.res.get::<Locale>();
