@@ -15,6 +15,7 @@ The goal of Allium is to replace MainUI (stock UI) with a faster and more user-f
 
 <div>
     <img alt="Main menu" src="assets/screenshots/main-menu.png" width="49%">
+    <img alt="Recents carousel" src="assets/screenshots/recents-carousel.png" width="49%">
     <img alt="Ingame menu" src="assets/screenshots/ingame-menu.png" width="49%">
     <img alt="Guide" src="assets/screenshots/guide.png" width="49%">
     <img alt="Settings" src="assets/screenshots/settings.png" width="49%">
