@@ -13,7 +13,8 @@ sort-random = Sort: Random
 sort-search = Sort: Search
 sort-favorites = Sort: Favorites
 
-no-recent-games = No recent games
+no-recent-games = Play a game to get started
+recents-counter = { $current }/{ $total }
 
 populating-database = Populating database...
     This may take several minutes.

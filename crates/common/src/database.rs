@@ -31,6 +31,7 @@ pub struct Game {
     pub publisher: Option<String>,
     pub genres: Vec<String>,
     pub favorite: bool,
+    pub screenshot_path: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -151,6 +152,9 @@ END;"),
         M::up("
 ALTER TABLE games ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0;
 "),
+        M::up("
+ALTER TABLE games ADD COLUMN screenshot_path TEXT;
+"),
                 ])
     }
 
@@ -158,6 +162,17 @@ ALTER TABLE games ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0;
         self.conn.as_ref().unwrap().execute(
             "UPDATE games SET play_count = 0, play_time = 0, last_played = 0 WHERE path = ?",
             params![path.display().to_string()],
+        )?;
+        Ok(())
+    }
+
+    pub fn update_screenshot_path(&self, game_path: &Path, screenshot_path: Option<&Path>) -> Result<()> {
+        self.conn.as_ref().unwrap().execute(
+            "UPDATE games SET screenshot_path = ? WHERE path = ?",
+            params![
+                screenshot_path.map(|p| p.display().to_string()),
+                game_path.display().to_string()
+            ],
         )?;
         Ok(())
     }
@@ -223,7 +238,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite FROM games WHERE last_played > 0 ORDER BY play_time DESC LIMIT ?")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite, screenshot_path FROM games WHERE last_played > 0 ORDER BY play_time DESC LIMIT ?")?;
 
         let results = stmt
             .query_map([limit], map_game)?
@@ -239,7 +254,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite FROM games WHERE last_played > 0 ORDER BY last_played DESC LIMIT ?")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite, screenshot_path FROM games WHERE last_played > 0 ORDER BY last_played DESC LIMIT ?")?;
 
         let results = stmt
             .query_map([limit], map_game)?
@@ -255,7 +270,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite FROM games ORDER BY rating DESC LIMIT ?")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite, screenshot_path FROM games ORDER BY rating DESC LIMIT ?")?;
 
         let results = stmt
             .query_map([limit], map_game)?
@@ -271,7 +286,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite FROM games ORDER BY release_date DESC LIMIT ?")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite, screenshot_path FROM games ORDER BY release_date DESC LIMIT ?")?;
 
         let results = stmt
             .query_map([limit], map_game)?
@@ -287,7 +302,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite FROM games WHERE id IN (SELECT id FROM games ORDER BY RANDOM() LIMIT ?)")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite, screenshot_path FROM games WHERE id IN (SELECT id FROM games ORDER BY RANDOM() LIMIT ?)")?;
 
         let results = stmt
             .query_map([limit], map_game)?
@@ -303,7 +318,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite FROM games WHERE favorite = 1 ORDER BY last_played DESC LIMIT ?")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite, screenshot_path FROM games WHERE favorite = 1 ORDER BY last_played DESC LIMIT ?")?;
 
         let results = stmt
             .query_map([limit], map_game)?
@@ -358,7 +373,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
             .conn
             .as_ref()
             .unwrap()
-            .query_row("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite FROM games WHERE path = ? LIMIT 1", [path.display().to_string()], map_game)
+            .query_row("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite, screenshot_path FROM games WHERE path = ? LIMIT 1", [path.display().to_string()], map_game)
             .optional()?;
 
         Ok(game)
@@ -369,7 +384,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
             .conn
             .as_ref()
             .unwrap()
-            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite FROM games WHERE path = ? ORDER BY favorite DESC")?;
+            .prepare("SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite, screenshot_path FROM games WHERE path = ? ORDER BY favorite DESC")?;
 
         let mut results = vec![None; paths.len()];
         for (i, path) in paths.iter().enumerate() {
@@ -385,7 +400,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
 
     pub fn select_all_games(&self) -> Result<Vec<Game>> {
         let mut stmt = self.conn.as_ref().unwrap().prepare(
-            "SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite FROM games",
+            "SELECT name, path, image, play_count, play_time, last_played, core, rating, release_date, developer, publisher, genres, favorite, screenshot_path FROM games",
         )?;
 
         let results = stmt
@@ -590,6 +605,7 @@ fn map_game(row: &Row<'_>) -> rusqlite::Result<Game> {
         publisher: row.get(10)?,
         genres: serde_json::from_str(&row.get::<_, String>(11)?).unwrap(),
         favorite: row.get::<_, i64>(12)? != 0,
+        screenshot_path: row.get::<_, Option<String>>(13)?.map(PathBuf::from),
     })
 }
 

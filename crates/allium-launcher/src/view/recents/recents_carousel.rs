@@ -1,11 +1,12 @@
-use std::collections::VecDeque;
+use std::borrow::Cow;
+use std::collections::{HashMap, VecDeque};
 use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::{Command, Value};
-use common::constants::{ALLIUM_SCREENSHOTS_DIR, RECENT_GAMES_LIMIT};
+use common::constants::RECENT_GAMES_LIMIT;
 use common::database::Database;
 use common::display::Display;
 use common::geom::{Alignment, Point, Rect};
@@ -36,6 +37,7 @@ pub struct RecentsCarousel {
     rect: Rect,
     res: Resources,
     games: Vec<Game>,
+    screenshot_paths: Vec<Option<PathBuf>>,
     selected: usize,
     screenshot: Image,
     game_name: Label<String>,
@@ -48,12 +50,16 @@ impl RecentsCarousel {
     pub fn new(rect: Rect, res: Resources, state: RecentsCarouselState) -> Result<Self> {
         let Rect { x, y, w, h } = rect;
 
-        let games = Self::load_games(&res)?;
+        let (games, screenshot_paths) = Self::load_games(&res)?;
         let selected = state.selected.min(games.len().saturating_sub(1));
 
         let styles = res.get::<Stylesheet>();
-
-        let screenshot_height = h - 100;
+        let y_margin = 8;
+        let x_margin = 12;
+        let ui_font_size = styles.ui_font.size as i32;
+        let bottom_area_height = (y_margin * 3) + (ui_font_size * 2);
+        let screenshot_height = h.saturating_sub(bottom_area_height as u32);
+        
         let mut screenshot = Image::empty(
             Rect::new(x, y, w, screenshot_height),
             ImageMode::Contain,
@@ -61,14 +67,20 @@ impl RecentsCarousel {
         screenshot.set_alignment(Alignment::Center);
 
         let game_name = Label::new(
-            Point::new(x + w as i32 / 2, y + screenshot_height as i32 + 20),
+            Point::new(
+                x + w as i32 / 2,
+                y + screenshot_height as i32 + y_margin,
+            ),
             String::new(),
             Alignment::Center,
             None,
         );
 
         let counter_label = Label::new(
-            Point::new(x + w as i32 - 12, y + screenshot_height as i32 + 20),
+            Point::new(
+                x + w as i32 - x_margin,
+                y + screenshot_height as i32 + y_margin,
+            ),
             String::new(),
             Alignment::Right,
             None,
@@ -80,6 +92,7 @@ impl RecentsCarousel {
             rect,
             res,
             games,
+            screenshot_paths,
             selected,
             screenshot,
             game_name,
@@ -98,41 +111,45 @@ impl RecentsCarousel {
         Self::new(rect, res, state)
     }
 
-    fn load_games(res: &Resources) -> Result<Vec<Game>> {
+    fn load_games(res: &Resources) -> Result<(Vec<Game>, Vec<Option<PathBuf>>)> {
         let database = res.get::<Database>();
-        let games = database.select_last_played(RECENT_GAMES_LIMIT)?;
+        let db_games = database.select_last_played(RECENT_GAMES_LIMIT)?;
 
-        Ok(games
-            .into_iter()
-            .map(|game| {
-                let extension = game
-                    .path
-                    .extension()
-                    .and_then(|e| e.to_str())
-                    .unwrap_or_default()
-                    .to_owned();
-                
-                let image = crate::entry::lazy_image::LazyImage::from_path(
-                    &game.path,
-                    game.image.clone(),
-                );
-                
-                Game {
-                    name: game.name.clone(),
-                    full_name: game.name,
-                    path: game.path,
-                    image,
-                    extension,
-                    core: game.core,
-                    rating: game.rating,
-                    release_date: game.release_date,
-                    developer: game.developer,
-                    publisher: game.publisher,
-                    genres: game.genres,
-                    favorite: game.favorite,
-                }
-            })
-            .collect())
+        let mut games = Vec::new();
+        let mut screenshot_paths = Vec::new();
+
+        for game in db_games {
+            let extension = game
+                .path
+                .extension()
+                .and_then(|e| e.to_str())
+                .unwrap_or_default()
+                .to_owned();
+            
+            let image = crate::entry::lazy_image::LazyImage::from_path(
+                &game.path,
+                game.image.clone(),
+            );
+            
+            screenshot_paths.push(game.screenshot_path.clone());
+            
+            games.push(Game {
+                name: game.name.clone(),
+                full_name: game.name,
+                path: game.path,
+                image,
+                extension,
+                core: game.core,
+                rating: game.rating,
+                release_date: game.release_date,
+                developer: game.developer,
+                publisher: game.publisher,
+                genres: game.genres,
+                favorite: game.favorite,
+            });
+        }
+
+        Ok((games, screenshot_paths))
     }
 
     fn update_current_game(&mut self) -> Result<()> {
@@ -144,17 +161,17 @@ impl RecentsCarousel {
         }
 
         let game = &self.games[self.selected];
-
-        let screenshot_path = if self.selected == 0 {
-            Self::find_screenshot_for_game_with_retry(&game.path)
-        } else {
-            Self::find_screenshot_for_game(&game.path)
-        };
+        let screenshot_path = self.screenshot_paths.get(self.selected).and_then(|p| p.clone());
         
         self.screenshot.set_path(screenshot_path);
         self.game_name.set_text(game.name.clone());
-        self.counter_label
-            .set_text(format!("{}/{}", self.selected + 1, self.games.len()));
+        
+        let locale = self.res.get::<Locale>();
+        let mut args = HashMap::new();
+        args.insert(Cow::from("current"), (self.selected + 1).into());
+        args.insert(Cow::from("total"), self.games.len().into());
+        let counter_text = locale.ta("recents-counter", &args);
+        self.counter_label.set_text(counter_text);
 
         self.dirty = true;
         Ok(())
@@ -183,70 +200,8 @@ impl RecentsCarousel {
         Ok(())
     }
 
-    fn find_screenshot_for_game_with_retry(game_path: &PathBuf) -> Option<PathBuf> {
-        use std::thread;
-        use std::time::Duration;
-        
-        for attempt in 0..5 {
-            if attempt > 0 {
-                let delay_ms = attempt * 50;
-                thread::sleep(Duration::from_millis(delay_ms as u64));
-            }
-            
-            if let Some(screenshot) = Self::find_screenshot_for_game(game_path) {
-                return Some(screenshot);
-            }
-        }
-        
-        None
-    }
-
-    fn find_screenshot_for_game(game_path: &PathBuf) -> Option<PathBuf> {
-        use std::fs;
-        use std::io::{BufRead, BufReader};
-        
-        let manifest_path = ALLIUM_SCREENSHOTS_DIR.join("manifest.txt");
-        
-        if let Ok(file) = fs::File::open(&manifest_path) {
-            let reader = BufReader::new(file);
-            let mut matching_entries: Vec<(u64, PathBuf)> = Vec::new();
-            
-            let game_path_str = game_path.to_string_lossy();
-            
-            for line in reader.lines().filter_map(|l| l.ok()) {
-                let parts: Vec<&str> = line.split('|').collect();
-                if parts.len() >= 3 {
-                    if let Ok(timestamp) = parts[0].parse::<u64>() {
-                        let filename = parts[1];
-                        let manifest_game_path = parts[2].trim();
-                        
-                        if manifest_game_path == game_path_str {
-                            let screenshot_path = ALLIUM_SCREENSHOTS_DIR.join(filename);
-                            if screenshot_path.exists() {
-                                matching_entries.push((timestamp, screenshot_path));
-                            }
-                        }
-                    }
-                }
-            }
-            
-            matching_entries.sort_by(|a, b| b.0.cmp(&a.0));
-            return matching_entries.first().map(|(_, path)| path.clone());
-        }
-        
-        None
-    }
-
     pub fn save(&self) -> RecentsCarouselState {
         RecentsCarouselState { selected: 0 }
-    }
-
-    pub fn reset_selection(&mut self) -> Result<()> {
-        if self.selected != 0 {
-            self.selected = 0;
-            self.update_current_game()?;
-        }
-        Ok(())
     }
 
     fn navigate_up(&mut self) -> Result<()> {
@@ -339,7 +294,6 @@ impl View for RecentsCarousel {
     }
 
     fn set_should_draw(&mut self) {
-        let _ = self.reset_selection();
         self.dirty = true;
         self.screenshot.set_should_draw();
         self.game_name.set_should_draw();

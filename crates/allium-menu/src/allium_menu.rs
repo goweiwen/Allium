@@ -131,24 +131,15 @@ impl AlliumMenu<DefaultPlatform> {
                     let base32 = encode(base32::Alphabet::Crockford, &hash);
                     let file_name = format!("{}.png", base32);
                     
-                    use std::time::{SystemTime, UNIX_EPOCH};
-                    let ts = SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .map(|d| d.as_secs())
-                        .unwrap_or_default();
-                    if let Ok(mut f) = std::fs::OpenOptions::new()
-                        .create(true)
-                        .append(true)
-                        .open(ALLIUM_SCREENSHOTS_DIR.join("manifest.txt"))
-                    {
-                        use std::io::Write;
-                        writeln!(f, "{}|{}|{}", ts, file_name, path).ok();
-                    }
+                    let screenshot_path = ALLIUM_SCREENSHOTS_DIR.join(&file_name);
+                    info!("saving screenshot to {:?}", screenshot_path);
                     
-                    let path = ALLIUM_SCREENSHOTS_DIR.join(file_name);
-                    info!("saving screenshot to {:?}", path);
+                    let database = self.res.get::<Database>();
+                    let game_path = std::path::Path::new(&path);
+                    database.update_screenshot_path(game_path, Some(&screenshot_path)).ok();
+                    
                     std::process::Command::new("screenshot")
-                        .arg(path)
+                        .arg(screenshot_path)
                         .arg(format!("--width={}", SAVE_STATE_IMAGE_WIDTH))
                         .arg("--crop")
                         .spawn()?;

@@ -431,7 +431,7 @@ impl Default for Stylesheet {
             enable_box_art: true,
             show_battery_level: false,
             show_clock: true,
-            use_recents_carousel: true,
+            use_recents_carousel: false,
             foreground_color: Self::default_foreground_color(),
             background_color: Self::default_background_color(),
             highlight_color: Self::default_highlight_color(),
