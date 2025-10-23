@@ -131,6 +131,8 @@ impl AlliumMenu<DefaultPlatform> {
                     let base32 = encode(base32::Alphabet::Crockford, &hash);
                     let file_name = format!("{}.png", base32);
                     
+                    std::fs::create_dir_all(&*ALLIUM_SCREENSHOTS_DIR).ok();
+                    
                     let screenshot_path = ALLIUM_SCREENSHOTS_DIR.join(&file_name);
                     info!("saving screenshot to {:?}", screenshot_path);
                     
