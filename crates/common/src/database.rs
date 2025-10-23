@@ -340,7 +340,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
 
         let conn = self.conn.as_ref().unwrap();
 
-        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core, rating, release_date, games.developer, games.publisher, genres, favorite FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts MATCH ? LIMIT ?")?;
+        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core, rating, release_date, games.developer, games.publisher, genres, favorite, screenshot_path FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts MATCH ? LIMIT ?")?;
 
         let query =
             format!("name:\"{query}\" * OR developer:\"{query}\" * OR publisher:\"{query}\" *");
@@ -356,7 +356,7 @@ ON CONFLICT(path) DO UPDATE SET name = ?, image = ?, core = ?, rating = ?, relea
         trace!("select_games_in_directory({:?})", path);
         let conn = self.conn.as_ref().unwrap();
 
-        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core, rating, release_date, games.developer, games.publisher, genres, favorite FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.path LIKE ? AND games_fts.path NOT LIKE ?")?;
+        let mut stmt = conn.prepare("SELECT games.name, games.path, image, play_count, play_time, last_played, core, rating, release_date, games.developer, games.publisher, genres, favorite, screenshot_path FROM games JOIN games_fts ON games.id = games_fts.rowid WHERE games_fts.path LIKE ? AND games_fts.path NOT LIKE ?")?;
 
         let results = stmt
             .query_map(

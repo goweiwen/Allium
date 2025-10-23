@@ -1,5 +1,4 @@
-use std::borrow::Cow;
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use std::time::Duration;
 
 use anyhow::Result;
@@ -13,7 +12,7 @@ use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::{Image, ImageMode, Keyboard, Label, View};
+use common::view::{ButtonHint, ButtonIcon, Image, ImageMode, Keyboard, Label, Row, View};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
@@ -39,7 +38,7 @@ pub struct RecentsCarousel {
     selected: usize,
     screenshot: Image,
     game_name: Label<String>,
-    counter_label: Label<String>,
+    button_hints: Row<ButtonHint<String>>,
     keyboard: Option<Keyboard>,
     dirty: bool,
 }
@@ -56,27 +55,41 @@ impl RecentsCarousel {
         let x_margin = 12;
         let ui_font_size = styles.ui_font.size as i32;
         let bottom_area_height = (y_margin * 3) + (ui_font_size * 2);
-        let screenshot_height = h.saturating_sub(bottom_area_height as u32);
+        let screenshot_height = h.saturating_sub((bottom_area_height + y_margin) as u32);
 
-        let mut screenshot =
-            Image::empty(Rect::new(x, y, w, screenshot_height), ImageMode::Contain);
+        let mut screenshot = Image::empty(
+            Rect::new(x, y + y_margin, w, screenshot_height),
+            ImageMode::Contain,
+        );
         screenshot.set_alignment(Alignment::Center);
 
         let game_name = Label::new(
-            Point::new(x + w as i32 / 2, y + screenshot_height as i32 + y_margin),
-            String::new(),
-            Alignment::Center,
-            None,
-        );
-
-        let counter_label = Label::new(
             Point::new(
-                x + w as i32 - x_margin,
-                y + screenshot_height as i32 + y_margin,
+                x + w as i32 / 2,
+                y + y_margin + screenshot_height as i32 + y_margin,
             ),
             String::new(),
-            Alignment::Right,
-            None,
+            Alignment::Center,
+            Some(w - (x_margin * 2) as u32),
+        );
+
+        let button_hints = Row::new(
+            Point::new(
+                x + 12,
+                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+            ),
+            {
+                let locale = res.get::<Locale>();
+                vec![ButtonHint::new(
+                    res.clone(),
+                    Point::zero(),
+                    Key::X,
+                    locale.t("sort-search"),
+                    Alignment::Left,
+                )]
+            },
+            Alignment::Left,
+            12,
         );
 
         drop(styles);
@@ -88,11 +101,12 @@ impl RecentsCarousel {
             selected,
             screenshot,
             game_name,
-            counter_label,
+            button_hints,
             keyboard: None,
             dirty: true,
         };
 
+        carousel.game_name.scroll(true);
         carousel.update_current_game()?;
 
         Ok(carousel)
@@ -148,7 +162,6 @@ impl RecentsCarousel {
         if self.games.is_empty() {
             self.screenshot.set_path(None);
             self.game_name.set_text(String::new());
-            self.counter_label.set_text(String::new());
             return Ok(());
         }
 
@@ -157,13 +170,6 @@ impl RecentsCarousel {
         self.screenshot.set_path(game.screenshot_path.clone());
         self.screenshot.set_should_draw();
         self.game_name.set_text(game.name.clone());
-
-        let locale = self.res.get::<Locale>();
-        let mut args = HashMap::new();
-        args.insert(Cow::from("current"), (self.selected + 1).into());
-        args.insert(Cow::from("total"), self.games.len().into());
-        let counter_text = locale.ta("recents-counter", &args);
-        self.counter_label.set_text(counter_text);
 
         self.dirty = true;
         Ok(())
@@ -261,10 +267,10 @@ impl View for RecentsCarousel {
             if self.game_name.should_draw() {
                 drawn |= self.game_name.draw(display, styles)?;
             }
+        }
 
-            if self.counter_label.should_draw() {
-                drawn |= self.counter_label.draw(display, styles)?;
-            }
+        if self.button_hints.should_draw() {
+            drawn |= self.button_hints.draw(display, styles)?;
         }
 
         if let Some(keyboard) = self.keyboard.as_mut() {
@@ -281,7 +287,7 @@ impl View for RecentsCarousel {
         self.dirty
             || self.screenshot.should_draw()
             || self.game_name.should_draw()
-            || self.counter_label.should_draw()
+            || self.button_hints.should_draw()
             || self.keyboard.as_ref().is_some_and(|k| k.should_draw())
     }
 
@@ -289,7 +295,7 @@ impl View for RecentsCarousel {
         self.dirty = true;
         self.screenshot.set_should_draw();
         self.game_name.set_should_draw();
-        self.counter_label.set_should_draw();
+        self.button_hints.set_should_draw();
         if let Some(keyboard) = self.keyboard.as_mut() {
             keyboard.set_should_draw();
         }
