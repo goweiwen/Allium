@@ -104,7 +104,7 @@ Allium comes with a simulator that can be used for development. The simulator re
 On Mac, quick set up with:
 
 ```
-.vscode/setup/mac.sh
+./scripts/setup-mac.sh
 ```
 
 ### Architecture
