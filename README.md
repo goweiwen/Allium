@@ -101,6 +101,12 @@ Allium comes with a simulator that can be used for development. The simulator re
 2. [SDL2](https://github.com/Rust-SDL2/rust-sdl2#sdl20-development-libraries) (optional, if simulator is not used)
 3. [cross](https://github.com/cross-rs/cross): `cargo install cross --git https://github.com/cross-rs/cross` (optional, for cross-compilation)
 
+On Mac, quick set up with:
+
+```
+.vscode/setup/mac.sh
+```
+
 ### Architecture
 Allium is split into several binaries:
 - `alliumd` (daemon that handles launcher/game/menu launching, vol/brightness hotkeys, poweroff)

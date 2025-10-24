@@ -16,6 +16,12 @@ fi
 
 source "$HOME/.cargo/env"
 
-cargo install cross
+rustup target add arm-unknown-linux-gnueabihf
 
+cargo install cross --git https://github.com/cross-rs/cross
+
+git submodule update --init --recursive
+
+echo "----------------------------"
 echo "Setup complete."
+echo "----------------------------"
