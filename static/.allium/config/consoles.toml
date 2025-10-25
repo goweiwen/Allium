@@ -1,4 +1,10 @@
 [[consoles]]
+name = "Game Tank"
+cores = ["libgametank"]
+patterns = ["GAMETANK"]
+extensions = ["gtr"]
+
+[[consoles]]
 name = "Amstrad CPC"
 cores = ["crocods"]
 patterns = ["CPC"]

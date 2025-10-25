@@ -30,6 +30,11 @@ name = "blueMSX"
 retroarch = "bsnes"
 name = "bsnes"
 
+[cores.libgametank]
+retroarch = "libgametank"
+name = "Game Tank"
+
+
 [cores.chailove]
 retroarch = "chailove"
 name = "ChaiLove"
