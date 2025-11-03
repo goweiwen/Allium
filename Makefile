@@ -92,6 +92,7 @@ $(DIST_DIR)/.allium/bin/syncthing:
 	wget "https://github.com/syncthing/syncthing/releases/download/v2.0.10/syncthing-linux-arm-v2.0.10.tar.gz" -O syncthing.tar.gz
 	tar xf syncthing.tar.gz
 	mv "syncthing-linux-arm-v2.0.10/syncthing" "$(DIST_DIR)/.allium/bin/syncthing"
+	strip -s "$(DIST_DIR)/.allium/bin/syncthing" || true
 
 DRASTIC_URL := https://github.com/steward-fu/nds/releases/download/v1.8/drastic-v1.8_miyoo.zip
 $(DIST_DIR)/.allium/cores/drastic/launch.sh:
