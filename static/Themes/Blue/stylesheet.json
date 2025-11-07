@@ -1,0 +1,56 @@
+{  "wallpaper": null,
+  "ui": {
+  "margin_x": 12,
+  "margin_y": 8,
+  "list_margin": 4,
+  "padding_x": 12,
+  "padding_y": 4,
+  "ui_font": {
+    "path": "Roboto.ttf",
+    "size": 27
+  },
+  "text_color": "#e9ecef",
+  "text_stroke_color": "#00000000",
+  "background_color": "#1b263b",
+  "highlight_color": "#3a86ff",
+  "highlight_text_color": "#ffffff",
+  "highlight_text_stroke_color": "#00000000",
+  "disabled_color": "#6c757d",
+  "tab_font_size": 0.95,
+  "tab_color": "#4b5d75",
+  "tab_stroke_color": "#00000000",
+  "tab_selected_color": "#3a86ff",
+  "tab_selected_stroke_color": "#00000000",
+  "stroke_width": 0
+  },
+  "status_bar": {
+  "show_battery_level": true,
+  "show_clock": true,
+  "font_size": 1.0,
+  "text_color": "#ffffff",
+  "text_stroke_color": "#00000000"
+  },
+  "button_hints": {
+  "button_hint_font_size": 0.95,
+  "button_a_color": "#eb1a1d",
+  "button_b_color": "#fece15",
+  "button_x_color": "#0749b4",
+  "button_y_color": "#008d45",
+  "button_bg_color": "#585b70",
+  "button_text_color": "#ffffff",
+  "text_color": "#ffffff"
+  },
+  "recents": {
+  "use_recents_carousel": false
+  },
+  "games": {
+  "boxart_width": 250
+  },
+  "menu": {
+  "background_color": "#000000",
+  "guide_font": {
+    "path": "Roboto.ttf",
+    "size": 20
+  }
+  }
+}
