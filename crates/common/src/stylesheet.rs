@@ -344,6 +344,8 @@ impl Stylesheet {
 
         #[cfg(feature = "simulator")]
         {
+            use std::str::FromStr;
+
             // Write default missing fields to original stylesheet.json
             let file = File::create(
                 PathBuf::from("/home/weiwen/dev/github/goweiwen/Allium/static/Themes")
