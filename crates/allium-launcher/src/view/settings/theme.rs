@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 use std::path::PathBuf;
+use std::time::Instant;
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -14,6 +15,7 @@ use common::view::{
     ButtonHint, ButtonIcon, ColorPicker, Number, Percentage, Row, Select, SettingsList, Toggle,
     View,
 };
+use log::error;
 use tokio::sync::mpsc::Sender;
 
 use crate::view::settings::{ChildState, SettingsChild};
@@ -21,9 +23,12 @@ use crate::view::settings::{ChildState, SettingsChild};
 pub struct Theme {
     rect: Rect,
     stylesheet: Stylesheet,
+    themes: Vec<String>,
     fonts: Vec<PathBuf>,
     list: SettingsList,
-    button_hints: Row<ButtonHint<String>>,
+    left_button_hints: Row<ButtonHint<String>>,
+    right_button_hints: Row<ButtonHint<String>>,
+    restore_pressed: Option<Instant>,
 }
 
 impl Theme {
@@ -34,6 +39,13 @@ impl Theme {
 
         let locale = res.get::<Locale>();
         let styles = res.get::<Stylesheet>();
+
+        let themes = Stylesheet::available_themes().unwrap_or_default();
+        let current_theme = common::stylesheet::Theme::load();
+        let current_theme_index = themes
+            .iter()
+            .position(|t| t == &current_theme.0)
+            .unwrap_or(0);
 
         let fonts = StylesheetFont::available_fonts().unwrap_or_default();
         let font_names: Vec<String> = fonts
@@ -54,7 +66,7 @@ impl Theme {
                 h - 8 - ButtonIcon::diameter(&styles) - 8,
             ),
             vec![
-                locale.t("settings-theme-dark-mode"),
+                locale.t("settings-theme-theme"),
                 locale.t("settings-theme-show-battery-level"),
                 locale.t("settings-theme-show-clock"),
                 locale.t("settings-theme-use-recents-carousel"),
@@ -78,9 +90,10 @@ impl Theme {
                 locale.t("settings-theme-button-y-color"),
             ],
             vec![
-                Box::new(Toggle::new(
+                Box::new(Select::new(
                     Point::zero(),
-                    stylesheet.background_color.is_dark(),
+                    current_theme_index,
+                    themes.clone(),
                     Alignment::Right,
                 )),
                 Box::new(Toggle::new(
@@ -117,7 +130,7 @@ impl Theme {
                     Point::zero(),
                     fonts
                         .iter()
-                        .position(|p| *p == stylesheet.ui_font.path)
+                        .position(|p| p.file_name() == stylesheet.ui_font.path.file_name())
                         .unwrap_or_default(),
                     font_names.clone(),
                     Alignment::Right,
@@ -125,7 +138,7 @@ impl Theme {
                 Box::new(Number::new(
                     Point::zero(),
                     stylesheet.ui_font.size as i32,
-                    20,
+                    10,
                     60,
                     5,
                     i32::to_string,
@@ -135,7 +148,7 @@ impl Theme {
                     Point::zero(),
                     fonts
                         .iter()
-                        .position(|p| *p == stylesheet.guide_font.path)
+                        .position(|p| p.file_name() == stylesheet.ui_font.path.file_name())
                         .unwrap_or_default(),
                     font_names,
                     Alignment::Right,
@@ -143,7 +156,7 @@ impl Theme {
                 Box::new(Number::new(
                     Point::zero(),
                     stylesheet.guide_font.size as i32,
-                    20,
+                    10,
                     60,
                     5,
                     i32::to_string,
@@ -227,7 +240,23 @@ impl Theme {
             list.select(state.selected);
         }
 
-        let button_hints = Row::new(
+        let left_button_hints = Row::new(
+            Point::new(
+                rect.x + 12,
+                rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+            ),
+            vec![ButtonHint::new(
+                res.clone(),
+                Point::zero(),
+                Key::X,
+                locale.t("button-restore-defaults"),
+                Alignment::Left,
+            )],
+            Alignment::Left,
+            12,
+        );
+
+        let right_button_hints = Row::new(
             Point::new(
                 rect.x + rect.w as i32 - 12,
                 rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
@@ -255,9 +284,12 @@ impl Theme {
         Self {
             rect,
             stylesheet,
+            themes,
             fonts,
             list,
-            button_hints,
+            left_button_hints,
+            right_button_hints,
+            restore_pressed: None,
         }
     }
 }
@@ -275,7 +307,11 @@ impl View for Theme {
             drawn = true;
         }
 
-        if self.button_hints.should_draw() && self.button_hints.draw(display, styles)? {
+        if self.left_button_hints.should_draw() && self.left_button_hints.draw(display, styles)? {
+            drawn = true;
+        }
+
+        if self.right_button_hints.should_draw() && self.right_button_hints.draw(display, styles)? {
             drawn = true;
         }
 
@@ -283,12 +319,15 @@ impl View for Theme {
     }
 
     fn should_draw(&self) -> bool {
-        self.list.should_draw() || self.button_hints.should_draw()
+        self.list.should_draw()
+            || self.left_button_hints.should_draw()
+            || self.right_button_hints.should_draw()
     }
 
     fn set_should_draw(&mut self) {
         self.list.set_should_draw();
-        self.button_hints.set_should_draw();
+        self.left_button_hints.set_should_draw();
+        self.right_button_hints.set_should_draw();
     }
 
     async fn handle_key_event(
@@ -306,79 +345,21 @@ impl View for Theme {
                 if let Command::ValueChanged(i, val) = command {
                     match i {
                         0 => {
-                            self.stylesheet.toggle_dark_mode();
-                            self.list.set_right(
-                                11,
-                                Box::new(ColorPicker::new(
-                                    Point::zero(),
-                                    self.stylesheet.foreground_color,
-                                    Alignment::Right,
-                                )),
-                            );
-                            self.list.set_right(
-                                12,
-                                Box::new(ColorPicker::new(
-                                    Point::zero(),
-                                    self.stylesheet.background_color,
-                                    Alignment::Right,
-                                )),
-                            );
-                            self.list.set_right(
-                                13,
-                                Box::new(ColorPicker::new(
-                                    Point::zero(),
-                                    self.stylesheet.disabled_color,
-                                    Alignment::Right,
-                                )),
-                            );
-                            self.list.set_right(
-                                14,
-                                Box::new(ColorPicker::new(
-                                    Point::zero(),
-                                    self.stylesheet.tab_color,
-                                    Alignment::Right,
-                                )),
-                            );
-                            self.list.set_right(
-                                15,
-                                Box::new(ColorPicker::new(
-                                    Point::zero(),
-                                    self.stylesheet.tab_selected_color,
-                                    Alignment::Right,
-                                )),
-                            );
-                            self.list.set_right(
-                                16,
-                                Box::new(ColorPicker::new(
-                                    Point::zero(),
-                                    self.stylesheet.button_a_color,
-                                    Alignment::Right,
-                                )),
-                            );
-                            self.list.set_right(
-                                17,
-                                Box::new(ColorPicker::new(
-                                    Point::zero(),
-                                    self.stylesheet.button_b_color,
-                                    Alignment::Right,
-                                )),
-                            );
-                            self.list.set_right(
-                                18,
-                                Box::new(ColorPicker::new(
-                                    Point::zero(),
-                                    self.stylesheet.button_x_color,
-                                    Alignment::Right,
-                                )),
-                            );
-                            self.list.set_right(
-                                19,
-                                Box::new(ColorPicker::new(
-                                    Point::zero(),
-                                    self.stylesheet.button_y_color,
-                                    Alignment::Right,
-                                )),
-                            );
+                            let theme_index = val.as_int().unwrap() as usize;
+                            if theme_index < self.themes.len() {
+                                let theme_name = &self.themes[theme_index];
+                                let theme = common::stylesheet::Theme(theme_name.clone());
+                                if let Err(e) = theme.save() {
+                                    error!("failed to save theme: {}", e);
+                                }
+                                self.stylesheet = Stylesheet::load_from_theme(&theme)?;
+                                commands
+                                    .send(Command::ReloadStylesheet(Box::new(
+                                        self.stylesheet.clone(),
+                                    )))
+                                    .await?;
+                                return Ok(true);
+                            }
                         }
                         1 => self.stylesheet.toggle_battery_percentage(),
                         2 => self.stylesheet.toggle_clock(),
@@ -387,17 +368,21 @@ impl View for Theme {
                                 !self.stylesheet.use_recents_carousel
                         }
                         4 => self.stylesheet.boxart_width = val.as_int().unwrap() as u32,
-                        5 => self
-                            .stylesheet
-                            .ui_font
-                            .path
-                            .clone_from(&self.fonts[val.as_int().unwrap() as usize]),
+                        5 => {
+                            self.stylesheet
+                                .ui_font
+                                .path
+                                .clone_from(&self.fonts[val.as_int().unwrap() as usize]);
+                            self.stylesheet.load_fonts()?;
+                        }
                         6 => self.stylesheet.ui_font.size = val.as_int().unwrap() as u32,
-                        7 => self
-                            .stylesheet
-                            .guide_font
-                            .path
-                            .clone_from(&self.fonts[val.as_int().unwrap() as usize]),
+                        7 => {
+                            self.stylesheet
+                                .guide_font
+                                .path
+                                .clone_from(&self.fonts[val.as_int().unwrap() as usize]);
+                            self.stylesheet.load_fonts()?;
+                        }
                         8 => self.stylesheet.guide_font.size = val.as_int().unwrap() as u32,
                         9 => self.stylesheet.tab_font_size = val.as_int().unwrap() as f32 / 100.0,
                         10 => {
@@ -420,11 +405,12 @@ impl View for Theme {
                         21 => self.stylesheet.button_y_color = val.as_color().unwrap(),
                         _ => unreachable!("Invalid index"),
                     }
-
-                    commands
-                        .send(Command::SaveStylesheet(Box::new(self.stylesheet.clone())))
-                        .await?;
                 }
+
+                self.stylesheet.save()?;
+                commands
+                    .send(Command::ReloadStylesheet(Box::new(self.stylesheet.clone())))
+                    .await?;
             }
             return Ok(true);
         }
@@ -434,16 +420,60 @@ impl View for Theme {
                 bubble.push_back(Command::CloseView);
                 Ok(true)
             }
+            KeyEvent::Pressed(Key::X) => {
+                if let Some(pressed_at) = self.restore_pressed {
+                    // Check if within 3 seconds
+                    if pressed_at.elapsed().as_secs() < 3 {
+                        // Second press within window - dismiss toast and restore defaults
+                        commands.send(Command::DismissToast).await?;
+                        self.restore_pressed = None;
+                        self.stylesheet.restore_defaults()?;
+                        self.stylesheet.save()?;
+                        commands
+                            .send(Command::ReloadStylesheet(Box::new(self.stylesheet.clone())))
+                            .await?;
+                    } else {
+                        // Expired, treat as first press
+                        self.restore_pressed = Some(Instant::now());
+                        commands
+                            .send(Command::Toast(
+                                "Press X again to restore defaults\nAll changes will be lost"
+                                    .to_string(),
+                                Some(std::time::Duration::from_secs(3)),
+                            ))
+                            .await?;
+                    }
+                } else {
+                    // First press - show confirmation toast
+                    self.restore_pressed = Some(Instant::now());
+                    commands
+                        .send(Command::Toast(
+                            "Press X again to restore defaults\nAll changes will be lost"
+                                .to_string(),
+                            Some(std::time::Duration::from_secs(3)),
+                        ))
+                        .await?;
+                }
+                Ok(true)
+            }
             _ => Ok(false),
         }
     }
 
     fn children(&self) -> Vec<&dyn View> {
-        vec![&self.list, &self.button_hints]
+        vec![
+            &self.list,
+            &self.left_button_hints,
+            &self.right_button_hints,
+        ]
     }
 
     fn children_mut(&mut self) -> Vec<&mut dyn View> {
-        vec![&mut self.list, &mut self.button_hints]
+        vec![
+            &mut self.list,
+            &mut self.left_button_hints,
+            &mut self.right_button_hints,
+        ]
     }
 
     fn bounding_box(&mut self, _styles: &Stylesheet) -> Rect {

@@ -62,6 +62,8 @@ settings-display-blue = Blue
 settings-display-screen-resolution = Screen Resolution
 
 settings-theme = Theme
+settings-theme-theme = Theme
+settings-theme-restore-defaults = Restore Defaults
 settings-theme-dark-mode = Dark Mode
 settings-theme-show-battery-level = Battery Percentage
 settings-theme-show-clock = Clock
@@ -149,6 +151,7 @@ button-select = Select
 button-launch = Launch
 button-sort = Sort
 button-edit-search = Edit Search
+button-restore-defaults = Restore Defaults
 
 keyboard-button-backspace = Backspace
 keyboard-button-shift = Shift

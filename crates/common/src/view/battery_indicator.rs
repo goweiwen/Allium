@@ -280,7 +280,7 @@ where
         let left = self.point.x - label_w - battery_w;
         let top = self.point.y;
         let right = self.point.x;
-        let bottom = self.point.y + (styles.status_bar_font_size() as f32 * 3.0 / 5.0) as i32;
+        let bottom = self.point.y + (styles.status_bar_font_size() * 3.0 / 5.0) as i32;
 
         Rect::new(left, top, (right - left) as u32, (bottom - top) as u32)
     }

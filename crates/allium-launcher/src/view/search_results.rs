@@ -14,7 +14,6 @@ use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::{ButtonHint, ButtonIcon, Label, Row, SearchView, View};
 use embedded_graphics::prelude::*;
-use embedded_graphics::primitives::Rectangle;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 

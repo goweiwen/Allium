@@ -5,7 +5,7 @@ use std::time::Instant;
 
 use anyhow::Result;
 use common::command::Command;
-use common::constants::{ALLIUM_GAMES_DIR, ALLIUM_SD_ROOT};
+use common::constants::{ALLIUM_GAMES_DIR, ALLIUM_SD_ROOT, ALLIUM_THEMES_DIR};
 use common::display::color::Color;
 use common::geom;
 use common::locale::{Locale, LocaleSettings};
@@ -14,7 +14,7 @@ use common::view::View;
 use embedded_graphics::image::ImageRaw;
 use embedded_graphics::prelude::*;
 use enum_map::EnumMap;
-use log::{error, info, trace, warn};
+use log::{debug, error, info, trace, warn};
 
 use common::database::Database;
 use common::display::Display;
@@ -68,7 +68,7 @@ impl AlliumLauncher<DefaultPlatform> {
             let styles = self.res.get::<Stylesheet>();
 
             if let Some(wallpaper) = styles.wallpaper.as_deref() {
-                let path = ALLIUM_SD_ROOT.join(wallpaper);
+                let path = resolve_wallpaper_path(wallpaper);
                 if let Err(e) = set_wallpaper(&mut self.display, &path) {
                     error!("Failed to set wallpaper: {}", e);
                 }
@@ -190,26 +190,17 @@ impl AlliumLauncher<DefaultPlatform> {
                     process::exit(0);
                 }
             }
-            Command::SaveStylesheet(mut styles) => {
-                trace!("saving stylesheet");
-                styles.load_fonts()?;
-                styles.save()?;
+            Command::ReloadStylesheet(styles) => {
+                debug!("reloading stylesheet");
 
-                {
-                    let old_styles = self.res.get::<Stylesheet>();
-                    if old_styles.wallpaper != styles.wallpaper
-                        || old_styles.background_color != styles.background_color
-                    {
-                        if let Some(wallpaper) = styles.wallpaper.as_deref() {
-                            let path = ALLIUM_SD_ROOT.join(wallpaper);
-                            if let Err(e) = set_wallpaper(&mut self.display, &path) {
-                                error!("Failed to set wallpaper: {}", e);
-                            }
-                        }
-                        self.display.clear(styles.background_color)?;
-                        self.display.save()?;
+                if let Some(wallpaper) = styles.wallpaper.as_deref() {
+                    let path = resolve_wallpaper_path(wallpaper);
+                    if let Err(e) = set_wallpaper(&mut self.display, &path) {
+                        error!("Failed to set wallpaper: {}", e);
                     }
                 }
+                self.display.clear(styles.background_color)?;
+                self.display.save()?;
 
                 self.res.insert(*styles);
                 self.view.save()?;
@@ -220,12 +211,12 @@ impl AlliumLauncher<DefaultPlatform> {
                 )?;
             }
             Command::SaveDisplaySettings(mut settings) => {
-                trace!("saving display settings");
+                debug!("saving display settings");
                 self.platform.set_display_settings(&mut settings)?;
                 settings.save()?;
             }
             Command::SaveLocaleSettings(settings) => {
-                trace!("saving locale settings");
+                debug!("saving locale settings");
                 settings.save()?;
                 self.res.insert(Locale::new(&settings.lang));
                 self.view.save()?;
@@ -241,23 +232,23 @@ impl AlliumLauncher<DefaultPlatform> {
                 self.view.set_should_draw();
             }
             Command::StartSearch => {
-                trace!("starting search");
+                debug!("starting search");
                 self.view.start_search();
             }
             Command::Search(query) => {
-                trace!("searching");
+                debug!("searching");
                 self.view.search(query)?;
             }
             Command::Toast(text, duration) => {
-                trace!("showing toast: {:?}", text);
+                debug!("showing toast: {:?}", text);
                 self.toast = Some(Toast::new(text, duration));
             }
             Command::ImageToast(image, text, duration) => {
-                trace!("showing image toast: {:?}", text);
+                debug!("showing image toast: {:?}", text);
                 self.toast = Some(Toast::with_image(image, text, duration));
             }
             Command::DismissToast => {
-                trace!("dismissing toast");
+                debug!("dismissing toast");
                 self.toast = None;
                 self.display.load(self.display.bounding_box().into())?;
                 self.view.set_should_draw();
@@ -334,6 +325,23 @@ impl AlliumLauncher<DefaultPlatform> {
         }
         Ok(())
     }
+}
+
+fn resolve_wallpaper_path(wallpaper: &Path) -> std::path::PathBuf {
+    // If wallpaper path is absolute, use it as-is
+    if wallpaper.is_absolute() {
+        return wallpaper.to_path_buf();
+    }
+
+    // Load the current theme and check if wallpaper exists in theme directory
+    let theme = common::stylesheet::Theme::load();
+    let theme_wallpaper = ALLIUM_THEMES_DIR.join(&theme.0).join(wallpaper);
+    if theme_wallpaper.exists() {
+        return theme_wallpaper;
+    }
+
+    // Fall back to SD root
+    ALLIUM_SD_ROOT.join(wallpaper)
 }
 
 fn set_wallpaper(display: &mut impl Display, path: &Path) -> Result<()> {

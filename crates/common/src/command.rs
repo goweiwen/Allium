@@ -10,7 +10,7 @@ use crate::{display::settings::DisplaySettings, stylesheet::Stylesheet};
 pub enum Command {
     Exit,
     Exec(std::process::Command),
-    SaveStylesheet(Box<Stylesheet>),
+    ReloadStylesheet(Box<Stylesheet>),
     SaveDisplaySettings(Box<DisplaySettings>),
     SaveLocaleSettings(LocaleSettings),
     CloseView,

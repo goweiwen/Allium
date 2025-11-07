@@ -6,7 +6,7 @@ use std::{
 
 use anyhow::Result;
 use chrono::{DateTime, Duration, Utc};
-use log::{debug, trace};
+use log::debug;
 use serde::{Deserialize, Serialize};
 
 use crate::constants::{ALLIUM_GAME_INFO, ALLIUM_GAMES_DIR, ALLIUM_SCRIPTS_DIR};
