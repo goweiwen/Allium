@@ -10,7 +10,7 @@ GLIBC_VERSION := 2.28
 -include local.mk
 
 .PHONY: all
-all: dist build package-build $(DIST_DIR)/RetroArch/retroarch $(DIST_DIR)/.allium/bin/dufs $(DIST_DIR)/.allium/bin/syncthing $(DIST_DIR)/.allium/cores/drastic/drastic migrations
+all: dist build package-build $(DIST_DIR)/RetroArch/retroarch $(DIST_DIR)/.allium/bin/dufs $(DIST_DIR)/.allium/bin/syncthing $(DIST_DIR)/.allium/cores/drastic/drastic migrations strip-all
 
 .PHONY: clean
 clean:
@@ -49,6 +49,9 @@ build: third-party/my283
 .PHONY: debug
 debug: third-party/my283
 	cargo zigbuild --target=$(TARGET_TRIPLE).$(GLIBC_VERSION) --features=miyoo --bin=alliumd --bin=allium-launcher --bin=allium-menu --bin=activity-tracker --bin=screenshot --bin=say --bin=show --bin=show-hotkeys --bin=myctl
+
+.PHONY: strip-all
+    find . -type f -exec file {}\; | awk -F ':' '/not stripped/ {print $1}' | while read f; do strip -s "$f"; done
 
 .PHONY: package-build
 package-build:
