@@ -25,7 +25,9 @@ impl Select {
     pub fn new(point: Point, value: usize, values: Vec<String>, alignment: Alignment) -> Self {
         let label = Label::new(
             Point::new(point.x, point.y),
-            values[value].clone(),
+            values
+                .get(value)
+                .map_or_else(|| "".to_owned(), String::to_owned),
             alignment,
             None,
         );

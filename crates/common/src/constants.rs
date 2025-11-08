@@ -65,6 +65,8 @@ pub const IMAGE_WIDTH: u32 = 250;
 pub const SELECTION_MARGIN: u32 = 8;
 pub const SAVE_STATE_IMAGE_WIDTH: u32 = 333;
 
+/// After the battery level drops below this threshold, the charging LED will blink at 0.5Hz.
+pub const BATTERY_WARNING_THRESHOLD: i32 = 15;
 /// After the battery level drops below this threshold, the device will shut down.
 pub const BATTERY_SHUTDOWN_THRESHOLD: i32 = 5;
 

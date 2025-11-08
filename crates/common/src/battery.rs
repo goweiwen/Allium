@@ -4,7 +4,11 @@ pub trait Battery: Send {
     fn update(&mut self) -> Result<()>;
     fn percentage(&self) -> i32;
     fn charging(&self) -> bool;
-    fn update_led(&mut self, _enabled: bool) {}
+    fn update_led(_enabled: bool)
+    where
+        Self: Sized,
+    {
+    }
 }
 
 impl Battery for Box<dyn Battery> {

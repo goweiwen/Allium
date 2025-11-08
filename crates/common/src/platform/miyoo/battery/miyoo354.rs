@@ -62,7 +62,8 @@ impl Battery for Miyoo354Battery {
         self.charging
     }
 
-    fn update_led(&mut self, enabled: bool) {
+    fn update_led(enabled: bool) {
+        info!("setting battery LED to {}", enabled);
         if !Path::new("/sys/class/gpio/gpio86").exists() {
             let _ = File::create("/sys/class/gpio/export").and_then(|mut f| f.write_all(b"86"));
         }

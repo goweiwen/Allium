@@ -337,7 +337,7 @@ impl Battery for SimulatorBattery {
         self.charging
     }
 
-    fn update_led(&mut self, enabled: bool) {
+    fn update_led(enabled: bool) {
         info!(
             "[Simulator] Charging LED: {}",
             if enabled { "ON" } else { "OFF" }

@@ -8,7 +8,8 @@ use chrono::{DateTime, Duration, Utc};
 use common::battery::Battery;
 use common::constants::{
     ALLIUM_GAME_INFO, ALLIUM_MENU, ALLIUM_SD_ROOT, ALLIUM_VERSION, ALLIUMD_STATE,
-    BATTERY_SHUTDOWN_THRESHOLD, BATTERY_UPDATE_INTERVAL, IDLE_TIMEOUT, LONG_PRESS_DURATION,
+    BATTERY_SHUTDOWN_THRESHOLD, BATTERY_UPDATE_INTERVAL, BATTERY_WARNING_THRESHOLD, IDLE_TIMEOUT,
+    LONG_PRESS_DURATION,
 };
 use common::display::settings::DisplaySettings;
 use common::locale::{Locale, LocaleSettings};
@@ -23,6 +24,7 @@ use tokio::process::{Child, Command};
 use common::database::Database;
 use common::game_info::GameInfo;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use tokio::task::JoinHandle;
 
 #[cfg(unix)]
 use {
@@ -50,8 +52,6 @@ pub struct AlliumD<P: Platform> {
     state: AlliumDState,
     locale: Locale,
     power_settings: PowerSettings,
-    led_enabled: bool,
-    last_led_toggle: Instant,
 }
 
 impl AlliumDState {
@@ -155,8 +155,6 @@ impl AlliumD<DefaultPlatform> {
             state,
             locale,
             power_settings,
-            led_enabled: false,
-            last_led_toggle: Instant::now(),
         })
     }
 
@@ -183,6 +181,8 @@ impl AlliumD<DefaultPlatform> {
                 self.handle_charging().await?;
             }
 
+            let mut battery_led_task = None;
+
             loop {
                 if let Some(menu) = self.menu.as_mut()
                     && menu.try_wait()?.is_some()
@@ -198,7 +198,30 @@ impl AlliumD<DefaultPlatform> {
                     if let Err(e) = battery.update() {
                         error!("failed to update battery: {}", e);
                     }
-                    self.update_charging_led(&mut battery);
+
+                    if battery.percentage() <= BATTERY_WARNING_THRESHOLD && !battery.charging() {
+                        if battery_led_task.is_none() {
+                            warn!(
+                                "battery is low ({}%), consider charging soon",
+                                battery.percentage()
+                            );
+
+                            battery_led_task = Some(tokio::spawn(async {
+                                loop {
+                                    <DefaultPlatform as Platform>::Battery::update_led(true);
+                                    tokio::time::sleep(std::time::Duration::from_millis(1750))
+                                        .await;
+                                    <DefaultPlatform as Platform>::Battery::update_led(false);
+                                    tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+                                }
+                            }));
+                        }
+                    } else if let Some(task) = battery_led_task.take() {
+                        info!("aborting battery LED blink task");
+                        task.abort();
+                        <DefaultPlatform as Platform>::Battery::update_led(false);
+                    }
+
                     if battery.percentage() <= BATTERY_SHUTDOWN_THRESHOLD && !battery.charging() {
                         warn!("battery is low, shutting down");
                         self.handle_quit().await?;
@@ -248,7 +271,7 @@ impl AlliumD<DefaultPlatform> {
     }
 
     async fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<()> {
-        info!(
+        debug!(
             "menu: {:?}, main: {:?}, ingame: {}, key_event: {:?}",
             self.menu.as_ref().map(tokio::process::Child::id),
             self.main.id(),
@@ -550,30 +573,6 @@ impl AlliumD<DefaultPlatform> {
         self.state.brightness = (self.state.brightness as i8 + add).clamp(0, 100) as u8;
         self.platform.set_brightness(self.state.brightness)?;
         Ok(())
-    }
-
-    fn update_charging_led(&mut self, battery: &mut <DefaultPlatform as Platform>::Battery) {
-        if battery.percentage() >= 100 {
-            if self.led_enabled {
-                self.led_enabled = false;
-                battery.update_led(self.led_enabled);
-            }
-            return;
-        }
-
-        // Calculate blink frequency: 0.5Hz at 20% -> 2Hz at 0%
-        const LOW_BATTERY_PERCENTAGE: i32 = 100;
-        let freq = 0.5
-            + (LOW_BATTERY_PERCENTAGE - battery.percentage()) as f32
-                / LOW_BATTERY_PERCENTAGE as f32
-                * 1.5;
-        let period = std::time::Duration::from_secs_f32(1.0 / freq);
-
-        if self.last_led_toggle.elapsed() >= period {
-            self.led_enabled = !self.led_enabled;
-            self.last_led_toggle = Instant::now();
-            battery.update_led(self.led_enabled);
-        }
     }
 }
 
