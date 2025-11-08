@@ -51,6 +51,7 @@ debug: third-party/my283
 	cargo zigbuild --target=$(TARGET_TRIPLE).$(GLIBC_VERSION) --features=miyoo --bin=alliumd --bin=allium-launcher --bin=allium-menu --bin=activity-tracker --bin=screenshot --bin=say --bin=show --bin=show-hotkeys --bin=myctl
 
 .PHONY: strip-all
+strip-all:
     find . -type f -exec file {}\; | awk -F ':' '/not stripped/ {print $1}' | while read f; do strip -s "$f"; done
 
 .PHONY: package-build
