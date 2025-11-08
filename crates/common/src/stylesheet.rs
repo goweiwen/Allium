@@ -233,16 +233,8 @@ impl Stylesheet {
             .collect())
     }
 
-    fn theme_override_path(theme: &Theme) -> PathBuf {
-        ALLIUM_THEMES_DIR
-            .join(&theme.0)
-            .join("stylesheet.override.json")
-    }
-
     pub fn load_from_theme(theme: &Theme) -> Result<Self> {
-        let theme_dir = ALLIUM_THEMES_DIR.join(&theme.0);
-        let stylesheet_path = theme_dir.join("stylesheet.json");
-
+        let stylesheet_path = ALLIUM_THEMES_DIR.join(&theme.0).join("stylesheet.json");
         if !stylesheet_path.exists() {
             return Err(anyhow::anyhow!(
                 "Theme '{}' does not have a stylesheet.json",
@@ -254,8 +246,21 @@ impl Stylesheet {
         let json = fs::read_to_string(&stylesheet_path)?;
         let mut styles = serde_json::from_str::<Self>(&json)?;
 
+        #[cfg(feature = "simulator")]
+        {
+            // Write default missing fields to original stylesheet.json
+            let file = File::create(
+                PathBuf::from("/home/weiwen/dev/github/goweiwen/Allium/static/Themes")
+                    .join(&theme.0)
+                    .join("stylesheet.json"),
+            )?;
+            serde_json::to_writer_pretty(&file, &styles)?;
+        }
+
         // Load override file if it exists
-        let override_path = Self::theme_override_path(theme);
+        let override_path = ALLIUM_THEMES_DIR
+            .join(&theme.0)
+            .join("stylesheet.override.json");
         if override_path.exists() {
             debug!("loading theme overrides from {}", override_path.display());
             if let Ok(override_json) = fs::read_to_string(&override_path)
@@ -367,14 +372,16 @@ impl Stylesheet {
 
     pub fn save(&self) -> Result<()> {
         let theme = Theme::load();
-        let save_path = Self::theme_override_path(&theme);
-        debug!("saving stylesheet to {}", save_path.display());
+        let override_path = ALLIUM_THEMES_DIR
+            .join(&theme.0)
+            .join("stylesheet.override.json");
+        debug!("saving stylesheet to {}", override_path.display());
 
-        if let Some(parent) = save_path.parent() {
+        if let Some(parent) = override_path.parent() {
             fs::create_dir_all(parent)?;
         }
-        let json = serde_json::to_string(&self).unwrap();
-        File::create(&save_path)?.write_all(json.as_bytes())?;
+        let file = File::create(&override_path)?;
+        serde_json::to_writer_pretty(&file, &self)?;
 
         if let Err(e) = self.patch_ra_config() {
             warn!("failed to patch RA config: {}", e);
@@ -384,7 +391,9 @@ impl Stylesheet {
 
     pub fn restore_defaults(&mut self) -> Result<()> {
         let theme = Theme::load();
-        let override_path = Self::theme_override_path(&theme);
+        let override_path = ALLIUM_THEMES_DIR
+            .join(&theme.0)
+            .join("stylesheet.override.json");
         if override_path.exists() {
             debug!(
                 "removing theme override file at {}",

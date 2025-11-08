@@ -12,7 +12,8 @@ use fluent_templates::{
 use log::{debug, warn};
 use serde::{Deserialize, Serialize};
 
-use crate::constants::{ALLIUM_LOCALE_SETTINGS, ALLIUM_LOCALES_DIR};
+use crate::constants::{ALLIUM_LOCALE_SETTINGS, ALLIUM_LOCALES_DIR, ALLIUM_THEMES_DIR};
+use crate::stylesheet::Theme;
 
 pub use fluent_templates::fluent_bundle::FluentValue as LocaleFluentValue;
 
@@ -55,26 +56,67 @@ impl LocaleSettings {
 }
 
 pub struct Locale {
-    pub loader: ArcLoader,
+    pub default_loader: ArcLoader,
+    pub theme_loader: Option<ArcLoader>,
     pub lang: LanguageIdentifier,
 }
 
 impl Locale {
     pub fn new(lang: &str) -> Self {
-        let loader = ArcLoader::builder(ALLIUM_LOCALES_DIR.as_path(), langid!("en-US"))
+        let theme = Theme::load();
+        let theme_locales_dir = ALLIUM_THEMES_DIR.join(&theme.0).join("locales");
+
+        let default_loader = ArcLoader::builder(ALLIUM_LOCALES_DIR.as_path(), langid!("en-US"))
             .customize(|b| b.set_use_isolating(false))
             .build()
             .unwrap();
+
+        let theme_loader = if theme_locales_dir.exists()
+            && theme_locales_dir
+                .read_dir()
+                .map(|mut d| d.next().is_some())
+                .unwrap_or(false)
+        {
+            debug!(
+                "loading locale overrides from theme: {}",
+                theme_locales_dir.display()
+            );
+            Some(
+                ArcLoader::builder(&theme_locales_dir, langid!("en-US"))
+                    .customize(|b| b.set_use_isolating(false))
+                    .build()
+                    .unwrap(),
+            )
+        } else {
+            None
+        };
+
         let lang = lang.parse().unwrap();
-        Self { loader, lang }
+        Self {
+            default_loader,
+            theme_loader,
+            lang,
+        }
     }
 
     pub fn t(&self, key: &str) -> String {
-        self.loader.lookup(&self.lang, key)
+        self.theme_loader
+            .as_ref()
+            .and_then(|loader| {
+                loader.lookup_no_default_fallback(
+                    &self.lang,
+                    key,
+                    None as Option<&HashMap<&str, _>>,
+                )
+            })
+            .unwrap_or(self.default_loader.lookup(&self.lang, key))
     }
 
     pub fn ta(&self, key: &str, args: &HashMap<Cow<'static, str>, FluentValue<'_>>) -> String {
-        self.loader.lookup_with_args(&self.lang, key, args)
+        self.theme_loader
+            .as_ref()
+            .and_then(|loader| loader.lookup_no_default_fallback(&self.lang, key, Some(args)))
+            .unwrap_or(self.default_loader.lookup_with_args(&self.lang, key, args))
     }
 
     pub fn language(&self) -> String {
@@ -82,7 +124,11 @@ impl Locale {
     }
 
     pub fn languages(&self) -> Vec<String> {
-        let mut vec: Vec<_> = self.loader.locales().map(|i| i.to_string()).collect();
+        let mut vec: Vec<_> = self
+            .default_loader
+            .locales()
+            .map(|i| i.to_string())
+            .collect();
         vec.sort_unstable();
         vec
     }
