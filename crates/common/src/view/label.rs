@@ -35,6 +35,7 @@ where
     width: Option<u32>,
     truncated_text: Option<String>,
     color: StylesheetColor,
+    stroke_color: StylesheetColor,
     font_size: f32,
     scrolling: Option<Scrolling>,
     dirty: bool,
@@ -56,6 +57,7 @@ where
             width,
             truncated_text: None,
             color: StylesheetColor::Foreground,
+            stroke_color: StylesheetColor::Stroke,
             font_size: 1.0,
             scrolling: None,
             dirty: true,
@@ -78,6 +80,12 @@ where
 
     pub fn color(&mut self, color: StylesheetColor) -> &mut Self {
         self.color = color;
+        self.dirty = true;
+        self
+    }
+
+    pub fn stroke_color(&mut self, stroke_color: StylesheetColor) -> &mut Self {
+        self.stroke_color = stroke_color;
         self.dirty = true;
         self
     }
@@ -232,6 +240,8 @@ where
             .font_fallback(styles.cjk_font.font())
             .text_color(self.color.to_color(styles))
             .font_size((styles.ui_font.size as f32 * self.font_size) as u32)
+            .stroke_width(styles.stroke_width)
+            .stroke_color(self.stroke_color.to_color(styles))
             .build();
 
         if self.truncated_text.is_none() {
@@ -305,6 +315,18 @@ where
 
     fn set_position(&mut self, point: Point) {
         self.point = point;
+        self.dirty = true;
+    }
+
+    fn focus(&mut self) {
+        self.color = StylesheetColor::HighlightText;
+        self.stroke_color = StylesheetColor::HighlightTextStroke;
+        self.dirty = true;
+    }
+
+    fn blur(&mut self) {
+        self.color = StylesheetColor::Foreground;
+        self.stroke_color = StylesheetColor::Stroke;
         self.dirty = true;
     }
 }

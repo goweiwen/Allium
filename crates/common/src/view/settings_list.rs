@@ -49,6 +49,7 @@ impl SettingsList {
         };
 
         this.set_items(left, right);
+        this.left_mut(0).focus();
 
         this
     }
@@ -87,6 +88,10 @@ impl SettingsList {
     }
 
     pub fn select(&mut self, index: usize) {
+        if let Some(child) = self.left.get_mut(self.selected - self.top) {
+            child.blur();
+        }
+
         if index >= self.top + self.visible_count() {
             self.top = index - self.visible_count() + 1;
             self.update_children();
@@ -98,6 +103,10 @@ impl SettingsList {
         }
 
         self.selected = index;
+
+        if let Some(child) = self.left.get_mut(self.selected - self.top) {
+            child.focus();
+        }
 
         self.dirty = true;
     }
@@ -178,7 +187,7 @@ impl View for SettingsList {
                     Size::new_equal(rect.h),
                 )
                 .into_styled(PrimitiveStyle::with_fill(
-                    styles.highlight_color.with_a(128),
+                    styles.highlight_color.with_a(0x40),
                 ))
                 .draw(display)?;
             }
@@ -237,7 +246,7 @@ impl View for SettingsList {
                     Size::new_equal(rect.h),
                 )
                 .into_styled(PrimitiveStyle::with_fill(
-                    styles.highlight_color.with_a(128),
+                    styles.highlight_color.with_a(0x40),
                 ))
                 .draw(display)?;
             }
@@ -296,6 +305,12 @@ impl View for SettingsList {
                     Command::TrapFocus => false,
                     Command::Unfocus => {
                         self.focused = false;
+                        if let Some(child) = self.left.get_mut(self.selected - self.top) {
+                            child.focus();
+                        }
+                        if let Some(child) = self.right.get_mut(self.selected - self.top) {
+                            child.blur();
+                        }
                         self.dirty = true;
                         false
                     }
@@ -342,6 +357,10 @@ impl View for SettingsList {
                         bubble.retain_mut(|cmd| match cmd {
                             Command::TrapFocus => {
                                 self.focused = true;
+                                selected.focus();
+                                if let Some(child) = self.left.get_mut(self.selected) {
+                                    child.blur();
+                                }
                                 self.dirty = true;
                                 false
                             }

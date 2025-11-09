@@ -15,7 +15,7 @@ use crate::display::color::Color;
 use crate::display::font::{FontTextStyle, FontTextStyleBuilder};
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
-use crate::stylesheet::Stylesheet;
+use crate::stylesheet::{Stylesheet, StylesheetColor};
 use crate::view::{Command, View};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -26,6 +26,7 @@ pub struct DateTime {
     dirty: bool,
     #[serde(skip)]
     edit_state: Option<EditState>,
+    text_color: StylesheetColor,
 }
 
 #[derive(Debug, Clone)]
@@ -42,6 +43,7 @@ impl DateTime {
             alignment,
             dirty: true,
             edit_state: None,
+            text_color: StylesheetColor::Foreground,
         }
     }
 
@@ -74,21 +76,34 @@ impl View for DateTime {
             .unwrap_or(self.value);
         let edit_index = self.edit_state.as_ref().map(|s| s.selected);
 
+        let text_color = self.text_color.to_color(styles);
+        let stroke_color = if self.text_color == StylesheetColor::HighlightText {
+            styles.highlight_text_stroke_color
+        } else {
+            styles.stroke_color
+        };
+
         let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
             .font_fallback(styles.cjk_font.font())
             .font_size(styles.ui_font.size)
-            .text_color(styles.foreground_color)
+            .text_color(text_color)
+            .stroke_color(stroke_color)
+            .stroke_width(2)
             .build();
 
         let focused_style = FontTextStyleBuilder::new(styles.ui_font.font())
             .font_size(styles.ui_font.size)
-            .text_color(styles.foreground_color)
+            .text_color(text_color)
+            .stroke_color(stroke_color)
+            .stroke_width(2)
             .draw_background()
             .build();
 
         let selected_style = FontTextStyleBuilder::new(styles.ui_font.font())
             .font_size(styles.ui_font.size)
-            .text_color(styles.foreground_color)
+            .text_color(text_color)
+            .stroke_color(stroke_color)
+            .stroke_width(2)
             .underline()
             .draw_background()
             .build();
@@ -310,5 +325,15 @@ impl View for DateTime {
 
     fn set_position(&mut self, point: Point) {
         self.point = point;
+    }
+
+    fn focus(&mut self) {
+        self.text_color = StylesheetColor::HighlightText;
+        self.dirty = true;
+    }
+
+    fn blur(&mut self) {
+        self.text_color = StylesheetColor::Foreground;
+        self.dirty = true;
     }
 }

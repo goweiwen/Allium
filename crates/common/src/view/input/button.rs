@@ -79,4 +79,12 @@ where
     fn set_position(&mut self, point: Point) {
         self.view.set_position(point)
     }
+
+    fn focus(&mut self) {
+        self.view.focus()
+    }
+
+    fn blur(&mut self) {
+        self.view.blur()
+    }
 }

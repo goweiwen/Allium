@@ -27,6 +27,7 @@ pub struct ColorPicker {
     #[serde(skip)]
     edit_state: Option<EditState>,
     background_color: StylesheetColor,
+    text_color: StylesheetColor,
 }
 
 #[derive(Debug, Clone)]
@@ -44,6 +45,7 @@ impl ColorPicker {
             dirty: true,
             edit_state: None,
             background_color: StylesheetColor::Background,
+            text_color: StylesheetColor::Foreground,
         }
     }
 
@@ -92,21 +94,34 @@ impl View for ColorPicker {
         .into_styled(fill_style)
         .draw(display)?;
 
+        let text_color = self.text_color.to_color(styles);
+        let stroke_color = if self.text_color == crate::stylesheet::StylesheetColor::HighlightText {
+            styles.highlight_text_stroke_color
+        } else {
+            styles.stroke_color
+        };
+
         let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
             .font_fallback(styles.cjk_font.font())
             .font_size(styles.ui_font.size)
-            .text_color(styles.foreground_color)
+            .text_color(text_color)
+            .stroke_color(stroke_color)
+            .stroke_width(styles.stroke_width)
             .build();
 
         let focused_style = FontTextStyleBuilder::new(styles.ui_font.font())
             .font_size(styles.ui_font.size)
-            .text_color(styles.foreground_color)
+            .text_color(text_color)
+            .stroke_color(stroke_color)
+            .stroke_width(styles.stroke_width)
             .draw_background()
             .build();
 
         let selected_style = FontTextStyleBuilder::new(styles.ui_font.font())
             .font_size(styles.ui_font.size)
-            .text_color(styles.foreground_color)
+            .text_color(text_color)
+            .stroke_color(stroke_color)
+            .stroke_width(styles.stroke_width)
             .underline()
             .draw_background()
             .build();
@@ -322,5 +337,15 @@ impl View for ColorPicker {
 
     fn set_position(&mut self, point: Point) {
         self.point = point;
+    }
+
+    fn focus(&mut self) {
+        self.text_color = StylesheetColor::HighlightText;
+        self.dirty = true;
+    }
+
+    fn blur(&mut self) {
+        self.text_color = StylesheetColor::Foreground;
+        self.dirty = true;
     }
 }

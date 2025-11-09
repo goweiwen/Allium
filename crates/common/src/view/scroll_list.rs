@@ -121,9 +121,10 @@ impl ScrollList {
             return;
         }
 
-        self.children
-            .get_mut(self.selected - self.top)
-            .map(|v| v.scroll(false));
+        if let Some(child) = self.children.get_mut(self.selected - self.top) {
+            child.scroll(false);
+            child.blur();
+        }
 
         index = index.clamp(0, self.items.len() - 1);
         if index >= self.top + self.visible_count() {
@@ -134,9 +135,10 @@ impl ScrollList {
         self.selected = index;
         self.update_children();
 
-        self.children
-            .get_mut(self.selected - self.top)
-            .map(|v| v.scroll(true));
+        if let Some(child) = self.children.get_mut(self.selected - self.top) {
+            child.scroll(true);
+            child.focus();
+        }
 
         self.dirty = true;
     }
@@ -183,6 +185,16 @@ impl View for ScrollList {
                 .draw(display)?;
             } else {
                 display.load(self.bounding_box(styles))?;
+            }
+
+            if let Some(bg_color) = self.background_color {
+                let fill_style = PrimitiveStyle::with_fill(bg_color.to_color(styles));
+                Rectangle::new(
+                    embedded_graphics::prelude::Point::new(self.rect.x, self.rect.y),
+                    Size::new(self.rect.w, self.rect.h),
+                )
+                .into_styled(fill_style)
+                .draw(display)?;
             }
 
             if let Some(selected) = self.children.get_mut(self.selected - self.top) {

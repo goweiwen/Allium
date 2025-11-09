@@ -26,6 +26,8 @@ impl Clock {
         let styles = res.get::<Stylesheet>();
         let mut label = Label::new(point, text(), alignment, None);
         label.font_size(styles.status_bar_font_size);
+        label.color(crate::stylesheet::StylesheetColor::StatusBar);
+        label.stroke_color(crate::stylesheet::StylesheetColor::StatusBarStroke);
 
         Self {
             label,

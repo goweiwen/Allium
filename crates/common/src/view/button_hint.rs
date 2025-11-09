@@ -9,7 +9,7 @@ use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use crate::resources::Resources;
-use crate::stylesheet::Stylesheet;
+use crate::stylesheet::{Stylesheet, StylesheetColor};
 use crate::view::{ButtonIcon, Command, Label, View};
 
 #[derive(Debug, Clone)]
@@ -32,7 +32,9 @@ where
     pub fn new(res: Resources, point: Point, button: Key, text: S, alignment: Alignment) -> Self {
         let styles = res.get::<Stylesheet>();
         let mut label = Label::new(Point::zero(), text, alignment, None);
-        label.font_size(styles.button_hint_font_size);
+        label
+            .font_size(styles.button_hint_font_size)
+            .color(StylesheetColor::ButtonHintText);
         let button = ButtonIcon::new(Point::zero(), button, alignment);
 
         Self {

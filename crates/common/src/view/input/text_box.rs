@@ -139,6 +139,14 @@ impl View for TextBox {
         self.point = point;
         self.label.set_position(point)
     }
+
+    fn focus(&mut self) {
+        self.label.focus()
+    }
+
+    fn blur(&mut self) {
+        self.label.blur()
+    }
 }
 
 fn masked_value(value: &str, is_password: bool) -> String {

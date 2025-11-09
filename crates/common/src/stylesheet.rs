@@ -13,11 +13,12 @@ use crate::{
     display::color::Color,
 };
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum StylesheetColor {
     Foreground,
     Background,
     Highlight,
+    HighlightText,
     Disabled,
     Tab,
     TabSelected,
@@ -25,7 +26,15 @@ pub enum StylesheetColor {
     ButtonB,
     ButtonX,
     ButtonY,
+    ButtonText,
+    ButtonHintText,
     BackgroundHighlightBlend,
+    Stroke,
+    HighlightTextStroke,
+    TabStroke,
+    TabSelectedStroke,
+    StatusBar,
+    StatusBarStroke,
 }
 
 impl StylesheetColor {
@@ -34,6 +43,7 @@ impl StylesheetColor {
             Self::Foreground => stylesheet.foreground_color,
             Self::Background => stylesheet.background_color,
             Self::Highlight => stylesheet.highlight_color,
+            Self::HighlightText => stylesheet.highlight_text_color,
             Self::Disabled => stylesheet.disabled_color,
             Self::Tab => stylesheet.tab_color,
             Self::TabSelected => stylesheet.tab_selected_color,
@@ -41,9 +51,17 @@ impl StylesheetColor {
             Self::ButtonB => stylesheet.button_b_color,
             Self::ButtonX => stylesheet.button_x_color,
             Self::ButtonY => stylesheet.button_y_color,
+            Self::ButtonText => stylesheet.button_text_color,
+            Self::ButtonHintText => stylesheet.button_hint_text_color,
             Self::BackgroundHighlightBlend => stylesheet
                 .background_color
                 .blend(stylesheet.highlight_color, 128),
+            Self::Stroke => stylesheet.stroke_color,
+            Self::HighlightTextStroke => stylesheet.highlight_text_stroke_color,
+            Self::TabStroke => stylesheet.tab_stroke_color,
+            Self::TabSelectedStroke => stylesheet.tab_selected_stroke_color,
+            Self::StatusBar => stylesheet.status_bar_color,
+            Self::StatusBarStroke => stylesheet.status_bar_stroke_color,
         }
     }
 }
@@ -165,6 +183,8 @@ pub struct Stylesheet {
     pub background_color: Color,
     #[serde(default = "Stylesheet::default_highlight_color")]
     pub highlight_color: Color,
+    #[serde(default = "Stylesheet::default_highlight_text_color")]
+    pub highlight_text_color: Color,
     #[serde(default = "Stylesheet::default_disabled_color")]
     pub disabled_color: Color,
     #[serde(default = "Stylesheet::default_tab_color")]
@@ -179,6 +199,24 @@ pub struct Stylesheet {
     pub button_x_color: Color,
     #[serde(default = "Stylesheet::default_button_y_color")]
     pub button_y_color: Color,
+    #[serde(default = "Stylesheet::default_button_text_color")]
+    pub button_text_color: Color,
+    #[serde(default = "Stylesheet::default_button_hint_text_color")]
+    pub button_hint_text_color: Color,
+    #[serde(default = "Stylesheet::default_stroke_color")]
+    pub stroke_color: Color,
+    #[serde(default = "Stylesheet::default_highlight_text_stroke_color")]
+    pub highlight_text_stroke_color: Color,
+    #[serde(default = "Stylesheet::default_tab_stroke_color")]
+    pub tab_stroke_color: Color,
+    #[serde(default = "Stylesheet::default_tab_selected_stroke_color")]
+    pub tab_selected_stroke_color: Color,
+    #[serde(default = "Stylesheet::default_status_bar_color")]
+    pub status_bar_color: Color,
+    #[serde(default = "Stylesheet::default_status_bar_stroke_color")]
+    pub status_bar_stroke_color: Color,
+    #[serde(default = "Stylesheet::default_stroke_width")]
+    pub stroke_width: u32,
     #[serde(default = "StylesheetFont::ui_font")]
     pub ui_font: StylesheetFont,
     #[serde(default = "StylesheetFont::guide_font")]
@@ -289,6 +327,7 @@ impl Stylesheet {
         self.foreground_color = other.foreground_color;
         self.background_color = other.background_color;
         self.highlight_color = other.highlight_color;
+        self.highlight_text_color = other.highlight_text_color;
         self.disabled_color = other.disabled_color;
         self.tab_color = other.tab_color;
         self.tab_selected_color = other.tab_selected_color;
@@ -296,6 +335,15 @@ impl Stylesheet {
         self.button_b_color = other.button_b_color;
         self.button_x_color = other.button_x_color;
         self.button_y_color = other.button_y_color;
+        self.button_text_color = other.button_text_color;
+        self.button_hint_text_color = other.button_hint_text_color;
+        self.stroke_color = other.stroke_color;
+        self.highlight_text_stroke_color = other.highlight_text_stroke_color;
+        self.tab_stroke_color = other.tab_stroke_color;
+        self.tab_selected_stroke_color = other.tab_selected_stroke_color;
+        self.status_bar_color = other.status_bar_color;
+        self.status_bar_stroke_color = other.status_bar_stroke_color;
+        self.stroke_width = other.stroke_width;
         self.ui_font = other.ui_font;
         self.guide_font = other.guide_font;
         self.tab_font_size = other.tab_font_size;
@@ -488,6 +536,11 @@ rgui_particle_color = "0xFF{highlight:X}"
     }
 
     #[inline]
+    fn default_highlight_text_color() -> Color {
+        Color::new(255, 255, 255)
+    }
+
+    #[inline]
     fn default_disabled_color() -> Color {
         Color::new(88, 91, 112)
     }
@@ -521,6 +574,51 @@ rgui_particle_color = "0xFF{highlight:X}"
     fn default_button_y_color() -> Color {
         Color::new(0, 141, 69)
     }
+
+    #[inline]
+    fn default_button_text_color() -> Color {
+        Stylesheet::default_foreground_color()
+    }
+
+    #[inline]
+    fn default_button_hint_text_color() -> Color {
+        Stylesheet::default_foreground_color()
+    }
+
+    #[inline]
+    fn default_stroke_color() -> Color {
+        Color::rgba(0, 0, 0, 0)
+    }
+
+    #[inline]
+    fn default_highlight_text_stroke_color() -> Color {
+        Color::rgba(0, 0, 0, 0)
+    }
+
+    #[inline]
+    fn default_tab_stroke_color() -> Color {
+        Color::rgba(0, 0, 0, 0)
+    }
+
+    #[inline]
+    fn default_tab_selected_stroke_color() -> Color {
+        Color::rgba(0, 0, 0, 0)
+    }
+
+    #[inline]
+    fn default_status_bar_color() -> Color {
+        Stylesheet::default_foreground_color()
+    }
+
+    #[inline]
+    fn default_status_bar_stroke_color() -> Color {
+        Color::rgba(0, 0, 0, 0)
+    }
+
+    #[inline]
+    fn default_stroke_width() -> u32 {
+        0
+    }
 }
 
 impl Default for Stylesheet {
@@ -534,6 +632,7 @@ impl Default for Stylesheet {
             foreground_color: Self::default_foreground_color(),
             background_color: Self::default_background_color(),
             highlight_color: Self::default_highlight_color(),
+            highlight_text_color: Self::default_highlight_text_color(),
             disabled_color: Self::default_disabled_color(),
             tab_color: Self::default_tab_color(),
             tab_selected_color: Self::default_tab_selected_color(),
@@ -541,6 +640,15 @@ impl Default for Stylesheet {
             button_b_color: Self::default_button_b_color(),
             button_x_color: Self::default_button_x_color(),
             button_y_color: Self::default_button_y_color(),
+            button_text_color: Self::default_button_text_color(),
+            button_hint_text_color: Self::default_button_hint_text_color(),
+            stroke_color: Self::default_stroke_color(),
+            highlight_text_stroke_color: Self::default_highlight_text_stroke_color(),
+            tab_stroke_color: Self::default_tab_stroke_color(),
+            tab_selected_stroke_color: Self::default_tab_selected_stroke_color(),
+            status_bar_color: Self::default_status_bar_color(),
+            status_bar_stroke_color: Self::default_status_bar_stroke_color(),
+            stroke_width: Self::default_stroke_width(),
             ui_font: StylesheetFont::ui_font(),
             guide_font: StylesheetFont::guide_font(),
             cjk_font: StylesheetFont::cjk_font(),

@@ -41,6 +41,12 @@ pub struct FontTextStyle<C: PixelColor> {
     /// Strikethrough color.
     pub strikethrough_color: DecorationColor<C>,
 
+    /// Stroke color.
+    pub stroke_color: Option<C>,
+
+    /// Stroke width.
+    pub stroke_width: u32,
+
     /// Font size.
     pub font_size: u32,
 
@@ -192,7 +198,7 @@ where
                 }
                 g
             })
-            .scan((None, 0.0), |(last, x), g| {
+            .scan((None, self.stroke_width as f32 * 2.0), |(last, x), g| {
                 let g = g.scaled(scale);
                 if let Some(last) = last {
                     *x += self.font.pair_kerning(scale, *last, g.id());
@@ -214,12 +220,61 @@ where
             })
             .next()
             .unwrap_or(0.0)
-            .ceil() as i32;
+            .ceil() as i32
+            + self.stroke_width as i32 * 2;
 
         let height = self.font_size as i32;
 
-        let mut pixels = Vec::new();
+        // Create a buffer to hold the rasterized output
+        // Each pixel stores RGBA color
+        let buffer_width = width as usize;
+        let buffer_height = height as usize;
+        let mut buffer: Vec<Color> = vec![Color::rgba(0, 0, 0, 0); buffer_width * buffer_height];
 
+        // Draw stroke first - render the glyph multiple times at different offsets
+        // Skip if stroke color is transparent (alpha == 0)
+        if let Some(stroke_color) = self.stroke_color {
+            let stroke_color = stroke_color.into();
+            if self.stroke_width > 0 && stroke_color.a() > 0 {
+                // Draw the glyph at each offset position within stroke_width
+                for dx in -(self.stroke_width as i32)..=(self.stroke_width as i32) {
+                    for dy in -(self.stroke_width as i32)..=(self.stroke_width as i32) {
+                        // Skip the center (0,0) as that's where the actual text will be
+                        if dx == 0 && dy == 0 {
+                            continue;
+                        }
+
+                        for g in glyphs.iter() {
+                            if let Some(bb) = g.pixel_bounding_box() {
+                                g.draw(|off_x, off_y, v| {
+                                    let off_x = off_x as i32 + bb.min.x + dx;
+                                    let off_y = off_y as i32 + bb.min.y + dy;
+                                    // There's still a possibility that the glyph clips the boundaries of the bitmap
+                                    if off_x >= 0 && off_x < width && off_y >= 0 && off_y < height {
+                                        let stroke_a = (v * stroke_color.a() as f32) as u8;
+                                        if stroke_a > 0 {
+                                            let idx =
+                                                off_y as usize * buffer_width + off_x as usize;
+                                            let existing = buffer[idx];
+                                            // Take max alpha since we're drawing the same color
+                                            let max_a = existing.a().max(stroke_a);
+                                            buffer[idx] = Color::rgba(
+                                                stroke_color.r(),
+                                                stroke_color.g(),
+                                                stroke_color.b(),
+                                                max_a,
+                                            );
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Draw text on top of stroke
         if let Some(text_color) = self.text_color {
             for g in glyphs.iter() {
                 if let Some(bb) = g.pixel_bounding_box() {
@@ -230,18 +285,59 @@ where
                         if off_x >= 0 && off_x < width && off_y >= 0 && off_y < height {
                             let text_color = text_color.into();
                             let text_a = (v * text_color.a() as f32) as u8;
-                            let text_r = text_color.r();
-                            let text_g = text_color.g();
-                            let text_b = text_color.b();
 
                             if text_a > 0 {
-                                pixels.push(Pixel(
-                                    Point::new(position.x + off_x, position.y + off_y),
-                                    Color::rgba(text_r, text_g, text_b, text_a).into(),
-                                ));
+                                let idx = off_y as usize * buffer_width + off_x as usize;
+                                let existing = buffer[idx];
+
+                                // Alpha blend the text pixel
+                                if existing.a() == 0 {
+                                    buffer[idx] = Color::rgba(
+                                        text_color.r(),
+                                        text_color.g(),
+                                        text_color.b(),
+                                        text_a,
+                                    );
+                                } else {
+                                    // Blend using alpha compositing
+                                    let src_a = text_a as f32 / 255.0;
+                                    let dst_a = existing.a() as f32 / 255.0;
+                                    let out_a = src_a + dst_a * (1.0 - src_a);
+                                    if out_a > 0.0 {
+                                        let out_r = ((text_color.r() as f32 * src_a
+                                            + existing.r() as f32 * dst_a * (1.0 - src_a))
+                                            / out_a)
+                                            as u8;
+                                        let out_g = ((text_color.g() as f32 * src_a
+                                            + existing.g() as f32 * dst_a * (1.0 - src_a))
+                                            / out_a)
+                                            as u8;
+                                        let out_b = ((text_color.b() as f32 * src_a
+                                            + existing.b() as f32 * dst_a * (1.0 - src_a))
+                                            / out_a)
+                                            as u8;
+                                        buffer[idx] =
+                                            Color::rgba(out_r, out_g, out_b, (out_a * 255.0) as u8);
+                                    }
+                                }
                             }
                         }
                     });
+                }
+            }
+        }
+
+        // Convert buffer to pixels
+        let mut pixels = Vec::new();
+        for y in 0..buffer_height {
+            for x in 0..buffer_width {
+                let idx = y * buffer_width + x;
+                let color = buffer[idx];
+                if color.a() > 0 {
+                    pixels.push(Pixel(
+                        Point::new(position.x + x as i32, position.y + y as i32),
+                        color.into(),
+                    ));
                 }
             }
         }
@@ -342,6 +438,8 @@ impl<C: PixelColor> FontTextStyleBuilder<C> {
                 text_color: None,
                 underline_color: DecorationColor::None,
                 strikethrough_color: DecorationColor::None,
+                stroke_color: None,
+                stroke_width: 0,
                 draw_background: false,
             },
         }
@@ -403,6 +501,20 @@ impl<C: PixelColor> FontTextStyleBuilder<C> {
 
     pub fn draw_background(mut self) -> Self {
         self.style.draw_background = true;
+
+        self
+    }
+
+    /// Sets the stroke color.
+    pub fn stroke_color(mut self, stroke_color: C) -> Self {
+        self.style.stroke_color = Some(stroke_color);
+
+        self
+    }
+
+    /// Sets the stroke width.
+    pub fn stroke_width(mut self, stroke_width: u32) -> Self {
+        self.style.stroke_width = stroke_width;
 
         self
     }

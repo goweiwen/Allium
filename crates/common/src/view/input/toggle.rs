@@ -81,7 +81,10 @@ impl View for Toggle {
             .into(),
             h - margin as u32 - margin as u32,
         )
-        .into_styled(PrimitiveStyle::with_fill(styles.foreground_color))
+        .into_styled(PrimitiveStyle::with_fill(match self.value {
+            true => styles.highlight_text_color,
+            false => styles.highlight_text_color,
+        }))
         .draw(display)?;
 
         self.dirty = false;

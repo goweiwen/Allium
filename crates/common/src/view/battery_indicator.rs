@@ -48,6 +48,8 @@ where
                 None,
             );
             label.font_size(styles.status_bar_font_size);
+            label.color(crate::stylesheet::StylesheetColor::StatusBar);
+            label.stroke_color(crate::stylesheet::StylesheetColor::StatusBarStroke);
             Some(label)
         } else {
             None
@@ -111,6 +113,37 @@ where
                 -margin - label_w
             };
 
+            // Outer battery stroke
+            if styles.stroke_width > 0 && styles.status_bar_stroke_color.a() > 0 {
+                for dx in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
+                    for dy in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
+                        if dx == 0 && dy == 0 {
+                            continue;
+                        }
+                        RoundedRectangle::new(
+                            Rect::new(
+                                x + self.point.x - w as i32 - margin - margin + dx,
+                                y + self.point.y + dy,
+                                w,
+                                h,
+                            )
+                            .into(),
+                            CornerRadii::new(Size::new_equal(stroke as u32 * 2)),
+                        )
+                        .into_styled(
+                            PrimitiveStyleBuilder::new()
+                                .stroke_color(styles.status_bar_stroke_color)
+                                .stroke_alignment(
+                                    embedded_graphics::primitives::StrokeAlignment::Inside,
+                                )
+                                .stroke_width(stroke as u32)
+                                .build(),
+                        )
+                        .draw(display)?;
+                    }
+                }
+            }
+
             // Outer battery
             RoundedRectangle::new(
                 Rect::new(
@@ -124,16 +157,45 @@ where
             )
             .into_styled(
                 PrimitiveStyleBuilder::new()
-                    .stroke_color(styles.foreground_color)
+                    .stroke_color(styles.status_bar_color)
                     .stroke_alignment(embedded_graphics::primitives::StrokeAlignment::Inside)
                     .stroke_width(stroke as u32)
                     .build(),
             )
             .draw(display)?;
 
-            // Inner battery
+            // Inner battery stroke
             let percentage = self.battery.percentage();
             if percentage > 5 {
+                if styles.stroke_width > 0 && styles.status_bar_stroke_color.a() > 0 {
+                    for dx in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
+                        for dy in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
+                            if dx == 0 && dy == 0 {
+                                continue;
+                            }
+                            RoundedRectangle::new(
+                                Rect::new(
+                                    x + self.point.x - w as i32 + stroke - margin + dx,
+                                    y + self.point.y + stroke + margin + dy,
+                                    w.saturating_sub(2 * (stroke + margin) as u32)
+                                        * (percentage - 5).max(0) as u32
+                                        / 90,
+                                    h.saturating_sub(2 * (stroke + margin) as u32),
+                                )
+                                .into(),
+                                CornerRadii::new(Size::new_equal(stroke as u32)),
+                            )
+                            .into_styled(
+                                PrimitiveStyleBuilder::new()
+                                    .fill_color(styles.status_bar_stroke_color)
+                                    .build(),
+                            )
+                            .draw(display)?;
+                        }
+                    }
+                }
+
+                // Inner battery
                 RoundedRectangle::new(
                     Rect::new(
                         x + self.point.x - w as i32 + stroke - margin,
@@ -148,10 +210,37 @@ where
                 )
                 .into_styled(
                     PrimitiveStyleBuilder::new()
-                        .fill_color(styles.foreground_color)
+                        .fill_color(styles.status_bar_color)
                         .build(),
                 )
                 .draw(display)?;
+            }
+
+            // Battery cap stroke
+            if styles.stroke_width > 0 && styles.status_bar_stroke_color.a() > 0 {
+                for dx in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
+                    for dy in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
+                        if dx == 0 && dy == 0 {
+                            continue;
+                        }
+                        RoundedRectangle::new(
+                            Rect::new(
+                                x + self.point.x - margin + dx,
+                                y + self.point.y + stroke + margin + dy,
+                                stroke as u32,
+                                h.saturating_sub(2 * (stroke + margin) as u32),
+                            )
+                            .into(),
+                            CornerRadii::new(Size::new_equal(stroke as u32)),
+                        )
+                        .into_styled(
+                            PrimitiveStyleBuilder::new()
+                                .fill_color(styles.status_bar_stroke_color)
+                                .build(),
+                        )
+                        .draw(display)?;
+                    }
+                }
             }
 
             // Battery cap
@@ -167,19 +256,84 @@ where
             )
             .into_styled(
                 PrimitiveStyleBuilder::new()
-                    .fill_color(styles.foreground_color)
+                    .fill_color(styles.status_bar_color)
                     .build(),
             )
             .draw(display)?;
 
             // Charging indicator
             if self.battery.charging() {
+                let stroke_style = PrimitiveStyleBuilder::new()
+                    .fill_color(styles.status_bar_stroke_color)
+                    .build();
                 let fill_style = PrimitiveStyleBuilder::new()
-                    .fill_color(styles.foreground_color)
+                    .fill_color(styles.status_bar_color)
                     .build();
 
                 let x = self.point.x - label_w;
                 let size = styles.status_bar_font_size();
+
+                // First triangle stroke
+                if styles.stroke_width > 0 && styles.status_bar_stroke_color.a() > 0 {
+                    for dx in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
+                        for dy in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
+                            if dx == 0 && dy == 0 {
+                                continue;
+                            }
+                            Triangle::new(
+                                Point::new(
+                                    x + (-6.0 * size / 40.0) as i32 + dx,
+                                    self.point.y + (7.0 * size / 40.0) as i32 + dy,
+                                )
+                                .into(),
+                                Point::new(
+                                    x + (-15.0 * size / 40.0) as i32 + dx,
+                                    self.point.y + (20.0 * size / 40.0) as i32 + dy,
+                                )
+                                .into(),
+                                Point::new(
+                                    x + (-9.0 * size / 40.0) as i32 + dx,
+                                    self.point.y + (20.0 * size / 40.0) as i32 + dy,
+                                )
+                                .into(),
+                            )
+                            .into_styled(stroke_style)
+                            .draw(display)?;
+                        }
+                    }
+                }
+
+                // Second triangle stroke
+                if styles.stroke_width > 0 && styles.status_bar_stroke_color.a() > 0 {
+                    for dx in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
+                        for dy in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
+                            if dx == 0 && dy == 0 {
+                                continue;
+                            }
+                            Triangle::new(
+                                Point::new(
+                                    x + (-12.0 * size / 40.0) as i32 + dx,
+                                    self.point.y + (31.0 * size / 40.0) as i32 + dy,
+                                )
+                                .into(),
+                                Point::new(
+                                    x + (-3.0 * size / 40.0) as i32 + dx,
+                                    self.point.y + (18.0 * size / 40.0) as i32 + dy,
+                                )
+                                .into(),
+                                Point::new(
+                                    x + (-9.0 * size / 40.0) as i32 + dx,
+                                    self.point.y + (18.0 * size / 40.0) as i32 + dy,
+                                )
+                                .into(),
+                            )
+                            .into_styled(stroke_style)
+                            .draw(display)?;
+                        }
+                    }
+                }
+
+                // First triangle
                 Triangle::new(
                     Point::new(
                         x + (-6.0 * size / 40.0) as i32,
@@ -199,6 +353,8 @@ where
                 )
                 .into_styled(fill_style)
                 .draw(display)?;
+
+                // Second triangle
                 Triangle::new(
                     Point::new(
                         x + (-12.0 * size / 40.0) as i32,

@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use common::command::Command;
+use common::command::{Command, Value};
 use common::constants::SELECTION_MARGIN;
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
@@ -20,12 +20,16 @@ use tokio::sync::mpsc::Sender;
 
 use crate::view::settings::{ChildState, SettingsChild};
 
+type Handler =
+    Box<dyn Fn(&mut Stylesheet, &[PathBuf], &[String], Value, &Sender<Command>) -> Result<()>>;
+
 pub struct Theme {
     rect: Rect,
     stylesheet: Stylesheet,
     themes: Vec<String>,
     fonts: Vec<PathBuf>,
     list: SettingsList,
+    handlers: Vec<Handler>,
     left_button_hints: Row<ButtonHint<String>>,
     right_button_hints: Row<ButtonHint<String>>,
     restore_pressed: Option<Instant>,
@@ -58,59 +62,68 @@ impl Theme {
             })
             .collect();
 
-        let mut list = SettingsList::new(
-            Rect::new(
-                x + 12,
-                y + 8,
-                w - 24,
-                h - 8 - ButtonIcon::diameter(&styles) - 8,
-            ),
-            vec![
+        let items: Vec<(String, Box<dyn View>, Handler)> = vec![
+            (
                 locale.t("settings-theme-theme"),
-                locale.t("settings-theme-show-battery-level"),
-                locale.t("settings-theme-show-clock"),
-                locale.t("settings-theme-use-recents-carousel"),
-                locale.t("settings-theme-boxart-width"),
-                locale.t("settings-theme-ui-font"),
-                locale.t("settings-theme-ui-font-size"),
-                locale.t("settings-theme-guide-font"),
-                locale.t("settings-theme-guide-font-size"),
-                locale.t("settings-theme-tab-font-size"),
-                locale.t("settings-theme-status-bar-font-size"),
-                locale.t("settings-theme-button-hint-font-size"),
-                locale.t("settings-theme-highlight-color"),
-                locale.t("settings-theme-foreground-color"),
-                locale.t("settings-theme-background-color"),
-                locale.t("settings-theme-disabled-color"),
-                locale.t("settings-theme-tab-color"),
-                locale.t("settings-theme-tab-selected-color"),
-                locale.t("settings-theme-button-a-color"),
-                locale.t("settings-theme-button-b-color"),
-                locale.t("settings-theme-button-x-color"),
-                locale.t("settings-theme-button-y-color"),
-            ],
-            vec![
                 Box::new(Select::new(
                     Point::zero(),
                     current_theme_index,
                     themes.clone(),
                     Alignment::Right,
                 )),
+                Box::new(move |stylesheet, _fonts, themes, val, commands| {
+                    let theme_index = val.as_int().unwrap() as usize;
+                    if theme_index < themes.len() {
+                        let theme_name = &themes[theme_index];
+                        let theme_obj = common::stylesheet::Theme(theme_name.clone());
+                        if let Err(e) = theme_obj.save() {
+                            error!("failed to save theme: {}", e);
+                        }
+                        *stylesheet = Stylesheet::load_from_theme(&theme_obj)?;
+                        commands
+                            .try_send(Command::ReloadStylesheet(Box::new(stylesheet.clone())))?;
+                    }
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-show-battery-level"),
                 Box::new(Toggle::new(
                     Point::zero(),
                     stylesheet.show_battery_level,
                     Alignment::Right,
                 )),
+                Box::new(|stylesheet, _fonts, _themes, _val, _commands| {
+                    stylesheet.toggle_battery_percentage();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-show-clock"),
                 Box::new(Toggle::new(
                     Point::zero(),
                     stylesheet.show_clock,
                     Alignment::Right,
                 )),
+                Box::new(|stylesheet, _fonts, _themes, _val, _commands| {
+                    stylesheet.toggle_clock();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-use-recents-carousel"),
                 Box::new(Toggle::new(
                     Point::zero(),
                     stylesheet.use_recents_carousel,
                     Alignment::Right,
                 )),
+                Box::new(|stylesheet, _fonts, _themes, _val, _commands| {
+                    stylesheet.use_recents_carousel = !stylesheet.use_recents_carousel;
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-boxart-width"),
                 Box::new(Number::new(
                     Point::zero(),
                     stylesheet.boxart_width as i32,
@@ -126,6 +139,13 @@ impl Theme {
                     },
                     Alignment::Right,
                 )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.boxart_width = val.as_int().unwrap() as u32;
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-ui-font"),
                 Box::new(Select::new(
                     Point::zero(),
                     fonts
@@ -135,6 +155,17 @@ impl Theme {
                     font_names.clone(),
                     Alignment::Right,
                 )),
+                Box::new(move |stylesheet, fonts, _themes, val, _commands| {
+                    stylesheet
+                        .ui_font
+                        .path
+                        .clone_from(&fonts[val.as_int().unwrap() as usize]);
+                    stylesheet.load_fonts()?;
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-ui-font-size"),
                 Box::new(Number::new(
                     Point::zero(),
                     stylesheet.ui_font.size as i32,
@@ -144,15 +175,33 @@ impl Theme {
                     i32::to_string,
                     Alignment::Right,
                 )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.ui_font.size = val.as_int().unwrap() as u32;
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-guide-font"),
                 Box::new(Select::new(
                     Point::zero(),
                     fonts
                         .iter()
-                        .position(|p| p.file_name() == stylesheet.ui_font.path.file_name())
+                        .position(|p| p.file_name() == stylesheet.guide_font.path.file_name())
                         .unwrap_or_default(),
                     font_names,
                     Alignment::Right,
                 )),
+                Box::new(move |stylesheet, fonts, _themes, val, _commands| {
+                    stylesheet
+                        .guide_font
+                        .path
+                        .clone_from(&fonts[val.as_int().unwrap() as usize]);
+                    stylesheet.load_fonts()?;
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-guide-font-size"),
                 Box::new(Number::new(
                     Point::zero(),
                     stylesheet.guide_font.size as i32,
@@ -162,6 +211,73 @@ impl Theme {
                     i32::to_string,
                     Alignment::Right,
                 )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.guide_font.size = val.as_int().unwrap() as u32;
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-foreground-color"),
+                Box::new(ColorPicker::new(
+                    Point::zero(),
+                    stylesheet.foreground_color,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.foreground_color = val.as_color().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-background-color"),
+                Box::new(ColorPicker::new(
+                    Point::zero(),
+                    stylesheet.background_color,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.background_color = val.as_color().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-highlight-color"),
+                Box::new(ColorPicker::new(
+                    Point::zero(),
+                    stylesheet.highlight_color,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.highlight_color = val.as_color().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-highlight-text-color"),
+                Box::new(ColorPicker::new(
+                    Point::zero(),
+                    stylesheet.highlight_text_color,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.highlight_text_color = val.as_color().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-disabled-color"),
+                Box::new(ColorPicker::new(
+                    Point::zero(),
+                    stylesheet.disabled_color,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.disabled_color = val.as_color().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-tab-font-size"),
                 Box::new(Percentage::new(
                     Point::zero(),
                     (stylesheet.tab_font_size * 100.0) as i32,
@@ -169,6 +285,37 @@ impl Theme {
                     200,
                     Alignment::Right,
                 )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.tab_font_size = val.as_int().unwrap() as f32 / 100.0;
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-tab-color"),
+                Box::new(ColorPicker::new(
+                    Point::zero(),
+                    stylesheet.tab_color,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.tab_color = val.as_color().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-tab-selected-color"),
+                Box::new(ColorPicker::new(
+                    Point::zero(),
+                    stylesheet.tab_selected_color,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.tab_selected_color = val.as_color().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-status-bar-font-size"),
                 Box::new(Percentage::new(
                     Point::zero(),
                     (stylesheet.status_bar_font_size * 100.0) as i32,
@@ -176,6 +323,25 @@ impl Theme {
                     200,
                     Alignment::Right,
                 )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.status_bar_font_size = val.as_int().unwrap() as f32 / 100.0;
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-status-bar-color"),
+                Box::new(ColorPicker::new(
+                    Point::zero(),
+                    stylesheet.status_bar_color,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.status_bar_color = val.as_color().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-button-hint-font-size"),
                 Box::new(Percentage::new(
                     Point::zero(),
                     (stylesheet.button_hint_font_size * 100.0) as i32,
@@ -183,57 +349,105 @@ impl Theme {
                     200,
                     Alignment::Right,
                 )),
-                Box::new(ColorPicker::new(
-                    Point::zero(),
-                    stylesheet.highlight_color,
-                    Alignment::Right,
-                )),
-                Box::new(ColorPicker::new(
-                    Point::zero(),
-                    stylesheet.foreground_color,
-                    Alignment::Right,
-                )),
-                Box::new(ColorPicker::new(
-                    Point::zero(),
-                    stylesheet.background_color,
-                    Alignment::Right,
-                )),
-                Box::new(ColorPicker::new(
-                    Point::zero(),
-                    stylesheet.disabled_color,
-                    Alignment::Right,
-                )),
-                Box::new(ColorPicker::new(
-                    Point::zero(),
-                    stylesheet.tab_color,
-                    Alignment::Right,
-                )),
-                Box::new(ColorPicker::new(
-                    Point::zero(),
-                    stylesheet.tab_selected_color,
-                    Alignment::Right,
-                )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.button_hint_font_size = val.as_int().unwrap() as f32 / 100.0;
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-button-a-color"),
                 Box::new(ColorPicker::new(
                     Point::zero(),
                     stylesheet.button_a_color,
                     Alignment::Right,
                 )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.button_a_color = val.as_color().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-button-b-color"),
                 Box::new(ColorPicker::new(
                     Point::zero(),
                     stylesheet.button_b_color,
                     Alignment::Right,
                 )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.button_b_color = val.as_color().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-button-x-color"),
                 Box::new(ColorPicker::new(
                     Point::zero(),
                     stylesheet.button_x_color,
                     Alignment::Right,
                 )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.button_x_color = val.as_color().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-button-y-color"),
                 Box::new(ColorPicker::new(
                     Point::zero(),
                     stylesheet.button_y_color,
                     Alignment::Right,
                 )),
-            ],
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.button_y_color = val.as_color().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-button-text-color"),
+                Box::new(ColorPicker::new(
+                    Point::zero(),
+                    stylesheet.button_text_color,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.button_text_color = val.as_color().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-button-hint-text-color"),
+                Box::new(ColorPicker::new(
+                    Point::zero(),
+                    stylesheet.button_hint_text_color,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.button_hint_text_color = val.as_color().unwrap();
+                    Ok(())
+                }),
+            ),
+        ];
+
+        // Unzip into left, right, and handlers
+        let (left, right, handlers): (Vec<_>, Vec<_>, Vec<_>) = items.into_iter().fold(
+            (Vec::new(), Vec::new(), Vec::new()),
+            |(mut left, mut right, mut handlers), (l, r, h)| {
+                left.push(l);
+                right.push(r);
+                handlers.push(h);
+                (left, right, handlers)
+            },
+        );
+
+        let mut list = SettingsList::new(
+            Rect::new(
+                x + 12,
+                y + 8,
+                w - 24,
+                h - 8 - ButtonIcon::diameter(&styles) - 8,
+            ),
+            left,
+            right,
             res.get::<Stylesheet>().ui_font.size + SELECTION_MARGIN,
         );
         if let Some(state) = state {
@@ -287,6 +501,7 @@ impl Theme {
             themes,
             fonts,
             list,
+            handlers,
             left_button_hints,
             right_button_hints,
             restore_pressed: None,
@@ -343,74 +558,19 @@ impl View for Theme {
         {
             while let Some(command) = bubble.pop_front() {
                 if let Command::ValueChanged(i, val) = command {
-                    match i {
-                        0 => {
-                            let theme_index = val.as_int().unwrap() as usize;
-                            if theme_index < self.themes.len() {
-                                let theme_name = &self.themes[theme_index];
-                                let theme = common::stylesheet::Theme(theme_name.clone());
-                                if let Err(e) = theme.save() {
-                                    error!("failed to save theme: {}", e);
-                                }
-                                self.stylesheet = Stylesheet::load_from_theme(&theme)?;
-                                commands
-                                    .send(Command::ReloadStylesheet(Box::new(
-                                        self.stylesheet.clone(),
-                                    )))
-                                    .await?;
-                                return Ok(true);
-                            }
-                        }
-                        1 => self.stylesheet.toggle_battery_percentage(),
-                        2 => self.stylesheet.toggle_clock(),
-                        3 => {
-                            self.stylesheet.use_recents_carousel =
-                                !self.stylesheet.use_recents_carousel
-                        }
-                        4 => self.stylesheet.boxart_width = val.as_int().unwrap() as u32,
-                        5 => {
-                            self.stylesheet
-                                .ui_font
-                                .path
-                                .clone_from(&self.fonts[val.as_int().unwrap() as usize]);
-                            self.stylesheet.load_fonts()?;
-                        }
-                        6 => self.stylesheet.ui_font.size = val.as_int().unwrap() as u32,
-                        7 => {
-                            self.stylesheet
-                                .guide_font
-                                .path
-                                .clone_from(&self.fonts[val.as_int().unwrap() as usize]);
-                            self.stylesheet.load_fonts()?;
-                        }
-                        8 => self.stylesheet.guide_font.size = val.as_int().unwrap() as u32,
-                        9 => self.stylesheet.tab_font_size = val.as_int().unwrap() as f32 / 100.0,
-                        10 => {
-                            self.stylesheet.status_bar_font_size =
-                                val.as_int().unwrap() as f32 / 100.0
-                        }
-                        11 => {
-                            self.stylesheet.button_hint_font_size =
-                                val.as_int().unwrap() as f32 / 100.0
-                        }
-                        12 => self.stylesheet.highlight_color = val.as_color().unwrap(),
-                        13 => self.stylesheet.foreground_color = val.as_color().unwrap(),
-                        14 => self.stylesheet.background_color = val.as_color().unwrap(),
-                        15 => self.stylesheet.disabled_color = val.as_color().unwrap(),
-                        16 => self.stylesheet.tab_color = val.as_color().unwrap(),
-                        17 => self.stylesheet.tab_selected_color = val.as_color().unwrap(),
-                        18 => self.stylesheet.button_a_color = val.as_color().unwrap(),
-                        19 => self.stylesheet.button_b_color = val.as_color().unwrap(),
-                        20 => self.stylesheet.button_x_color = val.as_color().unwrap(),
-                        21 => self.stylesheet.button_y_color = val.as_color().unwrap(),
-                        _ => unreachable!("Invalid index"),
-                    }
-                }
+                    self.handlers[i](
+                        &mut self.stylesheet,
+                        &self.fonts,
+                        &self.themes,
+                        val,
+                        &commands,
+                    )?;
 
-                self.stylesheet.save()?;
-                commands
-                    .send(Command::ReloadStylesheet(Box::new(self.stylesheet.clone())))
-                    .await?;
+                    self.stylesheet.save()?;
+                    commands
+                        .send(Command::ReloadStylesheet(Box::new(self.stylesheet.clone())))
+                        .await?;
+                }
             }
             return Ok(true);
         }

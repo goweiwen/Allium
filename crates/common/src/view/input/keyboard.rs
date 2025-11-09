@@ -103,13 +103,17 @@ impl View for Keyboard {
                 .font_fallback(styles.cjk_font.font())
                 .font_size(styles.ui_font.size)
                 .text_color(styles.foreground_color)
+                .stroke_color(styles.stroke_color)
+                .stroke_width(styles.stroke_width)
                 .background_color(styles.background_color)
                 .build();
 
             let selected_text_style = FontTextStyleBuilder::new(styles.ui_font.font())
                 .font_fallback(styles.cjk_font.font())
                 .font_size(styles.ui_font.size)
-                .text_color(styles.foreground_color)
+                .text_color(styles.highlight_text_color)
+                .stroke_color(styles.highlight_text_stroke_color)
+                .stroke_width(styles.stroke_width)
                 .background_color(styles.highlight_color)
                 .build();
 
@@ -337,6 +341,10 @@ impl View for Keyboard {
     }
 
     fn set_position(&mut self, _point: crate::geom::Point) {}
+
+    fn focus(&mut self) {}
+
+    fn blur(&mut self) {}
 }
 
 #[rustfmt::skip]

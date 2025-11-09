@@ -109,6 +109,7 @@ where
                 ];
                 for tab in tabs.iter_mut() {
                     tab.color(StylesheetColor::Tab);
+                    tab.stroke_color(StylesheetColor::TabStroke);
                     tab.font_size(styles.tab_font_size);
                 }
                 tabs
@@ -118,7 +119,8 @@ where
         );
         tabs.get_mut(selected)
             .unwrap()
-            .color(StylesheetColor::TabSelected);
+            .color(StylesheetColor::TabSelected)
+            .stroke_color(StylesheetColor::TabSelectedStroke);
 
         // let mut title = Label::new(
         //     Point::new(x + 24, y + 8),
@@ -233,14 +235,16 @@ where
         self.tabs
             .get_mut(self.selected)
             .unwrap()
-            .color(StylesheetColor::Tab);
+            .color(StylesheetColor::Tab)
+            .stroke_color(StylesheetColor::TabStroke);
         self.selected = selected;
         self.view_mut().set_should_draw();
         self.set_should_draw();
         self.tabs
             .get_mut(self.selected)
             .unwrap()
-            .color(StylesheetColor::TabSelected);
+            .color(StylesheetColor::TabSelected)
+            .stroke_color(StylesheetColor::TabSelectedStroke);
         // self.title.set_text(self.title());
     }
 

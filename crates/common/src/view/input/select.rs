@@ -128,4 +128,12 @@ impl View for Select {
         self.point = point;
         self.label.set_position(point)
     }
+
+    fn focus(&mut self) {
+        self.label.focus()
+    }
+
+    fn blur(&mut self) {
+        self.label.blur()
+    }
 }

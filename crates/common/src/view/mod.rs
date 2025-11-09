@@ -93,6 +93,12 @@ pub trait View {
 
     /// Sets the position of the view.
     fn set_position(&mut self, point: Point);
+
+    /// Called when the view gains focus.
+    fn focus(&mut self) {}
+
+    /// Called when the view loses focus.
+    fn blur(&mut self) {}
 }
 
 impl fmt::Debug for dyn View {
@@ -153,5 +159,15 @@ impl View for Box<dyn View> {
     /// Sets the position of the view.
     fn set_position(&mut self, point: Point) {
         (**self).set_position(point)
+    }
+
+    /// Called when the view gains focus.
+    fn focus(&mut self) {
+        (**self).focus()
+    }
+
+    /// Called when the view loses focus.
+    fn blur(&mut self) {
+        (**self).blur()
     }
 }
