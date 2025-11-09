@@ -52,7 +52,7 @@ debug: third-party/my283
 
 .PHONY: strip-all
 strip-all:
-    find . -type f -exec file {}\; | awk -F ':' '/not stripped/ {print $1}' | while read f; do strip -s "$f"; done
+	find dist static migrations -type f -exec file {} \; | awk -F ':' '/not stripped/ {print $1}' | while read f; do strip -s "$f"; done
 
 .PHONY: package-build
 package-build:
