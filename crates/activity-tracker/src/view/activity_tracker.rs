@@ -3,7 +3,7 @@ use std::collections::{HashMap, VecDeque};
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::{RECENT_GAMES_LIMIT, SELECTION_MARGIN};
+use common::constants::RECENT_GAMES_LIMIT;
 use common::database::{Database, Game};
 use common::display::Display;
 use common::geom::{Alignment, Point, Rect};
@@ -33,16 +33,22 @@ impl ActivityTracker {
         let styles = res.get::<Stylesheet>();
 
         let list = SettingsList::new(
-            Rect::new(x + 12, y, w - 24, h - 8 - ButtonIcon::diameter(&styles)),
+            res.clone(),
+            Rect::new(
+                x + styles.margin_x,
+                y,
+                w - styles.margin_x as u32 * 2,
+                h - styles.margin_y as u32 - ButtonIcon::diameter(&styles),
+            ),
             Vec::new(),
             Vec::new(),
-            res.get::<Stylesheet>().ui_font.size + SELECTION_MARGIN,
+            res.get::<Stylesheet>().ui_font.size + styles.padding_y as u32,
         );
 
         let button_hints = Row::new(
             Point::new(
-                x + w as i32 - 12,
-                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+                x + w as i32 - styles.margin_y,
+                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_x,
             ),
             {
                 let locale = res.get::<Locale>();
@@ -84,6 +90,7 @@ impl ActivityTracker {
     }
 
     fn load_entries(&mut self) -> Result<()> {
+        let styles = self.res.get::<Stylesheet>();
         self.entries = match self.sort {
             Sort::LastPlayed => self
                 .res
@@ -115,7 +122,7 @@ impl ActivityTracker {
                         Point::zero(),
                         s,
                         Alignment::Right,
-                        Some(self.rect.w / 2 - 12),
+                        Some(self.rect.w / 2 - styles.margin_y as u32),
                     )) as Box<dyn View>
                 })
                 .collect(),

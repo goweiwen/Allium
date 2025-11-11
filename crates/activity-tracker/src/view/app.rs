@@ -53,14 +53,14 @@ where
         }
 
         let row: Row<Box<dyn View>> = Row::new(
-            Point::new(w as i32 - 12, y + 8),
+            Point::new(w as i32 - styles.margin_y, y + styles.margin_y),
             children,
             Alignment::Right,
             8,
         );
 
         let label = Label::new(
-            Point::new(x + 12, y + 8),
+            Point::new(x + styles.margin_x, y + styles.margin_y),
             locale.t("activity-tracker-title"),
             Alignment::Left,
             None,
@@ -68,9 +68,9 @@ where
 
         let rect = Rect::new(
             x,
-            y + 8 + styles.ui_font.size as i32 + 8,
+            y + styles.margin_y * 2 + styles.ui_font.size as i32,
             w,
-            h - 8 - styles.ui_font.size - 8,
+            h - styles.margin_y as u32 * 2 - styles.ui_font.size,
         );
 
         drop(styles);

@@ -69,8 +69,8 @@ impl RecentsCarousel {
 
         let button_hints = Row::new(
             Point::new(
-                x + w as i32 - 12,
-                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+                x + w as i32 - styles.margin_y,
+                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_x,
             ),
             {
                 let locale = res.get::<Locale>();

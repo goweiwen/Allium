@@ -3,7 +3,6 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::SELECTION_MARGIN;
 
 use common::display::Display as DisplayTrait;
 use common::display::settings::DisplaySettings;
@@ -36,11 +35,12 @@ impl Display {
         let styles = res.get::<Stylesheet>();
 
         let mut list = SettingsList::new(
+            res.clone(),
             Rect::new(
-                x + 12,
-                y + 8,
-                w - 24,
-                h - 8 - ButtonIcon::diameter(&styles) - 8,
+                x + styles.margin_x,
+                y,
+                w - styles.margin_x as u32 * 2,
+                h - ButtonIcon::diameter(&styles) - styles.margin_y as u32,
             ),
             vec![
                 locale.t("settings-display-screen-resolution"),
@@ -112,7 +112,7 @@ impl Display {
                     Alignment::Right,
                 )),
             ],
-            styles.ui_font.size + SELECTION_MARGIN,
+            styles.ui_font.size + styles.padding_y as u32,
         );
         if let Some(state) = state {
             list.select(state.selected);
@@ -120,8 +120,8 @@ impl Display {
 
         let button_hints = Row::new(
             Point::new(
-                rect.x + rect.w as i32 - 12,
-                rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+                rect.x + rect.w as i32 - styles.margin_y,
+                rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_y,
             ),
             vec![ButtonHint::new(
                 res.clone(),
@@ -165,7 +165,9 @@ impl View for Display {
         if self.button_hints.should_draw() {
             display.load(Rect::new(
                 self.rect.x,
-                self.rect.y + self.rect.h as i32 - ButtonIcon::diameter(styles) as i32 - 8,
+                self.rect.y + self.rect.h as i32
+                    - ButtonIcon::diameter(styles) as i32
+                    - styles.margin_x,
                 self.rect.w,
                 ButtonIcon::diameter(styles),
             ))?;

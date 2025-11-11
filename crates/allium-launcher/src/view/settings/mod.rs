@@ -21,7 +21,6 @@ use std::fmt::Debug;
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
-use common::constants::SELECTION_MARGIN;
 use common::display::Display as DisplayTrait;
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
@@ -84,10 +83,16 @@ impl Settings {
         labels.push(locale.t("settings-about"));
 
         let mut list = ScrollList::new(
-            Rect::new(x + 12, y + 8, w - 24, h - 8 - styles.ui_font.size - 8),
+            res.clone(),
+            Rect::new(
+                x + styles.margin_x,
+                y,
+                w - styles.margin_x as u32 * 2,
+                h - styles.margin_y as u32 - styles.ui_font.size,
+            ),
             labels,
             Alignment::Left,
-            styles.ui_font.size + SELECTION_MARGIN,
+            styles.ui_font.size + styles.padding_y as u32,
         );
         list.select(state.selected);
 
@@ -112,8 +117,8 @@ impl Settings {
 
         let button_hints = Row::new(
             Point::new(
-                x + w as i32 - 12,
-                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+                x + w as i32 - styles.margin_y,
+                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_y,
             ),
             vec![
                 ButtonHint::new(

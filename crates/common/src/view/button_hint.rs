@@ -66,7 +66,7 @@ where
         self.button.set_position(self.point);
         let width = self.button.bounding_box(styles).w;
         self.label.set_position(Point::new(
-            self.point.x + width as i32 + 8,
+            self.point.x + width as i32 + styles.margin_y,
             self.point.y + 2,
         ));
     }
@@ -75,7 +75,7 @@ where
         self.label
             .set_position(Point::new(self.point.x, self.point.y + 2));
         self.button.set_position(Point::new(
-            self.label.bounding_box(styles).x - 8,
+            self.label.bounding_box(styles).x - styles.margin_y,
             self.point.y,
         ));
     }

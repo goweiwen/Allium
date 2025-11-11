@@ -5,7 +5,6 @@ use std::time::Instant;
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::{Command, Value};
-use common::constants::SELECTION_MARGIN;
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
@@ -213,6 +212,86 @@ impl Theme {
                 )),
                 Box::new(|stylesheet, _fonts, _themes, val, _commands| {
                     stylesheet.guide_font.size = val.as_int().unwrap() as u32;
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-margin-x"),
+                Box::new(Number::new(
+                    Point::zero(),
+                    stylesheet.margin_x,
+                    0,
+                    30,
+                    5,
+                    |x| format!("{x}px"),
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.margin_x = val.as_int().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-margin-y"),
+                Box::new(Number::new(
+                    Point::zero(),
+                    stylesheet.margin_y,
+                    0,
+                    30,
+                    5,
+                    |x| format!("{x}px"),
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.margin_y = val.as_int().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-list-margin"),
+                Box::new(Number::new(
+                    Point::zero(),
+                    stylesheet.list_margin,
+                    0,
+                    30,
+                    5,
+                    |x| format!("{x}px"),
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.list_margin = val.as_int().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-padding-x"),
+                Box::new(Number::new(
+                    Point::zero(),
+                    stylesheet.padding_x,
+                    0,
+                    30,
+                    5,
+                    |x| format!("{x}px"),
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.padding_x = val.as_int().unwrap();
+                    Ok(())
+                }),
+            ),
+            (
+                locale.t("settings-theme-padding-y"),
+                Box::new(Number::new(
+                    Point::zero(),
+                    stylesheet.padding_y,
+                    0,
+                    30,
+                    5,
+                    |x| format!("{x}px"),
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _fonts, _themes, val, _commands| {
+                    stylesheet.padding_y = val.as_int().unwrap();
                     Ok(())
                 }),
             ),
@@ -440,15 +519,16 @@ impl Theme {
         );
 
         let mut list = SettingsList::new(
+            res.clone(),
             Rect::new(
-                x + 12,
-                y + 8,
-                w - 24,
-                h - 8 - ButtonIcon::diameter(&styles) - 8,
+                x + styles.margin_x,
+                y,
+                w - styles.margin_x as u32 * 2,
+                h - ButtonIcon::diameter(&styles) - styles.margin_y as u32,
             ),
             left,
             right,
-            res.get::<Stylesheet>().ui_font.size + SELECTION_MARGIN,
+            res.get::<Stylesheet>().ui_font.size + styles.padding_y as u32,
         );
         if let Some(state) = state {
             list.select(state.selected);
@@ -456,8 +536,8 @@ impl Theme {
 
         let left_button_hints = Row::new(
             Point::new(
-                rect.x + 12,
-                rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+                rect.x + styles.margin_x,
+                rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_y,
             ),
             vec![ButtonHint::new(
                 res.clone(),
@@ -472,8 +552,8 @@ impl Theme {
 
         let right_button_hints = Row::new(
             Point::new(
-                rect.x + rect.w as i32 - 12,
-                rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+                rect.x + rect.w as i32 - styles.margin_y,
+                rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_y,
             ),
             vec![
                 ButtonHint::new(

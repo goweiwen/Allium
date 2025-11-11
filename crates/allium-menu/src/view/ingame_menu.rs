@@ -9,9 +9,7 @@ use async_trait::async_trait;
 use base32::encode;
 use common::battery::Battery;
 use common::command::Command;
-use common::constants::{
-    ALLIUM_MENU_STATE, ALLIUM_SCREENSHOTS_DIR, SAVE_STATE_IMAGE_WIDTH, SELECTION_MARGIN,
-};
+use common::constants::{ALLIUM_MENU_STATE, ALLIUM_SCREENSHOTS_DIR, SAVE_STATE_IMAGE_WIDTH};
 use common::display::Display;
 use common::game_info::GameInfo;
 use common::geom::{Alignment, Point, Rect};
@@ -74,7 +72,7 @@ where
         let styles = res.get::<Stylesheet>();
 
         let name = Label::new(
-            Point::new(x + 12, y + 8),
+            Point::new(x + styles.margin_x, y + styles.margin_y),
             game_info.name.clone(),
             Alignment::Left,
             None,
@@ -95,7 +93,7 @@ where
         }
 
         let row: Row<Box<dyn View>> = Row::new(
-            Point::new(w as i32 - 12, y + 8),
+            Point::new(w as i32 - styles.margin_y, y + styles.margin_y),
             children,
             Alignment::Right,
             8,
@@ -103,18 +101,22 @@ where
 
         let entries = MenuEntry::entries(retroarch_info.as_ref());
         let mut menu = SettingsList::new(
+            res.clone(),
             Rect::new(
-                x + 12,
-                y + 8 + ButtonIcon::diameter(&styles) as i32 + 8,
-                w - SAVE_STATE_IMAGE_WIDTH - 12 - 12 - 24,
-                h - 8 - ButtonIcon::diameter(&styles) - 8,
+                x + styles.margin_x,
+                y + styles.margin_y + ButtonIcon::diameter(&styles) as i32 + 8,
+                w - SAVE_STATE_IMAGE_WIDTH
+                    - styles.margin_y as u32
+                    - styles.margin_y as u32
+                    - styles.margin_y as u32 * 2,
+                h - ButtonIcon::diameter(&styles) - styles.margin_y as u32 * 2,
             ),
             entries.iter().map(|e| e.as_str(&locale)).collect(),
             entries
                 .iter()
                 .map(|_| Box::new(NullView) as Box<dyn View>)
                 .collect(),
-            styles.ui_font.size + SELECTION_MARGIN,
+            styles.ui_font.size + styles.padding_y as u32,
         );
         if let Some(info) = retroarch_info.as_ref()
             && info.max_disk_slots > 1
@@ -135,10 +137,14 @@ where
 
         let mut image = Image::empty(
             Rect::new(
-                x + w as i32 - SAVE_STATE_IMAGE_WIDTH as i32 - 24,
-                y + 8 + styles.ui_font.size as i32 + 8,
+                x + w as i32 - SAVE_STATE_IMAGE_WIDTH as i32 - styles.margin_y * 2,
+                y + styles.margin_y + styles.ui_font.size as i32 + 8,
                 SAVE_STATE_IMAGE_WIDTH,
-                h - 8 - styles.ui_font.size - 8 - ButtonIcon::diameter(&styles) - 8,
+                h - styles.margin_x as u32
+                    - styles.ui_font.size
+                    - styles.margin_x as u32
+                    - ButtonIcon::diameter(&styles)
+                    - styles.margin_x as u32,
             ),
             ImageMode::Contain,
         );
@@ -147,8 +153,8 @@ where
 
         let button_hints = Row::new(
             Point::new(
-                x + w as i32 - 12,
-                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+                x + w as i32 - styles.margin_y,
+                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_x,
             ),
             vec![
                 ButtonHint::new(

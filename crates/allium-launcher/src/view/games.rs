@@ -39,8 +39,8 @@ impl Games {
 
         let button_hints = Row::new(
             Point::new(
-                x + 12,
-                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+                x + styles.margin_x,
+                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_y,
             ),
             {
                 let locale = res.get::<Locale>();

@@ -75,9 +75,9 @@ impl View for Toast {
             let image_w = image.width();
             let image_h = image.height();
             let x = (w - image_w) as i32 / 2;
-            let y = (h - image_h) as i32 / 2 - 8 - styles.ui_font.size as i32;
+            let y = (h - image_h) as i32 / 2 - styles.margin_y - styles.ui_font.size as i32;
 
-            text_y = y + image_h as i32 + 8;
+            text_y = y + image_h as i32 + styles.margin_y;
 
             Some(Rect::new(x, y, image_w, image_h))
         } else {
@@ -110,10 +110,13 @@ impl View for Toast {
         let Size { width, height } = rect.size;
         RoundedRectangle::new(
             Rectangle::new(
-                Point::new(x - 12, y - 8).into(),
-                Size::new(width + 24, height + 16),
+                Point::new(x - styles.margin_x, y - styles.margin_y).into(),
+                Size::new(
+                    width + styles.margin_x as u32 * 2,
+                    height + styles.margin_y as u32 * 2,
+                ),
             ),
-            CornerRadii::new(Size::new_equal(12)),
+            CornerRadii::new(Size::new_equal(styles.margin_x as u32)),
         )
         .into_styled(PrimitiveStyle::with_fill(bg_color))
         .draw(display)?;

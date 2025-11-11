@@ -10,12 +10,14 @@ use tokio::sync::mpsc::Sender;
 use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use crate::resources::Resources;
 use crate::stylesheet::Stylesheet;
 use crate::view::{Command, Label, View};
 
 /// A listing of selectable entries. Assumes that all entries have the same size.
 #[derive(Debug)]
 pub struct SettingsList {
+    res: Resources,
     rect: Rect,
     labels: Vec<String>,
     left: Vec<Label<String>>,
@@ -30,12 +32,14 @@ pub struct SettingsList {
 
 impl SettingsList {
     pub fn new(
+        res: Resources,
         rect: Rect,
         left: Vec<String>,
         right: Vec<Box<dyn View>>,
         entry_height: u32,
     ) -> Self {
         let mut this = Self {
+            res,
             rect,
             labels: Vec::new(),
             left: Vec::new(),
@@ -49,7 +53,6 @@ impl SettingsList {
         };
 
         this.set_items(left, right);
-        this.left_mut(0).focus();
 
         this
     }
@@ -59,22 +62,29 @@ impl SettingsList {
         self.right = right;
         self.left.clear();
 
-        let mut y = self.rect.y + 4;
-        for i in 0..self.visible_count() {
-            self.left.push(Label::new(
-                Point::new(self.rect.x + 12, y),
-                self.labels[i].to_owned(),
-                Alignment::Left,
-                Some((self.rect.w - 24) * 2 / 3),
-            ));
-            y += self.entry_height as i32;
+        {
+            let styles = self.res.get::<Stylesheet>();
+            let mut y = self.rect.y + styles.padding_y;
+            for i in 0..self.visible_count() {
+                self.left.push(Label::new(
+                    Point::new(self.rect.x + styles.padding_x, y),
+                    self.labels[i].to_owned(),
+                    Alignment::Left,
+                    Some((self.rect.w - styles.padding_x as u32 * 2) * 2 / 3),
+                ));
+                y += self.entry_height as i32 + styles.list_margin;
+            }
+
+            self.top = 0;
+            if self.selected >= self.top + self.visible_count() {
+                self.top = self.selected;
+            } else if self.selected < self.top {
+                self.top = self.selected.min(self.labels.len() - self.visible_count());
+            }
         }
 
-        self.top = 0;
-        if self.selected >= self.top + self.visible_count() {
-            self.top = self.selected;
-        } else if self.selected < self.top {
-            self.top = self.selected.min(self.labels.len() - self.visible_count());
+        if !self.left.is_empty() {
+            self.left_mut(0).focus();
         }
 
         self.has_layout = false;
@@ -132,7 +142,9 @@ impl SettingsList {
     }
 
     pub fn visible_count(&self) -> usize {
-        (self.rect.h as usize / self.entry_height as usize)
+        let styles = self.res.get::<Stylesheet>();
+        ((self.rect.h as usize - styles.margin_y as usize)
+            / (self.entry_height as usize + styles.list_margin as usize))
             .min(self.labels.len())
             .min(self.right.len())
     }
@@ -156,8 +168,10 @@ impl View for SettingsList {
                 for i in 0..self.visible_count() {
                     let child = &mut self.right[self.top + i];
                     child.set_position(Point::new(
-                        self.rect.x + self.rect.w as i32 - 13,
-                        self.rect.y + 4 + i as i32 * self.entry_height as i32,
+                        self.rect.x + self.rect.w as i32 - styles.padding_x - 1,
+                        self.rect.y
+                            + styles.padding_y
+                            + i as i32 * (self.entry_height as i32 + styles.list_margin),
                     ));
                     self.has_layout = true;
                 }
@@ -181,10 +195,13 @@ impl View for SettingsList {
                 let rect = left.union(&right);
                 RoundedRectangle::with_equal_corners(
                     Rectangle::new(
-                        embedded_graphics::prelude::Point::new(self.rect.x, rect.y - 4),
-                        Size::new(self.rect.w, rect.h + 8),
+                        embedded_graphics::prelude::Point::new(
+                            self.rect.x,
+                            rect.y - styles.padding_y,
+                        ),
+                        Size::new(self.rect.w, rect.h + styles.padding_y as u32 * 2),
                     ),
-                    Size::new_equal(rect.h),
+                    Size::new_equal(rect.h + styles.padding_y as u32 * 2),
                 )
                 .into_styled(PrimitiveStyle::with_fill(
                     styles.highlight_color.with_a(0x40),
@@ -196,10 +213,16 @@ impl View for SettingsList {
             let rect = if self.focused { right } else { left };
             RoundedRectangle::with_equal_corners(
                 Rectangle::new(
-                    embedded_graphics::prelude::Point::new(rect.x - 12, rect.y - 4),
-                    Size::new(rect.w + 24, rect.h + 8),
+                    embedded_graphics::prelude::Point::new(
+                        rect.x - styles.padding_x,
+                        rect.y - styles.padding_y,
+                    ),
+                    Size::new(
+                        rect.w + styles.padding_x as u32 * 2,
+                        rect.h + styles.padding_y as u32 * 2,
+                    ),
                 ),
-                Size::new_equal(rect.h),
+                Size::new_equal(rect.h + styles.padding_y as u32 * 2),
             )
             .into_styled(PrimitiveStyle::with_fill(styles.highlight_color))
             .draw(display)?;
@@ -237,11 +260,19 @@ impl View for SettingsList {
             // Highlight Background
             if right_rect.w != 0 && right_rect.h != 0 {
                 let rect = left_rect.union(&right_rect);
-                display.load(Rect::new(rect.x - 12, rect.y - 4, rect.w + 24, rect.h + 8))?;
+                display.load(Rect::new(
+                    rect.x - styles.padding_x,
+                    rect.y - styles.padding_y,
+                    rect.w + styles.padding_x as u32 * 2,
+                    rect.h + styles.padding_y as u32 * 2,
+                ))?;
                 RoundedRectangle::with_equal_corners(
                     Rectangle::new(
-                        embedded_graphics::prelude::Point::new(self.rect.x, rect.y - 4),
-                        Size::new(self.rect.w, rect.h + 8),
+                        embedded_graphics::prelude::Point::new(
+                            self.rect.x,
+                            rect.y - styles.padding_y,
+                        ),
+                        Size::new(self.rect.w, rect.h + styles.padding_y as u32 * 2),
                     ),
                     Size::new_equal(rect.h),
                 )
@@ -254,8 +285,14 @@ impl View for SettingsList {
             // Highlight
             RoundedRectangle::with_equal_corners(
                 Rectangle::new(
-                    embedded_graphics::prelude::Point::new(right_rect.x - 12, right_rect.y - 4),
-                    Size::new(right_rect.w + 24, right_rect.h + 8),
+                    embedded_graphics::prelude::Point::new(
+                        right_rect.x - styles.padding_x,
+                        right_rect.y - styles.padding_y,
+                    ),
+                    Size::new(
+                        right_rect.w + styles.padding_x as u32 * 2,
+                        right_rect.h + styles.padding_y as u32 * 2,
+                    ),
                 ),
                 Size::new_equal(right_rect.h),
             )
@@ -402,12 +439,14 @@ impl View for SettingsList {
     }
 
     fn set_position(&mut self, point: Point) {
+        let styles = self.res.get::<Stylesheet>();
+
         self.rect.x = point.x;
         self.rect.y = point.y;
         for (i, child) in self.left.iter_mut().enumerate() {
             child.set_position(Point::new(
-                point.x + 12,
-                point.y + 8 + i as i32 * self.entry_height as i32,
+                point.x + styles.padding_x,
+                point.y + i as i32 * (self.entry_height as i32 + styles.list_margin),
             ));
         }
 

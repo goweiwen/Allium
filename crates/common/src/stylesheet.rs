@@ -229,6 +229,16 @@ pub struct Stylesheet {
     pub status_bar_font_size: f32,
     #[serde(default = "Stylesheet::default_button_hint_font_size")]
     pub button_hint_font_size: f32,
+    #[serde(default = "Stylesheet::default_margin_x")]
+    pub margin_x: i32,
+    #[serde(default = "Stylesheet::default_margin_y")]
+    pub margin_y: i32,
+    #[serde(default = "Stylesheet::default_list_margin")]
+    pub list_margin: i32,
+    #[serde(default = "Stylesheet::default_padding_x")]
+    pub padding_x: i32,
+    #[serde(default = "Stylesheet::default_padding_y")]
+    pub padding_y: i32,
 }
 
 impl Stylesheet {
@@ -349,6 +359,11 @@ impl Stylesheet {
         self.tab_font_size = other.tab_font_size;
         self.status_bar_font_size = other.status_bar_font_size;
         self.button_hint_font_size = other.button_hint_font_size;
+        self.margin_x = other.margin_x;
+        self.margin_y = other.margin_y;
+        self.list_margin = other.list_margin;
+        self.padding_x = other.padding_x;
+        self.padding_y = other.padding_y;
     }
 
     pub fn load() -> Result<Self> {
@@ -516,6 +531,31 @@ rgui_particle_color = "0xFF{highlight:X}"
     }
 
     #[inline]
+    fn default_margin_x() -> i32 {
+        12
+    }
+
+    #[inline]
+    fn default_margin_y() -> i32 {
+        8
+    }
+
+    #[inline]
+    fn default_list_margin() -> i32 {
+        4
+    }
+
+    #[inline]
+    fn default_padding_x() -> i32 {
+        12
+    }
+
+    #[inline]
+    fn default_padding_y() -> i32 {
+        4
+    }
+
+    #[inline]
     fn default_boxart_width() -> u32 {
         250
     }
@@ -655,6 +695,11 @@ impl Default for Stylesheet {
             tab_font_size: Self::default_tab_font_size(),
             status_bar_font_size: Self::default_status_bar_font_size(),
             button_hint_font_size: Self::default_button_hint_font_size(),
+            margin_x: Self::default_margin_x(),
+            margin_y: Self::default_margin_y(),
+            list_margin: Self::default_list_margin(),
+            padding_x: Self::default_padding_x(),
+            padding_y: Self::default_padding_y(),
         }
     }
 }

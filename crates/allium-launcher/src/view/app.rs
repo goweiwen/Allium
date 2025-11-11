@@ -82,14 +82,14 @@ where
         }
 
         let status_bar: Row<Box<dyn View>> = Row::new(
-            Point::new(w as i32 - 12, y + 8),
+            Point::new(w as i32 - styles.margin_x, y + styles.margin_y),
             children,
             Alignment::Right,
-            8,
+            styles.margin_y,
         );
 
         let mut tabs = Row::new(
-            Point::new(x + 12, y + 8),
+            Point::new(x + styles.margin_x, y + styles.margin_y),
             {
                 let mut tabs = vec![
                     Label::new(
@@ -115,7 +115,7 @@ where
                 tabs
             },
             Alignment::Left,
-            12,
+            styles.margin_x,
         );
         tabs.get_mut(selected)
             .unwrap()
@@ -123,7 +123,7 @@ where
             .stroke_color(StylesheetColor::TabSelectedStroke);
 
         // let mut title = Label::new(
-        //     Point::new(x + 24, y + 8),
+        //     Point::new(x + 24, y + styles.margin_y),
         //     title(&locale, selected),
         //     Alignment::Left,
         //     None,
@@ -156,9 +156,9 @@ where
                 as u32;
             Rect::new(
                 rect.x,
-                rect.y + font_size as i32 + 8,
+                rect.y + font_size as i32 + styles.margin_y + styles.margin_y / 2,
                 rect.w,
-                rect.h - font_size - 8,
+                rect.h - font_size - styles.margin_y as u32 - styles.margin_y as u32 / 2,
             )
         };
 

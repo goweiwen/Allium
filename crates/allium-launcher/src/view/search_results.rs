@@ -163,22 +163,25 @@ impl SearchResultsView {
         };
 
         let mut header = Label::new(
-            Point::new(x + 12, y + 8),
+            Point::new(x + styles.margin_x, y + styles.margin_y),
             format!("Search: {}", query),
             Alignment::Left,
-            Some(w - 24),
+            Some(w - styles.margin_x as u32 * 2),
         );
         header.font_size(styles.tab_font_size);
 
         let mut result_count = Label::new(
-            Point::new(x + 12, y + 8 + styles.tab_font_size() as i32),
+            Point::new(
+                x + styles.margin_x,
+                y + styles.margin_y + styles.tab_font_size() as i32,
+            ),
             result_text,
             Alignment::Left,
-            Some(w - 24),
+            Some(w - styles.margin_x as u32 * 2),
         );
         result_count.font_size(styles.tab_font_size);
 
-        let list_y = y + 8 + styles.tab_font_size() as i32 * 2;
+        let list_y = y + styles.margin_y + styles.tab_font_size() as i32 * 2;
         let list = EntryList::new(
             Rect::new(x, y + list_y, w, h - list_y as u32),
             res.clone(),
@@ -187,8 +190,8 @@ impl SearchResultsView {
 
         let button_hints = Row::new(
             Point::new(
-                x + w as i32 - 12,
-                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+                x + w as i32 - styles.margin_x,
+                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_y,
             ),
             {
                 let locale = res.get::<Locale>();
@@ -217,7 +220,7 @@ impl SearchResultsView {
                 ]
             },
             Alignment::Right,
-            12,
+            styles.margin_x,
         );
 
         drop(styles);

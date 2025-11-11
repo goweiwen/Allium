@@ -128,7 +128,7 @@ impl View for ColorPicker {
 
         match self.alignment {
             Alignment::Right => {
-                let mut x = self.point.x - w as i32 - 12;
+                let mut x = self.point.x - w as i32 - styles.margin_y;
                 for i in (0..8).rev() {
                     let c = color.char(i);
                     let text = Text::with_alignment(
@@ -306,7 +306,7 @@ impl View for ColorPicker {
             .draw_background()
             .build();
 
-        let mut x = self.point.x - 30 - 12;
+        let mut x = self.point.x - 30 - styles.margin_y;
         for i in (0..8).rev() {
             let c = self.value.char(i);
             let text = Text::with_alignment(

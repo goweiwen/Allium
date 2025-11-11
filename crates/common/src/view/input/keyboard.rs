@@ -40,8 +40,8 @@ impl Keyboard {
 
         let button_hints = Row::new(
             Point::new(
-                w as i32 - 12,
-                h as i32 - ButtonIcon::diameter(&styles) as i32 - 8,
+                w as i32 - styles.margin_x,
+                h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_y,
             ),
             vec![
                 ButtonHint::new(
@@ -133,11 +133,15 @@ impl View for Keyboard {
             let w = key_size as i32 * KEYBOARD_COLUMNS + key_padding * 14;
             let h = key_size as i32 * KEYBOARD_ROWS + key_padding * 5;
             let x0 = (display.size().width as i32 - w) / 2;
-            let y0 = display.size().height as i32 - h - ButtonIcon::diameter(styles) as i32 - 8 - 8;
+            let y0 = display.size().height as i32
+                - h
+                - ButtonIcon::diameter(styles) as i32
+                - styles.margin_y
+                - styles.margin_y;
 
             RoundedRectangle::with_equal_corners(
                 Rectangle::new(
-                    Point::new(8, y0 - styles.ui_font.size as i32 - 8).into(),
+                    Point::new(8, y0 - styles.ui_font.size as i32 - styles.margin_y).into(),
                     Size::new(
                         display.size().width - 16,
                         h as u32 + styles.ui_font.size + 8,
@@ -215,7 +219,7 @@ impl View for Keyboard {
                 &masked_value(&self.value, self.is_password),
                 Point::new(
                     display.size().width as i32 / 2,
-                    display.size().height as i32 - h - 48 - styles.ui_font.size as i32,
+                    y0 - styles.margin_y - styles.ui_font.size as i32,
                 )
                 .into(),
                 text_style,
@@ -330,13 +334,17 @@ impl View for Keyboard {
         let key_size = styles.ui_font.size;
         let key_padding = 0;
         let h = key_size as i32 * KEYBOARD_ROWS + key_padding * 5 + 8;
-        let y = size.h as i32 - h - ButtonIcon::diameter(styles) as i32 - 8 - 8;
+        let y = size.h as i32
+            - h
+            - ButtonIcon::diameter(styles) as i32
+            - styles.margin_x
+            - styles.margin_x;
 
         Rect::new(
-            8,
-            y - styles.ui_font.size as i32 - 8,
-            size.w - 16,
-            h as u32 + styles.ui_font.size + 8,
+            0,
+            y - styles.ui_font.size as i32 - styles.margin_x,
+            size.w,
+            size.h - y as u32,
         )
     }
 

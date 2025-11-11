@@ -4,21 +4,21 @@ use anyhow::Result;
 use async_trait::async_trait;
 use embedded_graphics::Drawable;
 use embedded_graphics::prelude::Size;
-use embedded_graphics::primitives::{
-    CornerRadii, Primitive, PrimitiveStyle, Rectangle, RoundedRectangle,
-};
+use embedded_graphics::primitives::{Primitive, PrimitiveStyle, Rectangle, RoundedRectangle};
 
 use tokio::sync::mpsc::Sender;
 
 use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+use crate::resources::Resources;
 use crate::stylesheet::{Stylesheet, StylesheetColor};
 use crate::view::{Command, Label, View};
 
 /// A listing of selectable entries. Assumes that all entries have the same size.
 #[derive(Debug, Clone)]
 pub struct ScrollList {
+    res: Resources,
     rect: Rect,
     /// All entries.
     items: Vec<String>,
@@ -34,6 +34,7 @@ pub struct ScrollList {
 
 impl ScrollList {
     pub fn new(
+        res: Resources,
         mut rect: Rect,
         items: Vec<String>,
         alignment: Alignment,
@@ -49,6 +50,7 @@ impl ScrollList {
             }
         }
         let mut this = Self {
+            res,
             rect,
             items: Vec::new(),
             children: Vec::new(),
@@ -99,15 +101,19 @@ impl ScrollList {
         self.items = items;
 
         self.children.clear();
-        let mut y = self.rect.y + 4;
-        for i in 0..self.visible_count() {
-            self.children.push(Label::new(
-                Point::new(self.rect.x + 12 * self.alignment.sign(), y),
-                self.items[i].to_owned(),
-                self.alignment,
-                Some(self.rect.w - 24),
-            ));
-            y += self.entry_height as i32;
+
+        {
+            let styles = self.res.get::<Stylesheet>();
+            let mut y = self.rect.y + styles.padding_y;
+            for i in 0..self.visible_count() {
+                self.children.push(Label::new(
+                    Point::new(self.rect.x + styles.padding_x * self.alignment.sign(), y),
+                    self.items[i].to_owned(),
+                    self.alignment,
+                    Some(self.rect.w - styles.padding_x as u32 * 2),
+                ));
+                y += self.entry_height as i32 + styles.list_margin;
+            }
         }
 
         self.select(selected);
@@ -148,7 +154,9 @@ impl ScrollList {
     }
 
     pub fn visible_count(&self) -> usize {
-        (self.rect.h as usize / self.entry_height as usize).min(self.items.len())
+        let styles = self.res.get::<Stylesheet>();
+        ((self.rect.h as usize) / (self.entry_height as usize + styles.list_margin as usize))
+            .min(self.items.len())
     }
 
     fn update_children(&mut self) {
@@ -166,26 +174,7 @@ impl View for ScrollList {
         styles: &Stylesheet,
     ) -> Result<bool> {
         if self.should_draw() {
-            if let Some(color) = self.background_color {
-                let mut rect = self
-                    .children_mut()
-                    .iter_mut()
-                    .map(|v| v.bounding_box(styles))
-                    .reduce(|acc, r| acc.union(&r))
-                    .unwrap_or_default();
-                rect.x -= 12;
-                rect.w += 24;
-                rect.y -= 4;
-                rect.h += 8;
-                RoundedRectangle::new(
-                    rect.into(),
-                    CornerRadii::new(Size::new_equal((styles.ui_font.size + 8) / 2)),
-                )
-                .into_styled(PrimitiveStyle::with_fill(color.to_color(styles)))
-                .draw(display)?;
-            } else {
-                display.load(self.bounding_box(styles))?;
-            }
+            display.load(self.bounding_box(styles))?;
 
             if let Some(bg_color) = self.background_color {
                 let fill_style = PrimitiveStyle::with_fill(bg_color.to_color(styles));
@@ -203,10 +192,16 @@ impl View for ScrollList {
                 let fill_style = PrimitiveStyle::with_fill(styles.highlight_color);
                 RoundedRectangle::with_equal_corners(
                     Rectangle::new(
-                        embedded_graphics::prelude::Point::new(rect.x - 12, rect.y - 4),
-                        Size::new(rect.w + 24, rect.h + 8),
+                        embedded_graphics::prelude::Point::new(
+                            rect.x - styles.padding_x,
+                            rect.y - styles.padding_y,
+                        ),
+                        Size::new(
+                            rect.w + styles.padding_x as u32 * 2,
+                            rect.h + styles.padding_y as u32 * 2,
+                        ),
                     ),
-                    Size::new_equal(rect.h),
+                    Size::new_equal(rect.h + styles.padding_y as u32 * 2),
                 )
                 .into_styled(fill_style)
                 .draw(display)?;
@@ -312,12 +307,14 @@ impl View for ScrollList {
     }
 
     fn set_position(&mut self, point: Point) {
+        let styles = self.res.get::<Stylesheet>();
+
         self.rect.x = point.x;
         self.rect.y = point.y;
         for (i, child) in self.children.iter_mut().enumerate() {
             child.set_position(Point::new(
-                point.x + 12,
-                point.y + 8 + i as i32 * self.entry_height as i32,
+                point.x + styles.padding_x,
+                point.y + styles.margin_y / 2 + i as i32 * self.entry_height as i32,
             ));
         }
 

@@ -96,6 +96,11 @@ settings-theme-tab-selected-stroke-color = Tab Selected Stroke Color
 settings-theme-status-bar-color = Status Bar Color
 settings-theme-status-bar-stroke-color = Status Bar Stroke Color
 settings-theme-stroke-width = Stroke Width
+settings-theme-margin-x = Horizontal Margin
+settings-theme-margin-y = Vertical Margin
+settings-theme-list-margin = List Margin
+settings-theme-padding-x = Horizontal Padding
+settings-theme-padding-y = Vertical Padding
 
 settings-language = Language
 settings-language-language = Language

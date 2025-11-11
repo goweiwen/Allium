@@ -88,14 +88,14 @@ impl View for DateTime {
             .font_size(styles.ui_font.size)
             .text_color(text_color)
             .stroke_color(stroke_color)
-            .stroke_width(2)
+            .stroke_width(styles.stroke_width)
             .build();
 
         let focused_style = FontTextStyleBuilder::new(styles.ui_font.font())
             .font_size(styles.ui_font.size)
             .text_color(text_color)
             .stroke_color(stroke_color)
-            .stroke_width(2)
+            .stroke_width(styles.stroke_width)
             .draw_background()
             .build();
 
@@ -103,7 +103,7 @@ impl View for DateTime {
             .font_size(styles.ui_font.size)
             .text_color(text_color)
             .stroke_color(stroke_color)
-            .stroke_width(2)
+            .stroke_width(styles.stroke_width)
             .underline()
             .draw_background()
             .build();
@@ -292,7 +292,7 @@ impl View for DateTime {
             .draw_background()
             .build();
 
-        let mut x = self.point.x - 30 - 12;
+        let mut x = self.point.x - 30 - styles.margin_y;
         let datetime_str = self.value.format("%Y-%m-%d %H:%M:%S").to_string();
         let mut datetime_str = datetime_str.chars().map(|c| c.to_string()).rev();
         for _ in 0..19 {
