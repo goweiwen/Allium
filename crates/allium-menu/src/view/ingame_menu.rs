@@ -289,7 +289,10 @@ where
                             slot: -1,
                         })
                         .await?;
-                    RetroArchCommand::Quit.send().await?;
+                    // Send this as a command so we are sure the screenshot succeeds first.
+                    commands
+                        .send(Command::RetroArchCommand(RetroArchCommand::Quit))
+                        .await?;
                 } else {
                     tokio::process::Command::new("pkill")
                         .arg("retroarch")

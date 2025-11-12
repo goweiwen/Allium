@@ -78,10 +78,10 @@ impl AlliumMenu<DefaultPlatform> {
             #[cfg(unix)]
             tokio::select! {
                 _ = sigterm.recv() => {
-                    self.handle_command(Command::Exit)?;
+                    self.handle_command(Command::Exit).await?;
                 }
                 Some(command) = rx.recv() => {
-                    self.handle_command(command)?;
+                    self.handle_command(command).await?;
                 }
                 event = self.platform.poll() => {
                     let mut bubble = VecDeque::new();
@@ -93,7 +93,7 @@ impl AlliumMenu<DefaultPlatform> {
             #[cfg(not(unix))]
             tokio::select! {
                 Some(command) = rx.recv() => {
-                    self.handle_command(command)?;
+                    self.handle_command(command).await?;
                 }
                 event = self.platform.poll() => {
                     let mut bubble = VecDeque::new();
@@ -104,7 +104,7 @@ impl AlliumMenu<DefaultPlatform> {
         }
     }
 
-    fn handle_command(&mut self, command: Command) -> Result<()> {
+    async fn handle_command(&mut self, command: Command) -> Result<()> {
         match command {
             Command::Exit => {
                 self.view.save()?;
@@ -143,14 +143,16 @@ impl AlliumMenu<DefaultPlatform> {
                         .ok();
 
                     #[cfg(feature = "miyoo")]
-                    std::process::Command::new("screenshot")
+                    tokio::process::Command::new("screenshot")
                         .arg(screenshot_path)
                         .arg(format!(
                             "--width={}",
                             common::constants::SAVE_STATE_IMAGE_WIDTH
                         ))
                         .arg("--crop")
-                        .spawn()?;
+                        .spawn()?
+                        .wait()
+                        .await?;
 
                     #[cfg(feature = "simulator")]
                     std::fs::copy(
@@ -158,6 +160,9 @@ impl AlliumMenu<DefaultPlatform> {
                         screenshot_path,
                     )?;
                 }
+            }
+            Command::RetroArchCommand(command) => {
+                command.send().await?;
             }
             command => {
                 warn!("unhandled command: {:?}", command);

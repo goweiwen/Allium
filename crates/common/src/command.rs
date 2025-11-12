@@ -4,6 +4,7 @@ use image::{ImageBuffer, Rgba};
 
 use crate::display::color::Color;
 use crate::locale::LocaleSettings;
+use crate::retroarch::RetroArchCommand;
 use crate::{display::settings::DisplaySettings, stylesheet::Stylesheet};
 
 #[derive(Debug)]
@@ -29,6 +30,7 @@ pub enum Command {
         core: String,
         slot: i8,
     },
+    RetroArchCommand(RetroArchCommand),
 }
 
 #[derive(Debug, Clone)]
