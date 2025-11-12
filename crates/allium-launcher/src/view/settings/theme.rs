@@ -575,6 +575,9 @@ impl Theme {
             12,
         );
 
+        drop(styles);
+        drop(locale);
+
         Self {
             rect,
             stylesheet,

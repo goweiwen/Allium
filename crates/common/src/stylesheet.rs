@@ -1,6 +1,7 @@
 use std::fs::{self, File};
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 use anyhow::Result;
 use itertools::Itertools;
@@ -8,6 +9,7 @@ use log::{debug, error, warn};
 use rusttype::Font;
 use serde::{Deserialize, Serialize};
 
+use crate::constants::ALLIUM_SD_ROOT;
 use crate::{
     constants::{ALLIUM_FONTS_DIR, ALLIUM_THEME_STATE, ALLIUM_THEMES_DIR},
     display::color::Color,
@@ -446,7 +448,7 @@ impl Stylesheet {
         let file = File::create(&override_path)?;
         serde_json::to_writer_pretty(&file, &self)?;
 
-        if let Err(e) = self.patch_ra_config() {
+        if let Err(e) = self.set_retroarch_theme() {
             warn!("failed to patch RA config: {}", e);
         }
         Ok(())
@@ -494,12 +496,47 @@ impl Stylesheet {
         self.ui_font.size as f32 * self.status_bar_font_size
     }
 
-    fn patch_ra_config(&self) -> Result<()> {
+    fn set_retroarch_theme(&self) -> Result<()> {
+        if let Some(wallpaper) = &self.wallpaper {
+            let path = Self::resolve_wallpaper(wallpaper);
+
+            if !path.exists() {
+                return Ok(());
+            }
+
+            let mut image = ::image::open(path)?;
+
+            let (w, h) = (320, 240);
+            if image.width() != w || image.height() != h {
+                let new_h = h.min(w * image.height() / image.width());
+                image = image.resize_to_fill(w, new_h, image::imageops::FilterType::Nearest);
+            }
+
+            let mut image = image.into_rgba8();
+
+            let bg_color = self.background_color;
+            if bg_color.a() != 0 {
+                for p in image.pixels_mut() {
+                    let alpha = bg_color.a() as u32;
+                    p[0] =
+                        ((p[0] as u32 * (255 - alpha) + bg_color.r() as u32 * alpha) / 255) as u8;
+                    p[1] =
+                        ((p[1] as u32 * (255 - alpha) + bg_color.g() as u32 * alpha) / 255) as u8;
+                    p[2] =
+                        ((p[2] as u32 * (255 - alpha) + bg_color.b() as u32 * alpha) / 255) as u8;
+                }
+            }
+
+            let retroarch_wallpaper_path =
+                PathBuf::from("/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.png");
+            image.save(&retroarch_wallpaper_path)?;
+        }
+
         let mut file = File::create("/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.cfg")?;
         write!(
             file,
-            r#"rgui_entry_normal_color = "0xFF{foreground:X}"
-rgui_entry_hover_color = "0xFF{highlight:X}"
+            r#"rgui_entry_normal_color = "0xFF{tab_color:X}"
+rgui_entry_hover_color = "0xFF{tab_selected_color:X}"
 rgui_title_color = "0xFF{highlight:X}"
 rgui_bg_dark_color = "0xFF{background:X}"
 rgui_bg_light_color = "0xFF{background:X}"
@@ -507,12 +544,32 @@ rgui_border_dark_color = "0xFF{background:X}"
 rgui_border_light_color = "0xFF{background:X}"
 rgui_shadow_color = "0xFF{background:X}"
 rgui_particle_color = "0xFF{highlight:X}"
+rgui_wallpaper = "/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.png"
 "#,
-            foreground = self.foreground_color,
+            tab_color = self.tab_color,
+            tab_selected_color = self.tab_selected_color,
+            // foreground = self.foreground_color,
             highlight = self.highlight_color,
-            background = self.background_color
+            background = self.background_color,
         )?;
         Ok(())
+    }
+
+    fn resolve_wallpaper(wallpaper: &Path) -> PathBuf {
+        // If wallpaper path is absolute, use it as-is
+        if wallpaper.is_absolute() {
+            return wallpaper.to_path_buf();
+        }
+
+        // Load the current theme and check if wallpaper exists in theme directory
+        let theme = crate::stylesheet::Theme::load();
+        let theme_wallpaper = ALLIUM_THEMES_DIR.join(&theme.0).join(wallpaper);
+        if theme_wallpaper.exists() {
+            return theme_wallpaper;
+        }
+
+        // Fall back to SD root
+        ALLIUM_SD_ROOT.join(wallpaper)
     }
 
     #[inline]
