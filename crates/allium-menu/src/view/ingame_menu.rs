@@ -20,7 +20,7 @@ use common::retroarch::RetroArchCommand;
 use common::stylesheet::Stylesheet;
 use common::view::{
     BatteryIndicator, ButtonHint, ButtonIcon, Clock, Image, ImageMode, Label, NullView, Row,
-    SettingsList, View,
+    ScrollList, SettingsList, View,
 };
 use log::warn;
 use serde::{Deserialize, Serialize};
@@ -33,6 +33,12 @@ use crate::view::text_reader::TextReader;
 #[derive(Serialize, Deserialize, Default)]
 pub struct IngameMenuState {
     is_text_reader_open: bool,
+    selected_guide_path: Option<PathBuf>,
+}
+
+enum ChildView {
+    TextReader(Box<TextReader>),
+    GuideSelector(ScrollList),
 }
 
 pub struct IngameMenu<B>
@@ -44,7 +50,7 @@ where
     name: Label<String>,
     row: Row<Box<dyn View>>,
     menu: SettingsList,
-    child: Option<TextReader>,
+    child: Option<ChildView>,
     button_hints: Row<ButtonHint<String>>,
     entries: Vec<MenuEntry>,
     retroarch_info: Option<RetroArchInfo>,
@@ -177,11 +183,52 @@ where
         );
 
         let mut child = None;
-        if state.is_text_reader_open
-            && let Some(guide) = game_info.guide.as_ref()
-        {
+        if state.is_text_reader_open {
             menu.select(MenuEntry::Guide.index(retroarch_info.as_ref()));
-            child = Some(TextReader::new(rect, res.clone(), guide.clone()));
+
+            // Select the guide by path if previously selected
+            let selected = if let Some(path) = &state.selected_guide_path
+                && let Some(idx) = game_info.guides.iter().position(|p| p == path)
+            {
+                Some(idx)
+            } else if game_info.guides.len() == 1 {
+                Some(0)
+            } else {
+                None
+            };
+
+            if let Some(selected) = selected {
+                // If only one guide, open it directly
+                child = Some(ChildView::TextReader(Box::new(TextReader::new(
+                    rect,
+                    res.clone(),
+                    game_info.guides[selected].clone(),
+                ))));
+            } else if !game_info.guides.is_empty() {
+                // If multiple guides, show selector
+                let guide_names: Vec<String> = game_info
+                    .guides
+                    .iter()
+                    .filter_map(|p| {
+                        p.file_name()
+                            .and_then(|n| n.to_str())
+                            .map(|s| s.to_string())
+                    })
+                    .collect();
+                let selector = ScrollList::new(
+                    res.clone(),
+                    Rect::new(
+                        x + styles.margin_x,
+                        y + styles.margin_y + ButtonIcon::diameter(&styles) as i32 + 8,
+                        w - styles.margin_x as u32 * 2,
+                        h - ButtonIcon::diameter(&styles) - styles.margin_y as u32 * 3,
+                    ),
+                    guide_names.clone(),
+                    Alignment::Left,
+                    styles.ui_font.size + styles.padding_y as u32,
+                );
+                child = Some(ChildView::GuideSelector(selector));
+            }
         }
 
         let path = game_info.path.clone();
@@ -227,11 +274,19 @@ where
 
     pub fn save(&self) -> Result<()> {
         let file = File::create(ALLIUM_MENU_STATE.as_path())?;
+        let selected_guide_path = match self.child.as_ref() {
+            Some(ChildView::GuideSelector(selector)) => {
+                let guides = &self.res.get::<GameInfo>().guides;
+                guides.get(selector.selected()).cloned()
+            }
+            _ => None,
+        };
         let state = IngameMenuState {
             is_text_reader_open: self.child.is_some(),
+            selected_guide_path,
         };
-        if let Some(child) = self.child.as_ref() {
-            child.save_cursor();
+        if let Some(ChildView::TextReader(reader)) = self.child.as_ref() {
+            reader.save_cursor();
         }
         serde_json::to_writer(file, &state)?;
         Ok(())
@@ -270,8 +325,43 @@ where
                 commands.send(Command::Exit).await?;
             }
             MenuEntry::Guide => {
-                if let Some(guide) = self.res.get::<GameInfo>().guide.as_ref() {
-                    self.child = Some(TextReader::new(self.rect, self.res.clone(), guide.clone()));
+                let guides = &self.res.get::<GameInfo>().guides;
+                if guides.len() == 1 {
+                    // If only one guide, open it directly
+                    self.child = Some(ChildView::TextReader(Box::new(TextReader::new(
+                        self.rect,
+                        self.res.clone(),
+                        guides[0].clone(),
+                    ))));
+                } else if !guides.is_empty() {
+                    // If multiple guides, show selector
+                    let styles = self.res.get::<Stylesheet>();
+                    let guide_names: Vec<String> = guides
+                        .iter()
+                        .filter_map(|p| {
+                            p.file_name()
+                                .and_then(|n| n.to_str())
+                                .map(|s| s.to_string())
+                        })
+                        .collect();
+                    let selector = ScrollList::new(
+                        self.res.clone(),
+                        Rect::new(
+                            self.rect.x + styles.margin_x,
+                            self.rect.y
+                                + styles.margin_y
+                                + ButtonIcon::diameter(&styles) as i32
+                                + 8,
+                            self.rect.w - styles.margin_x as u32 * 2,
+                            self.rect.h
+                                - ButtonIcon::diameter(&styles)
+                                - styles.margin_y as u32 * 3,
+                        ),
+                        guide_names,
+                        Alignment::Left,
+                        styles.ui_font.size + styles.padding_y as u32,
+                    );
+                    self.child = Some(ChildView::GuideSelector(selector));
                 }
             }
             MenuEntry::Settings => {
@@ -380,40 +470,66 @@ where
             self.dirty = false;
         }
 
-        if let Some(child) = self.child.as_mut() {
-            drawn |= child.should_draw() && child.draw(display, styles)?;
-        } else {
-            drawn |= self.name.should_draw() && self.name.draw(display, styles)?;
-            drawn |= self.row.should_draw() && self.row.draw(display, styles)?;
-            drawn |= self.menu.should_draw() && self.menu.draw(display, styles)?;
-            drawn |= self.image.should_draw() && self.image.draw(display, styles)?;
-            drawn |= self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
+        match self.child.as_mut() {
+            Some(ChildView::TextReader(reader)) => {
+                drawn |= reader.should_draw() && reader.draw(display, styles)?;
+            }
+            Some(ChildView::GuideSelector(selector)) => {
+                drawn |= self.name.should_draw() && self.name.draw(display, styles)?;
+                drawn |= self.row.should_draw() && self.row.draw(display, styles)?;
+                drawn |= selector.should_draw() && selector.draw(display, styles)?;
+                drawn |=
+                    self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
+            }
+            None => {
+                drawn |= self.name.should_draw() && self.name.draw(display, styles)?;
+                drawn |= self.row.should_draw() && self.row.draw(display, styles)?;
+                drawn |= self.menu.should_draw() && self.menu.draw(display, styles)?;
+                drawn |= self.image.should_draw() && self.image.draw(display, styles)?;
+                drawn |=
+                    self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
+            }
         }
 
         Ok(drawn)
     }
 
     fn should_draw(&self) -> bool {
-        if let Some(child) = self.child.as_ref() {
-            self.dirty || child.should_draw()
-        } else {
-            self.dirty
-                || self.name.should_draw()
-                || self.row.should_draw()
-                || self.menu.should_draw()
-                || self.button_hints.should_draw()
+        match self.child.as_ref() {
+            Some(ChildView::TextReader(reader)) => self.dirty || reader.should_draw(),
+            Some(ChildView::GuideSelector(selector)) => {
+                self.dirty
+                    || self.name.should_draw()
+                    || self.row.should_draw()
+                    || selector.should_draw()
+                    || self.button_hints.should_draw()
+            }
+            None => {
+                self.dirty
+                    || self.name.should_draw()
+                    || self.row.should_draw()
+                    || self.menu.should_draw()
+                    || self.button_hints.should_draw()
+            }
         }
     }
 
     fn set_should_draw(&mut self) {
         self.dirty = true;
-        if let Some(child) = self.child.as_mut() {
-            child.set_should_draw();
-        } else {
-            self.name.set_should_draw();
-            self.row.set_should_draw();
-            self.menu.set_should_draw();
-            self.button_hints.set_should_draw();
+        match self.child.as_mut() {
+            Some(ChildView::TextReader(reader)) => reader.set_should_draw(),
+            Some(ChildView::GuideSelector(selector)) => {
+                self.name.set_should_draw();
+                self.row.set_should_draw();
+                selector.set_should_draw();
+                self.button_hints.set_should_draw();
+            }
+            None => {
+                self.name.set_should_draw();
+                self.row.set_should_draw();
+                self.menu.set_should_draw();
+                self.button_hints.set_should_draw();
+            }
         }
     }
 
@@ -423,20 +539,52 @@ where
         commands: Sender<Command>,
         bubble: &mut VecDeque<Command>,
     ) -> Result<bool> {
-        if let Some(child) = self.child.as_mut()
-            && child
-                .handle_key_event(event, commands.clone(), bubble)
-                .await?
-        {
-            bubble.retain(|cmd| match cmd {
-                Command::CloseView => {
+        match self.child.as_mut() {
+            Some(ChildView::TextReader(reader)) => {
+                if reader
+                    .handle_key_event(event, commands.clone(), bubble)
+                    .await?
+                {
+                    bubble.retain(|cmd| match cmd {
+                        Command::CloseView => {
+                            self.child = None;
+                            self.set_should_draw();
+                            false
+                        }
+                        _ => true,
+                    });
+                    return Ok(true);
+                }
+            }
+            Some(ChildView::GuideSelector(selector)) => {
+                if selector
+                    .handle_key_event(event, commands.clone(), bubble)
+                    .await?
+                {
+                    return Ok(true);
+                }
+                // Handle selection of a guide
+                if matches!(event, KeyEvent::Pressed(Key::A)) {
+                    let selected_idx = selector.selected();
+                    let guides = self.res.get::<GameInfo>().guides.clone();
+                    if let Some(guide) = guides.get(selected_idx) {
+                        self.child = Some(ChildView::TextReader(Box::new(TextReader::new(
+                            self.rect,
+                            self.res.clone(),
+                            guide.clone(),
+                        ))));
+                        self.set_should_draw();
+                        return Ok(true);
+                    }
+                }
+                // Handle back button to close selector
+                if matches!(event, KeyEvent::Pressed(Key::B)) {
                     self.child = None;
                     self.set_should_draw();
-                    false
+                    return Ok(true);
                 }
-                _ => true,
-            });
-            return Ok(true);
+            }
+            None => {}
         }
 
         let selected = self.menu.selected();

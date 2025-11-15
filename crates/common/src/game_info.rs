@@ -30,8 +30,8 @@ pub struct GameInfo {
     pub needs_swap: bool,
     /// Path to the image.
     pub image: Option<PathBuf>,
-    /// Path to the guide text file.
-    pub guide: Option<PathBuf>,
+    /// Paths to the guide text files.
+    pub guides: Vec<PathBuf>,
     /// Start time. Used to measure playtime.
     pub start_time: DateTime<Utc>,
 }
@@ -47,7 +47,7 @@ impl Default for GameInfo {
             has_menu: false,
             needs_swap: false,
             image: None,
-            guide: None,
+            guides: Vec::new(),
             start_time: Utc::now(),
         }
     }
@@ -66,7 +66,7 @@ impl GameInfo {
         has_menu: bool,
         needs_swap: bool,
     ) -> Self {
-        let guide = find_guide(&path);
+        let guides = find_guides(&path);
 
         Self {
             name,
@@ -77,7 +77,7 @@ impl GameInfo {
             has_menu,
             needs_swap,
             image,
-            guide,
+            guides,
             start_time: Utc::now(),
         }
     }
@@ -135,11 +135,11 @@ impl GameInfo {
     }
 }
 
-/// Searches for the guide path, caches it, and returns it
-pub fn find_guide(path: &Path) -> Option<PathBuf> {
-    // Search for Imgs folder upwards, recursively
+/// Searches for all guide paths and returns them
+pub fn find_guides(path: &Path) -> Vec<PathBuf> {
+    // Search for Guides folder upwards, recursively
     let mut parent = path.to_path_buf();
-    let mut guide = None;
+    let mut guides = Vec::new();
     'guide: while parent.pop() {
         let mut guide_path = parent.join("Guides");
         if guide_path.is_dir() {
@@ -149,13 +149,19 @@ pub fn find_guide(path: &Path) -> Option<PathBuf> {
             guide_path.set_extension("");
             if guide_path.is_dir() {
                 debug!("Found guide directory: {:?}", guide_path);
-                // Take the first guide for now
-                let entries = fs::read_dir(&guide_path).ok()?;
-                for entry in entries {
-                    let entry = entry.ok()?;
-                    let path = entry.path();
-                    if path.is_file() {
-                        guide = Some(path);
+                // Collect all guides in the directory
+                if let Ok(entries) = fs::read_dir(&guide_path) {
+                    let mut found_guides: Vec<PathBuf> = entries
+                        .filter_map(|entry| {
+                            let entry = entry.ok()?;
+                            let path = entry.path();
+                            if path.is_file() { Some(path) } else { None }
+                        })
+                        .collect();
+                    // Sort guides alphabetically for consistent ordering
+                    found_guides.sort();
+                    if !found_guides.is_empty() {
+                        guides = found_guides;
                         break 'guide;
                     }
                 }
@@ -164,9 +170,9 @@ pub fn find_guide(path: &Path) -> Option<PathBuf> {
             const GUIDE_EXTENSIONS: [&str; 1] = ["txt"];
             for ext in &GUIDE_EXTENSIONS {
                 guide_path.set_extension(ext);
-                debug!("Found guide file: {:?}", guide_path);
+                debug!("Checking guide file: {:?}", guide_path);
                 if guide_path.is_file() {
-                    guide = Some(guide_path);
+                    guides.push(guide_path.clone());
                     break 'guide;
                 }
             }
@@ -175,5 +181,5 @@ pub fn find_guide(path: &Path) -> Option<PathBuf> {
             break;
         }
     }
-    guide
+    guides
 }
