@@ -52,6 +52,7 @@ where
     menu: SettingsList,
     child: Option<ChildView>,
     button_hints: Row<ButtonHint<String>>,
+    button_hints_left: Row<ButtonHint<String>>,
     entries: Vec<MenuEntry>,
     retroarch_info: Option<RetroArchInfo>,
     path: PathBuf,
@@ -182,6 +183,22 @@ where
             12,
         );
 
+        let button_hints_left = Row::new(
+            Point::new(
+                x + styles.margin_x,
+                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_x,
+            ),
+            vec![ButtonHint::new(
+                res.clone(),
+                Point::zero(),
+                Key::Menu,
+                locale.t("ingame-menu-continue"),
+                Alignment::Left,
+            )],
+            Alignment::Left,
+            12,
+        );
+
         let mut child = None;
         if state.is_text_reader_open {
             menu.select(
@@ -250,6 +267,7 @@ where
             menu,
             child,
             button_hints,
+            button_hints_left,
             entries,
             retroarch_info,
             path,
@@ -483,16 +501,18 @@ where
                 drawn |= self.name.should_draw() && self.name.draw(display, styles)?;
                 drawn |= self.row.should_draw() && self.row.draw(display, styles)?;
                 drawn |= selector.should_draw() && selector.draw(display, styles)?;
-                drawn |=
-                    self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
+                drawn |= (self.button_hints.should_draw() || self.button_hints_left.should_draw())
+                    && self.button_hints.draw(display, styles)?
+                    && self.button_hints_left.draw(display, styles)?;
             }
             None => {
                 drawn |= self.name.should_draw() && self.name.draw(display, styles)?;
                 drawn |= self.row.should_draw() && self.row.draw(display, styles)?;
                 drawn |= self.menu.should_draw() && self.menu.draw(display, styles)?;
                 drawn |= self.image.should_draw() && self.image.draw(display, styles)?;
-                drawn |=
-                    self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
+                drawn |= (self.button_hints.should_draw() || self.button_hints_left.should_draw())
+                    && self.button_hints.draw(display, styles)?
+                    && self.button_hints_left.draw(display, styles)?;
             }
         }
 
@@ -508,6 +528,7 @@ where
                     || self.row.should_draw()
                     || selector.should_draw()
                     || self.button_hints.should_draw()
+                    || self.button_hints_left.should_draw()
             }
             None => {
                 self.dirty
@@ -515,6 +536,7 @@ where
                     || self.row.should_draw()
                     || self.menu.should_draw()
                     || self.button_hints.should_draw()
+                    || self.button_hints_left.should_draw()
             }
         }
     }
@@ -528,12 +550,14 @@ where
                 self.row.set_should_draw();
                 selector.set_should_draw();
                 self.button_hints.set_should_draw();
+                self.button_hints_left.set_should_draw();
             }
             None => {
                 self.name.set_should_draw();
                 self.row.set_should_draw();
                 self.menu.set_should_draw();
                 self.button_hints.set_should_draw();
+                self.button_hints_left.set_should_draw();
             }
         }
     }
@@ -717,7 +741,13 @@ where
     }
 
     fn children(&self) -> Vec<&dyn View> {
-        vec![&self.name, &self.row, &self.menu, &self.button_hints]
+        vec![
+            &self.name,
+            &self.row,
+            &self.menu,
+            &self.button_hints,
+            &self.button_hints_left,
+        ]
     }
 
     fn children_mut(&mut self) -> Vec<&mut dyn View> {
@@ -726,6 +756,7 @@ where
             &mut self.row,
             &mut self.menu,
             &mut self.button_hints,
+            &mut self.button_hints_left,
         ]
     }
 

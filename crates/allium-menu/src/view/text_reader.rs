@@ -30,6 +30,7 @@ pub struct TextReader {
     lowercase_text: String,
     cursor: usize,
     button_hints: Row<ButtonHint<String>>,
+    button_hints_left: Row<ButtonHint<String>>,
     keyboard: Option<Keyboard>,
     last_searched: String,
     dirty: bool,
@@ -82,6 +83,22 @@ impl TextReader {
             12,
         );
 
+        let button_hints_left = Row::new(
+            Point::new(
+                x + styles.margin_x,
+                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_x,
+            ),
+            vec![ButtonHint::new(
+                res.clone(),
+                Point::zero(),
+                Key::Menu,
+                locale.t("ingame-menu-continue"),
+                Alignment::Left,
+            )],
+            Alignment::Left,
+            12,
+        );
+
         drop(locale);
         drop(styles);
 
@@ -93,6 +110,7 @@ impl TextReader {
             lowercase_text,
             cursor,
             button_hints,
+            button_hints_left,
             keyboard: None,
             dirty: true,
             last_searched: String::new(),
@@ -425,6 +443,7 @@ impl View for TextReader {
         }
 
         drawn |= self.button_hints.draw(display, styles)?;
+        drawn |= self.button_hints_left.draw(display, styles)?;
 
         if let Some(keyboard) = self.keyboard.as_mut() {
             drawn |= keyboard.draw(display, styles)?;
@@ -436,6 +455,7 @@ impl View for TextReader {
     fn should_draw(&self) -> bool {
         self.dirty
             || self.button_hints.should_draw()
+            || self.button_hints_left.should_draw()
             || self
                 .keyboard
                 .as_ref()
@@ -445,6 +465,7 @@ impl View for TextReader {
     fn set_should_draw(&mut self) {
         self.dirty = true;
         self.button_hints.set_should_draw();
+        self.button_hints_left.set_should_draw();
         if let Some(keyboard) = self.keyboard.as_mut() {
             keyboard.set_should_draw();
         }
