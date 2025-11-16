@@ -28,6 +28,7 @@ pub enum StylesheetColor {
     ButtonB,
     ButtonX,
     ButtonY,
+    ButtonBackground,
     ButtonText,
     ButtonHintText,
     BackgroundHighlightBlend,
@@ -53,6 +54,7 @@ impl StylesheetColor {
             Self::ButtonB => stylesheet.button_b_color,
             Self::ButtonX => stylesheet.button_x_color,
             Self::ButtonY => stylesheet.button_y_color,
+            Self::ButtonBackground => stylesheet.button_bg_color,
             Self::ButtonText => stylesheet.button_text_color,
             Self::ButtonHintText => stylesheet.button_hint_text_color,
             Self::BackgroundHighlightBlend => stylesheet
@@ -201,6 +203,8 @@ pub struct Stylesheet {
     pub button_x_color: Color,
     #[serde(default = "Stylesheet::default_button_y_color")]
     pub button_y_color: Color,
+    #[serde(default = "Stylesheet::default_button_bg_color")]
+    pub button_bg_color: Color,
     #[serde(default = "Stylesheet::default_button_text_color")]
     pub button_text_color: Color,
     #[serde(default = "Stylesheet::default_button_hint_text_color")]
@@ -347,6 +351,7 @@ impl Stylesheet {
         self.button_b_color = other.button_b_color;
         self.button_x_color = other.button_x_color;
         self.button_y_color = other.button_y_color;
+        self.button_bg_color = other.button_bg_color;
         self.button_text_color = other.button_text_color;
         self.button_hint_text_color = other.button_hint_text_color;
         self.stroke_color = other.stroke_color;
@@ -673,6 +678,11 @@ rgui_wallpaper = "/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.png"
     }
 
     #[inline]
+    fn default_button_bg_color() -> Color {
+        Stylesheet::default_disabled_color()
+    }
+
+    #[inline]
     fn default_button_text_color() -> Color {
         Stylesheet::default_foreground_color()
     }
@@ -737,6 +747,7 @@ impl Default for Stylesheet {
             button_b_color: Self::default_button_b_color(),
             button_x_color: Self::default_button_x_color(),
             button_y_color: Self::default_button_y_color(),
+            button_bg_color: Self::default_button_bg_color(),
             button_text_color: Self::default_button_text_color(),
             button_hint_text_color: Self::default_button_hint_text_color(),
             stroke_color: Self::default_stroke_color(),
