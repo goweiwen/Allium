@@ -69,15 +69,15 @@ impl View for Toast {
         let h = display.size().height;
 
         let lines = self.text.lines().count() as u32;
-        let mut text_y = (h - styles.ui_font.size * lines) as i32 / 2;
+        let mut text_y = (h - styles.ui.ui_font.size * lines) as i32 / 2;
 
         let image_rect = if let Some(image) = &self.image {
             let image_w = image.width();
             let image_h = image.height();
             let x = (w - image_w) as i32 / 2;
-            let y = (h - image_h) as i32 / 2 - styles.margin_y - styles.ui_font.size as i32;
+            let y = (h - image_h) as i32 / 2 - styles.ui.margin_y - styles.ui.ui_font.size as i32;
 
-            text_y = y + image_h as i32 + styles.margin_y;
+            text_y = y + image_h as i32 + styles.ui.margin_y;
 
             Some(Rect::new(x, y, image_w, image_h))
         } else {
@@ -86,11 +86,11 @@ impl View for Toast {
 
         let bg_color = StylesheetColor::BackgroundHighlightBlend.to_color(styles);
 
-        let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
+        let text_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
             .font_fallback(styles.cjk_font.font())
-            .font_size(styles.ui_font.size)
+            .font_size(styles.ui.ui_font.size)
             .background_color(bg_color)
-            .text_color(styles.foreground_color)
+            .text_color(styles.ui.text_color)
             .build();
 
         let text = Text::with_alignment(
@@ -110,13 +110,13 @@ impl View for Toast {
         let Size { width, height } = rect.size;
         RoundedRectangle::new(
             Rectangle::new(
-                Point::new(x - styles.margin_x, y - styles.margin_y).into(),
+                Point::new(x - styles.ui.margin_x, y - styles.ui.margin_y).into(),
                 Size::new(
-                    width + styles.margin_x as u32 * 2,
-                    height + styles.margin_y as u32 * 2,
+                    width + styles.ui.margin_x as u32 * 2,
+                    height + styles.ui.margin_y as u32 * 2,
                 ),
             ),
-            CornerRadii::new(Size::new_equal(styles.margin_x as u32)),
+            CornerRadii::new(Size::new_equal(styles.ui.margin_x as u32)),
         )
         .into_styled(PrimitiveStyle::with_fill(bg_color))
         .draw(display)?;

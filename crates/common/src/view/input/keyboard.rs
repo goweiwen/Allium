@@ -93,35 +93,35 @@ impl View for Keyboard {
         let mut drawn = false;
         if self.dirty {
             display.load(self.bounding_box(styles))?;
-            let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
+            let text_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
                 .font_fallback(styles.cjk_font.font())
-                .font_size(styles.ui_font.size)
-                .text_color(styles.foreground_color)
-                .stroke_color(styles.stroke_color)
-                .stroke_width(styles.stroke_width)
-                .background_color(styles.background_color)
+                .font_size(styles.ui.ui_font.size)
+                .text_color(styles.ui.text_color)
+                .stroke_color(styles.ui.text_stroke_color)
+                .stroke_width(styles.ui.stroke_width)
+                .background_color(styles.ui.background_color)
                 .build();
 
-            let selected_text_style = FontTextStyleBuilder::new(styles.ui_font.font())
+            let selected_text_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
                 .font_fallback(styles.cjk_font.font())
-                .font_size(styles.ui_font.size)
-                .text_color(styles.highlight_text_color)
-                .stroke_color(styles.highlight_text_stroke_color)
-                .stroke_width(styles.stroke_width)
-                .background_color(styles.highlight_color)
+                .font_size(styles.ui.ui_font.size)
+                .text_color(styles.ui.highlight_text_color)
+                .stroke_color(styles.ui.highlight_text_stroke_color)
+                .stroke_width(styles.ui.stroke_width)
+                .background_color(styles.ui.highlight_color)
                 .build();
 
             let fill_style = PrimitiveStyleBuilder::new()
-                .fill_color(styles.background_color)
+                .fill_color(styles.ui.background_color)
                 .stroke_width(1)
                 .build();
 
             let selected_btn_style = PrimitiveStyleBuilder::new()
-                .fill_color(styles.highlight_color)
+                .fill_color(styles.ui.highlight_color)
                 .stroke_width(1)
                 .build();
 
-            let key_size = styles.ui_font.size;
+            let key_size = styles.ui.ui_font.size;
             let key_padding = 0;
 
             let w = key_size as i32 * KEYBOARD_COLUMNS + key_padding * 14;
@@ -130,15 +130,15 @@ impl View for Keyboard {
             let y0 = display.size().height as i32
                 - h
                 - ButtonIcon::diameter(styles) as i32
-                - styles.margin_y
-                - styles.margin_y;
+                - styles.ui.margin_y
+                - styles.ui.margin_y;
 
             RoundedRectangle::with_equal_corners(
                 Rectangle::new(
-                    Point::new(8, y0 - styles.ui_font.size as i32 - styles.margin_y).into(),
+                    Point::new(8, y0 - styles.ui.ui_font.size as i32 - styles.ui.margin_y).into(),
                     Size::new(
                         display.size().width - 16,
-                        h as u32 + styles.ui_font.size + 8,
+                        h as u32 + styles.ui.ui_font.size + 8,
                     ),
                 ),
                 Size::new_equal(8),
@@ -166,7 +166,7 @@ impl View for Keyboard {
                     key.key(self.mode),
                     Point::new(
                         x0 + x + key_size as i32 / 2,
-                        y0 + y + key_size as i32 / 2 - styles.ui_font.size as i32 / 2,
+                        y0 + y + key_size as i32 / 2 - styles.ui.ui_font.size as i32 / 2,
                     )
                     .into(),
                     if selected {
@@ -196,7 +196,7 @@ impl View for Keyboard {
                     "space",
                     Point::new(
                         x0 + w / 2,
-                        y0 + y + key_size as i32 / 2 - styles.ui_font.size as i32 / 2,
+                        y0 + y + key_size as i32 / 2 - styles.ui.ui_font.size as i32 / 2,
                     )
                     .into(),
                     if selected {
@@ -213,7 +213,7 @@ impl View for Keyboard {
                 &masked_value(&self.value, self.is_password),
                 Point::new(
                     display.size().width as i32 / 2,
-                    y0 - styles.margin_y - styles.ui_font.size as i32,
+                    y0 - styles.ui.margin_y - styles.ui.ui_font.size as i32,
                 )
                 .into(),
                 text_style,
@@ -325,18 +325,18 @@ impl View for Keyboard {
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
         let size = self.res.get::<geom::Size>();
 
-        let key_size = styles.ui_font.size;
+        let key_size = styles.ui.ui_font.size;
         let key_padding = 0;
         let h = key_size as i32 * KEYBOARD_ROWS + key_padding * 5 + 8;
         let y = size.h as i32
             - h
             - ButtonIcon::diameter(styles) as i32
-            - styles.margin_x
-            - styles.margin_x;
+            - styles.ui.margin_x
+            - styles.ui.margin_x;
 
         Rect::new(
             0,
-            y - styles.ui_font.size as i32 - styles.margin_x,
+            y - styles.ui.ui_font.size as i32 - styles.ui.margin_x,
             size.w,
             size.h - y as u32,
         )

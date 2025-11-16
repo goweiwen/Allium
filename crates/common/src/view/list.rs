@@ -70,11 +70,11 @@ where
         styles: &Stylesheet,
     ) -> Result<bool> {
         if !self.has_layout {
-            let mut y = self.rect.y + styles.margin_y;
+            let mut y = self.rect.y + styles.ui.margin_y;
             for child in &mut self.children {
                 let rect = child.bounding_box(styles);
-                child.set_position(Point::new(self.rect.x + styles.margin_x, y));
-                y += rect.h as i32 + self.margin as i32 + styles.margin_y;
+                child.set_position(Point::new(self.rect.x + styles.ui.margin_x, y));
+                y += rect.h as i32 + self.margin as i32 + styles.ui.margin_y;
             }
             self.has_layout = true;
             self.dirty = true;
@@ -87,16 +87,16 @@ where
 
             let rect = selected.bounding_box(styles);
 
-            let fill_style = PrimitiveStyle::with_fill(styles.highlight_color);
+            let fill_style = PrimitiveStyle::with_fill(styles.ui.highlight_color);
             RoundedRectangle::with_equal_corners(
                 Rectangle::new(
                     embedded_graphics::prelude::Point::new(
-                        rect.x - styles.margin_x,
-                        rect.y - styles.margin_y / 2,
+                        rect.x - styles.ui.margin_x,
+                        rect.y - styles.ui.margin_y / 2,
                     ),
                     Size::new(
-                        rect.w + styles.margin_x as u32 * 2,
-                        rect.h + styles.margin_y as u32,
+                        rect.w + styles.ui.margin_x as u32 * 2,
+                        rect.h + styles.ui.margin_y as u32,
                     ),
                 ),
                 Size::new_equal(rect.h),

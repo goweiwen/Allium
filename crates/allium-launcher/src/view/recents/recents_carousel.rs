@@ -46,7 +46,7 @@ impl RecentsCarousel {
         let styles = res.get::<Stylesheet>();
         let y_margin = 8;
         let x_margin = 12;
-        let ui_font_size = styles.ui_font.size as i32;
+        let ui_font_size = styles.ui.ui_font.size as i32;
         let bottom_area_height = (y_margin * 3) + (ui_font_size * 2);
         let screenshot_height = h.saturating_sub((bottom_area_height + y_margin) as u32);
 

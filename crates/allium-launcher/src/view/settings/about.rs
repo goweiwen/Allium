@@ -35,10 +35,10 @@ impl About {
         let mut list = SettingsList::new(
             res.clone(),
             Rect::new(
-                x + styles.margin_x,
+                x + styles.ui.margin_x,
                 y,
-                w - styles.margin_x as u32 * 2,
-                h - ButtonIcon::diameter(&styles) - styles.margin_y as u32,
+                w - styles.ui.margin_x as u32 * 2,
+                h - ButtonIcon::diameter(&styles) - styles.ui.margin_y as u32,
             ),
             vec![
                 locale.t("settings-about-allium-version"),
@@ -89,7 +89,7 @@ impl About {
                     None,
                 )),
             ],
-            styles.ui_font.size + styles.padding_y as u32,
+            styles.ui.ui_font.size + styles.ui.padding_y as u32,
         );
         if let Some(state) = state {
             list.select(state.selected);

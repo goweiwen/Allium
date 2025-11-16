@@ -41,15 +41,15 @@ fn say(text: &str, bg: bool) -> Result<()> {
     let mut display = platform.display()?;
     let styles = Stylesheet::load()?;
 
-    let text_style = FontTextStyleBuilder::<Color>::new(styles.ui_font.font())
-        .text_color(styles.foreground_color)
+    let text_style = FontTextStyleBuilder::<Color>::new(styles.ui.ui_font.font())
+        .text_color(styles.ui.text_color)
         .font_fallback(styles.cjk_font.font())
-        .font_size(styles.ui_font.size)
+        .font_size(styles.ui.ui_font.size)
         .build();
 
     let w = display.size().width;
     let h = display.size().height;
-    let height = text.lines().count() as u32 * styles.ui_font.size;
+    let height = text.lines().count() as u32 * styles.ui.ui_font.size;
 
     let text = Text::with_alignment(
         text,
@@ -66,9 +66,9 @@ fn say(text: &str, bg: bool) -> Result<()> {
         rect.size.height += 16;
         RoundedRectangle::new(
             rect,
-            CornerRadii::new(Size::new_equal((styles.ui_font.size + 8) / 2)),
+            CornerRadii::new(Size::new_equal((styles.ui.ui_font.size + 8) / 2)),
         )
-        .into_styled(PrimitiveStyle::with_fill(styles.highlight_color))
+        .into_styled(PrimitiveStyle::with_fill(styles.ui.highlight_color))
         .draw(&mut display)?;
     }
 

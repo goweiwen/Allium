@@ -77,12 +77,12 @@ impl View for ColorPicker {
 
         let fill_style = PrimitiveStyleBuilder::new()
             .fill_color(color)
-            .stroke_color(styles.foreground_color)
+            .stroke_color(styles.ui.text_color)
             .stroke_alignment(StrokeAlignment::Inside)
             .stroke_width(1)
             .build();
 
-        let w = styles.ui_font.size;
+        let w = styles.ui.ui_font.size;
         Rectangle::new(
             Point::new(
                 self.point.x - (w as i32 * (1 - self.alignment.sign()) / 2),
@@ -96,39 +96,39 @@ impl View for ColorPicker {
 
         let text_color = self.text_color.to_color(styles);
         let stroke_color = if self.text_color == crate::stylesheet::StylesheetColor::HighlightText {
-            styles.highlight_text_stroke_color
+            styles.ui.highlight_text_stroke_color
         } else {
-            styles.stroke_color
+            styles.ui.text_stroke_color
         };
 
-        let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
+        let text_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
             .font_fallback(styles.cjk_font.font())
-            .font_size(styles.ui_font.size)
+            .font_size(styles.ui.ui_font.size)
             .text_color(text_color)
             .stroke_color(stroke_color)
-            .stroke_width(styles.stroke_width)
+            .stroke_width(styles.ui.stroke_width)
             .build();
 
-        let focused_style = FontTextStyleBuilder::new(styles.ui_font.font())
-            .font_size(styles.ui_font.size)
+        let focused_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
+            .font_size(styles.ui.ui_font.size)
             .text_color(text_color)
             .stroke_color(stroke_color)
-            .stroke_width(styles.stroke_width)
+            .stroke_width(styles.ui.stroke_width)
             .draw_background()
             .build();
 
-        let selected_style = FontTextStyleBuilder::new(styles.ui_font.font())
-            .font_size(styles.ui_font.size)
+        let selected_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
+            .font_size(styles.ui.ui_font.size)
             .text_color(text_color)
             .stroke_color(stroke_color)
-            .stroke_width(styles.stroke_width)
+            .stroke_width(styles.ui.stroke_width)
             .underline()
             .draw_background()
             .build();
 
         match self.alignment {
             Alignment::Right => {
-                let mut x = self.point.x - w as i32 - styles.margin_y;
+                let mut x = self.point.x - w as i32 - styles.ui.margin_y;
                 for i in (0..8).rev() {
                     let c = color.char(i);
                     let text = Text::with_alignment(
@@ -300,13 +300,13 @@ impl View for ColorPicker {
     }
 
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
-        let text_style: FontTextStyle<Color> = FontTextStyleBuilder::new(styles.ui_font.font())
+        let text_style: FontTextStyle<Color> = FontTextStyleBuilder::new(styles.ui.ui_font.font())
             .font_fallback(styles.cjk_font.font())
-            .font_size(styles.ui_font.size)
+            .font_size(styles.ui.ui_font.size)
             .draw_background()
             .build();
 
-        let mut x = self.point.x - 30 - styles.margin_y;
+        let mut x = self.point.x - 30 - styles.ui.margin_y;
         for i in (0..8).rev() {
             let c = self.value.char(i);
             let text = Text::with_alignment(

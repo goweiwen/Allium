@@ -50,7 +50,7 @@ impl ActivityTracker<DefaultPlatform> {
 
     pub async fn run_event_loop(&mut self) -> Result<()> {
         self.display
-            .clear(self.res.get::<Stylesheet>().background_color)?;
+            .clear(self.res.get::<Stylesheet>().ui.background_color)?;
         self.display.save()?;
 
         #[cfg(unix)]

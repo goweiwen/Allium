@@ -69,12 +69,12 @@ where
 
         let status_bar = StatusBar::new(
             res.clone(),
-            Point::new(w as i32 - styles.margin_x, y + styles.margin_y),
+            Point::new(w as i32 - styles.ui.margin_x, y + styles.ui.margin_y),
             battery,
         );
 
         let mut tabs = Row::new(
-            Point::new(x + styles.margin_x, y + styles.margin_y),
+            Point::new(x + styles.ui.margin_x, y + styles.ui.margin_y),
             {
                 let mut tabs = vec![
                     Label::new(
@@ -95,12 +95,12 @@ where
                 for tab in tabs.iter_mut() {
                     tab.color(StylesheetColor::Tab);
                     tab.stroke_color(StylesheetColor::TabStroke);
-                    tab.font_size(styles.tab_font_size);
+                    tab.font_size(styles.ui.tab_font_size);
                 }
                 tabs
             },
             Alignment::Left,
-            styles.margin_x,
+            styles.ui.margin_x,
         );
         tabs.get_mut(selected)
             .unwrap()
@@ -108,12 +108,12 @@ where
             .stroke_color(StylesheetColor::TabSelectedStroke);
 
         // let mut title = Label::new(
-        //     Point::new(x + 24, y + styles.margin_y),
+        //     Point::new(x + 24, y + styles.ui.margin_y),
         //     title(&locale, selected),
         //     Alignment::Left,
         //     None,
         // );
-        // title.font_size(styles.tab_font_size);
+        // title.font_size(styles.ui.tab_font_size);
 
         drop(styles);
         drop(locale);
@@ -136,14 +136,12 @@ where
     pub fn load_or_new(rect: Rect, res: Resources, battery: B) -> Result<Self> {
         let tab_rect = {
             let styles = res.get::<Stylesheet>();
-            let font_size = (styles.ui_font.size as f32
-                * styles.tab_font_size.max(styles.status_bar_font_size))
-                as u32;
+            let font_size = styles.tab_font_size().max(styles.status_bar_font_size()) as u32;
             Rect::new(
                 rect.x,
-                rect.y + font_size as i32 + styles.margin_y + styles.margin_y / 2,
+                rect.y + font_size as i32 + styles.ui.margin_y + styles.ui.margin_y / 2,
                 rect.w,
-                rect.h - font_size - styles.margin_y as u32 - styles.margin_y as u32 / 2,
+                rect.h - font_size - styles.ui.margin_y as u32 - styles.ui.margin_y as u32 / 2,
             )
         };
 

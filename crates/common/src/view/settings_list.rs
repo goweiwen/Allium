@@ -64,15 +64,15 @@ impl SettingsList {
 
         {
             let styles = self.res.get::<Stylesheet>();
-            let mut y = self.rect.y + styles.padding_y;
+            let mut y = self.rect.y + styles.ui.padding_y;
             for i in 0..self.visible_count() {
                 self.left.push(Label::new(
-                    Point::new(self.rect.x + styles.padding_x, y),
+                    Point::new(self.rect.x + styles.ui.padding_x, y),
                     self.labels[i].to_owned(),
                     Alignment::Left,
-                    Some((self.rect.w - styles.padding_x as u32 * 2) * 2 / 3),
+                    Some((self.rect.w - styles.ui.padding_x as u32 * 2) * 2 / 3),
                 ));
-                y += self.entry_height as i32 + styles.list_margin;
+                y += self.entry_height as i32 + styles.ui.list_margin;
             }
 
             self.top = 0;
@@ -143,8 +143,8 @@ impl SettingsList {
 
     pub fn visible_count(&self) -> usize {
         let styles = self.res.get::<Stylesheet>();
-        ((self.rect.h as usize - styles.margin_y as usize)
-            / (self.entry_height as usize + styles.list_margin as usize))
+        ((self.rect.h as usize - styles.ui.margin_y as usize)
+            / (self.entry_height as usize + styles.ui.list_margin as usize))
             .min(self.labels.len())
             .min(self.right.len())
     }
@@ -168,10 +168,10 @@ impl View for SettingsList {
                 for i in 0..self.visible_count() {
                     let child = &mut self.right[self.top + i];
                     child.set_position(Point::new(
-                        self.rect.x + self.rect.w as i32 - styles.padding_x - 1,
+                        self.rect.x + self.rect.w as i32 - styles.ui.padding_x - 1,
                         self.rect.y
-                            + styles.padding_y
-                            + i as i32 * (self.entry_height as i32 + styles.list_margin),
+                            + styles.ui.padding_y
+                            + i as i32 * (self.entry_height as i32 + styles.ui.list_margin),
                     ));
                     self.has_layout = true;
                 }
@@ -197,14 +197,14 @@ impl View for SettingsList {
                     Rectangle::new(
                         embedded_graphics::prelude::Point::new(
                             self.rect.x,
-                            rect.y - styles.padding_y,
+                            rect.y - styles.ui.padding_y,
                         ),
-                        Size::new(self.rect.w, rect.h + styles.padding_y as u32 * 2),
+                        Size::new(self.rect.w, rect.h + styles.ui.padding_y as u32 * 2),
                     ),
-                    Size::new_equal(rect.h + styles.padding_y as u32 * 2),
+                    Size::new_equal(rect.h + styles.ui.padding_y as u32 * 2),
                 )
                 .into_styled(PrimitiveStyle::with_fill(
-                    styles.highlight_color.with_a(0x40),
+                    styles.ui.highlight_color.with_a(0x40),
                 ))
                 .draw(display)?;
             }
@@ -214,17 +214,17 @@ impl View for SettingsList {
             RoundedRectangle::with_equal_corners(
                 Rectangle::new(
                     embedded_graphics::prelude::Point::new(
-                        rect.x - styles.padding_x,
-                        rect.y - styles.padding_y,
+                        rect.x - styles.ui.padding_x,
+                        rect.y - styles.ui.padding_y,
                     ),
                     Size::new(
-                        rect.w + styles.padding_x as u32 * 2,
-                        rect.h + styles.padding_y as u32 * 2,
+                        rect.w + styles.ui.padding_x as u32 * 2,
+                        rect.h + styles.ui.padding_y as u32 * 2,
                     ),
                 ),
-                Size::new_equal(rect.h + styles.padding_y as u32 * 2),
+                Size::new_equal(rect.h + styles.ui.padding_y as u32 * 2),
             )
-            .into_styled(PrimitiveStyle::with_fill(styles.highlight_color))
+            .into_styled(PrimitiveStyle::with_fill(styles.ui.highlight_color))
             .draw(display)?;
 
             for (i, left) in self.left.iter_mut().enumerate() {
@@ -261,23 +261,23 @@ impl View for SettingsList {
             if right_rect.w != 0 && right_rect.h != 0 {
                 let rect = left_rect.union(&right_rect);
                 display.load(Rect::new(
-                    rect.x - styles.padding_x,
-                    rect.y - styles.padding_y,
-                    rect.w + styles.padding_x as u32 * 2,
-                    rect.h + styles.padding_y as u32 * 2,
+                    rect.x - styles.ui.padding_x,
+                    rect.y - styles.ui.padding_y,
+                    rect.w + styles.ui.padding_x as u32 * 2,
+                    rect.h + styles.ui.padding_y as u32 * 2,
                 ))?;
                 RoundedRectangle::with_equal_corners(
                     Rectangle::new(
                         embedded_graphics::prelude::Point::new(
                             self.rect.x,
-                            rect.y - styles.padding_y,
+                            rect.y - styles.ui.padding_y,
                         ),
-                        Size::new(self.rect.w, rect.h + styles.padding_y as u32 * 2),
+                        Size::new(self.rect.w, rect.h + styles.ui.padding_y as u32 * 2),
                     ),
                     Size::new_equal(rect.h),
                 )
                 .into_styled(PrimitiveStyle::with_fill(
-                    styles.highlight_color.with_a(0x40),
+                    styles.ui.highlight_color.with_a(0x40),
                 ))
                 .draw(display)?;
             }
@@ -286,17 +286,17 @@ impl View for SettingsList {
             RoundedRectangle::with_equal_corners(
                 Rectangle::new(
                     embedded_graphics::prelude::Point::new(
-                        right_rect.x - styles.padding_x,
-                        right_rect.y - styles.padding_y,
+                        right_rect.x - styles.ui.padding_x,
+                        right_rect.y - styles.ui.padding_y,
                     ),
                     Size::new(
-                        right_rect.w + styles.padding_x as u32 * 2,
-                        right_rect.h + styles.padding_y as u32 * 2,
+                        right_rect.w + styles.ui.padding_x as u32 * 2,
+                        right_rect.h + styles.ui.padding_y as u32 * 2,
                     ),
                 ),
                 Size::new_equal(right_rect.h),
             )
-            .into_styled(PrimitiveStyle::with_fill(styles.highlight_color))
+            .into_styled(PrimitiveStyle::with_fill(styles.ui.highlight_color))
             .draw(display)?;
 
             left.draw(display, styles)?;
@@ -445,8 +445,8 @@ impl View for SettingsList {
         self.rect.y = point.y;
         for (i, child) in self.left.iter_mut().enumerate() {
             child.set_position(Point::new(
-                point.x + styles.padding_x,
-                point.y + i as i32 * (self.entry_height as i32 + styles.list_margin),
+                point.x + styles.ui.padding_x,
+                point.y + i as i32 * (self.entry_height as i32 + styles.ui.list_margin),
             ));
         }
 

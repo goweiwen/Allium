@@ -78,7 +78,7 @@ where
         let styles = res.get::<Stylesheet>();
 
         let name = Label::new(
-            Point::new(x + styles.margin_x, y + styles.margin_y),
+            Point::new(x + styles.ui.margin_x, y + styles.ui.margin_y),
             game_info.name.clone(),
             Alignment::Left,
             None,
@@ -86,7 +86,7 @@ where
 
         let status_bar = StatusBar::new(
             res.clone(),
-            Point::new(w as i32 - styles.margin_y, y + styles.margin_y),
+            Point::new(w as i32 - styles.ui.margin_y, y + styles.ui.margin_y),
             battery,
         );
 
@@ -94,20 +94,20 @@ where
         let mut menu = SettingsList::new(
             res.clone(),
             Rect::new(
-                x + styles.margin_x,
-                y + styles.margin_y + ButtonIcon::diameter(&styles) as i32 + 8,
+                x + styles.ui.margin_x,
+                y + styles.ui.margin_y + ButtonIcon::diameter(&styles) as i32 + 8,
                 w - SAVE_STATE_IMAGE_WIDTH
-                    - styles.margin_y as u32
-                    - styles.margin_y as u32
-                    - styles.margin_y as u32 * 2,
-                h - ButtonIcon::diameter(&styles) - styles.margin_y as u32 * 2,
+                    - styles.ui.margin_y as u32
+                    - styles.ui.margin_y as u32
+                    - styles.ui.margin_y as u32 * 2,
+                h - ButtonIcon::diameter(&styles) - styles.ui.margin_y as u32 * 2,
             ),
             entries.iter().map(|e| e.as_str(&locale)).collect(),
             entries
                 .iter()
                 .map(|_| Box::new(NullView) as Box<dyn View>)
                 .collect(),
-            styles.ui_font.size + styles.padding_y as u32,
+            styles.ui.ui_font.size + styles.ui.padding_y as u32,
         );
         if let Some(info) = retroarch_info.as_ref()
             && info.max_disk_slots > 1
@@ -128,14 +128,14 @@ where
 
         let mut image = Image::empty(
             Rect::new(
-                x + w as i32 - SAVE_STATE_IMAGE_WIDTH as i32 - styles.margin_y * 2,
-                y + styles.margin_y + styles.ui_font.size as i32 + 8,
+                x + w as i32 - SAVE_STATE_IMAGE_WIDTH as i32 - styles.ui.margin_y * 2,
+                y + styles.ui.margin_y + styles.ui.ui_font.size as i32 + 8,
                 SAVE_STATE_IMAGE_WIDTH,
-                h - styles.margin_x as u32
-                    - styles.ui_font.size
-                    - styles.margin_x as u32
+                h - styles.ui.margin_x as u32
+                    - styles.ui.ui_font.size
+                    - styles.ui.margin_x as u32
                     - ButtonIcon::diameter(&styles)
-                    - styles.margin_x as u32,
+                    - styles.ui.margin_x as u32,
             ),
             ImageMode::Contain,
         );
@@ -210,14 +210,14 @@ where
                 let selector = ScrollList::new(
                     res.clone(),
                     Rect::new(
-                        x + styles.margin_x,
-                        y + styles.margin_y + ButtonIcon::diameter(&styles) as i32 + 8,
-                        w - styles.margin_x as u32 * 2,
-                        h - ButtonIcon::diameter(&styles) - styles.margin_y as u32 * 3,
+                        x + styles.ui.margin_x,
+                        y + styles.ui.margin_y + ButtonIcon::diameter(&styles) as i32 + 8,
+                        w - styles.ui.margin_x as u32 * 2,
+                        h - ButtonIcon::diameter(&styles) - styles.ui.margin_y as u32 * 3,
                     ),
                     guide_names.clone(),
                     Alignment::Left,
-                    styles.ui_font.size + styles.padding_y as u32,
+                    styles.ui.ui_font.size + styles.ui.padding_y as u32,
                 );
                 child = Some(ChildView::GuideSelector(selector));
             }
@@ -339,19 +339,19 @@ where
                     let selector = ScrollList::new(
                         self.res.clone(),
                         Rect::new(
-                            self.rect.x + styles.margin_x,
+                            self.rect.x + styles.ui.margin_x,
                             self.rect.y
-                                + styles.margin_y
+                                + styles.ui.margin_y
                                 + ButtonIcon::diameter(&styles) as i32
                                 + 8,
-                            self.rect.w - styles.margin_x as u32 * 2,
+                            self.rect.w - styles.ui.margin_x as u32 * 2,
                             self.rect.h
                                 - ButtonIcon::diameter(&styles)
-                                - styles.margin_y as u32 * 3,
+                                - styles.ui.margin_y as u32 * 3,
                         ),
                         guide_names,
                         Alignment::Left,
-                        styles.ui_font.size + styles.padding_y as u32,
+                        styles.ui.ui_font.size + styles.ui.padding_y as u32,
                     );
                     self.child = Some(ChildView::GuideSelector(selector));
                 }

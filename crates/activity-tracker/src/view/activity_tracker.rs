@@ -35,14 +35,14 @@ impl ActivityTracker {
         let list = SettingsList::new(
             res.clone(),
             Rect::new(
-                x + styles.margin_x,
+                x + styles.ui.margin_x,
                 y,
-                w - styles.margin_x as u32 * 2,
-                h - styles.margin_y as u32 - ButtonIcon::diameter(&styles),
+                w - styles.ui.margin_x as u32 * 2,
+                h - styles.ui.margin_y as u32 - ButtonIcon::diameter(&styles),
             ),
             Vec::new(),
             Vec::new(),
-            res.get::<Stylesheet>().ui_font.size + styles.padding_y as u32,
+            res.get::<Stylesheet>().ui.ui_font.size + styles.ui.padding_y as u32,
         );
 
         let button_hints = {
@@ -118,7 +118,7 @@ impl ActivityTracker {
                         Point::zero(),
                         s,
                         Alignment::Right,
-                        Some(self.rect.w / 2 - styles.margin_y as u32),
+                        Some(self.rect.w / 2 - styles.ui.margin_y as u32),
                     )) as Box<dyn View>
                 })
                 .collect(),

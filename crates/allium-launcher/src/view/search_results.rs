@@ -163,25 +163,25 @@ impl SearchResultsView {
         };
 
         let mut header = Label::new(
-            Point::new(x + styles.margin_x, y + styles.margin_y),
+            Point::new(x + styles.ui.margin_x, y + styles.ui.margin_y),
             format!("Search: {}", query),
             Alignment::Left,
-            Some(w - styles.margin_x as u32 * 2),
+            Some(w - styles.ui.margin_x as u32 * 2),
         );
-        header.font_size(styles.tab_font_size);
+        header.font_size(styles.ui.tab_font_size);
 
         let mut result_count = Label::new(
             Point::new(
-                x + styles.margin_x,
-                y + styles.margin_y + styles.tab_font_size() as i32,
+                x + styles.ui.margin_x,
+                y + styles.ui.margin_y + styles.tab_font_size() as i32,
             ),
             result_text,
             Alignment::Left,
-            Some(w - styles.margin_x as u32 * 2),
+            Some(w - styles.ui.margin_x as u32 * 2),
         );
-        result_count.font_size(styles.tab_font_size);
+        result_count.font_size(styles.ui.tab_font_size);
 
-        let list_y = y + styles.margin_y + styles.tab_font_size() as i32 * 2;
+        let list_y = y + styles.ui.margin_y + styles.tab_font_size() as i32 * 2;
         let list = EntryList::new(
             Rect::new(x, y + list_y, w, h - list_y as u32),
             res.clone(),

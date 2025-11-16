@@ -31,12 +31,12 @@ where
             res.clone(),
             Point::new(0, 0),
             battery,
-            styles.show_battery_level,
+            styles.status_bar.show_battery_level,
         );
 
         let mut children: Vec<Box<dyn View>> = vec![Box::new(battery_indicator)];
 
-        if styles.show_clock {
+        if styles.status_bar.show_clock {
             let clock = Clock::new(res.clone(), Point::new(0, 0), Alignment::Right);
             children.push(Box::new(clock));
         }

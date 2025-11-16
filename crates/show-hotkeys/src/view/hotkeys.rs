@@ -36,7 +36,7 @@ impl Hotkeys {
             Alignment::Left,
             None,
         );
-        y += styles.ui_font.size as i32 + 8;
+        y += styles.ui.ui_font.size as i32 + 8;
 
         let mut global_hotkeys = Vec::with_capacity(5);
         let global_hotkeys_data = [
@@ -53,7 +53,7 @@ impl Hotkeys {
                 label,
                 Alignment::Left,
             ));
-            y += styles.ui_font.size as i32 + 8;
+            y += styles.ui.ui_font.size as i32 + 8;
         }
 
         y += 16;
@@ -64,7 +64,7 @@ impl Hotkeys {
             Alignment::Left,
             None,
         );
-        y += styles.ui_font.size as i32 + 8;
+        y += styles.ui.ui_font.size as i32 + 8;
 
         let mut ingame_hotkeys = Vec::with_capacity(2);
         let ingame_hotkeys_data = [
@@ -78,7 +78,7 @@ impl Hotkeys {
                 label,
                 Alignment::Left,
             ));
-            y += styles.ui_font.size as i32 + 8;
+            y += styles.ui.ui_font.size as i32 + 8;
         }
 
         drop(locale);

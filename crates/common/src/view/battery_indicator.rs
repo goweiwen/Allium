@@ -169,9 +169,10 @@ impl BatteryIcons {
                 };
 
                 // Outer battery stroke
-                if styles.stroke_width > 0 && styles.status_bar_stroke_color.a() > 0 {
-                    for dx in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
-                        for dy in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
+                if styles.ui.stroke_width > 0 && styles.status_bar.text_stroke_color.a() > 0 {
+                    for dx in -(styles.ui.stroke_width as i32)..=(styles.ui.stroke_width as i32) {
+                        for dy in -(styles.ui.stroke_width as i32)..=(styles.ui.stroke_width as i32)
+                        {
                             if dx == 0 && dy == 0 {
                                 continue;
                             }
@@ -187,7 +188,7 @@ impl BatteryIcons {
                             )
                             .into_styled(
                                 PrimitiveStyleBuilder::new()
-                                    .stroke_color(styles.status_bar_stroke_color)
+                                    .stroke_color(styles.status_bar.text_stroke_color)
                                     .stroke_alignment(
                                         embedded_graphics::primitives::StrokeAlignment::Inside,
                                     )
@@ -206,7 +207,7 @@ impl BatteryIcons {
                 )
                 .into_styled(
                     PrimitiveStyleBuilder::new()
-                        .stroke_color(styles.status_bar_color)
+                        .stroke_color(styles.status_bar.text_color)
                         .stroke_alignment(embedded_graphics::primitives::StrokeAlignment::Inside)
                         .stroke_width(stroke as u32)
                         .build(),
@@ -215,9 +216,12 @@ impl BatteryIcons {
 
                 // Inner battery stroke
                 if percentage > 5 {
-                    if styles.stroke_width > 0 && styles.status_bar_stroke_color.a() > 0 {
-                        for dx in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
-                            for dy in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
+                    if styles.ui.stroke_width > 0 && styles.status_bar.text_stroke_color.a() > 0 {
+                        for dx in -(styles.ui.stroke_width as i32)..=(styles.ui.stroke_width as i32)
+                        {
+                            for dy in
+                                -(styles.ui.stroke_width as i32)..=(styles.ui.stroke_width as i32)
+                            {
                                 if dx == 0 && dy == 0 {
                                     continue;
                                 }
@@ -235,7 +239,7 @@ impl BatteryIcons {
                                 )
                                 .into_styled(
                                     PrimitiveStyleBuilder::new()
-                                        .fill_color(styles.status_bar_stroke_color)
+                                        .fill_color(styles.status_bar.text_stroke_color)
                                         .build(),
                                 )
                                 .draw(display)?;
@@ -258,16 +262,17 @@ impl BatteryIcons {
                     )
                     .into_styled(
                         PrimitiveStyleBuilder::new()
-                            .fill_color(styles.status_bar_color)
+                            .fill_color(styles.status_bar.text_color)
                             .build(),
                     )
                     .draw(display)?;
                 }
 
                 // Battery cap stroke
-                if styles.stroke_width > 0 && styles.status_bar_stroke_color.a() > 0 {
-                    for dx in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
-                        for dy in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
+                if styles.ui.stroke_width > 0 && styles.status_bar.text_stroke_color.a() > 0 {
+                    for dx in -(styles.ui.stroke_width as i32)..=(styles.ui.stroke_width as i32) {
+                        for dy in -(styles.ui.stroke_width as i32)..=(styles.ui.stroke_width as i32)
+                        {
                             if dx == 0 && dy == 0 {
                                 continue;
                             }
@@ -283,7 +288,7 @@ impl BatteryIcons {
                             )
                             .into_styled(
                                 PrimitiveStyleBuilder::new()
-                                    .fill_color(styles.status_bar_stroke_color)
+                                    .fill_color(styles.status_bar.text_stroke_color)
                                     .build(),
                             )
                             .draw(display)?;
@@ -304,7 +309,7 @@ impl BatteryIcons {
                 )
                 .into_styled(
                     PrimitiveStyleBuilder::new()
-                        .fill_color(styles.status_bar_color)
+                        .fill_color(styles.status_bar.text_color)
                         .build(),
                 )
                 .draw(display)?;
@@ -312,19 +317,22 @@ impl BatteryIcons {
                 // Charging indicator
                 if charging {
                     let stroke_style = PrimitiveStyleBuilder::new()
-                        .fill_color(styles.status_bar_stroke_color)
+                        .fill_color(styles.status_bar.text_stroke_color)
                         .build();
                     let fill_style = PrimitiveStyleBuilder::new()
-                        .fill_color(styles.status_bar_color)
+                        .fill_color(styles.status_bar.text_color)
                         .build();
 
                     let x = point.x - label_w;
                     let size = styles.status_bar_font_size();
 
                     // First triangle stroke
-                    if styles.stroke_width > 0 && styles.status_bar_stroke_color.a() > 0 {
-                        for dx in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
-                            for dy in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
+                    if styles.ui.stroke_width > 0 && styles.status_bar.text_stroke_color.a() > 0 {
+                        for dx in -(styles.ui.stroke_width as i32)..=(styles.ui.stroke_width as i32)
+                        {
+                            for dy in
+                                -(styles.ui.stroke_width as i32)..=(styles.ui.stroke_width as i32)
+                            {
                                 if dx == 0 && dy == 0 {
                                     continue;
                                 }
@@ -352,9 +360,12 @@ impl BatteryIcons {
                     }
 
                     // Second triangle stroke
-                    if styles.stroke_width > 0 && styles.status_bar_stroke_color.a() > 0 {
-                        for dx in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
-                            for dy in -(styles.stroke_width as i32)..=(styles.stroke_width as i32) {
+                    if styles.ui.stroke_width > 0 && styles.status_bar.text_stroke_color.a() > 0 {
+                        for dx in -(styles.ui.stroke_width as i32)..=(styles.ui.stroke_width as i32)
+                        {
+                            for dy in
+                                -(styles.ui.stroke_width as i32)..=(styles.ui.stroke_width as i32)
+                            {
                                 if dx == 0 && dy == 0 {
                                     continue;
                                 }
@@ -458,7 +469,7 @@ where
                 crate::geom::Alignment::Right,
                 None,
             );
-            label.font_size(styles.status_bar_font_size);
+            label.font_size(styles.status_bar.font_size);
             label.color(crate::stylesheet::StylesheetColor::StatusBar);
             label.stroke_color(crate::stylesheet::StylesheetColor::StatusBarStroke);
             Some(label)

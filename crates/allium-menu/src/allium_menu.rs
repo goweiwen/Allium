@@ -61,7 +61,7 @@ impl AlliumMenu<DefaultPlatform> {
         {
             let styles = self.res.get::<Stylesheet>();
             self.display
-                .map_pixels(|pixel| pixel.blend(styles.menu_background_color.overlay(pixel), 192))?;
+                .map_pixels(|pixel| pixel.blend(styles.menu.background_color.overlay(pixel), 192))?;
         }
         self.display.save()?;
 

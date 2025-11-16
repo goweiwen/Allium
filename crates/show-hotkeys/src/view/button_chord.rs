@@ -84,7 +84,7 @@ where
 
     fn layout_right(&mut self, styles: &Stylesheet) {
         self.label.set_position(self.point);
-        let mut x = self.label.bounding_box(styles).w as i32 - styles.margin_x;
+        let mut x = self.label.bounding_box(styles).w as i32 - styles.ui.margin_x;
         for button in &mut self.buttons {
             button.set_position(Point::new(x, self.point.y));
             x -= ButtonIcon::diameter(styles) as i32 + 8;

@@ -78,32 +78,32 @@ impl View for DateTime {
 
         let text_color = self.text_color.to_color(styles);
         let stroke_color = if self.text_color == StylesheetColor::HighlightText {
-            styles.highlight_text_stroke_color
+            styles.ui.highlight_text_stroke_color
         } else {
-            styles.stroke_color
+            styles.ui.text_stroke_color
         };
 
-        let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
+        let text_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
             .font_fallback(styles.cjk_font.font())
-            .font_size(styles.ui_font.size)
+            .font_size(styles.ui.ui_font.size)
             .text_color(text_color)
             .stroke_color(stroke_color)
-            .stroke_width(styles.stroke_width)
+            .stroke_width(styles.ui.stroke_width)
             .build();
 
-        let focused_style = FontTextStyleBuilder::new(styles.ui_font.font())
-            .font_size(styles.ui_font.size)
+        let focused_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
+            .font_size(styles.ui.ui_font.size)
             .text_color(text_color)
             .stroke_color(stroke_color)
-            .stroke_width(styles.stroke_width)
+            .stroke_width(styles.ui.stroke_width)
             .draw_background()
             .build();
 
-        let selected_style = FontTextStyleBuilder::new(styles.ui_font.font())
-            .font_size(styles.ui_font.size)
+        let selected_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
+            .font_size(styles.ui.ui_font.size)
             .text_color(text_color)
             .stroke_color(stroke_color)
-            .stroke_width(styles.stroke_width)
+            .stroke_width(styles.ui.stroke_width)
             .underline()
             .draw_background()
             .build();
@@ -286,13 +286,13 @@ impl View for DateTime {
     }
 
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
-        let text_style: FontTextStyle<Color> = FontTextStyleBuilder::new(styles.ui_font.font())
+        let text_style: FontTextStyle<Color> = FontTextStyleBuilder::new(styles.ui.ui_font.font())
             .font_fallback(styles.cjk_font.font())
-            .font_size(styles.ui_font.size)
+            .font_size(styles.ui.ui_font.size)
             .draw_background()
             .build();
 
-        let mut x = self.point.x - 30 - styles.margin_y;
+        let mut x = self.point.x - 30 - styles.ui.margin_y;
         let datetime_str = self.value.format("%Y-%m-%d %H:%M:%S").to_string();
         let mut datetime_str = datetime_str.chars().map(|c| c.to_string()).rev();
         for _ in 0..19 {

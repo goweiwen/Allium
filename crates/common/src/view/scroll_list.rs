@@ -104,15 +104,15 @@ impl ScrollList {
 
         {
             let styles = self.res.get::<Stylesheet>();
-            let mut y = self.rect.y + styles.padding_y;
+            let mut y = self.rect.y + styles.ui.padding_y;
             for i in 0..self.visible_count() {
                 self.children.push(Label::new(
-                    Point::new(self.rect.x + styles.padding_x * self.alignment.sign(), y),
+                    Point::new(self.rect.x + styles.ui.padding_x * self.alignment.sign(), y),
                     self.items[i].to_owned(),
                     self.alignment,
-                    Some(self.rect.w - styles.padding_x as u32 * 2),
+                    Some(self.rect.w - styles.ui.padding_x as u32 * 2),
                 ));
-                y += self.entry_height as i32 + styles.list_margin;
+                y += self.entry_height as i32 + styles.ui.list_margin;
             }
         }
 
@@ -155,7 +155,7 @@ impl ScrollList {
 
     pub fn visible_count(&self) -> usize {
         let styles = self.res.get::<Stylesheet>();
-        ((self.rect.h as usize) / (self.entry_height as usize + styles.list_margin as usize))
+        ((self.rect.h as usize) / (self.entry_height as usize + styles.ui.list_margin as usize))
             .min(self.items.len())
     }
 
@@ -189,19 +189,19 @@ impl View for ScrollList {
             if let Some(selected) = self.children.get_mut(self.selected - self.top) {
                 let rect = selected.bounding_box(styles);
 
-                let fill_style = PrimitiveStyle::with_fill(styles.highlight_color);
+                let fill_style = PrimitiveStyle::with_fill(styles.ui.highlight_color);
                 RoundedRectangle::with_equal_corners(
                     Rectangle::new(
                         embedded_graphics::prelude::Point::new(
-                            rect.x - styles.padding_x,
-                            rect.y - styles.padding_y,
+                            rect.x - styles.ui.padding_x,
+                            rect.y - styles.ui.padding_y,
                         ),
                         Size::new(
-                            rect.w + styles.padding_x as u32 * 2,
-                            rect.h + styles.padding_y as u32 * 2,
+                            rect.w + styles.ui.padding_x as u32 * 2,
+                            rect.h + styles.ui.padding_y as u32 * 2,
                         ),
                     ),
-                    Size::new_equal(rect.h + styles.padding_y as u32 * 2),
+                    Size::new_equal(rect.h + styles.ui.padding_y as u32 * 2),
                 )
                 .into_styled(fill_style)
                 .draw(display)?;
@@ -313,8 +313,8 @@ impl View for ScrollList {
         self.rect.y = point.y;
         for (i, child) in self.children.iter_mut().enumerate() {
             child.set_position(Point::new(
-                point.x + styles.padding_x,
-                point.y + styles.margin_y / 2 + i as i32 * self.entry_height as i32,
+                point.x + styles.ui.padding_x,
+                point.y + styles.ui.margin_y / 2 + i as i32 * self.entry_height as i32,
             ));
         }
 

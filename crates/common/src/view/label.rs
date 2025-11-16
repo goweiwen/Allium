@@ -116,9 +116,9 @@ where
 
         self.dirty = true;
 
-        let text_style = FontTextStyleBuilder::<Color>::new(styles.ui_font.font())
+        let text_style = FontTextStyleBuilder::<Color>::new(styles.ui.ui_font.font())
             .font_fallback(styles.cjk_font.font())
-            .font_size((styles.ui_font.size as f32 * self.font_size) as u32)
+            .font_size((styles.ui.ui_font.size as f32 * self.font_size) as u32)
             .build();
 
         let mut text = Text::with_alignment(
@@ -236,11 +236,11 @@ where
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
+        let text_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
             .font_fallback(styles.cjk_font.font())
             .text_color(self.color.to_color(styles))
-            .font_size((styles.ui_font.size as f32 * self.font_size) as u32)
-            .stroke_width(styles.stroke_width)
+            .font_size((styles.ui.ui_font.size as f32 * self.font_size) as u32)
+            .stroke_width(styles.ui.stroke_width)
             .stroke_color(self.stroke_color.to_color(styles))
             .build();
 
@@ -290,9 +290,9 @@ where
     }
 
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
-        let text_style = FontTextStyleBuilder::<Color>::new(styles.ui_font.font())
+        let text_style = FontTextStyleBuilder::<Color>::new(styles.ui.ui_font.font())
             .font_fallback(styles.cjk_font.font())
-            .font_size((styles.ui_font.size as f32 * self.font_size) as u32)
+            .font_size((styles.ui.ui_font.size as f32 * self.font_size) as u32)
             .build();
 
         let mut rect: Rect = Text::with_alignment(

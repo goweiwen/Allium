@@ -33,7 +33,7 @@ where
         let styles = res.get::<Stylesheet>();
         let mut label = Label::new(Point::zero(), text, alignment, None);
         label
-            .font_size(styles.button_hint_font_size)
+            .font_size(styles.button_hints.button_hint_font_size)
             .color(StylesheetColor::ButtonHintText);
         let button = ButtonIcon::new(Point::zero(), button, alignment);
 
@@ -66,7 +66,7 @@ where
         self.button.set_position(self.point);
         let width = self.button.bounding_box(styles).w;
         self.label.set_position(Point::new(
-            self.point.x + width as i32 + styles.margin_y,
+            self.point.x + width as i32 + styles.ui.margin_y,
             self.point.y + 2,
         ));
     }
@@ -75,7 +75,7 @@ where
         self.label
             .set_position(Point::new(self.point.x, self.point.y + 2));
         self.button.set_position(Point::new(
-            self.label.bounding_box(styles).x - styles.margin_y,
+            self.label.bounding_box(styles).x - styles.ui.margin_y,
             self.point.y,
         ));
     }

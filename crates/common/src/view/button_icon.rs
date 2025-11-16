@@ -120,10 +120,10 @@ impl ButtonIcons {
             | Key::Down
             | Key::Left => diameter,
             _ => {
-                let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
+                let text_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
                     .font_fallback(styles.cjk_font.font())
                     .font_size(diameter * 3 / 4)
-                    .text_color(styles.background_color)
+                    .text_color(styles.ui.background_color)
                     .build();
                 let text = Text::with_text_style(
                     text,
@@ -190,34 +190,34 @@ impl ButtonIcons {
         button: Key,
     ) -> Result<()> {
         let (color, text) = match button {
-            Key::A => (styles.button_a_color, "A"),
-            Key::B => (styles.button_b_color, "B"),
-            Key::X => (styles.button_x_color, "X"),
-            Key::Y => (styles.button_y_color, "Y"),
-            Key::Up => (styles.button_bg_color, ""),
-            Key::Down => (styles.button_bg_color, ""),
-            Key::Left => (styles.button_bg_color, ""),
-            Key::Right => (styles.button_bg_color, ""),
-            Key::Start => (styles.button_bg_color, "START"),
-            Key::Select => (styles.button_bg_color, "SELECT"),
-            Key::L => (styles.button_bg_color, "L"),
-            Key::R => (styles.button_bg_color, "R"),
-            Key::Menu => (styles.button_bg_color, "MENU"),
-            Key::L2 => (styles.button_bg_color, "L2"),
-            Key::R2 => (styles.button_bg_color, "R2"),
-            Key::Power => (styles.button_bg_color, "POWER"),
-            Key::VolDown => (styles.button_bg_color, "VOL-"),
-            Key::VolUp => (styles.button_bg_color, "VOL+"),
-            Key::LidClose => (styles.button_bg_color, "LID"),
+            Key::A => (styles.button_hints.button_a_color, "A"),
+            Key::B => (styles.button_hints.button_b_color, "B"),
+            Key::X => (styles.button_hints.button_x_color, "X"),
+            Key::Y => (styles.button_hints.button_y_color, "Y"),
+            Key::Up => (styles.button_hints.button_bg_color, ""),
+            Key::Down => (styles.button_hints.button_bg_color, ""),
+            Key::Left => (styles.button_hints.button_bg_color, ""),
+            Key::Right => (styles.button_hints.button_bg_color, ""),
+            Key::Start => (styles.button_hints.button_bg_color, "START"),
+            Key::Select => (styles.button_hints.button_bg_color, "SELECT"),
+            Key::L => (styles.button_hints.button_bg_color, "L"),
+            Key::R => (styles.button_hints.button_bg_color, "R"),
+            Key::Menu => (styles.button_hints.button_bg_color, "MENU"),
+            Key::L2 => (styles.button_hints.button_bg_color, "L2"),
+            Key::R2 => (styles.button_hints.button_bg_color, "R2"),
+            Key::Power => (styles.button_hints.button_bg_color, "POWER"),
+            Key::VolDown => (styles.button_hints.button_bg_color, "VOL-"),
+            Key::VolUp => (styles.button_hints.button_bg_color, "VOL+"),
+            Key::LidClose => (styles.button_hints.button_bg_color, "LID"),
             Key::Unknown => unimplemented!("unknown button"),
         };
 
         let diameter = styles.button_hint_font_size() as u32;
 
-        let text_style = FontTextStyleBuilder::new(styles.ui_font.font())
+        let text_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
             .font_fallback(styles.cjk_font.font())
             .font_size(diameter * 3 / 4)
-            .text_color(styles.button_text_color)
+            .text_color(styles.button_hints.button_text_color)
             .build();
         let mut text = Text::with_text_style(
             text,
@@ -305,7 +305,7 @@ impl ButtonIcons {
                     ),
                     _ => unreachable!(),
                 }
-                .into_styled(PrimitiveStyle::with_fill(styles.foreground_color))
+                .into_styled(PrimitiveStyle::with_fill(styles.ui.text_color))
                 .draw(display)?;
                 Rect::new(point.x, point.y, diameter, diameter)
             }

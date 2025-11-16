@@ -127,10 +127,10 @@ impl Clock {
         let mut list = SettingsList::new(
             res.clone(),
             Rect::new(
-                x + styles.margin_x,
+                x + styles.ui.margin_x,
                 y,
-                w - styles.margin_x as u32 * 2,
-                h - ButtonIcon::diameter(&styles) - styles.margin_y as u32,
+                w - styles.ui.margin_x as u32 * 2,
+                h - ButtonIcon::diameter(&styles) - styles.ui.margin_y as u32,
             ),
             vec![
                 locale.t("settings-clock-datetime"),
@@ -149,7 +149,7 @@ impl Clock {
                     Alignment::Right,
                 )),
             ],
-            styles.ui_font.size + styles.padding_y as u32,
+            styles.ui.ui_font.size + styles.ui.padding_y as u32,
         );
         if let Some(state) = state {
             list.select(state.selected);
@@ -157,8 +157,8 @@ impl Clock {
 
         let button_hints = Row::new(
             Point::new(
-                rect.x + rect.w as i32 - styles.margin_y,
-                rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_y,
+                rect.x + rect.w as i32 - styles.ui.margin_y,
+                rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.ui.margin_y,
             ),
             vec![
                 ButtonHint::new(
@@ -205,7 +205,7 @@ impl View for Clock {
                 self.rect.x,
                 self.rect.y + self.rect.h as i32
                     - ButtonIcon::diameter(styles) as i32
-                    - styles.margin_x,
+                    - styles.ui.margin_x,
                 self.rect.w,
                 ButtonIcon::diameter(styles),
             ))?;

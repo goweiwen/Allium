@@ -64,30 +64,30 @@ where
         let list = ScrollList::new(
             res.clone(),
             Rect::new(
-                x + styles.margin_x,
+                x + styles.ui.margin_x,
                 y,
-                if styles.boxart_width > 0 {
-                    w - styles.boxart_width - styles.margin_x as u32 * 4
+                if styles.games.boxart_width > 0 {
+                    w - styles.games.boxart_width - styles.ui.margin_x as u32 * 4
                 } else {
-                    w - styles.margin_x as u32 * 2
+                    w - styles.ui.margin_x as u32 * 2
                 },
-                h - styles.margin_y as u32 - ButtonIcon::diameter(&styles),
+                h - styles.ui.margin_y as u32 - ButtonIcon::diameter(&styles),
             ),
             Vec::new(),
             Alignment::Left,
-            res.get::<Stylesheet>().ui_font.size + styles.padding_y as u32,
+            res.get::<Stylesheet>().ui.ui_font.size + styles.ui.padding_y as u32,
         );
 
         let mut image = Image::empty(
             Rect::new(
-                x + w as i32 - styles.boxart_width as i32 - styles.margin_x * 2,
-                y + styles.margin_y,
-                styles.boxart_width,
-                h - styles.margin_y as u32 * 4 - ButtonIcon::diameter(&styles),
+                x + w as i32 - styles.games.boxart_width as i32 - styles.ui.margin_x * 2,
+                y + styles.ui.margin_y,
+                styles.games.boxart_width,
+                h - styles.ui.margin_y as u32 * 4 - ButtonIcon::diameter(&styles),
             ),
             ImageMode::Contain,
         );
-        image.set_border_radius(styles.margin_x as u32);
+        image.set_border_radius(styles.ui.margin_x as u32);
         image.set_alignment(Alignment::Right);
 
         let button_hints = {
@@ -266,19 +266,19 @@ where
         };
 
         let height = entries.len() as u32
-            * (styles.ui_font.size + styles.list_margin as u32 + styles.padding_y as u32);
+            * (styles.ui.ui_font.size + styles.ui.list_margin as u32 + styles.ui.padding_y as u32);
 
         let mut menu = ScrollList::new(
             self.res.clone(),
             Rect::new(
-                x + styles.margin_x + (w as i32 - styles.margin_x * 2) / 6,
+                x + styles.ui.margin_x + (w as i32 - styles.ui.margin_x * 2) / 6,
                 (y + h as i32 - height as i32) / 2,
-                (w - styles.margin_x as u32 * 2) * 2 / 3,
+                (w - styles.ui.margin_x as u32 * 2) * 2 / 3,
                 height,
             ),
             entries.iter().map(|e| e.text(&locale)).collect(),
             Alignment::Left,
-            styles.ui_font.size + styles.padding_y as u32,
+            styles.ui.ui_font.size + styles.ui.padding_y as u32,
         );
         menu.set_background_color(Some(StylesheetColor::BackgroundHighlightBlend));
         self.menu = Some(menu);
@@ -307,15 +307,15 @@ where
         if let Some(menu) = &mut self.menu {
             if menu.should_draw() {
                 let mut rect = menu.bounding_box(styles);
-                rect.y -= styles.margin_x;
-                rect.h += styles.margin_x as u32 * 2;
-                rect.x -= styles.margin_x * 2;
-                rect.w += styles.margin_x as u32 * 4;
+                rect.y -= styles.ui.margin_x;
+                rect.h += styles.ui.margin_x as u32 * 2;
+                rect.x -= styles.ui.margin_x * 2;
+                rect.w += styles.ui.margin_x as u32 * 4;
                 rect = rect.intersection(&display.bounding_box().into());
                 RoundedRectangle::new(
                     rect.into(),
                     CornerRadii::new(Size::new_equal(
-                        (styles.ui_font.size + styles.margin_y as u32) / 2,
+                        (styles.ui.ui_font.size + styles.ui.margin_y as u32) / 2,
                     )),
                 )
                 .into_styled(PrimitiveStyle::with_fill(
@@ -331,7 +331,7 @@ where
 
         drawn |= self.list.should_draw() && self.list.draw(display, styles)?;
 
-        if styles.boxart_width > 0 {
+        if styles.games.boxart_width > 0 {
             if let Some(entry) = self.entries.get_mut(self.list.selected()) {
                 if let Some(path) = entry.image() {
                     trace!("Loading image from {:?}", path);

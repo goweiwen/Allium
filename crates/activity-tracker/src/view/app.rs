@@ -40,12 +40,12 @@ where
 
         let status_bar = StatusBar::new(
             res.clone(),
-            Point::new(w as i32 - styles.margin_y, y + styles.margin_y),
+            Point::new(w as i32 - styles.ui.margin_y, y + styles.ui.margin_y),
             battery,
         );
 
         let label = Label::new(
-            Point::new(x + styles.margin_x, y + styles.margin_y),
+            Point::new(x + styles.ui.margin_x, y + styles.ui.margin_y),
             locale.t("activity-tracker-title"),
             Alignment::Left,
             None,
@@ -53,9 +53,9 @@ where
 
         let rect = Rect::new(
             x,
-            y + styles.margin_y * 2 + styles.ui_font.size as i32,
+            y + styles.ui.margin_y * 2 + styles.ui.ui_font.size as i32,
             w,
-            h - styles.margin_y as u32 * 2 - styles.ui_font.size,
+            h - styles.ui.margin_y as u32 * 2 - styles.ui.ui_font.size,
         );
 
         drop(styles);

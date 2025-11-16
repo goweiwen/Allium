@@ -1,7 +1,6 @@
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
 
 use anyhow::Result;
 use itertools::Itertools;
@@ -44,30 +43,31 @@ pub enum StylesheetColor {
 impl StylesheetColor {
     pub fn to_color(&self, stylesheet: &Stylesheet) -> Color {
         match self {
-            Self::Foreground => stylesheet.foreground_color,
-            Self::Background => stylesheet.background_color,
-            Self::Highlight => stylesheet.highlight_color,
-            Self::HighlightText => stylesheet.highlight_text_color,
-            Self::Disabled => stylesheet.disabled_color,
-            Self::Tab => stylesheet.tab_color,
-            Self::TabSelected => stylesheet.tab_selected_color,
-            Self::ButtonA => stylesheet.button_a_color,
-            Self::ButtonB => stylesheet.button_b_color,
-            Self::ButtonX => stylesheet.button_x_color,
-            Self::ButtonY => stylesheet.button_y_color,
-            Self::ButtonBackground => stylesheet.button_bg_color,
-            Self::ButtonText => stylesheet.button_text_color,
-            Self::ButtonHintText => stylesheet.button_hint_text_color,
+            Self::Foreground => stylesheet.ui.text_color,
+            Self::Background => stylesheet.ui.background_color,
+            Self::Highlight => stylesheet.ui.highlight_color,
+            Self::HighlightText => stylesheet.ui.highlight_text_color,
+            Self::Disabled => stylesheet.ui.disabled_color,
+            Self::Tab => stylesheet.ui.tab_color,
+            Self::TabSelected => stylesheet.ui.tab_selected_color,
+            Self::ButtonA => stylesheet.button_hints.button_a_color,
+            Self::ButtonB => stylesheet.button_hints.button_b_color,
+            Self::ButtonX => stylesheet.button_hints.button_x_color,
+            Self::ButtonY => stylesheet.button_hints.button_y_color,
+            Self::ButtonBackground => stylesheet.button_hints.button_bg_color,
+            Self::ButtonText => stylesheet.button_hints.button_text_color,
+            Self::ButtonHintText => stylesheet.button_hints.text_color,
             Self::BackgroundHighlightBlend => stylesheet
+                .ui
                 .background_color
-                .blend(stylesheet.highlight_color, 128),
-            Self::Stroke => stylesheet.stroke_color,
-            Self::HighlightTextStroke => stylesheet.highlight_text_stroke_color,
-            Self::TabStroke => stylesheet.tab_stroke_color,
-            Self::TabSelectedStroke => stylesheet.tab_selected_stroke_color,
-            Self::StatusBar => stylesheet.status_bar_color,
-            Self::StatusBarStroke => stylesheet.status_bar_stroke_color,
-            Self::MenuBackground => stylesheet.menu_background_color,
+                .blend(stylesheet.ui.highlight_color, 128),
+            Self::Stroke => stylesheet.ui.text_stroke_color,
+            Self::HighlightTextStroke => stylesheet.ui.highlight_text_stroke_color,
+            Self::TabStroke => stylesheet.ui.tab_stroke_color,
+            Self::TabSelectedStroke => stylesheet.ui.tab_selected_stroke_color,
+            Self::StatusBar => stylesheet.status_bar.text_color,
+            Self::StatusBarStroke => stylesheet.status_bar.text_stroke_color,
+            Self::MenuBackground => stylesheet.menu.background_color,
         }
     }
 }
@@ -175,28 +175,65 @@ impl Theme {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Stylesheet {
-    pub wallpaper: Option<PathBuf>,
-    pub show_battery_level: bool,
-    pub show_clock: bool,
-    #[serde(default)]
-    pub use_recents_carousel: bool,
-    #[serde(default = "Stylesheet::default_boxart_width")]
-    pub boxart_width: u32,
-    #[serde(default = "Stylesheet::default_foreground_color")]
-    pub foreground_color: Color,
+pub struct StylesheetUi {
+    #[serde(default = "Stylesheet::default_margin_x")]
+    pub margin_x: i32,
+    #[serde(default = "Stylesheet::default_margin_y")]
+    pub margin_y: i32,
+    #[serde(default = "Stylesheet::default_list_margin")]
+    pub list_margin: i32,
+    #[serde(default = "Stylesheet::default_padding_x")]
+    pub padding_x: i32,
+    #[serde(default = "Stylesheet::default_padding_y")]
+    pub padding_y: i32,
+    #[serde(default = "StylesheetFont::ui_font")]
+    pub ui_font: StylesheetFont,
+    #[serde(default = "Stylesheet::default_text_color")]
+    pub text_color: Color,
+    #[serde(default = "Stylesheet::default_text_stroke_color")]
+    pub text_stroke_color: Color,
     #[serde(default = "Stylesheet::default_background_color")]
     pub background_color: Color,
     #[serde(default = "Stylesheet::default_highlight_color")]
     pub highlight_color: Color,
     #[serde(default = "Stylesheet::default_highlight_text_color")]
     pub highlight_text_color: Color,
+    #[serde(default = "Stylesheet::default_highlight_text_stroke_color")]
+    pub highlight_text_stroke_color: Color,
     #[serde(default = "Stylesheet::default_disabled_color")]
     pub disabled_color: Color,
+    #[serde(default = "Stylesheet::default_tab_font_size")]
+    pub tab_font_size: f32,
     #[serde(default = "Stylesheet::default_tab_color")]
     pub tab_color: Color,
+    #[serde(default = "Stylesheet::default_tab_stroke_color")]
+    pub tab_stroke_color: Color,
     #[serde(default = "Stylesheet::default_tab_selected_color")]
     pub tab_selected_color: Color,
+    #[serde(default = "Stylesheet::default_tab_selected_stroke_color")]
+    pub tab_selected_stroke_color: Color,
+    #[serde(default = "Stylesheet::default_stroke_width")]
+    pub stroke_width: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StylesheetStatusBar {
+    #[serde(default)]
+    pub show_battery_level: bool,
+    #[serde(default = "Stylesheet::default_show_clock")]
+    pub show_clock: bool,
+    #[serde(default = "Stylesheet::default_status_bar_font_size")]
+    pub font_size: f32,
+    #[serde(default = "Stylesheet::default_status_bar_color")]
+    pub text_color: Color,
+    #[serde(default = "Stylesheet::default_status_bar_stroke_color")]
+    pub text_stroke_color: Color,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StylesheetButtonHints {
+    #[serde(default = "Stylesheet::default_button_hint_font_size")]
+    pub button_hint_font_size: f32,
     #[serde(default = "Stylesheet::default_button_a_color")]
     pub button_a_color: Color,
     #[serde(default = "Stylesheet::default_button_b_color")]
@@ -210,45 +247,46 @@ pub struct Stylesheet {
     #[serde(default = "Stylesheet::default_button_text_color")]
     pub button_text_color: Color,
     #[serde(default = "Stylesheet::default_button_hint_text_color")]
-    pub button_hint_text_color: Color,
-    #[serde(default = "Stylesheet::default_stroke_color")]
-    pub stroke_color: Color,
-    #[serde(default = "Stylesheet::default_highlight_text_stroke_color")]
-    pub highlight_text_stroke_color: Color,
-    #[serde(default = "Stylesheet::default_tab_stroke_color")]
-    pub tab_stroke_color: Color,
-    #[serde(default = "Stylesheet::default_tab_selected_stroke_color")]
-    pub tab_selected_stroke_color: Color,
-    #[serde(default = "Stylesheet::default_status_bar_color")]
-    pub status_bar_color: Color,
-    #[serde(default = "Stylesheet::default_status_bar_stroke_color")]
-    pub status_bar_stroke_color: Color,
+    pub text_color: Color,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StylesheetRecents {
+    #[serde(default)]
+    pub use_recents_carousel: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StylesheetGames {
+    #[serde(default = "Stylesheet::default_boxart_width")]
+    pub boxart_width: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StylesheetMenu {
     #[serde(default = "Stylesheet::default_menu_background_color")]
-    pub menu_background_color: Color,
-    #[serde(default = "Stylesheet::default_stroke_width")]
-    pub stroke_width: u32,
-    #[serde(default = "StylesheetFont::ui_font")]
-    pub ui_font: StylesheetFont,
+    pub background_color: Color,
     #[serde(default = "StylesheetFont::guide_font")]
     pub guide_font: StylesheetFont,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Stylesheet {
+    pub wallpaper: Option<PathBuf>,
+    #[serde(default = "StylesheetUi::default")]
+    pub ui: StylesheetUi,
+    #[serde(default = "StylesheetStatusBar::default")]
+    pub status_bar: StylesheetStatusBar,
+    #[serde(default = "StylesheetButtonHints::default")]
+    pub button_hints: StylesheetButtonHints,
+    #[serde(default = "StylesheetRecents::default")]
+    pub recents: StylesheetRecents,
+    #[serde(default = "StylesheetGames::default")]
+    pub games: StylesheetGames,
+    #[serde(default = "StylesheetMenu::default")]
+    pub menu: StylesheetMenu,
     #[serde(skip, default = "StylesheetFont::cjk_font")]
     pub cjk_font: StylesheetFont,
-    #[serde(default = "Stylesheet::default_tab_font_size")]
-    pub tab_font_size: f32,
-    #[serde(default = "Stylesheet::default_status_bar_font_size")]
-    pub status_bar_font_size: f32,
-    #[serde(default = "Stylesheet::default_button_hint_font_size")]
-    pub button_hint_font_size: f32,
-    #[serde(default = "Stylesheet::default_margin_x")]
-    pub margin_x: i32,
-    #[serde(default = "Stylesheet::default_margin_y")]
-    pub margin_y: i32,
-    #[serde(default = "Stylesheet::default_list_margin")]
-    pub list_margin: i32,
-    #[serde(default = "Stylesheet::default_padding_x")]
-    pub padding_x: i32,
-    #[serde(default = "Stylesheet::default_padding_y")]
-    pub padding_y: i32,
 }
 
 impl Stylesheet {
@@ -340,42 +378,12 @@ impl Stylesheet {
         }
 
         // For non-Option types, always take the value from `other`
-        self.show_battery_level = other.show_battery_level;
-        self.show_clock = other.show_clock;
-        self.use_recents_carousel = other.use_recents_carousel;
-        self.boxart_width = other.boxart_width;
-        self.foreground_color = other.foreground_color;
-        self.background_color = other.background_color;
-        self.highlight_color = other.highlight_color;
-        self.highlight_text_color = other.highlight_text_color;
-        self.disabled_color = other.disabled_color;
-        self.tab_color = other.tab_color;
-        self.tab_selected_color = other.tab_selected_color;
-        self.button_a_color = other.button_a_color;
-        self.button_b_color = other.button_b_color;
-        self.button_x_color = other.button_x_color;
-        self.button_y_color = other.button_y_color;
-        self.button_bg_color = other.button_bg_color;
-        self.button_text_color = other.button_text_color;
-        self.button_hint_text_color = other.button_hint_text_color;
-        self.stroke_color = other.stroke_color;
-        self.highlight_text_stroke_color = other.highlight_text_stroke_color;
-        self.tab_stroke_color = other.tab_stroke_color;
-        self.tab_selected_stroke_color = other.tab_selected_stroke_color;
-        self.status_bar_color = other.status_bar_color;
-        self.status_bar_stroke_color = other.status_bar_stroke_color;
-        self.menu_background_color = other.menu_background_color;
-        self.stroke_width = other.stroke_width;
-        self.ui_font = other.ui_font;
-        self.guide_font = other.guide_font;
-        self.tab_font_size = other.tab_font_size;
-        self.status_bar_font_size = other.status_bar_font_size;
-        self.button_hint_font_size = other.button_hint_font_size;
-        self.margin_x = other.margin_x;
-        self.margin_y = other.margin_y;
-        self.list_margin = other.list_margin;
-        self.padding_x = other.padding_x;
-        self.padding_y = other.padding_y;
+        self.ui = other.ui;
+        self.status_bar = other.status_bar;
+        self.button_hints = other.button_hints;
+        self.recents = other.recents;
+        self.games = other.games;
+        self.menu = other.menu;
     }
 
     pub fn load() -> Result<Self> {
@@ -409,26 +417,26 @@ impl Stylesheet {
             ALLIUM_FONTS_DIR.join(font)
         };
 
-        self.ui_font.path = resolve_font_path(&self.ui_font.path);
-        if let Err(e) = self.ui_font.load() {
+        self.ui.ui_font.path = resolve_font_path(&self.ui.ui_font.path);
+        if let Err(e) = self.ui.ui_font.load() {
             error!(
                 "failed to load UI font: {}, {}",
-                self.ui_font.path.display(),
+                self.ui.ui_font.path.display(),
                 e
             );
-            self.ui_font = StylesheetFont::ui_font();
-            self.ui_font.load()?;
+            self.ui.ui_font = StylesheetFont::ui_font();
+            self.ui.ui_font.load()?;
         }
 
-        self.guide_font.path = resolve_font_path(&self.guide_font.path);
-        if let Err(e) = self.guide_font.load() {
+        self.menu.guide_font.path = resolve_font_path(&self.menu.guide_font.path);
+        if let Err(e) = self.menu.guide_font.load() {
             error!(
                 "failed to load guide font: {} ({})",
-                self.guide_font.path.display(),
+                self.menu.guide_font.path.display(),
                 e
             );
-            self.guide_font = StylesheetFont::guide_font();
-            self.guide_font.load()?;
+            self.menu.guide_font = StylesheetFont::guide_font();
+            self.menu.guide_font.load()?;
         }
 
         self.cjk_font.path = resolve_font_path(&self.cjk_font.path);
@@ -484,26 +492,26 @@ impl Stylesheet {
     }
 
     pub fn toggle_battery_percentage(&mut self) {
-        self.show_battery_level = !self.show_battery_level;
+        self.status_bar.show_battery_level = !self.status_bar.show_battery_level;
     }
 
     pub fn toggle_clock(&mut self) {
-        self.show_clock = !self.show_clock;
+        self.status_bar.show_clock = !self.status_bar.show_clock;
     }
 
     #[inline]
     pub fn tab_font_size(&self) -> f32 {
-        self.ui_font.size as f32 * self.tab_font_size
+        self.ui.ui_font.size as f32 * self.ui.tab_font_size
     }
 
     #[inline]
     pub fn button_hint_font_size(&self) -> f32 {
-        self.ui_font.size as f32 * self.button_hint_font_size
+        self.ui.ui_font.size as f32 * self.button_hints.button_hint_font_size
     }
 
     #[inline]
     pub fn status_bar_font_size(&self) -> f32 {
-        self.ui_font.size as f32 * self.status_bar_font_size
+        self.ui.ui_font.size as f32 * self.status_bar.font_size
     }
 
     fn set_retroarch_theme(&self) -> Result<()> {
@@ -524,7 +532,7 @@ impl Stylesheet {
 
             let mut image = image.into_rgba8();
 
-            let bg_color = self.background_color;
+            let bg_color = self.ui.background_color;
             if bg_color.a() != 0 {
                 for p in image.pixels_mut() {
                     let alpha = bg_color.a() as u32;
@@ -556,11 +564,11 @@ rgui_shadow_color = "0xFF{background:X}"
 rgui_particle_color = "0xFF{highlight:X}"
 rgui_wallpaper = "/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.png"
 "#,
-            tab_color = self.tab_color,
-            tab_selected_color = self.tab_selected_color,
-            // foreground = self.foreground_color,
-            highlight = self.highlight_color,
-            background = self.background_color,
+            tab_color = self.ui.tab_color,
+            tab_selected_color = self.ui.tab_selected_color,
+            // foreground = self.ui.text_color,
+            highlight = self.ui.highlight_color,
+            background = self.ui.background_color,
         )?;
         Ok(())
     }
@@ -628,7 +636,7 @@ rgui_wallpaper = "/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.png"
     }
 
     #[inline]
-    fn default_foreground_color() -> Color {
+    fn default_text_color() -> Color {
         Color::new(255, 255, 255)
     }
 
@@ -689,16 +697,16 @@ rgui_wallpaper = "/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.png"
 
     #[inline]
     fn default_button_text_color() -> Color {
-        Stylesheet::default_foreground_color()
+        Stylesheet::default_text_color()
     }
 
     #[inline]
     fn default_button_hint_text_color() -> Color {
-        Stylesheet::default_foreground_color()
+        Stylesheet::default_text_color()
     }
 
     #[inline]
-    fn default_stroke_color() -> Color {
+    fn default_text_stroke_color() -> Color {
         Color::rgba(0, 0, 0, 0)
     }
 
@@ -719,7 +727,7 @@ rgui_wallpaper = "/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.png"
 
     #[inline]
     fn default_status_bar_color() -> Color {
-        Stylesheet::default_foreground_color()
+        Stylesheet::default_text_color()
     }
 
     #[inline]
@@ -736,49 +744,102 @@ rgui_wallpaper = "/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.png"
     fn default_stroke_width() -> u32 {
         0
     }
+
+    #[inline]
+    fn default_show_clock() -> bool {
+        true
+    }
+}
+
+impl Default for StylesheetUi {
+    fn default() -> Self {
+        Self {
+            margin_x: Stylesheet::default_margin_x(),
+            margin_y: Stylesheet::default_margin_y(),
+            list_margin: Stylesheet::default_list_margin(),
+            padding_x: Stylesheet::default_padding_x(),
+            padding_y: Stylesheet::default_padding_y(),
+            ui_font: StylesheetFont::ui_font(),
+            text_color: Stylesheet::default_text_color(),
+            text_stroke_color: Stylesheet::default_text_stroke_color(),
+            background_color: Stylesheet::default_background_color(),
+            highlight_color: Stylesheet::default_highlight_color(),
+            highlight_text_color: Stylesheet::default_highlight_text_color(),
+            highlight_text_stroke_color: Stylesheet::default_highlight_text_stroke_color(),
+            disabled_color: Stylesheet::default_disabled_color(),
+            tab_font_size: Stylesheet::default_tab_font_size(),
+            tab_color: Stylesheet::default_tab_color(),
+            tab_stroke_color: Stylesheet::default_tab_stroke_color(),
+            tab_selected_color: Stylesheet::default_tab_selected_color(),
+            tab_selected_stroke_color: Stylesheet::default_tab_selected_stroke_color(),
+            stroke_width: Stylesheet::default_stroke_width(),
+        }
+    }
+}
+
+impl Default for StylesheetStatusBar {
+    fn default() -> Self {
+        Self {
+            show_battery_level: false,
+            show_clock: Stylesheet::default_show_clock(),
+            font_size: Stylesheet::default_status_bar_font_size(),
+            text_color: Stylesheet::default_status_bar_color(),
+            text_stroke_color: Stylesheet::default_status_bar_stroke_color(),
+        }
+    }
+}
+
+impl Default for StylesheetButtonHints {
+    fn default() -> Self {
+        Self {
+            button_hint_font_size: Stylesheet::default_button_hint_font_size(),
+            button_a_color: Stylesheet::default_button_a_color(),
+            button_b_color: Stylesheet::default_button_b_color(),
+            button_x_color: Stylesheet::default_button_x_color(),
+            button_y_color: Stylesheet::default_button_y_color(),
+            button_bg_color: Stylesheet::default_button_bg_color(),
+            button_text_color: Stylesheet::default_button_text_color(),
+            text_color: Stylesheet::default_button_hint_text_color(),
+        }
+    }
+}
+
+impl Default for StylesheetRecents {
+    fn default() -> Self {
+        Self {
+            use_recents_carousel: false,
+        }
+    }
+}
+
+impl Default for StylesheetGames {
+    fn default() -> Self {
+        Self {
+            boxart_width: Stylesheet::default_boxart_width(),
+        }
+    }
+}
+
+impl Default for StylesheetMenu {
+    fn default() -> Self {
+        Self {
+            background_color: Stylesheet::default_background_color(),
+            guide_font: StylesheetFont::guide_font(),
+        }
+    }
 }
 
 impl Default for Stylesheet {
     fn default() -> Self {
         Self {
             wallpaper: None,
-            show_battery_level: false,
-            show_clock: true,
-            use_recents_carousel: false,
-            boxart_width: Self::default_boxart_width(),
-            foreground_color: Self::default_foreground_color(),
-            background_color: Self::default_background_color(),
-            highlight_color: Self::default_highlight_color(),
-            highlight_text_color: Self::default_highlight_text_color(),
-            disabled_color: Self::default_disabled_color(),
-            tab_color: Self::default_tab_color(),
-            tab_selected_color: Self::default_tab_selected_color(),
-            button_a_color: Self::default_button_a_color(),
-            button_b_color: Self::default_button_b_color(),
-            button_x_color: Self::default_button_x_color(),
-            button_y_color: Self::default_button_y_color(),
-            button_bg_color: Self::default_button_bg_color(),
-            button_text_color: Self::default_button_text_color(),
-            button_hint_text_color: Self::default_button_hint_text_color(),
-            stroke_color: Self::default_stroke_color(),
-            highlight_text_stroke_color: Self::default_highlight_text_stroke_color(),
-            tab_stroke_color: Self::default_tab_stroke_color(),
-            tab_selected_stroke_color: Self::default_tab_selected_stroke_color(),
-            status_bar_color: Self::default_status_bar_color(),
-            status_bar_stroke_color: Self::default_status_bar_stroke_color(),
-            menu_background_color: Self::default_menu_background_color(),
-            stroke_width: Self::default_stroke_width(),
-            ui_font: StylesheetFont::ui_font(),
-            guide_font: StylesheetFont::guide_font(),
+            ui: StylesheetUi::default(),
+            status_bar: StylesheetStatusBar::default(),
+            button_hints: StylesheetButtonHints::default(),
+            recents: StylesheetRecents::default(),
+            games: StylesheetGames::default(),
+            menu: StylesheetMenu::default(),
             cjk_font: StylesheetFont::cjk_font(),
-            tab_font_size: Self::default_tab_font_size(),
-            status_bar_font_size: Self::default_status_bar_font_size(),
-            button_hint_font_size: Self::default_button_hint_font_size(),
-            margin_x: Self::default_margin_x(),
-            margin_y: Self::default_margin_y(),
-            list_margin: Self::default_list_margin(),
-            padding_x: Self::default_padding_x(),
-            padding_y: Self::default_padding_y(),
         }
     }
 }

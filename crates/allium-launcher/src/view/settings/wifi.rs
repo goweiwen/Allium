@@ -44,10 +44,10 @@ impl Wifi {
         let mut list = SettingsList::new(
             res.clone(),
             Rect::new(
-                x + styles.margin_x,
+                x + styles.ui.margin_x,
                 y,
-                w - styles.margin_x as u32 * 2,
-                h - ButtonIcon::diameter(&styles) - styles.margin_y as u32,
+                w - styles.ui.margin_x as u32 * 2,
+                h - ButtonIcon::diameter(&styles) - styles.ui.margin_y as u32,
             ),
             vec![
                 locale.t("settings-wifi-wifi-enabled"),
@@ -100,7 +100,7 @@ impl Wifi {
                     Alignment::Right,
                 )),
             ],
-            res.get::<Stylesheet>().ui_font.size + styles.padding_y as u32,
+            res.get::<Stylesheet>().ui.ui_font.size + styles.ui.padding_y as u32,
         );
         if let Some(state) = state {
             list.select(state.selected);
@@ -272,7 +272,7 @@ impl View for Wifi {
                             let enabled = val.as_bool().unwrap();
                             self.settings.toggle_web_file_browser(enabled)?;
                             if enabled {
-                                let fg_color = self.res.get::<Stylesheet>().foreground_color;
+                                let fg_color = self.res.get::<Stylesheet>().ui.text_color;
                                 let commands = commands.clone();
                                 tokio::spawn(async move {
                                     if wifi::wait_for_wifi().await.is_ok()
@@ -307,7 +307,7 @@ impl View for Wifi {
                             let enabled = val.as_bool().unwrap();
                             self.settings.toggle_syncthing(enabled)?;
                             if enabled {
-                                let fg_color = self.res.get::<Stylesheet>().foreground_color;
+                                let fg_color = self.res.get::<Stylesheet>().ui.text_color;
                                 let commands = commands.clone();
                                 tokio::spawn(async move {
                                     if wifi::wait_for_wifi().await.is_ok()

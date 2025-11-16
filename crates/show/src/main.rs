@@ -37,9 +37,9 @@ fn main() -> Result<()> {
     let mut frame = if !cli.clear {
         fb.read_frame().to_vec()
     } else {
-        let r = styles.background_color.r();
-        let g = styles.background_color.g();
-        let b = styles.background_color.b();
+        let r = styles.ui.background_color.r();
+        let g = styles.ui.background_color.g();
+        let b = styles.ui.background_color.b();
 
         [b, g, r, 0xff]
             .into_iter()
@@ -49,7 +49,7 @@ fn main() -> Result<()> {
     };
 
     if cli.darken {
-        darken(&mut frame, styles.background_color, 192);
+        darken(&mut frame, styles.ui.background_color, 192);
     }
 
     if let Some(path) = cli.path {

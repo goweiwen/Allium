@@ -49,7 +49,7 @@ impl View for Toggle {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        let h = styles.ui_font.size;
+        let h = styles.ui.ui_font.size;
         let w = h * 3 / 2;
         let margin = h as i32 / 6;
 
@@ -64,8 +64,8 @@ impl View for Toggle {
             Size::new_equal(h),
         )
         .into_styled(PrimitiveStyle::with_fill(match self.value {
-            true => styles.highlight_color,
-            false => styles.disabled_color,
+            true => styles.ui.highlight_color,
+            false => styles.ui.disabled_color,
         }))
         .draw(display)?;
 
@@ -82,8 +82,8 @@ impl View for Toggle {
             h - margin as u32 - margin as u32,
         )
         .into_styled(PrimitiveStyle::with_fill(match self.value {
-            true => styles.highlight_text_color,
-            false => styles.highlight_text_color,
+            true => styles.ui.highlight_text_color,
+            false => styles.ui.highlight_text_color,
         }))
         .draw(display)?;
 

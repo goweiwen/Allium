@@ -32,13 +32,6 @@ pub struct RecentsList {
 
 impl RecentsList {
     pub fn new(rect: Rect, res: Resources, list: EntryList<RecentsSort>) -> Result<Self> {
-        let Rect {
-            x: _,
-            y: _,
-            w: _w,
-            h: _,
-        } = rect;
-
         let styles = res.get::<Stylesheet>();
 
         let button_hints = {

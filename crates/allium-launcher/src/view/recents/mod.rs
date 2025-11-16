@@ -42,7 +42,7 @@ pub enum Recents {
 
 impl Recents {
     pub fn load_or_new(rect: Rect, res: Resources, state: Option<RecentsState>) -> Result<Self> {
-        let use_carousel = res.get::<Stylesheet>().use_recents_carousel;
+        let use_carousel = res.get::<Stylesheet>().recents.use_recents_carousel;
 
         if use_carousel {
             let carousel_state = match state {

@@ -85,14 +85,14 @@ impl Settings {
         let mut list = ScrollList::new(
             res.clone(),
             Rect::new(
-                x + styles.margin_x,
+                x + styles.ui.margin_x,
                 y,
-                w - styles.margin_x as u32 * 2,
-                h - styles.margin_y as u32 - styles.ui_font.size,
+                w - styles.ui.margin_x as u32 * 2,
+                h - styles.ui.margin_y as u32 - styles.ui.ui_font.size,
             ),
             labels,
             Alignment::Left,
-            styles.ui_font.size + styles.padding_y as u32,
+            styles.ui.ui_font.size + styles.ui.padding_y as u32,
         );
         list.select(state.selected);
 

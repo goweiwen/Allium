@@ -109,11 +109,11 @@ impl TextReader {
 
     fn visible_text(&self, styles: &Stylesheet) -> Vec<&str> {
         let line_count = (self.rect.h
-            - styles.margin_y as u32
-            - styles.margin_y as u32
+            - styles.ui.margin_y as u32
+            - styles.ui.margin_y as u32
             - ButtonIcon::diameter(styles)
-            - styles.margin_x as u32)
-            / styles.guide_font.size;
+            - styles.ui.margin_x as u32)
+            / styles.menu.guide_font.size;
         let mut lines = Vec::with_capacity(line_count as usize);
         let mut cursor = self.cursor;
         for _ in 0..line_count {
@@ -135,12 +135,12 @@ impl TextReader {
     }
 
     fn get_line(&self, styles: &Stylesheet, cursor: usize) -> &str {
-        let line_width = self.rect.w - styles.margin_x as u32 * 2 - styles.margin_y as u32 * 2;
-        let text_style = FontTextStyleBuilder::new(styles.guide_font.font())
+        let line_width = self.rect.w - styles.ui.margin_x as u32 * 2 - styles.ui.margin_y as u32 * 2;
+        let text_style = FontTextStyleBuilder::new(styles.menu.guide_font.font())
             .font_fallback(styles.cjk_font.font())
-            .font_size(styles.guide_font.size)
-            .background_color(styles.background_color)
-            .text_color(styles.foreground_color)
+            .font_size(styles.menu.guide_font.size)
+            .background_color(styles.ui.background_color)
+            .text_color(styles.ui.text_color)
             .build();
         let mut offset = self.text[cursor..]
             .find('\n')
@@ -158,7 +158,7 @@ impl TextReader {
         );
 
         while text.bounding_box().size.width > line_width
-            || text.bounding_box().size.height > styles.guide_font.size
+            || text.bounding_box().size.height > styles.menu.guide_font.size
         {
             offset -= 1;
             while !self.text.is_char_boundary(cursor + offset) {
@@ -366,36 +366,36 @@ impl View for TextReader {
             display.load(display.bounding_box().into())?;
             RoundedRectangle::with_equal_corners(
                 <Rect as Into<Rectangle>>::into(Rect::new(
-                    self.rect.x + styles.margin_x,
+                    self.rect.x + styles.ui.margin_x,
                     self.rect.y + 12,
-                    self.rect.w - styles.margin_x as u32 * 2,
+                    self.rect.w - styles.ui.margin_x as u32 * 2,
                     self.rect.h
-                        - styles.margin_y as u32
-                        - styles.margin_y as u32
+                        - styles.ui.margin_y as u32
+                        - styles.ui.margin_y as u32
                         - ButtonIcon::diameter(styles)
-                        - styles.margin_x as u32,
+                        - styles.ui.margin_x as u32,
                 )),
                 Size::new_equal(8),
             )
-            .into_styled(PrimitiveStyle::with_fill(styles.background_color))
+            .into_styled(PrimitiveStyle::with_fill(styles.ui.background_color))
             .draw(display)?;
 
-            let text_style = FontTextStyleBuilder::new(styles.guide_font.font())
+            let text_style = FontTextStyleBuilder::new(styles.menu.guide_font.font())
                 .font_fallback(styles.cjk_font.font())
-                .font_size(styles.guide_font.size)
-                .background_color(styles.background_color)
-                .text_color(styles.foreground_color)
+                .font_size(styles.menu.guide_font.size)
+                .background_color(styles.ui.background_color)
+                .text_color(styles.ui.text_color)
                 .build();
 
             let mut y = self.rect.y + 12 + 8;
             for line in self.visible_text(styles) {
                 let text = Text::new(
                     line,
-                    Point::new(self.rect.x + styles.margin_x + 12, y).into(),
+                    Point::new(self.rect.x + styles.ui.margin_x + 12, y).into(),
                     text_style.clone(),
                 );
                 text.draw(display)?;
-                y += styles.guide_font.size as i32;
+                y += styles.menu.guide_font.size as i32;
             }
 
             Text::with_alignment(
@@ -406,10 +406,10 @@ impl View for TextReader {
                 Point::new(
                     self.rect.x + self.rect.w as i32 - 16,
                     self.rect.y + self.rect.h as i32
-                        - styles.guide_font.size as i32
-                        - styles.margin_x
+                        - styles.menu.guide_font.size as i32
+                        - styles.ui.margin_x
                         - ButtonIcon::diameter(styles) as i32
-                        - styles.margin_x,
+                        - styles.ui.margin_x,
                 )
                 .into(),
                 text_style,

@@ -50,7 +50,7 @@ impl App<DefaultPlatform> {
         {
             let styles = self.res.get::<Stylesheet>();
             self.display
-                .map_pixels(|pixel| pixel.blend(styles.background_color.overlay(pixel), 192))?;
+                .map_pixels(|pixel| pixel.blend(styles.ui.background_color.overlay(pixel), 192))?;
             self.display.save()?;
         }
 

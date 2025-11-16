@@ -74,7 +74,7 @@ impl AlliumLauncher<DefaultPlatform> {
                 }
             }
 
-            self.display.clear(styles.background_color)?;
+            self.display.clear(styles.ui.background_color)?;
         }
 
         self.display.save()?;
@@ -199,7 +199,7 @@ impl AlliumLauncher<DefaultPlatform> {
                         error!("Failed to set wallpaper: {}", e);
                     }
                 }
-                self.display.clear(styles.background_color)?;
+                self.display.clear(styles.ui.background_color)?;
                 self.display.save()?;
 
                 self.res.insert(*styles);
