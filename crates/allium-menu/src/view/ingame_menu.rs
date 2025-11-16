@@ -105,7 +105,7 @@ where
             8,
         );
 
-        let entries = MenuEntry::entries(retroarch_info.as_ref());
+        let entries = MenuEntry::entries(retroarch_info.as_ref(), !game_info.guides.is_empty());
         let mut menu = SettingsList::new(
             res.clone(),
             Rect::new(
@@ -131,7 +131,7 @@ where
             let mut map = HashMap::new();
             map.insert("disk".into(), (info.disk_slot + 1).into());
             menu.set_right(
-                MenuEntry::Continue.index(retroarch_info.as_ref()),
+                MenuEntry::Continue.index(retroarch_info.as_ref(), !game_info.guides.is_empty()),
                 Box::new(Label::new(
                     Point::zero(),
                     locale.ta("ingame-menu-disk", &map),
@@ -184,7 +184,12 @@ where
 
         let mut child = None;
         if state.is_text_reader_open {
-            menu.select(MenuEntry::Guide.index(retroarch_info.as_ref()));
+            menu.select(
+                entries
+                    .iter()
+                    .position(|e| *e == MenuEntry::Guide)
+                    .unwrap_or(0),
+            );
 
             // Select the guide by path if previously selected
             let selected = if let Some(path) = &state.selected_guide_path
@@ -591,7 +596,7 @@ where
 
         // Handle disk slot selection
         if let Some(ref mut info) = self.retroarch_info {
-            if info.max_disk_slots > 1 && selected == MenuEntry::Continue.index(Some(info)) {
+            if info.max_disk_slots > 1 && selected == MenuEntry::Continue as usize {
                 match event {
                     KeyEvent::Pressed(Key::Left) | KeyEvent::Autorepeat(Key::Left) => {
                         info.disk_slot = info.disk_slot.saturating_sub(1);
@@ -632,8 +637,7 @@ where
             }
 
             // Handle state slot selection
-            if (selected == MenuEntry::Save.index(Some(info))
-                || selected == MenuEntry::Load.index(Some(info)))
+            if (selected == MenuEntry::Save as usize || selected == MenuEntry::Load as usize)
                 && let Some(state_slot) = info.state_slot.as_mut()
             {
                 match event {
@@ -759,33 +763,40 @@ impl MenuEntry {
         }
     }
 
-    fn entries(info: Option<&RetroArchInfo>) -> Vec<Self> {
+    fn entries(info: Option<&RetroArchInfo>, has_guides: bool) -> Vec<Self> {
         match info {
             Some(RetroArchInfo {
                 state_slot: Some(_),
                 ..
-            }) => vec![
-                MenuEntry::Continue,
-                MenuEntry::Save,
-                MenuEntry::Load,
-                MenuEntry::Guide,
-                MenuEntry::Settings,
-                MenuEntry::Reset,
-                MenuEntry::Quit,
-            ],
-            Some(_) => vec![
-                MenuEntry::Continue,
-                MenuEntry::Reset,
-                MenuEntry::Guide,
-                MenuEntry::Settings,
-                MenuEntry::Quit,
-            ],
-            None => vec![MenuEntry::Continue, MenuEntry::Guide, MenuEntry::Quit],
+            }) => {
+                let mut entries = vec![MenuEntry::Continue, MenuEntry::Save, MenuEntry::Load];
+                if has_guides {
+                    entries.push(MenuEntry::Guide);
+                }
+                entries.extend([MenuEntry::Settings, MenuEntry::Reset, MenuEntry::Quit]);
+                entries
+            }
+            Some(_) => {
+                let mut entries = vec![MenuEntry::Continue, MenuEntry::Reset];
+                if has_guides {
+                    entries.push(MenuEntry::Guide);
+                }
+                entries.extend([MenuEntry::Settings, MenuEntry::Quit]);
+                entries
+            }
+            None => {
+                let mut entries = vec![MenuEntry::Continue];
+                if has_guides {
+                    entries.push(MenuEntry::Guide);
+                }
+                entries.push(MenuEntry::Quit);
+                entries
+            }
         }
     }
 
-    fn index(&self, info: Option<&RetroArchInfo>) -> usize {
-        let entries = MenuEntry::entries(info);
+    fn index(&self, info: Option<&RetroArchInfo>, has_guides: bool) -> usize {
+        let entries = MenuEntry::entries(info, has_guides);
         entries.iter().position(|e| e == self).unwrap_or(0)
     }
 }
