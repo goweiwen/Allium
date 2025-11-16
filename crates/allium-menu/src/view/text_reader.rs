@@ -13,7 +13,7 @@ use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, Row, View};
+use common::view::{ButtonHint, ButtonHints, View};
 use common::view::{ButtonIcon, Keyboard};
 use embedded_graphics::Drawable;
 use embedded_graphics::prelude::{Dimensions, Size};
@@ -29,8 +29,7 @@ pub struct TextReader {
     text: String,
     lowercase_text: String,
     cursor: usize,
-    button_hints: Row<ButtonHint<String>>,
-    button_hints_left: Row<ButtonHint<String>>,
+    button_hints: ButtonHints<String>,
     keyboard: Option<Keyboard>,
     last_searched: String,
     dirty: bool,
@@ -53,16 +52,18 @@ impl TextReader {
             cursor -= 1;
         }
 
-        let Rect { x, y, w, h } = rect;
-
         let locale = res.get::<Locale>();
         let styles = res.get::<Stylesheet>();
 
-        let button_hints = Row::new(
-            Point::new(
-                x + w as i32 - styles.margin_y,
-                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_x,
-            ),
+        let button_hints = ButtonHints::new(
+            res.clone(),
+            vec![ButtonHint::new(
+                res.clone(),
+                Point::zero(),
+                Key::Menu,
+                locale.t("ingame-menu-continue"),
+                Alignment::Left,
+            )],
             vec![
                 ButtonHint::new(
                     res.clone(),
@@ -79,24 +80,6 @@ impl TextReader {
                     Alignment::Right,
                 ),
             ],
-            Alignment::Right,
-            12,
-        );
-
-        let button_hints_left = Row::new(
-            Point::new(
-                x + styles.margin_x,
-                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_x,
-            ),
-            vec![ButtonHint::new(
-                res.clone(),
-                Point::zero(),
-                Key::Menu,
-                locale.t("ingame-menu-continue"),
-                Alignment::Left,
-            )],
-            Alignment::Left,
-            12,
         );
 
         drop(locale);
@@ -110,7 +93,6 @@ impl TextReader {
             lowercase_text,
             cursor,
             button_hints,
-            button_hints_left,
             keyboard: None,
             dirty: true,
             last_searched: String::new(),
@@ -242,16 +224,16 @@ impl TextReader {
             self.search_forward(needle);
         }
 
-        if self.button_hints.children().len() <= 2 {
+        if self.button_hints.right().len() <= 2 {
             let locale = self.res.get::<Locale>();
-            self.button_hints.push(ButtonHint::new(
+            self.button_hints.right_mut().push(ButtonHint::new(
                 self.res.clone(),
                 Point::zero(),
                 Key::L2,
                 locale.t("guide-next"),
                 Alignment::Right,
             ));
-            self.button_hints.push(ButtonHint::new(
+            self.button_hints.right_mut().push(ButtonHint::new(
                 self.res.clone(),
                 Point::zero(),
                 Key::R2,
@@ -274,16 +256,16 @@ impl TextReader {
             self.search_backward(needle);
         }
 
-        if self.button_hints.children().len() <= 2 {
+        if self.button_hints.right().len() <= 2 {
             let locale = self.res.get::<Locale>();
-            self.button_hints.push(ButtonHint::new(
+            self.button_hints.right_mut().push(ButtonHint::new(
                 self.res.clone(),
                 Point::zero(),
                 Key::L,
                 locale.t("guide-next"),
                 Alignment::Right,
             ));
-            self.button_hints.push(ButtonHint::new(
+            self.button_hints.right_mut().push(ButtonHint::new(
                 self.res.clone(),
                 Point::zero(),
                 Key::R,
@@ -443,7 +425,6 @@ impl View for TextReader {
         }
 
         drawn |= self.button_hints.draw(display, styles)?;
-        drawn |= self.button_hints_left.draw(display, styles)?;
 
         if let Some(keyboard) = self.keyboard.as_mut() {
             drawn |= keyboard.draw(display, styles)?;
@@ -455,7 +436,6 @@ impl View for TextReader {
     fn should_draw(&self) -> bool {
         self.dirty
             || self.button_hints.should_draw()
-            || self.button_hints_left.should_draw()
             || self
                 .keyboard
                 .as_ref()
@@ -465,7 +445,6 @@ impl View for TextReader {
     fn set_should_draw(&mut self) {
         self.dirty = true;
         self.button_hints.set_should_draw();
-        self.button_hints_left.set_should_draw();
         if let Some(keyboard) = self.keyboard.as_mut() {
             keyboard.set_should_draw();
         }

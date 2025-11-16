@@ -18,7 +18,7 @@ use crate::locale::Locale;
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use crate::resources::Resources;
 use crate::stylesheet::Stylesheet;
-use crate::view::{ButtonHint, ButtonIcon, Row, View};
+use crate::view::{ButtonHint, ButtonHints, ButtonIcon, View};
 
 #[derive(Debug, Clone)]
 pub struct Keyboard {
@@ -27,22 +27,18 @@ pub struct Keyboard {
     cursor: rusttype::Point<usize>,
     mode: KeyboardMode,
     is_password: bool,
-    button_hints: Row<ButtonHint<String>>,
+    button_hints: ButtonHints<String>,
     dirty: bool,
 }
 
 impl Keyboard {
     pub fn new(res: Resources, value: String, is_password: bool) -> Self {
-        let geom::Size { w, h } = res.get::<geom::Size>().to_owned();
-
         let locale = res.get::<Locale>();
         let styles = res.get::<Stylesheet>();
 
-        let button_hints = Row::new(
-            Point::new(
-                w as i32 - styles.margin_x,
-                h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_y,
-            ),
+        let button_hints = ButtonHints::new(
+            res.clone(),
+            vec![],
             vec![
                 ButtonHint::new(
                     res.clone(),
@@ -66,8 +62,6 @@ impl Keyboard {
                     Alignment::Right,
                 ),
             ],
-            Alignment::Right,
-            12,
         );
 
         drop(locale);

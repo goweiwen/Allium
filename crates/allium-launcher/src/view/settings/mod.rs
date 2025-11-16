@@ -27,7 +27,7 @@ use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, ButtonIcon, Row, ScrollList, View};
+use common::view::{ButtonHint, ButtonHints, ScrollList, View};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
@@ -58,7 +58,7 @@ pub struct Settings {
     res: Resources,
     list: ScrollList,
     child: Option<Box<dyn SettingsChild>>,
-    button_hints: Row<ButtonHint<String>>,
+    button_hints: ButtonHints<String>,
     has_wifi: bool,
     dirty: bool,
 }
@@ -115,11 +115,9 @@ impl Settings {
             None
         };
 
-        let button_hints = Row::new(
-            Point::new(
-                x + w as i32 - styles.margin_y,
-                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_y,
-            ),
+        let button_hints = ButtonHints::new(
+            res.clone(),
+            vec![],
             vec![
                 ButtonHint::new(
                     res.clone(),
@@ -136,8 +134,6 @@ impl Settings {
                     Alignment::Right,
                 ),
             ],
-            Alignment::Right,
-            12,
         );
 
         std::mem::drop(locale);

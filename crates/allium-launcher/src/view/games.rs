@@ -11,7 +11,7 @@ use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, ButtonIcon, Row, View};
+use common::view::{ButtonHint, ButtonHints, View};
 use itertools::Itertools;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
@@ -28,33 +28,25 @@ pub type GamesState = EntryListState<GamesSort>;
 pub struct Games {
     rect: Rect,
     list: EntryList<GamesSort>,
-    button_hints: Row<ButtonHint<String>>,
+    button_hints: ButtonHints<String>,
 }
 
 impl Games {
     pub fn new(rect: Rect, res: Resources, list: EntryList<GamesSort>) -> Result<Self> {
-        let Rect { x, y, w: _, h } = rect;
-
-        let styles = res.get::<Stylesheet>();
-
-        let button_hints = Row::new(
-            Point::new(
-                x + styles.margin_x,
-                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_y,
-            ),
-            {
-                let locale = res.get::<Locale>();
+        let button_hints = {
+            let locale = res.get::<Locale>();
+            ButtonHints::new(
+                res.clone(),
                 vec![ButtonHint::new(
                     res.clone(),
                     Point::zero(),
                     Key::X,
                     locale.t("sort-search"),
                     Alignment::Left,
-                )]
-            },
-            Alignment::Left,
-            12,
-        );
+                )],
+                vec![],
+            )
+        };
 
         Ok(Self {
             rect,

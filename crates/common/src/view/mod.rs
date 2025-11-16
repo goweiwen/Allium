@@ -1,5 +1,6 @@
 mod battery_indicator;
 mod button_hint;
+mod button_hints;
 mod button_icon;
 mod clock;
 mod image;
@@ -18,6 +19,7 @@ use std::time::Duration;
 
 pub use self::battery_indicator::BatteryIndicator;
 pub use self::button_hint::ButtonHint;
+pub use self::button_hints::ButtonHints;
 pub use self::button_icon::ButtonIcon;
 pub use self::clock::Clock;
 pub use self::image::{Image, ImageMode};

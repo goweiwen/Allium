@@ -11,8 +11,8 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::{Stylesheet, StylesheetFont};
 use common::view::{
-    ButtonHint, ButtonIcon, ColorPicker, Number, Percentage, Row, Select, SettingsList, Toggle,
-    View,
+    ButtonHint, ButtonHints, ButtonIcon, ColorPicker, Number, Percentage, Select, SettingsList,
+    Toggle, View,
 };
 use log::error;
 use tokio::sync::mpsc::Sender;
@@ -29,8 +29,7 @@ pub struct Theme {
     fonts: Vec<PathBuf>,
     list: SettingsList,
     handlers: Vec<Handler>,
-    left_button_hints: Row<ButtonHint<String>>,
-    right_button_hints: Row<ButtonHint<String>>,
+    button_hints: ButtonHints<String>,
     restore_pressed: Option<Instant>,
 }
 
@@ -534,11 +533,8 @@ impl Theme {
             list.select(state.selected);
         }
 
-        let left_button_hints = Row::new(
-            Point::new(
-                rect.x + styles.margin_x,
-                rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_y,
-            ),
+        let button_hints = ButtonHints::new(
+            res.clone(),
             vec![ButtonHint::new(
                 res.clone(),
                 Point::zero(),
@@ -546,15 +542,6 @@ impl Theme {
                 locale.t("button-restore-defaults"),
                 Alignment::Left,
             )],
-            Alignment::Left,
-            12,
-        );
-
-        let right_button_hints = Row::new(
-            Point::new(
-                rect.x + rect.w as i32 - styles.margin_y,
-                rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_y,
-            ),
             vec![
                 ButtonHint::new(
                     res.clone(),
@@ -571,8 +558,6 @@ impl Theme {
                     Alignment::Right,
                 ),
             ],
-            Alignment::Right,
-            12,
         );
 
         drop(styles);
@@ -585,8 +570,7 @@ impl Theme {
             fonts,
             list,
             handlers,
-            left_button_hints,
-            right_button_hints,
+            button_hints,
             restore_pressed: None,
         }
     }
@@ -601,31 +585,19 @@ impl View for Theme {
     ) -> Result<bool> {
         let mut drawn = false;
 
-        if self.list.should_draw() && self.list.draw(display, styles)? {
-            drawn = true;
-        }
-
-        if self.left_button_hints.should_draw() && self.left_button_hints.draw(display, styles)? {
-            drawn = true;
-        }
-
-        if self.right_button_hints.should_draw() && self.right_button_hints.draw(display, styles)? {
-            drawn = true;
-        }
+        drawn |= self.list.should_draw() && self.list.draw(display, styles)?;
+        drawn |= self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
 
         Ok(drawn)
     }
 
     fn should_draw(&self) -> bool {
-        self.list.should_draw()
-            || self.left_button_hints.should_draw()
-            || self.right_button_hints.should_draw()
+        self.list.should_draw() || self.button_hints.should_draw()
     }
 
     fn set_should_draw(&mut self) {
         self.list.set_should_draw();
-        self.left_button_hints.set_should_draw();
-        self.right_button_hints.set_should_draw();
+        self.button_hints.set_should_draw();
     }
 
     async fn handle_key_event(
@@ -704,19 +676,11 @@ impl View for Theme {
     }
 
     fn children(&self) -> Vec<&dyn View> {
-        vec![
-            &self.list,
-            &self.left_button_hints,
-            &self.right_button_hints,
-        ]
+        vec![&self.list, &self.button_hints]
     }
 
     fn children_mut(&mut self) -> Vec<&mut dyn View> {
-        vec![
-            &mut self.list,
-            &mut self.left_button_hints,
-            &mut self.right_button_hints,
-        ]
+        vec![&mut self.list, &mut self.button_hints]
     }
 
     fn bounding_box(&mut self, _styles: &Stylesheet) -> Rect {

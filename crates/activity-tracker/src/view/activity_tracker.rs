@@ -11,7 +11,7 @@ use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, ButtonIcon, Label, Row, SettingsList, View};
+use common::view::{ButtonHint, ButtonHints, ButtonIcon, Label, SettingsList, View};
 use embedded_graphics::prelude::OriginDimensions;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
@@ -23,7 +23,7 @@ pub struct ActivityTracker {
     entries: Vec<Game>,
     sort: Sort,
     list: SettingsList,
-    button_hints: Row<ButtonHint<String>>,
+    button_hints: ButtonHints<String>,
 }
 
 impl ActivityTracker {
@@ -45,13 +45,11 @@ impl ActivityTracker {
             res.get::<Stylesheet>().ui_font.size + styles.padding_y as u32,
         );
 
-        let button_hints = Row::new(
-            Point::new(
-                x + w as i32 - styles.margin_y,
-                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_x,
-            ),
-            {
-                let locale = res.get::<Locale>();
+        let button_hints = {
+            let locale = res.get::<Locale>();
+            ButtonHints::new(
+                res.clone(),
+                vec![],
                 vec![
                     ButtonHint::new(
                         res.clone(),
@@ -67,11 +65,9 @@ impl ActivityTracker {
                         Sort::MostPlayed.button_hint(&locale),
                         Alignment::Right,
                     ),
-                ]
-            },
-            Alignment::Right,
-            12,
-        );
+                ],
+            )
+        };
 
         drop(styles);
 
@@ -178,6 +174,7 @@ impl View for ActivityTracker {
             KeyEvent::Pressed(Key::Y) => {
                 self.sort = self.sort.next();
                 self.button_hints
+                    .right_mut()
                     .get_mut(1)
                     .unwrap()
                     .set_text(self.sort.button_hint(&self.res.get::<Locale>()));

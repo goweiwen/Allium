@@ -12,7 +12,7 @@ use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, ButtonIcon, Image, ImageMode, Label, Row, View};
+use common::view::{ButtonHint, ButtonHints, Image, ImageMode, Label, View};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
@@ -32,7 +32,7 @@ pub struct RecentsCarousel {
     selected: usize,
     screenshot: Image,
     game_name: Label<String>,
-    button_hints: Row<ButtonHint<String>>,
+    button_hints: ButtonHints<String>,
     dirty: bool,
 }
 
@@ -67,13 +67,11 @@ impl RecentsCarousel {
             Some(w - (x_margin * 2) as u32),
         );
 
-        let button_hints = Row::new(
-            Point::new(
-                x + w as i32 - styles.margin_y,
-                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_x,
-            ),
-            {
-                let locale = res.get::<Locale>();
+        let button_hints = {
+            let locale = res.get::<Locale>();
+            ButtonHints::new(
+                res.clone(),
+                vec![],
                 vec![
                     ButtonHint::new(
                         res.clone(),
@@ -89,11 +87,9 @@ impl RecentsCarousel {
                         locale.t("sort-search"),
                         Alignment::Right,
                     ),
-                ]
-            },
-            Alignment::Right,
-            12,
-        );
+                ],
+            )
+        };
 
         drop(styles);
 

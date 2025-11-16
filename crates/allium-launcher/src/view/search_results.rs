@@ -12,7 +12,7 @@ use common::locale::{Locale, LocaleFluentValue};
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, ButtonIcon, Label, Row, SearchView, View};
+use common::view::{ButtonHint, ButtonHints, Label, SearchView, View};
 use embedded_graphics::prelude::*;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
@@ -138,7 +138,7 @@ pub struct SearchResultsView {
     list: EntryList<SearchResultsSort>,
     header: Label<String>,
     result_count: Label<String>,
-    button_hints: Row<ButtonHint<String>>,
+    button_hints: ButtonHints<String>,
     search_view: SearchView,
 }
 
@@ -188,13 +188,11 @@ impl SearchResultsView {
             sort.clone(),
         )?;
 
-        let button_hints = Row::new(
-            Point::new(
-                x + w as i32 - styles.margin_x,
-                y + h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_y,
-            ),
-            {
-                let locale = res.get::<Locale>();
+        let button_hints = {
+            let locale = res.get::<Locale>();
+            ButtonHints::new(
+                res.clone(),
+                vec![],
                 vec![
                     ButtonHint::new(
                         res.clone(),
@@ -217,11 +215,9 @@ impl SearchResultsView {
                         sort.button_hint(&locale),
                         Alignment::Right,
                     ),
-                ]
-            },
-            Alignment::Right,
-            styles.margin_x,
-        );
+                ],
+            )
+        };
 
         drop(styles);
 
@@ -267,7 +263,11 @@ impl SearchResultsView {
     fn update_sort_button_hint(&mut self) {
         let locale = self.res.get::<Locale>();
         let sort_text = self.current_sort.button_hint(&locale);
-        self.button_hints.get_mut(2).unwrap().set_text(sort_text);
+        self.button_hints
+            .right_mut()
+            .get_mut(2)
+            .unwrap()
+            .set_text(sort_text);
     }
 }
 

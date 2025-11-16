@@ -9,7 +9,7 @@ use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::{ButtonHint, ButtonIcon, Label, Row, SettingsList, View};
+use common::view::{ButtonHint, ButtonHints, ButtonIcon, Label, SettingsList, View};
 use tokio::sync::mpsc::Sender;
 
 use crate::view::settings::{ChildState, SettingsChild};
@@ -17,7 +17,7 @@ use crate::view::settings::{ChildState, SettingsChild};
 pub struct About {
     rect: Rect,
     list: SettingsList,
-    button_hints: Row<ButtonHint<String>>,
+    button_hints: ButtonHints<String>,
 }
 
 impl About {
@@ -95,11 +95,9 @@ impl About {
             list.select(state.selected);
         }
 
-        let button_hints = Row::new(
-            Point::new(
-                rect.x + rect.w as i32 - styles.margin_x,
-                rect.y + rect.h as i32 - ButtonIcon::diameter(&styles) as i32 - styles.margin_y,
-            ),
+        let button_hints = ButtonHints::new(
+            res.clone(),
+            vec![],
             vec![ButtonHint::new(
                 res.clone(),
                 Point::zero(),
@@ -107,8 +105,6 @@ impl About {
                 locale.t("button-back"),
                 Alignment::Right,
             )],
-            Alignment::Right,
-            12,
         );
 
         Self {
