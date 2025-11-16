@@ -38,6 +38,7 @@ pub enum StylesheetColor {
     TabSelectedStroke,
     StatusBar,
     StatusBarStroke,
+    MenuBackground,
 }
 
 impl StylesheetColor {
@@ -66,6 +67,7 @@ impl StylesheetColor {
             Self::TabSelectedStroke => stylesheet.tab_selected_stroke_color,
             Self::StatusBar => stylesheet.status_bar_color,
             Self::StatusBarStroke => stylesheet.status_bar_stroke_color,
+            Self::MenuBackground => stylesheet.menu_background_color,
         }
     }
 }
@@ -221,6 +223,8 @@ pub struct Stylesheet {
     pub status_bar_color: Color,
     #[serde(default = "Stylesheet::default_status_bar_stroke_color")]
     pub status_bar_stroke_color: Color,
+    #[serde(default = "Stylesheet::default_menu_background_color")]
+    pub menu_background_color: Color,
     #[serde(default = "Stylesheet::default_stroke_width")]
     pub stroke_width: u32,
     #[serde(default = "StylesheetFont::ui_font")]
@@ -360,6 +364,7 @@ impl Stylesheet {
         self.tab_selected_stroke_color = other.tab_selected_stroke_color;
         self.status_bar_color = other.status_bar_color;
         self.status_bar_stroke_color = other.status_bar_stroke_color;
+        self.menu_background_color = other.menu_background_color;
         self.stroke_width = other.stroke_width;
         self.ui_font = other.ui_font;
         self.guide_font = other.guide_font;
@@ -723,6 +728,11 @@ rgui_wallpaper = "/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.png"
     }
 
     #[inline]
+    fn default_menu_background_color() -> Color {
+        Stylesheet::default_background_color()
+    }
+
+    #[inline]
     fn default_stroke_width() -> u32 {
         0
     }
@@ -756,6 +766,7 @@ impl Default for Stylesheet {
             tab_selected_stroke_color: Self::default_tab_selected_stroke_color(),
             status_bar_color: Self::default_status_bar_color(),
             status_bar_stroke_color: Self::default_status_bar_stroke_color(),
+            menu_background_color: Self::default_menu_background_color(),
             stroke_width: Self::default_stroke_width(),
             ui_font: StylesheetFont::ui_font(),
             guide_font: StylesheetFont::guide_font(),
