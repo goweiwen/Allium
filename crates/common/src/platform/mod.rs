@@ -72,7 +72,7 @@ pub enum KeyEvent {
     Autorepeat(Key),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Enum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Enum)]
 pub enum Key {
     Up,
     Down,
