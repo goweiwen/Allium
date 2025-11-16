@@ -200,47 +200,23 @@ impl View for Power {
                     match i {
                         0 => {
                             self.power_settings.auto_sleep_when_charging = val.as_bool().unwrap();
-                            let locale = self.res.get::<Locale>();
-                            commands
-                                .send(Command::Toast(
-                                    locale.t("settings-needs-restart-for-effect"),
-                                    Some(Duration::from_secs(5)),
-                                ))
-                                .await?;
+                            toast_needs_restart_for_effect(&self.res, &commands).await?;
                         }
                         1 => {
                             self.power_settings.auto_sleep_duration_minutes = val.as_int().unwrap();
-                            let locale = self.res.get::<Locale>();
-                            commands
-                                .send(Command::Toast(
-                                    locale.t("settings-needs-restart-for-effect"),
-                                    Some(Duration::from_secs(5)),
-                                ))
-                                .await?;
+                            toast_needs_restart_for_effect(&self.res, &commands).await?;
                         }
                         2 => {
                             self.power_settings.power_button_action =
                                 PowerButtonAction::from_repr(val.as_int().unwrap() as usize)
                                     .unwrap_or_default();
-                            let locale = self.res.get::<Locale>();
-                            commands
-                                .send(Command::Toast(
-                                    locale.t("settings-needs-restart-for-effect"),
-                                    Some(Duration::from_secs(5)),
-                                ))
-                                .await?;
+                            toast_needs_restart_for_effect(&self.res, &commands).await?;
                         }
                         3 => {
                             self.power_settings.lid_close_action =
                                 PowerButtonAction::from_repr(val.as_int().unwrap() as usize)
                                     .unwrap_or_default();
-                            let locale = self.res.get::<Locale>();
-                            commands
-                                .send(Command::Toast(
-                                    locale.t("settings-needs-restart-for-effect"),
-                                    Some(Duration::from_secs(5)),
-                                ))
-                                .await?;
+                            toast_needs_restart_for_effect(&self.res, &commands).await?;
                         }
                         _ => unreachable!("Invalid index"),
                     }
@@ -274,6 +250,13 @@ impl View for Power {
     fn set_position(&mut self, _point: Point) {
         unimplemented!()
     }
+}
+
+async fn toast_needs_restart_for_effect(res: &Resources, commands: &Sender<Command>) -> Result<()> {
+    let message = res.get::<Locale>().t("settings-needs-restart-for-effect");
+    Ok(commands
+        .send(Command::Toast(message, Some(Duration::from_secs(5))))
+        .await?)
 }
 
 impl SettingsChild for Power {

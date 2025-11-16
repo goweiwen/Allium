@@ -1,8 +1,5 @@
 use anyhow::Result;
 
-const MIN_RAW_VALUE: i32 = -60;
-const MAX_RAW_VALUE: i32 = 0;
-
 // Real implementations for the device target (ARM)
 #[cfg(target_arch = "arm")]
 pub fn set(volume: i32) -> Result<()> {
