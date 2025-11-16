@@ -11,7 +11,7 @@ use common::locale::Locale;
 use common::platform::{DefaultPlatform, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
-use common::view::{BatteryIndicator, Clock, Label, Row, View};
+use common::view::{Label, StatusBar, View};
 use tokio::sync::mpsc::Sender;
 
 use crate::view::ActivityTracker;
@@ -23,7 +23,7 @@ where
 {
     rect: Rect,
     label: Label<String>,
-    row: Row<Box<dyn View>>,
+    status_bar: StatusBar<B>,
     view: ActivityTracker,
     dirty: bool,
     _phantom_battery: PhantomData<B>,
@@ -38,25 +38,10 @@ where
         let styles = res.get::<Stylesheet>();
         let locale = res.get::<Locale>();
 
-        let battery_indicator = BatteryIndicator::new(
+        let status_bar = StatusBar::new(
             res.clone(),
-            Point::new(0, 0),
-            battery,
-            styles.show_battery_level,
-        );
-
-        let mut children: Vec<Box<dyn View>> = vec![Box::new(battery_indicator)];
-
-        if styles.show_clock {
-            let clock = Clock::new(res.clone(), Point::new(0, 0), Alignment::Right);
-            children.push(Box::new(clock));
-        }
-
-        let row: Row<Box<dyn View>> = Row::new(
             Point::new(w as i32 - styles.margin_y, y + styles.margin_y),
-            children,
-            Alignment::Right,
-            8,
+            battery,
         );
 
         let label = Label::new(
@@ -81,7 +66,7 @@ where
         Ok(Self {
             rect,
             label,
-            row,
+            status_bar,
             view,
             dirty: true,
             _phantom_battery: PhantomData,
@@ -107,20 +92,20 @@ where
         let mut drawn = false;
 
         drawn |= self.label.should_draw() && self.label.draw(display, styles)?;
-        drawn |= self.row.should_draw() && self.row.draw(display, styles)?;
+        drawn |= self.status_bar.should_draw() && self.status_bar.draw(display, styles)?;
         drawn |= self.view.should_draw() && self.view.draw(display, styles)?;
 
         Ok(drawn)
     }
 
     fn should_draw(&self) -> bool {
-        self.label.should_draw() || self.row.should_draw() || self.view.should_draw()
+        self.label.should_draw() || self.status_bar.should_draw() || self.view.should_draw()
     }
 
     fn set_should_draw(&mut self) {
         self.dirty = true;
         self.label.set_should_draw();
-        self.row.set_should_draw();
+        self.status_bar.set_should_draw();
         self.view.set_should_draw();
     }
 
@@ -134,11 +119,11 @@ where
     }
 
     fn children(&self) -> Vec<&dyn View> {
-        vec![&self.row, &self.view]
+        vec![&self.status_bar, &self.view]
     }
 
     fn children_mut(&mut self) -> Vec<&mut dyn View> {
-        vec![&mut self.row, &mut self.view]
+        vec![&mut self.status_bar, &mut self.view]
     }
 
     fn bounding_box(&mut self, _styles: &Stylesheet) -> Rect {

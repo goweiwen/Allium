@@ -13,7 +13,7 @@ use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::{Stylesheet, StylesheetColor};
-use common::view::{BatteryIndicator, Clock, Label, Row, SearchView, View};
+use common::view::{Label, Row, SearchView, StatusBar, View};
 use log::{trace, warn};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
@@ -42,7 +42,7 @@ where
 {
     rect: Rect,
     res: Resources,
-    status_bar: Row<Box<dyn View>>,
+    status_bar: StatusBar<B>,
     views: (Recents, Games, Apps, Settings),
     selected: usize,
     tabs: Row<Label<String>>,
@@ -67,25 +67,10 @@ where
         let styles = res.get::<Stylesheet>();
         let locale = res.get::<Locale>();
 
-        let battery_indicator = BatteryIndicator::new(
+        let status_bar = StatusBar::new(
             res.clone(),
-            Point::new(0, 0),
-            battery,
-            styles.show_battery_level,
-        );
-
-        let mut children: Vec<Box<dyn View>> = vec![Box::new(battery_indicator)];
-
-        if styles.show_clock {
-            let clock = Clock::new(res.clone(), Point::new(0, 0), Alignment::Right);
-            children.push(Box::new(clock));
-        }
-
-        let status_bar: Row<Box<dyn View>> = Row::new(
             Point::new(w as i32 - styles.margin_x, y + styles.margin_y),
-            children,
-            Alignment::Right,
-            styles.margin_y,
+            battery,
         );
 
         let mut tabs = Row::new(

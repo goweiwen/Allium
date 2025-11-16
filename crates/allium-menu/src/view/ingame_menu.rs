@@ -19,8 +19,8 @@ use common::resources::Resources;
 use common::retroarch::RetroArchCommand;
 use common::stylesheet::Stylesheet;
 use common::view::{
-    BatteryIndicator, ButtonHint, ButtonHints, ButtonIcon, Clock, Image, ImageMode, Label,
-    NullView, Row, ScrollList, SettingsList, View,
+    ButtonHint, ButtonHints, ButtonIcon, Image, ImageMode, Label, NullView, ScrollList,
+    SettingsList, StatusBar, View,
 };
 use log::warn;
 use serde::{Deserialize, Serialize};
@@ -48,7 +48,7 @@ where
     rect: Rect,
     res: Resources,
     name: Label<String>,
-    row: Row<Box<dyn View>>,
+    status_bar: StatusBar<B>,
     menu: SettingsList,
     child: Option<ChildView>,
     button_hints: ButtonHints<String>,
@@ -84,25 +84,10 @@ where
             None,
         );
 
-        let battery_indicator = BatteryIndicator::new(
+        let status_bar = StatusBar::new(
             res.clone(),
-            Point::new(0, 0),
-            battery,
-            styles.show_battery_level,
-        );
-
-        let mut children: Vec<Box<dyn View>> = vec![Box::new(battery_indicator)];
-
-        if styles.show_clock {
-            let clock = Clock::new(res.clone(), Point::new(0, 0), Alignment::Right);
-            children.push(Box::new(clock));
-        }
-
-        let row: Row<Box<dyn View>> = Row::new(
             Point::new(w as i32 - styles.margin_y, y + styles.margin_y),
-            children,
-            Alignment::Right,
-            8,
+            battery,
         );
 
         let entries = MenuEntry::entries(retroarch_info.as_ref(), !game_info.guides.is_empty());
@@ -248,7 +233,7 @@ where
             rect,
             res,
             name,
-            row,
+            status_bar,
             menu,
             child,
             button_hints,
@@ -483,14 +468,14 @@ where
             }
             Some(ChildView::GuideSelector(selector)) => {
                 drawn |= self.name.should_draw() && self.name.draw(display, styles)?;
-                drawn |= self.row.should_draw() && self.row.draw(display, styles)?;
+                drawn |= self.status_bar.should_draw() && self.status_bar.draw(display, styles)?;
                 drawn |= selector.should_draw() && selector.draw(display, styles)?;
                 drawn |=
                     self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
             }
             None => {
                 drawn |= self.name.should_draw() && self.name.draw(display, styles)?;
-                drawn |= self.row.should_draw() && self.row.draw(display, styles)?;
+                drawn |= self.status_bar.should_draw() && self.status_bar.draw(display, styles)?;
                 drawn |= self.menu.should_draw() && self.menu.draw(display, styles)?;
                 drawn |= self.image.should_draw() && self.image.draw(display, styles)?;
                 drawn |=
@@ -507,14 +492,14 @@ where
             Some(ChildView::GuideSelector(selector)) => {
                 self.dirty
                     || self.name.should_draw()
-                    || self.row.should_draw()
+                    || self.status_bar.should_draw()
                     || selector.should_draw()
                     || self.button_hints.should_draw()
             }
             None => {
                 self.dirty
                     || self.name.should_draw()
-                    || self.row.should_draw()
+                    || self.status_bar.should_draw()
                     || self.menu.should_draw()
                     || self.button_hints.should_draw()
             }
@@ -527,13 +512,13 @@ where
             Some(ChildView::TextReader(reader)) => reader.set_should_draw(),
             Some(ChildView::GuideSelector(selector)) => {
                 self.name.set_should_draw();
-                self.row.set_should_draw();
+                self.status_bar.set_should_draw();
                 selector.set_should_draw();
                 self.button_hints.set_should_draw();
             }
             None => {
                 self.name.set_should_draw();
-                self.row.set_should_draw();
+                self.status_bar.set_should_draw();
                 self.menu.set_should_draw();
                 self.button_hints.set_should_draw();
             }
@@ -719,13 +704,13 @@ where
     }
 
     fn children(&self) -> Vec<&dyn View> {
-        vec![&self.name, &self.row, &self.menu, &self.button_hints]
+        vec![&self.name, &self.status_bar, &self.menu, &self.button_hints]
     }
 
     fn children_mut(&mut self) -> Vec<&mut dyn View> {
         vec![
             &mut self.name,
-            &mut self.row,
+            &mut self.status_bar,
             &mut self.menu,
             &mut self.button_hints,
         ]
