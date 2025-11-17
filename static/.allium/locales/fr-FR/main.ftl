@@ -92,14 +92,14 @@ settings-power-auto-sleep-duration-disabled = Désactivé
 
 settings-files = Fichiers
 
-settings-about = A propros
-settings-about-allium-version = Version d'Allium
-settings-about-model-name = Modèle
-settings-about-firmware-version = Version du firmware
-settings-about-operating-system-version = OS
-settings-about-kernel-version = Version du noyau
-settings-about-memory-used = Mémoire utilisée
-settings-about-unknown-value = Inconnu
+settings-system = A propros
+settings-system-allium-version = Version d'Allium
+settings-system-model-name = Modèle
+settings-system-firmware-version = Version du firmware
+settings-system-operating-system-version = OS
+settings-system-kernel-version = Version du noyau
+settings-system-memory-used = Mémoire utilisée
+settings-system-unknown-value = Inconnu
 
 settings-needs-restart-for-effect =
     Vous devez redémarrer l'appareil

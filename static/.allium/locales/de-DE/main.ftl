@@ -92,14 +92,14 @@ settings-power-auto-sleep-duration-disabled = Deaktiviert
 
 settings-files = Dateien
 
-settings-about = Über
-settings-about-allium-version = Allium-Version
-settings-about-model-name = Modell
-settings-about-firmware-version = Firmware-Version
-settings-about-operating-system-version = Betriebssystem
-settings-about-kernel-version = Kernel-Version
-settings-about-memory-used = Arbeitsspeicher belegt
-settings-about-unknown-value = Unbekannt
+settings-system = Über
+settings-system-allium-version = Allium-Version
+settings-system-model-name = Modell
+settings-system-firmware-version = Firmware-Version
+settings-system-operating-system-version = Betriebssystem
+settings-system-kernel-version = Kernel-Version
+settings-system-memory-used = Arbeitsspeicher belegt
+settings-system-unknown-value = Unbekannt
 
 settings-needs-restart-for-effect =
     Sie müssen das Gerät neu starten,

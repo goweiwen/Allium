@@ -4,6 +4,7 @@
 mod allium_launcher;
 mod consoles;
 mod entry;
+mod ota;
 mod view;
 
 use anyhow::Result;

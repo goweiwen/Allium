@@ -92,14 +92,14 @@ settings-power-auto-sleep-duration-disabled = 已禁用
 
 settings-files = 文件
 
-settings-about = 關於
-settings-about-allium-version = Allium版本
-settings-about-model-name = 型號名稱
-settings-about-firmware-version = 固件版本
-settings-about-operating-system-version = 操作系統版本
-settings-about-kernel-version = 內核版本
-settings-about-memory-used = 已使用記憶體
-settings-about-unknown-value = 未知
+settings-system = 關於
+settings-system-allium-version = Allium版本
+settings-system-model-name = 型號名稱
+settings-system-firmware-version = 固件版本
+settings-system-operating-system-version = 操作系統版本
+settings-system-kernel-version = 內核版本
+settings-system-memory-used = 已使用記憶體
+settings-system-unknown-value = 未知
 
 settings-needs-restart-for-effect =
     您需要重新啟動裝置以使更改

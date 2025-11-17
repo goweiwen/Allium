@@ -92,14 +92,14 @@ settings-power-auto-sleep-duration-disabled = 無効
 
 settings-files = ファイル
 
-settings-about = 情報
-settings-about-allium-version = Alliumバージョン
-settings-about-model-name = モデル名
-settings-about-firmware-version = ファームウェアバージョン
-settings-about-operating-system-version = OSバージョン
-settings-about-kernel-version = カーネルバージョン
-settings-about-memory-used = 使用済みメモリ
-settings-about-unknown-value = 不明
+settings-system = 情報
+settings-system-allium-version = Alliumバージョン
+settings-system-model-name = モデル名
+settings-system-firmware-version = ファームウェアバージョン
+settings-system-operating-system-version = OSバージョン
+settings-system-kernel-version = カーネルバージョン
+settings-system-memory-used = 使用済みメモリ
+settings-system-unknown-value = 不明
 
 settings-needs-restart-for-effect =
     変更を有効にするにはデバイスを

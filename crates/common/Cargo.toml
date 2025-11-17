@@ -41,3 +41,4 @@ sysfs_gpio = { workspace = true, optional = true }
 wait-timeout.workspace = true
 evdev = { workspace = true, features = ["tokio"], optional = true }
 framebuffer = { workspace = true, optional = true }
+sysinfo.workspace = true

@@ -105,6 +105,8 @@ settings-theme-padding-y = Vertical Padding
 settings-language = Language
 settings-language-language = Language
 
+settings-about = About
+
 settings-power = Power
 settings-power-power-button-action = Power Button Action
 settings-power-power-button-action-suspend = Suspend
@@ -117,14 +119,27 @@ settings-power-auto-sleep-duration-disabled = Disabled
 
 settings-files = Files
 
-settings-about = About
-settings-about-allium-version = Allium Version
-settings-about-model-name = Model Name
-settings-about-firmware-version = Firmware Version
-settings-about-operating-system-version = OS Version
-settings-about-kernel-version = Kernel Version
-settings-about-memory-used = Memory Used
-settings-about-unknown-value = Unknown
+settings-system = System
+settings-system-allium-version = Allium Version
+settings-system-latest-version = Latest Version
+settings-system-model-name = Model Name
+settings-system-firmware-version = Firmware Version
+settings-system-operating-system-version = OS Version
+settings-system-kernel-version = Kernel Version
+settings-system-memory-used = Memory Used
+settings-system-update-channel = Update Channel
+settings-system-update-channel-stable = Stable
+settings-system-update-channel-nightly = Nightly
+settings-system-update = System Update
+settings-system-update-check = Check for Updates
+settings-system-update-checking = Checking...
+settings-system-update-available = Download Update
+settings-system-update-downloading = Downloading...
+settings-system-update-restart-to-update = Restart to Update
+settings-system-update-installing = Installing...
+settings-system-update-up-to-date = Up to Date
+settings-system-update-restart-required = Restart the device to install the update.
+settings-system-unknown-value = Unknown
 
 settings-needs-restart-for-effect =
     You need to restart the device

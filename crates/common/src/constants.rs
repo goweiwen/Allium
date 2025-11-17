@@ -1,6 +1,7 @@
 #![allow(unused)]
 use std::env;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 use std::time::Duration;
 
 use lazy_static::lazy_static;
@@ -9,10 +10,21 @@ use crate::geom::Size;
 
 pub const ALLIUM_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+#[cfg(feature = "miyoo")]
+pub static ALLIUM_SD_ROOT: LazyLock<PathBuf> = LazyLock::new(|| {
+    PathBuf::from(&env::var("ALLIUM_SD_ROOT").unwrap_or_else(|_| "/mnt/SDCARD/".to_string()))
+});
+#[cfg(feature = "simulator")]
+pub static ALLIUM_SD_ROOT: LazyLock<PathBuf> = LazyLock::new(|| {
+    env::var("ALLIUM_SD_ROOT")
+        .map(|path| PathBuf::from(path))
+        .unwrap_or_else(|_| env::current_dir().unwrap().join("simulator"))
+});
+#[cfg(not(any(feature = "miyoo", feature = "simulator")))]
+pub static ALLIUM_SD_ROOT: LazyLock<PathBuf> =
+    LazyLock::new(|| PathBuf::from(&env::var("ALLIUM_SD_ROOT").unwrap()));
+
 lazy_static! {
-    pub static ref ALLIUM_SD_ROOT: PathBuf = PathBuf::from(
-        &env::var("ALLIUM_SD_ROOT").unwrap_or_else(|_| "/mnt/SDCARD/".to_string())
-    );
     pub static ref ALLIUM_BASE_DIR: PathBuf = PathBuf::from(
         &env::var("ALLIUM_BASE_DIR").map_or_else(|_| ALLIUM_SD_ROOT.join(".allium"), PathBuf::from)
     );
@@ -48,6 +60,7 @@ lazy_static! {
     pub static ref ALLIUM_LOCALE_SETTINGS: PathBuf = ALLIUM_BASE_DIR.join("state/locale.json");
     pub static ref ALLIUM_POWER_SETTINGS: PathBuf = ALLIUM_BASE_DIR.join("state/power.json");
     pub static ref ALLIUM_WIFI_SETTINGS: PathBuf = ALLIUM_BASE_DIR.join("state/wifi.json");
+    pub static ref ALLIUM_UPDATE_SETTINGS: PathBuf = ALLIUM_BASE_DIR.join("state/update.json");
     pub static ref ALLIUM_TIMEZONE: PathBuf = ALLIUM_BASE_DIR.join("state/timezone");
     pub static ref ALLIUM_THEME_STATE: PathBuf = ALLIUM_BASE_DIR.join("state/theme");
 

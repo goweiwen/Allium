@@ -41,12 +41,12 @@ impl About {
                 h - ButtonIcon::diameter(&styles) - styles.ui.margin_y as u32,
             ),
             vec![
-                locale.t("settings-about-allium-version"),
-                locale.t("settings-about-model-name"),
-                locale.t("settings-about-firmware-version"),
-                locale.t("settings-about-operating-system-version"),
-                locale.t("settings-about-kernel-version"),
-                locale.t("settings-about-memory-used"),
+                locale.t("settings-system-allium-version"),
+                locale.t("settings-system-model-name"),
+                locale.t("settings-system-firmware-version"),
+                locale.t("settings-system-operating-system-version"),
+                locale.t("settings-system-kernel-version"),
+                locale.t("settings-system-memory-used"),
             ],
             vec![
                 Box::new(Label::new(
@@ -65,7 +65,7 @@ impl About {
                 Box::new(Label::new(
                     Point::zero(),
                     sysinfo::System::long_os_version().map_or_else(
-                        || locale.t("settings-about-unknown-value"),
+                        || locale.t("settings-system-unknown-value"),
                         |s: String| s.trim().to_owned(),
                     ),
                     Alignment::Right,
@@ -74,7 +74,7 @@ impl About {
                 Box::new(Label::new(
                     Point::zero(),
                     sysinfo::System::kernel_version()
-                        .unwrap_or_else(|| locale.t("settings-about-unknown-value")),
+                        .unwrap_or_else(|| locale.t("settings-system-unknown-value")),
                     Alignment::Right,
                     None,
                 )),
@@ -106,6 +106,9 @@ impl About {
                 Alignment::Right,
             )],
         );
+
+        std::mem::drop(locale);
+        std::mem::drop(styles);
 
         Self {
             rect,

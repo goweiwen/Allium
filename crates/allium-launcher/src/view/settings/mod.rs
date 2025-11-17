@@ -3,6 +3,7 @@ mod clock;
 mod display;
 mod language;
 mod power;
+mod system;
 mod theme;
 mod wifi;
 
@@ -12,6 +13,7 @@ use self::about::About;
 use self::display::Display;
 use self::language::Language;
 use self::power::Power;
+use self::system::System;
 use self::theme::Theme;
 use self::wifi::Wifi;
 
@@ -71,7 +73,7 @@ impl Settings {
         let styles = res.get::<Stylesheet>();
 
         let has_wifi = DefaultPlatform::has_wifi();
-        let mut labels = Vec::with_capacity(7);
+        let mut labels = Vec::with_capacity(8);
         if has_wifi {
             labels.push(locale.t("settings-wifi"));
         }
@@ -81,6 +83,7 @@ impl Settings {
         labels.push(locale.t("settings-theme"));
         labels.push(locale.t("settings-language"));
         labels.push(locale.t("settings-about"));
+        labels.push(locale.t("settings-system"));
 
         let mut list = ScrollList::new(
             res.clone(),
@@ -109,6 +112,7 @@ impl Settings {
                 4 => Some(Box::new(Theme::new(rect, res.clone(), Some(child)))),
                 5 => Some(Box::new(Language::new(rect, res.clone(), Some(child)))),
                 6 => Some(Box::new(About::new(rect, res.clone(), Some(child)))),
+                7 => Some(Box::new(System::new(rect, res.clone(), Some(child)))),
                 _ => None,
             }
         } else {
@@ -169,6 +173,7 @@ impl Settings {
             4 => self.child = Some(Box::new(Theme::new(self.rect, self.res.clone(), None))),
             5 => self.child = Some(Box::new(Language::new(self.rect, self.res.clone(), None))),
             6 => self.child = Some(Box::new(About::new(self.rect, self.res.clone(), None))),
+            7 => self.child = Some(Box::new(System::new(self.rect, self.res.clone(), None))),
             _ => unreachable!("Invalid index"),
         }
         self.dirty = true;

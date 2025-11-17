@@ -19,6 +19,11 @@ if [ -f $ROOT/.allium/state/timezone ]; then
     TZ="$(cat $ROOT/.allium/state/timezone)"
 fi
 
+# check for OTA update
+if [ -f "$ROOT/allium-ota.zip" ]; then
+    "$ROOT/.allium/scripts/ota-update.sh"
+fi
+
 # perform model-specific logic
 if [ -e /dev/input/event1 ]; then
     export MODEL=285

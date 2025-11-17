@@ -25,9 +25,11 @@ qrcode.workspace = true
 quick-xml = { workspace = true, features = ["serde", "serialize"] }
 rand.workspace = true
 regex.workspace = true
+reqwest.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 serial_test.workspace = true
+sha2.workspace = true
 simple_logger = { workspace = true, default-features = false }
 strum.workspace = true
 sysinfo.workspace = true

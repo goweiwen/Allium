@@ -92,14 +92,14 @@ settings-power-auto-sleep-duration-disabled = Dinonaktifkan
 
 settings-files = Berkas
 
-settings-about = Tentang
-settings-about-allium-version = Versi Allium
-settings-about-model-name = Model
-settings-about-firmware-version = Versi Firmware
-settings-about-operating-system-version = Versi Sistem Operasi
-settings-about-kernel-version = Versi Kernel
-settings-about-memory-used = Memori terpakai
-settings-about-unknown-value = Tak diketahui
+settings-system = Tentang
+settings-system-allium-version = Versi Allium
+settings-system-model-name = Model
+settings-system-firmware-version = Versi Firmware
+settings-system-operating-system-version = Versi Sistem Operasi
+settings-system-kernel-version = Versi Kernel
+settings-system-memory-used = Memori terpakai
+settings-system-unknown-value = Tak diketahui
 
 settings-needs-restart-for-effect =
     Anda perlu me-restart perangkat

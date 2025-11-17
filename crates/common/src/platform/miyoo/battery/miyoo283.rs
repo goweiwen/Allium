@@ -10,8 +10,8 @@ use crate::battery::Battery;
 const SARADC_IOC_MAGIC: u8 = b'a';
 
 // Define ioctl request codes
-const SAR_INIT: u32 = nix::request_code_none!(SARADC_IOC_MAGIC, 0);
-const SAR_SET_CHANNEL_READ_VALUE: u32 = nix::request_code_none!(SARADC_IOC_MAGIC, 1);
+const SAR_INIT: u64 = nix::request_code_none!(SARADC_IOC_MAGIC, 0);
+const SAR_SET_CHANNEL_READ_VALUE: u64 = nix::request_code_none!(SARADC_IOC_MAGIC, 1);
 
 nix::ioctl_write_ptr_bad!(sar_init, SAR_INIT, ());
 nix::ioctl_write_ptr_bad!(

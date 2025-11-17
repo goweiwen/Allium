@@ -92,14 +92,14 @@ settings-power-auto-sleep-duration-disabled = Dezactivat
 
 settings-files = Fișiere
 
-settings-about = Despre
-settings-about-allium-version = Versiune Allium
-settings-about-model-name = Numele Modelului
-settings-about-firmware-version = Versiunea Firmware-ului
-settings-about-operating-system-version = Versiunea Sistemului de Operare
-settings-about-kernel-version = Versiunea Kernel-ului
-settings-about-memory-used = Memorie Utilizată
-settings-about-unknown-value = Necunoscut
+settings-system = Despre
+settings-system-allium-version = Versiune Allium
+settings-system-model-name = Numele Modelului
+settings-system-firmware-version = Versiunea Firmware-ului
+settings-system-operating-system-version = Versiunea Sistemului de Operare
+settings-system-kernel-version = Versiunea Kernel-ului
+settings-system-memory-used = Memorie Utilizată
+settings-system-unknown-value = Necunoscut
 
 settings-needs-restart-for-effect =
     Trebuie să reporniți dispozitivul

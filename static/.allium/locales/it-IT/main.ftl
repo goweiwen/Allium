@@ -92,14 +92,14 @@ settings-power-auto-sleep-duration-disabled = Disabilitato
 
 settings-files = File
 
-settings-about = Info
-settings-about-allium-version = Versione Allium
-settings-about-model-name = Nome Modello
-settings-about-firmware-version = Versione Firmware
-settings-about-operating-system-version = Versione OS
-settings-about-kernel-version = Versione Kernel
-settings-about-memory-used = Memoria in uso
-settings-about-unknown-value = Sconosciuto
+settings-system = Info
+settings-system-allium-version = Versione Allium
+settings-system-model-name = Nome Modello
+settings-system-firmware-version = Versione Firmware
+settings-system-operating-system-version = Versione OS
+settings-system-kernel-version = Versione Kernel
+settings-system-memory-used = Memoria in uso
+settings-system-unknown-value = Sconosciuto
 
 settings-needs-restart-for-effect =
     È necessario riavviare il
