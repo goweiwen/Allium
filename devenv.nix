@@ -9,6 +9,7 @@
   packages = with pkgs; [
     rustup
     cargo-bloat
+    cargo-deny
     cargo-zigbuild
     cargo-watch
     cargo-nextest
