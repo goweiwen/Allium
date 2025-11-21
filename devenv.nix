@@ -8,6 +8,7 @@
 
   packages = with pkgs; [
     rustup
+    cargo-bloat
     cargo-zigbuild
     cargo-watch
     cargo-nextest
