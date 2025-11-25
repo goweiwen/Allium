@@ -6,17 +6,16 @@ use std::time::Duration;
 
 use anyhow::{Result, bail};
 use async_trait::async_trait;
-use embedded_graphics::image::{Image, ImageRaw};
-use embedded_graphics::pixelcolor::raw::BigEndian;
-use embedded_graphics::prelude::*;
-use embedded_graphics_simulator::{
-    OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
-};
-use image::buffer::ConvertBuffer;
 use image::{ImageBuffer, Rgba};
-use itertools::iproduct;
-use log::{info, trace, warn};
-use sdl2::keyboard::Keycode;
+use log::{trace, warn};
+use softbuffer::Surface;
+use tiny_skia::{Pixmap, PixmapMut, PixmapRef};
+use winit::application::ApplicationHandler;
+use winit::dpi::PhysicalSize;
+use winit::event::{ElementState, KeyEvent as WinitKeyEvent, WindowEvent};
+use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+use winit::keyboard::{KeyCode, PhysicalKey};
+use winit::window::{Window as WinitWindow, WindowId};
 
 use crate::battery::Battery;
 use crate::display::Display;
@@ -47,7 +46,84 @@ static SCREEN_SCALE: LazyLock<u32> = LazyLock::new(|| {
 });
 
 pub struct SimulatorPlatform {
-    window: Rc<RefCell<Window>>,
+    event_loop: EventLoop<()>,
+    window: Option<Rc<WinitWindow>>,
+    key_events: Rc<RefCell<Vec<KeyEvent>>>,
+}
+
+struct SimulatorApp {
+    window: Option<Rc<WinitWindow>>,
+    surface: Option<Surface<Rc<WinitWindow>, Rc<WinitWindow>>>,
+    key_events: Rc<RefCell<Vec<KeyEvent>>>,
+}
+
+impl ApplicationHandler for SimulatorApp {
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        if self.window.is_none() {
+            let window_attrs = WinitWindow::default_attributes()
+                .with_title("Allium Simulator")
+                .with_inner_size(PhysicalSize::new(
+                    *SCREEN_WIDTH * *SCREEN_SCALE,
+                    *SCREEN_HEIGHT * *SCREEN_SCALE,
+                ))
+                .with_resizable(false);
+
+            let window = event_loop
+                .create_window(window_attrs)
+                .expect("Failed to create window");
+            let window = Rc::new(window);
+
+            let context = softbuffer::Context::new(window.clone())
+                .expect("Failed to create softbuffer context");
+            let surface = softbuffer::Surface::new(&context, window.clone())
+                .expect("Failed to create softbuffer surface");
+
+            self.window = Some(window);
+            self.surface = Some(surface);
+        }
+    }
+
+    fn window_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        _window_id: WindowId,
+        event: WindowEvent,
+    ) {
+        match event {
+            WindowEvent::CloseRequested => {
+                event_loop.exit();
+            }
+            WindowEvent::KeyboardInput {
+                event:
+                    WinitKeyEvent {
+                        physical_key: PhysicalKey::Code(keycode),
+                        state,
+                        repeat,
+                        ..
+                    },
+                ..
+            } => {
+                if keycode == KeyCode::KeyQ && state == ElementState::Pressed {
+                    event_loop.exit();
+                }
+
+                let key = Key::from(keycode);
+                let key_event = match (state, repeat) {
+                    (ElementState::Pressed, true) => KeyEvent::Autorepeat(key),
+                    (ElementState::Pressed, false) => KeyEvent::Pressed(key),
+                    (ElementState::Released, _) => KeyEvent::Released(key),
+                };
+
+                self.key_events.borrow_mut().push(key_event);
+            }
+            WindowEvent::RedrawRequested => {
+                if let Some(window) = &self.window {
+                    window.request_redraw();
+                }
+            }
+            _ => {}
+        }
+    }
 }
 
 #[async_trait(?Send)]
@@ -57,59 +133,100 @@ impl Platform for SimulatorPlatform {
     type SuspendContext = ();
 
     fn new() -> Result<SimulatorPlatform> {
-        let output_settings = OutputSettingsBuilder::new().scale(*SCREEN_SCALE).build();
-        let window = Window::new("Allium Simulator", &output_settings);
+        let event_loop = EventLoop::new()?;
+        event_loop.set_control_flow(ControlFlow::Poll);
+
         Ok(SimulatorPlatform {
-            window: Rc::new(RefCell::new(window)),
+            event_loop,
+            window: None,
+            key_events: Rc::new(RefCell::new(Vec::new())),
         })
     }
 
     async fn poll(&mut self) -> KeyEvent {
         loop {
-            let event = self.window.borrow_mut().events().next();
-            if let Some(event) = event {
-                match event {
-                    SimulatorEvent::KeyDown {
-                        keycode, repeat, ..
-                    } => {
-                        if keycode == Keycode::Q {
-                            process::exit(0);
-                        }
-                        return if repeat {
-                            KeyEvent::Autorepeat(Key::from(keycode))
-                        } else {
-                            KeyEvent::Pressed(Key::from(keycode))
-                        };
-                    }
-                    SimulatorEvent::KeyUp { keycode, .. } => {
-                        return KeyEvent::Released(Key::from(keycode));
-                    }
-                    SimulatorEvent::Quit => {
-                        process::exit(0);
-                    }
-                    _ => {}
-                }
-            } else {
-                tokio::time::sleep(Duration::from_millis(10)).await;
+            // Check if we have any queued key events
+            if let Some(event) = self.key_events.borrow_mut().pop() {
+                return event;
             }
+
+            // Process window events
+            let key_events = Rc::clone(&self.key_events);
+            let window_ref = self.window.clone();
+
+            self.event_loop
+                .run_app_on_demand(&mut SimulatorApp {
+                    window: window_ref.clone(),
+                    surface: None,
+                    key_events,
+                })
+                .ok();
+
+            if self.window.is_none() && window_ref.is_some() {
+                self.window = window_ref;
+            }
+
+            // Check again after processing events
+            if let Some(event) = self.key_events.borrow_mut().pop() {
+                return event;
+            }
+
+            tokio::time::sleep(Duration::from_millis(10)).await;
         }
     }
 
     fn display(&mut self) -> Result<SimulatorWindow> {
+        // Initialize window if not already done
+        if self.window.is_none() {
+            let key_events = Rc::clone(&self.key_events);
+            self.event_loop
+                .run_app_on_demand(&mut SimulatorApp {
+                    window: None,
+                    surface: None,
+                    key_events: key_events.clone(),
+                })
+                .ok();
+        }
+
+        // Load background image if available
         let bg_path = format!("simulator/bg-{}x{}.png", *SCREEN_WIDTH, *SCREEN_HEIGHT);
-        let display = SimulatorDisplay::load_png(&bg_path).unwrap_or_else(|_| {
+        let mut pixmap = if let Ok(img) = image::open(&bg_path) {
+            let img = img.to_rgba8();
+            let mut pixmap =
+                Pixmap::new(*SCREEN_WIDTH, *SCREEN_HEIGHT).expect("Failed to create pixmap");
+
+            for (x, y, pixel) in img.enumerate_pixels() {
+                let idx = (y * *SCREEN_WIDTH + x) as usize;
+                let color = Color::rgba(pixel[0], pixel[1], pixel[2], pixel[3]);
+                pixmap.pixels_mut()[idx] = color.into();
+            }
+            pixmap
+        } else {
             warn!(
                 "Failed to load background image '{}', using black background",
                 bg_path
             );
-            SimulatorDisplay::with_default_color(
-                Size::new(*SCREEN_WIDTH, *SCREEN_HEIGHT),
-                Color::new(0, 0, 0),
-            )
-        });
+            Pixmap::new(*SCREEN_WIDTH, *SCREEN_HEIGHT).expect("Failed to create pixmap")
+        };
+
+        // Fill with black if no background
+        if pixmap.pixels().iter().all(|p| {
+            let c: Color = (*p).into();
+            c.r() == 0 && c.g() == 0 && c.b() == 0 && c.a() == 0
+        }) {
+            pixmap.fill(tiny_skia::Color::BLACK);
+        }
+
+        let window = self.window.clone().expect("Window not initialized");
+        let context =
+            softbuffer::Context::new(window.clone()).expect("Failed to create softbuffer context");
+        let surface = softbuffer::Surface::new(&context, window.clone())
+            .expect("Failed to create softbuffer surface");
+
         Ok(SimulatorWindow {
-            window: Rc::clone(&self.window),
-            display,
+            window,
+            surface: Rc::new(RefCell::new(surface)),
+            pixmap,
             saved: Vec::new(),
         })
     }
@@ -170,40 +287,88 @@ impl Default for SimulatorPlatform {
 }
 
 pub struct SimulatorWindow {
-    window: Rc<RefCell<Window>>,
-    display: SimulatorDisplay<Color>,
-    saved: Vec<(Vec<u8>, u32)>,
+    window: Rc<WinitWindow>,
+    surface: Rc<RefCell<Surface<Rc<WinitWindow>, Rc<WinitWindow>>>>,
+    pixmap: Pixmap,
+    saved: Vec<Vec<u8>>,
 }
 
 impl Display for SimulatorWindow {
+    fn width(&self) -> u32 {
+        *SCREEN_WIDTH
+    }
+
+    fn height(&self) -> u32 {
+        *SCREEN_HEIGHT
+    }
+
+    fn pixmap(&self) -> PixmapRef {
+        self.pixmap.as_ref()
+    }
+
+    fn pixmap_mut(&mut self) -> PixmapMut {
+        self.pixmap.as_mut()
+    }
+
     fn map_pixels<F>(&mut self, mut f: F) -> Result<()>
     where
         F: FnMut(Color) -> Color,
     {
-        let Size { width, height } = self.display.size();
-        let pixels = iproduct!(0..width as i32, 0..height as i32)
-            .map(|(x, y)| {
-                let point = Point::new(x, y);
-                let color = self.display.get_pixel(point);
-                Pixel(point, f(color))
-            })
-            .collect::<Vec<_>>();
-        self.display.draw_iter(pixels)?;
+        for pixel in self.pixmap.pixels_mut() {
+            let color: Color = (*pixel).into();
+            *pixel = f(color).into();
+        }
         Ok(())
     }
 
     fn flush(&mut self) -> Result<()> {
-        self.window.borrow_mut().update(&self.display);
+        let width = *SCREEN_WIDTH as usize;
+        let height = *SCREEN_HEIGHT as usize;
+        let scale = *SCREEN_SCALE as usize;
+
+        let mut surface = self.surface.borrow_mut();
+        surface
+            .resize(
+                std::num::NonZeroU32::new((width * scale) as u32).unwrap(),
+                std::num::NonZeroU32::new((height * scale) as u32).unwrap(),
+            )
+            .expect("Failed to resize surface");
+
+        let mut buffer = surface.buffer_mut().expect("Failed to get buffer");
+
+        // Convert pixmap to softbuffer format (u32 RGB)
+        // Apply scaling if needed
+        for y in 0..height * scale {
+            for x in 0..width * scale {
+                let src_x = x / scale;
+                let src_y = y / scale;
+                let src_idx = src_y * width + src_x;
+
+                let color: Color = self.pixmap.pixels()[src_idx].into();
+                let rgb = (color.r() as u32) << 16 | (color.g() as u32) << 8 | (color.b() as u32);
+
+                let dst_idx = y * width * scale + x;
+                buffer[dst_idx] = rgb;
+            }
+        }
+
+        buffer.present().expect("Failed to present buffer");
+        self.window.request_redraw();
+
         Ok(())
     }
 
     fn save(&mut self) -> Result<()> {
-        let image = self
-            .display
-            .to_rgb_output_image(&OutputSettingsBuilder::new().build());
-        let size = image.size();
-        let buffer: ImageBuffer<Rgba<u8>, Vec<u8>> = image.as_image_buffer().convert();
-        self.saved.push((buffer.as_raw().to_vec(), size.width));
+        // Save pixmap as raw RGBA bytes
+        let mut buffer = Vec::with_capacity(self.pixmap.pixels().len() * 4);
+        for pixel in self.pixmap.pixels() {
+            let color: Color = (*pixel).into();
+            buffer.push(color.r());
+            buffer.push(color.g());
+            buffer.push(color.b());
+            buffer.push(color.a());
+        }
+        self.saved.push(buffer);
         Ok(())
     }
 
@@ -215,8 +380,8 @@ impl Display for SimulatorWindow {
         let size = self.size();
         if rect.x < 0
             || rect.y < 0
-            || rect.x as u32 + rect.w > size.width
-            || rect.y as u32 + rect.h > size.height
+            || rect.x as u32 + rect.w > size.w
+            || rect.y as u32 + rect.h > size.h
         {
             warn!(
                 "Area exceeds display bounds: x: {}, y: {}, w: {}, h: {}",
@@ -224,14 +389,30 @@ impl Display for SimulatorWindow {
             );
             rect.x = rect.x.max(0);
             rect.y = rect.y.max(0);
-            rect.w = rect.w.min(size.width - rect.x as u32);
-            rect.h = rect.h.min(size.height - rect.h);
+            rect.w = rect.w.min(size.w - rect.x as u32);
+            rect.h = rect.h.min(size.h - rect.y as u32);
         }
 
-        let image: ImageRaw<'_, _, BigEndian> = ImageRaw::new(&saved.0, saved.1);
-        let image = image.sub_image(&rect.into());
-        let image = Image::new(&image, rect.top_left().into());
-        image.draw(&mut self.display)?;
+        // Copy saved region back to pixmap
+        let width = *SCREEN_WIDTH as usize;
+        for dy in 0..rect.h {
+            for dx in 0..rect.w {
+                let x = (rect.x + dx as i32) as usize;
+                let y = (rect.y + dy as i32) as usize;
+                let idx = y * width + x;
+                let src_idx = idx * 4;
+
+                if src_idx + 3 < saved.len() {
+                    let color = Color::rgba(
+                        saved[src_idx],
+                        saved[src_idx + 1],
+                        saved[src_idx + 2],
+                        saved[src_idx + 3],
+                    );
+                    self.pixmap.pixels_mut()[idx] = color.into();
+                }
+            }
+        }
 
         Ok(())
     }
@@ -242,69 +423,27 @@ impl Display for SimulatorWindow {
     }
 }
 
-impl DrawTarget for SimulatorWindow {
-    type Color = Color;
-    type Error = anyhow::Error;
-
-    fn draw_iter<I>(&mut self, pixels: I) -> std::result::Result<(), Self::Error>
-    where
-        I: IntoIterator<Item = embedded_graphics::Pixel<Self::Color>>,
-    {
-        let pixels: Vec<_> = pixels
-            .into_iter()
-            .filter_map(|p| {
-                if p.0.x < 0
-                    || p.0.y < 0
-                    || p.0.x >= *SCREEN_WIDTH as i32
-                    || p.0.y >= *SCREEN_HEIGHT as i32
-                {
-                    warn!("Pixel out of bounds: {:?}", p);
-                    return None;
-                }
-                let curr = self.display.get_pixel(p.0);
-                let color = p.1;
-
-                let a = color.a() as u32;
-                let a_inv = 255 - a;
-
-                let b = (curr.b() as u32 * a_inv + color.b() as u32 * a) / 255;
-                let g = (curr.g() as u32 * a_inv + color.g() as u32 * a) / 255;
-                let r = (curr.r() as u32 * a_inv + color.r() as u32 * a) / 255;
-
-                Some(Pixel(p.0, Color::new(r as u8, g as u8, b as u8)))
-            })
-            .collect();
-        Ok(self.display.draw_iter(pixels)?)
-    }
-}
-
-impl OriginDimensions for SimulatorWindow {
-    fn size(&self) -> Size {
-        self.display.size()
-    }
-}
-
-impl From<Keycode> for Key {
-    fn from(value: Keycode) -> Self {
+impl From<KeyCode> for Key {
+    fn from(value: KeyCode) -> Self {
         match value {
-            Keycode::Up => Key::Up,
-            Keycode::Down => Key::Down,
-            Keycode::Left => Key::Left,
-            Keycode::Right => Key::Right,
-            Keycode::Space => Key::A,
-            Keycode::LCtrl => Key::B,
-            Keycode::LShift => Key::X,
-            Keycode::LAlt => Key::Y,
-            Keycode::Return => Key::Start,
-            Keycode::RCtrl => Key::Select,
-            Keycode::E => Key::L,
-            Keycode::T => Key::R,
-            Keycode::Escape => Key::Menu,
-            Keycode::Tab => Key::L2,
-            Keycode::Backspace => Key::R2,
-            Keycode::Power => Key::Power,
-            Keycode::LGui => Key::VolDown,
-            Keycode::RGui => Key::VolUp,
+            KeyCode::ArrowUp => Key::Up,
+            KeyCode::ArrowDown => Key::Down,
+            KeyCode::ArrowLeft => Key::Left,
+            KeyCode::ArrowRight => Key::Right,
+            KeyCode::Space => Key::A,
+            KeyCode::ControlLeft => Key::B,
+            KeyCode::ShiftLeft => Key::X,
+            KeyCode::AltLeft => Key::Y,
+            KeyCode::Enter => Key::Start,
+            KeyCode::ControlRight => Key::Select,
+            KeyCode::KeyE => Key::L,
+            KeyCode::KeyT => Key::R,
+            KeyCode::Escape => Key::Menu,
+            KeyCode::Tab => Key::L2,
+            KeyCode::Backspace => Key::R2,
+            KeyCode::Power => Key::Power,
+            KeyCode::SuperLeft => Key::VolDown,
+            KeyCode::SuperRight => Key::VolUp,
             _ => Key::Unknown,
         }
     }
@@ -348,10 +487,7 @@ impl Battery for SimulatorBattery {
         self.charging
     }
 
-    fn update_led(enabled: bool) {
-        info!(
-            "[Simulator] Charging LED: {}",
-            if enabled { "ON" } else { "OFF" }
-        );
+    fn update_led(_enabled: bool) {
+        // Simulator doesn't have LED
     }
 }
