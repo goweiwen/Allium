@@ -101,40 +101,6 @@ impl Color {
             overlay(self.b(), other.b()),
         )
     }
-
-    /// Convert to tiny-skia's premultiplied color format
-    #[inline]
-    pub fn to_premultiplied(self) -> PremultipliedColorU8 {
-        let a = self.a();
-        if a == 0 {
-            PremultipliedColorU8::from_rgba(0, 0, 0, 0).unwrap()
-        } else if a == 255 {
-            PremultipliedColorU8::from_rgba(self.r(), self.g(), self.b(), 255).unwrap()
-        } else {
-            // Premultiply RGB by alpha
-            let r = ((self.r() as u16 * a as u16) / 255) as u8;
-            let g = ((self.g() as u16 * a as u16) / 255) as u8;
-            let b = ((self.b() as u16 * a as u16) / 255) as u8;
-            PremultipliedColorU8::from_rgba(r, g, b, a).unwrap()
-        }
-    }
-
-    /// Create from tiny-skia's premultiplied color format
-    #[inline]
-    pub fn from_premultiplied(color: PremultipliedColorU8) -> Self {
-        let a = color.alpha();
-        if a == 0 {
-            Self::rgba(0, 0, 0, 0)
-        } else if a == 255 {
-            Self::rgba(color.red(), color.green(), color.blue(), 255)
-        } else {
-            // Un-premultiply RGB by alpha
-            let r = ((color.red() as u16 * 255) / a as u16) as u8;
-            let g = ((color.green() as u16 * 255) / a as u16) as u8;
-            let b = ((color.blue() as u16 * 255) / a as u16) as u8;
-            Self::rgba(r, g, b, a)
-        }
-    }
 }
 
 impl Serialize for Color {
@@ -187,6 +153,42 @@ impl From<Color> for Rgba<u8> {
             (color.0 >> 8) as u8,
             color.0 as u8,
         ])
+    }
+}
+
+impl From<Color> for PremultipliedColorU8 {
+    #[inline]
+    fn from(color: Color) -> Self {
+        let a = color.a();
+        if a == 0 {
+            PremultipliedColorU8::from_rgba(0, 0, 0, 0).unwrap()
+        } else if a == 255 {
+            PremultipliedColorU8::from_rgba(color.r(), color.g(), color.b(), 255).unwrap()
+        } else {
+            // Premultiply RGB by alpha
+            let r = ((color.r() as u16 * a as u16) / 255) as u8;
+            let g = ((color.g() as u16 * a as u16) / 255) as u8;
+            let b = ((color.b() as u16 * a as u16) / 255) as u8;
+            PremultipliedColorU8::from_rgba(r, g, b, a).unwrap()
+        }
+    }
+}
+
+impl From<PremultipliedColorU8> for Color {
+    #[inline]
+    fn from(color: PremultipliedColorU8) -> Self {
+        let a = color.alpha();
+        if a == 0 {
+            Self::rgba(0, 0, 0, 0)
+        } else if a == 255 {
+            Self::rgba(color.red(), color.green(), color.blue(), 255)
+        } else {
+            // Un-premultiply RGB by alpha
+            let r = ((color.red() as u16 * 255) / a as u16) as u8;
+            let g = ((color.green() as u16 * 255) / a as u16) as u8;
+            let b = ((color.blue() as u16 * 255) / a as u16) as u8;
+            Self::rgba(r, g, b, a)
+        }
     }
 }
 
