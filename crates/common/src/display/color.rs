@@ -1,9 +1,8 @@
 use std::fmt;
 
-use embedded_graphics::pixelcolor::{Rgb888, raw::RawU32};
-use embedded_graphics::prelude::{PixelColor, RawData, RgbColor};
 use image::Rgba;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use tiny_skia::PremultipliedColorU8;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Color(u32);
@@ -102,6 +101,40 @@ impl Color {
             overlay(self.b(), other.b()),
         )
     }
+
+    /// Convert to tiny-skia's premultiplied color format
+    #[inline]
+    pub fn to_premultiplied(self) -> PremultipliedColorU8 {
+        let a = self.a();
+        if a == 0 {
+            PremultipliedColorU8::from_rgba(0, 0, 0, 0).unwrap()
+        } else if a == 255 {
+            PremultipliedColorU8::from_rgba(self.r(), self.g(), self.b(), 255).unwrap()
+        } else {
+            // Premultiply RGB by alpha
+            let r = ((self.r() as u16 * a as u16) / 255) as u8;
+            let g = ((self.g() as u16 * a as u16) / 255) as u8;
+            let b = ((self.b() as u16 * a as u16) / 255) as u8;
+            PremultipliedColorU8::from_rgba(r, g, b, a).unwrap()
+        }
+    }
+
+    /// Create from tiny-skia's premultiplied color format
+    #[inline]
+    pub fn from_premultiplied(color: PremultipliedColorU8) -> Self {
+        let a = color.alpha();
+        if a == 0 {
+            Self::rgba(0, 0, 0, 0)
+        } else if a == 255 {
+            Self::rgba(color.red(), color.green(), color.blue(), 255)
+        } else {
+            // Un-premultiply RGB by alpha
+            let r = ((color.red() as u16 * 255) / a as u16) as u8;
+            let g = ((color.green() as u16 * 255) / a as u16) as u8;
+            let b = ((color.blue() as u16 * 255) / a as u16) as u8;
+            Self::rgba(r, g, b, a)
+        }
+    }
 }
 
 impl Serialize for Color {
@@ -143,32 +176,6 @@ impl fmt::UpperHex for Color {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (r, g, b) = (self.r(), self.g(), self.b());
         write!(f, "{:02X}{:02X}{:02X}", r, g, b)
-    }
-}
-
-impl PixelColor for Color {
-    type Raw = RawU32;
-}
-
-impl From<Rgb888> for Color {
-    fn from(rgb: Rgb888) -> Self {
-        Color(0xFF | (rgb.b() as u32) << 8 | (rgb.g() as u32) << 16 | (rgb.r() as u32) << 24)
-    }
-}
-
-impl From<Color> for Rgb888 {
-    fn from(color: Color) -> Self {
-        Rgb888::new(
-            (color.0 >> 24) as u8,
-            (color.0 >> 16) as u8,
-            (color.0 >> 8) as u8,
-        )
-    }
-}
-
-impl From<RawU32> for Color {
-    fn from(raw: RawU32) -> Self {
-        Color(raw.into_inner())
     }
 }
 
