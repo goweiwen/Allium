@@ -1,24 +1,16 @@
 use anyhow::{Result, anyhow, bail};
-use embedded_graphics::Pixel;
-use embedded_graphics::prelude::*;
-use embedded_graphics::primitives::Rectangle;
 use framebuffer::Framebuffer;
 use log::{trace, warn};
+use tiny_skia::{Pixmap, PixmapMut, PixmapRef};
 
 use crate::display::Display;
 use crate::display::color::Color;
 use crate::geom::Rect;
 
-pub struct Buffer {
-    buffer: Vec<u8>,
-    size: Size,
-    bytes_per_pixel: u32,
-}
-
 pub struct FramebufferDisplay {
-    framebuffer: Buffer,
+    pixmap: Pixmap,
     iface: Framebuffer,
-    saved: Vec<Vec<u8>>,
+    saved: Vec<Pixmap>,
 }
 
 impl FramebufferDisplay {
@@ -29,27 +21,50 @@ impl FramebufferDisplay {
             iface.var_screen_info, iface.fix_screen_info,
         );
 
-        let background = iface.read_frame();
-        let size = Size::new(iface.var_screen_info.xres, iface.var_screen_info.yres);
+        let width = iface.var_screen_info.xres;
+        let height = iface.var_screen_info.yres;
 
+        let mut pixmap = Pixmap::new(width, height)
+            .ok_or_else(|| anyhow!("Failed to create pixmap {}x{}", width, height))?;
+
+        // Read initial framebuffer content
+        let background = iface.read_frame();
         let (xoffset, yoffset) = (
             iface.var_screen_info.xoffset as usize,
             iface.var_screen_info.yoffset as usize,
         );
-        let width = size.width as usize;
-        let height = size.height as usize;
         let bytes_per_pixel = iface.var_screen_info.bits_per_pixel / 8;
-        let mut buffer = vec![0; width * height * bytes_per_pixel as usize];
-        let buffer_size = buffer.len();
-        let location = (yoffset * width + xoffset) * bytes_per_pixel as usize;
-        buffer[..].copy_from_slice(&background[location..location + buffer_size]);
+        let location = (yoffset * width as usize + xoffset) * bytes_per_pixel as usize;
+        let buffer_size = (width * height) as usize * bytes_per_pixel as usize;
+
+        // Convert BGRA framebuffer to RGBA pixmap (and undo 180° rotation)
+        let mut display = FramebufferDisplay {
+            pixmap,
+            iface,
+            saved: Vec::new(),
+        };
+
+        // Copy initial background (need to convert from BGRA and unrotate)
+        for y in 0..height {
+            for x in 0..width {
+                // Framebuffer is rotated 180°, so read from reversed position
+                let fb_x = width - x - 1;
+                let fb_y = height - y - 1;
+                let fb_idx = location + ((fb_y * width + fb_x) as usize * bytes_per_pixel as usize);
+
+                let b = background[fb_idx];
+                let g = background[fb_idx + 1];
+                let r = background[fb_idx + 2];
+                let a = background[fb_idx + 3];
+
+                let color = Color::rgba(r, g, b, a);
+                let idx = (y * width + x) as usize;
+                pixmap.pixels_mut()[idx] = color.into();
+            }
+        }
 
         Ok(FramebufferDisplay {
-            framebuffer: Buffer {
-                buffer,
-                size,
-                bytes_per_pixel,
-            },
+            pixmap,
             iface,
             saved: Vec::new(),
         })
@@ -57,20 +72,52 @@ impl FramebufferDisplay {
 }
 
 impl Display for FramebufferDisplay {
+    fn width(&self) -> u32 {
+        self.pixmap.width()
+    }
+
+    fn height(&self) -> u32 {
+        self.pixmap.height()
+    }
+
+    fn pixmap(&self) -> PixmapRef<'_> {
+        self.pixmap.as_ref()
+    }
+
+    fn pixmap_mut(&mut self) -> PixmapMut<'_> {
+        self.pixmap.as_mut()
+    }
+
     fn sync(&mut self) -> Result<()> {
         self.iface.var_screen_info = Framebuffer::get_var_screeninfo(&self.iface.device)
             .map_err(|e| anyhow!("failed to get var_screen_info: {}", e))?;
 
         let xoffset = self.iface.var_screen_info.xoffset as usize;
         let yoffset = self.iface.var_screen_info.yoffset as usize;
-        let width = self.framebuffer.size.width as usize;
-        let height = self.framebuffer.size.height as usize;
-        let bytes_per_pixel = self.framebuffer.bytes_per_pixel as usize;
+        let width = self.width() as usize;
+        let height = self.height() as usize;
+        let bytes_per_pixel = (self.iface.var_screen_info.bits_per_pixel / 8) as usize;
         let location = (yoffset * width + xoffset) * bytes_per_pixel;
 
         let background = self.iface.read_frame();
-        let buffer_size = self.framebuffer.buffer.len();
-        self.framebuffer.buffer[..].copy_from_slice(&background[location..location + buffer_size]);
+
+        // Re-read framebuffer content (convert from BGRA and unrotate)
+        for y in 0..height {
+            for x in 0..width {
+                let fb_x = width - x - 1;
+                let fb_y = height - y - 1;
+                let fb_idx = location + (fb_y * width + fb_x) * bytes_per_pixel;
+
+                let b = background[fb_idx];
+                let g = background[fb_idx + 1];
+                let r = background[fb_idx + 2];
+                let a = background[fb_idx + 3];
+
+                let color = Color::rgba(r, g, b, a);
+                let idx = y * width + x;
+                self.pixmap.pixels_mut()[idx] = color.into();
+            }
+        }
 
         if yoffset != 0 {
             let frame_size = width * height * bytes_per_pixel;
@@ -89,16 +136,10 @@ impl Display for FramebufferDisplay {
     where
         F: FnMut(Color) -> Color,
     {
-        self.framebuffer.buffer = self
-            .framebuffer
-            .buffer
-            .chunks(self.framebuffer.bytes_per_pixel as usize)
-            .flat_map(|raw| {
-                // framebuffer should be divisible by bytespp, we don't have to worry about out of bounds
-                let pixel = f(Color::new(raw[2], raw[1], raw[0]));
-                [pixel.b(), pixel.g(), pixel.r(), raw[3]]
-            })
-            .collect();
+        for pixel in self.pixmap.pixels_mut() {
+            let color: Color = (*pixel).into();
+            *pixel = f(color).into();
+        }
         Ok(())
     }
 
@@ -107,15 +148,35 @@ impl Display for FramebufferDisplay {
             self.iface.var_screen_info.xoffset as usize,
             self.iface.var_screen_info.yoffset as usize,
         );
-        let width = self.framebuffer.size.width as usize;
-        let location = (yoffset * width + xoffset) * self.framebuffer.bytes_per_pixel as usize;
-        self.iface.frame[location..location + self.framebuffer.buffer.len()]
-            .copy_from_slice(&self.framebuffer.buffer);
+        let width = self.width() as usize;
+        let height = self.height() as usize;
+        let bytes_per_pixel = (self.iface.var_screen_info.bits_per_pixel / 8) as usize;
+        let location = (yoffset * width + xoffset) * bytes_per_pixel;
+
+        // Write pixmap to framebuffer with 180° rotation and BGRA format
+        for y in 0..height {
+            for x in 0..width {
+                let idx = y * width + x;
+                let color: Color = self.pixmap.pixels()[idx].into();
+
+                // Apply 180° rotation when writing to framebuffer
+                let fb_x = width - x - 1;
+                let fb_y = height - y - 1;
+                let fb_idx = location + (fb_y * width + fb_x) * bytes_per_pixel;
+
+                // Write as BGRA
+                self.iface.frame[fb_idx] = color.b();
+                self.iface.frame[fb_idx + 1] = color.g();
+                self.iface.frame[fb_idx + 2] = color.r();
+                self.iface.frame[fb_idx + 3] = color.a();
+            }
+        }
+
         Ok(())
     }
 
     fn save(&mut self) -> Result<()> {
-        self.saved.push(self.framebuffer.buffer.clone());
+        self.saved.push(self.pixmap.clone());
         Ok(())
     }
 
@@ -127,8 +188,8 @@ impl Display for FramebufferDisplay {
         let size = self.size();
         if rect.x < 0
             || rect.y < 0
-            || rect.x as u32 + rect.w > size.width
-            || rect.y as u32 + rect.h > size.height
+            || rect.x as u32 + rect.w > size.w
+            || rect.y as u32 + rect.h > size.h
         {
             warn!(
                 "Area exceeds display bounds: x: {}, y: {}, w: {}, h: {}",
@@ -136,18 +197,23 @@ impl Display for FramebufferDisplay {
             );
             rect.x = rect.x.max(0);
             rect.y = rect.y.max(0);
-            rect.w = rect.w.min(size.width - rect.x as u32);
-            rect.h = rect.h.min(size.height - rect.h);
+            rect.w = rect.w.min(size.w - rect.x as u32);
+            rect.h = rect.h.min(size.h - rect.y as u32);
         }
 
-        let x = self.framebuffer.size.width - rect.x as u32;
-        let y = self.framebuffer.size.height - rect.y as u32;
+        // Apply 180° rotation to the rect coordinates
+        let width = self.width() as i32;
+        let height = self.height() as i32;
+        let x = width - rect.x - rect.w as i32;
+        let y = height - rect.y - rect.h as i32;
 
-        for y in (y - rect.h)..y {
-            let to = (y * self.framebuffer.size.width + x) as usize
-                * self.framebuffer.bytes_per_pixel as usize;
-            let from = to - rect.w as usize * self.framebuffer.bytes_per_pixel as usize;
-            self.framebuffer.buffer[from..to].copy_from_slice(&saved[from..to]);
+        // Copy the saved region
+        for dy in 0..rect.h {
+            for dx in 0..rect.w {
+                let src_idx = ((y + dy as i32) * width + (x + dx as i32)) as usize;
+                let dst_idx = src_idx;
+                self.pixmap.pixels_mut()[dst_idx] = saved.pixels()[src_idx];
+            }
         }
 
         Ok(())
@@ -156,90 +222,5 @@ impl Display for FramebufferDisplay {
     fn pop(&mut self) -> bool {
         self.saved.pop();
         !self.saved.is_empty()
-    }
-}
-
-impl DrawTarget for FramebufferDisplay {
-    type Color = Color;
-    type Error = anyhow::Error;
-
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<()>
-    where
-        I: IntoIterator<Item = embedded_graphics::Pixel<Self::Color>>,
-    {
-        self.framebuffer
-            .draw_iter(pixels)
-            .map_err(|e| anyhow!("failed to draw: {}", e))
-    }
-
-    fn fill_contiguous<I>(&mut self, area: &Rectangle, colors: I) -> Result<()>
-    where
-        I: IntoIterator<Item = Self::Color>,
-    {
-        self.framebuffer
-            .fill_contiguous(area, colors)
-            .map_err(|e| anyhow!("failed to draw: {}", e))
-    }
-
-    fn fill_solid(&mut self, area: &Rectangle, color: Self::Color) -> Result<()> {
-        self.framebuffer
-            .fill_solid(area, color)
-            .map_err(|e| anyhow!("failed to draw: {}", e))
-    }
-
-    fn clear(&mut self, color: Self::Color) -> Result<()> {
-        self.framebuffer
-            .clear(color)
-            .map_err(|e| anyhow!("failed to draw: {}", e))
-    }
-}
-
-impl OriginDimensions for FramebufferDisplay {
-    fn size(&self) -> Size {
-        self.framebuffer.size
-    }
-}
-
-impl DrawTarget for Buffer {
-    type Color = Color;
-    type Error = anyhow::Error;
-
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<()>
-    where
-        I: IntoIterator<Item = embedded_graphics::Pixel<Self::Color>>,
-    {
-        let width = self.size.width as i32;
-        let height = self.size.height as i32;
-        let bytespp = self.bytes_per_pixel;
-
-        for Pixel(coord, color) in pixels.into_iter() {
-            // rotate 180 degrees
-            let x: i32 = width - coord.x - 1;
-            let y: i32 = height - coord.y - 1;
-            if 0 <= x && x < width && 0 <= y && y < height {
-                let index: u32 = (x as u32 + y as u32 * width as u32) * bytespp;
-
-                let a = color.a() as u32;
-                let a_inv = 255 - a;
-
-                let b = (self.buffer[index as usize] as u32 * a_inv + color.b() as u32 * a) / 255;
-                let g =
-                    (self.buffer[index as usize + 1] as u32 * a_inv + color.g() as u32 * a) / 255;
-                let r =
-                    (self.buffer[index as usize + 2] as u32 * a_inv + color.r() as u32 * a) / 255;
-
-                self.buffer[index as usize] = b as u8;
-                self.buffer[index as usize + 1] = g as u8;
-                self.buffer[index as usize + 2] = r as u8;
-            }
-        }
-
-        Ok(())
-    }
-}
-
-impl OriginDimensions for Buffer {
-    fn size(&self) -> Size {
-        self.size
     }
 }
