@@ -1,6 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
-use embedded_graphics::prelude::*;
+use tiny_skia::{Pixmap, PixmapMut, PixmapRef};
 
 use crate::battery::Battery;
 use crate::display::Display;
@@ -29,7 +29,7 @@ impl Platform for MockPlatform {
     }
 
     fn display(&mut self) -> Result<Self::Display> {
-        Ok(MockDisplay)
+        Ok(MockDisplay::new())
     }
 
     fn battery(&self) -> Result<Self::Battery> {
@@ -87,13 +87,49 @@ impl Default for MockPlatform {
     }
 }
 
-pub struct MockDisplay;
+pub struct MockDisplay {
+    pixmap: Pixmap,
+}
+
+impl MockDisplay {
+    pub fn new() -> Self {
+        Self {
+            pixmap: Pixmap::new(SCREEN_WIDTH, SCREEN_HEIGHT).expect("Failed to create mock pixmap"),
+        }
+    }
+}
+
+impl Default for MockDisplay {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl Display for MockDisplay {
-    fn map_pixels<F>(&mut self, _f: F) -> Result<()>
+    fn width(&self) -> u32 {
+        SCREEN_WIDTH
+    }
+
+    fn height(&self) -> u32 {
+        SCREEN_HEIGHT
+    }
+
+    fn pixmap(&self) -> PixmapRef {
+        self.pixmap.as_ref()
+    }
+
+    fn pixmap_mut(&mut self) -> PixmapMut {
+        self.pixmap.as_mut()
+    }
+
+    fn map_pixels<F>(&mut self, mut f: F) -> Result<()>
     where
         F: FnMut(Color) -> Color,
     {
+        for pixel in self.pixmap.pixels_mut() {
+            let color: Color = (*pixel).into();
+            *pixel = f(color).into();
+        }
         Ok(())
     }
 
@@ -107,25 +143,6 @@ impl Display for MockDisplay {
 
     fn pop(&mut self) -> bool {
         true
-    }
-}
-
-impl DrawTarget for MockDisplay {
-    type Color = Color;
-
-    type Error = anyhow::Error;
-
-    fn draw_iter<I>(&mut self, _pixels: I) -> Result<()>
-    where
-        I: IntoIterator<Item = Pixel<Self::Color>>,
-    {
-        Ok(())
-    }
-}
-
-impl OriginDimensions for MockDisplay {
-    fn size(&self) -> Size {
-        Size::new(SCREEN_WIDTH, SCREEN_HEIGHT)
     }
 }
 
