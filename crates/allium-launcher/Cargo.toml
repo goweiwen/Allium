@@ -17,7 +17,7 @@ debug-ui-redraw = [] # Show only redraws
 anyhow.workspace = true
 async-trait.workspace = true
 chrono = { workspace = true, features = ["serde"] }
-embedded-graphics.workspace = true
+tiny-skia.workspace = true
 enum-map.workspace = true
 image = { workspace = true, features = ["gif", "jpeg", "png"] }
 itertools.workspace = true

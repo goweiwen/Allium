@@ -13,7 +13,7 @@ miyoo = ["common/miyoo"]
 
 [dependencies]
 anyhow.workspace = true
-embedded-graphics.workspace = true
+tiny-skia.workspace = true
 lazy_static.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
