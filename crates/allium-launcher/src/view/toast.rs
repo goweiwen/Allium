@@ -5,19 +5,13 @@ use anyhow::Result;
 use async_trait::async_trait;
 
 use common::command::Command;
+use common::display::Display;
 use common::display::color::Color;
 use common::display::font::FontTextStyleBuilder;
 use common::geom::{Point, Rect};
 use common::platform::{DefaultPlatform, KeyEvent, Platform};
 use common::stylesheet::{Stylesheet, StylesheetColor};
 use common::view::View;
-use embedded_graphics::Drawable;
-use embedded_graphics::image::ImageRaw;
-use embedded_graphics::prelude::{Dimensions, OriginDimensions, Size};
-use embedded_graphics::primitives::{
-    CornerRadii, Primitive, PrimitiveStyle, Rectangle, RoundedRectangle,
-};
-use embedded_graphics::text::{Alignment, Text};
 use image::{ImageBuffer, Rgba};
 use tokio::sync::mpsc::Sender;
 
@@ -65,8 +59,8 @@ impl View for Toast {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        let w = display.size().width;
-        let h = display.size().height;
+        let w = display.size().w;
+        let h = display.size().h;
 
         let lines = self.text.lines().count() as u32;
         let mut text_y = (h - styles.ui.ui_font.size * lines) as i32 / 2;
@@ -93,46 +87,93 @@ impl View for Toast {
             .text_color(styles.ui.text_color)
             .build();
 
-        let text = Text::with_alignment(
-            &self.text,
-            Point::new(w as i32 / 2, text_y).into(),
-            text_style,
-            Alignment::Center,
-        );
+        // Measure text to calculate background size
+        let text_size = text_style.measure(&self.text);
+        let text_x = w as i32 / 2 - text_size.w as i32 / 2;
 
-        let mut rect = text.bounding_box();
+        let mut bounds_rect = Rect::new(text_x, text_y, text_size.w, text_size.h);
         if let Some(image_rect) = image_rect {
-            rect = common::geom::Rect::union(&rect.into(), &image_rect).into();
+            bounds_rect = Rect::union(&bounds_rect, &image_rect);
         }
 
-        let x = rect.top_left.x;
-        let y = rect.top_left.y;
-        let Size { width, height } = rect.size;
-        RoundedRectangle::new(
-            Rectangle::new(
-                Point::new(x - styles.ui.margin_x, y - styles.ui.margin_y).into(),
-                Size::new(
-                    width + styles.ui.margin_x as u32 * 2,
-                    height + styles.ui.margin_y as u32 * 2,
-                ),
-            ),
-            CornerRadii::new(Size::new_equal(styles.ui.margin_x as u32)),
-        )
-        .into_styled(PrimitiveStyle::with_fill(bg_color))
-        .draw(display)?;
+        // Draw rounded background
+        let bg_rect = Rect::new(
+            bounds_rect.x - styles.ui.margin_x,
+            bounds_rect.y - styles.ui.margin_y,
+            bounds_rect.w + styles.ui.margin_x as u32 * 2,
+            bounds_rect.h + styles.ui.margin_y as u32 * 2,
+        );
+        common::display::fill_rounded_rect(
+            &mut display.pixmap_mut(),
+            bg_rect,
+            styles.ui.margin_x as u32,
+            bg_color,
+        );
 
+        // Draw optional image
         if let Some(ref image) = self.image
             && let Some(image_rect) = image_rect
         {
-            let image_raw: ImageRaw<'_, Color> = ImageRaw::new(image, image_rect.w);
-            let image = embedded_graphics::image::Image::new(
-                &image_raw,
-                embedded_graphics::geometry::Point::new(image_rect.x, image_rect.y),
-            );
-            image.draw(display)?;
+            let mut pixmap = display.pixmap_mut();
+            let pixmap_width = pixmap.width() as i32;
+            let pixmap_height = pixmap.height() as i32;
+
+            for y in 0..image.height() {
+                for x in 0..image.width() {
+                    let px = image_rect.x + x as i32;
+                    let py = image_rect.y + y as i32;
+
+                    if px >= 0 && px < pixmap_width && py >= 0 && py < pixmap_height {
+                        let pixel = image.get_pixel(x, y);
+                        let src = Color::rgba(pixel[0], pixel[1], pixel[2], pixel[3]);
+
+                        if src.a() > 0 {
+                            let pixmap_idx = (py * pixmap_width + px) as usize;
+                            let pixels = pixmap.pixels_mut();
+
+                            if src.a() == 255 {
+                                pixels[pixmap_idx] = src.into();
+                            } else {
+                                let dst: Color = pixels[pixmap_idx].into();
+
+                                let src_a = src.a() as u16;
+                                let dst_a = dst.a() as u16;
+                                let inv_src_a = 255 - src_a;
+
+                                let out_a = src_a + (dst_a * inv_src_a) / 255;
+
+                                if out_a == 0 {
+                                    pixels[pixmap_idx] = Color::rgba(0, 0, 0, 0).into();
+                                } else {
+                                    let out_r = ((src.r() as u16 * src_a
+                                        + dst.r() as u16 * dst_a * inv_src_a / 255)
+                                        / out_a)
+                                        as u8;
+                                    let out_g = ((src.g() as u16 * src_a
+                                        + dst.g() as u16 * dst_a * inv_src_a / 255)
+                                        / out_a)
+                                        as u8;
+                                    let out_b = ((src.b() as u16 * src_a
+                                        + dst.b() as u16 * dst_a * inv_src_a / 255)
+                                        / out_a)
+                                        as u8;
+
+                                    pixels[pixmap_idx] =
+                                        Color::rgba(out_r, out_g, out_b, out_a as u8).into();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        text.draw(display)?;
+        // Draw text
+        text_style.draw(
+            &mut display.pixmap_mut(),
+            &self.text,
+            Point::new(text_x, text_y),
+        );
 
         Ok(true)
     }

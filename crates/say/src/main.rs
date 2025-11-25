@@ -3,15 +3,10 @@
 use anyhow::Result;
 use clap::Parser;
 use common::{
-    display::{Display, color::Color, font::FontTextStyleBuilder},
+    display::{Display, font::FontTextStyleBuilder},
+    geom::{Point, Rect},
     platform::{DefaultPlatform, Platform},
     stylesheet::Stylesheet,
-};
-use embedded_graphics::{
-    Drawable,
-    prelude::{Dimensions, OriginDimensions, Point, Size},
-    primitives::{CornerRadii, Primitive, PrimitiveStyle, RoundedRectangle},
-    text::{Alignment, Text},
 };
 
 #[derive(Parser, Debug)]
@@ -46,38 +41,40 @@ fn say(text: &str, bg: bool) -> Result<()> {
     } else {
         styles.ui.text_color
     };
-    let text_style = FontTextStyleBuilder::<Color>::new(styles.ui.ui_font.font())
+    let text_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
         .text_color(text_color)
         .font_fallback(styles.cjk_font.font())
         .font_size(styles.ui.ui_font.size)
         .build();
 
-    let w = display.size().width;
-    let h = display.size().height;
+    let w = display.size().w;
+    let h = display.size().h;
     let height = text.lines().count() as u32 * styles.ui.ui_font.size;
 
-    let text = Text::with_alignment(
-        text,
-        Point::new(w as i32 / 2, (h - height) as i32 / 2),
-        text_style,
-        Alignment::Center,
+    // Measure text for centered positioning
+    let text_size = text_style.measure(text);
+    let text_pos = Point::new(
+        w as i32 / 2 - text_size.w as i32 / 2,
+        (h - height) as i32 / 2,
     );
 
     if bg {
-        let mut rect = text.bounding_box();
-        rect.top_left.x -= 12;
-        rect.top_left.y -= 8;
-        rect.size.width += 24;
-        rect.size.height += 16;
-        RoundedRectangle::new(
-            rect,
-            CornerRadii::new(Size::new_equal((styles.ui.ui_font.size + 8) / 2)),
-        )
-        .into_styled(PrimitiveStyle::with_fill(styles.ui.highlight_color))
-        .draw(&mut display)?;
+        let bg_rect = Rect::new(
+            text_pos.x - 12,
+            text_pos.y - 8,
+            text_size.w + 24,
+            text_size.h + 16,
+        );
+        let radius = (styles.ui.ui_font.size + 8) / 2;
+        common::display::fill_rounded_rect(
+            &mut display.pixmap_mut(),
+            bg_rect,
+            radius,
+            styles.ui.highlight_color,
+        );
     }
 
-    text.draw(&mut display)?;
+    text_style.draw(&mut display.pixmap_mut(), text, text_pos);
     display.flush()?;
 
     Ok(())

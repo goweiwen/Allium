@@ -11,9 +11,6 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::{Stylesheet, StylesheetColor};
 use common::view::{ButtonHint, ButtonHints, Image, ImageMode, ScrollList, View};
-use embedded_graphics::Drawable;
-use embedded_graphics::prelude::{Dimensions, OriginDimensions, Size};
-use embedded_graphics::primitives::{CornerRadii, Primitive, PrimitiveStyle, RoundedRectangle};
 use log::{debug, trace};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
@@ -315,17 +312,17 @@ where
                 rect.h += styles.ui.margin_x as u32 * 2;
                 rect.x -= styles.ui.margin_x * 2;
                 rect.w += styles.ui.margin_x as u32 * 4;
-                rect = rect.intersection(&display.bounding_box().into());
-                RoundedRectangle::new(
-                    rect.into(),
-                    CornerRadii::new(Size::new_equal(
-                        (styles.ui.ui_font.size + styles.ui.margin_y as u32) / 2,
-                    )),
-                )
-                .into_styled(PrimitiveStyle::with_fill(
+                rect = rect.intersection(&display.bounding_box());
+
+                // Draw menu background
+                let radius = (styles.ui.ui_font.size + styles.ui.margin_y as u32) / 2;
+                common::display::fill_rounded_rect(
+                    &mut display.pixmap_mut(),
+                    rect,
+                    radius,
                     StylesheetColor::BackgroundHighlightBlend.to_color(styles),
-                ))
-                .draw(display)?;
+                );
+
                 menu.set_should_draw();
                 menu.draw(display, styles)?;
                 drawn = true;

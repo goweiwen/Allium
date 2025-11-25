@@ -115,21 +115,14 @@ impl fmt::Debug for dyn View {
 
 /// Draw debug bounding boxes around the UI tree.
 #[cfg(feature = "debug-ui")]
-pub fn draw_debug_bounds<D>(
+pub fn draw_debug_bounds(
     view: &mut dyn View,
-    display: &mut D,
+    display: &mut <DefaultPlatform as Platform>::Display,
     styles: &Stylesheet,
     depth: usize,
-) -> Result<()>
-where
-    D: embedded_graphics::draw_target::DrawTarget<
-            Color = crate::display::color::Color,
-            Error = anyhow::Error,
-        >,
-{
+) -> Result<()> {
+    use crate::display::Display;
     use crate::display::color::Color;
-    use embedded_graphics::Drawable;
-    use embedded_graphics::primitives::{Primitive, PrimitiveStyleBuilder, Rectangle};
 
     // Generate a color based on depth for visual distinction
     let colors = [
@@ -144,14 +137,53 @@ where
 
     let rect = view.bounding_box(styles);
     if rect.w > 0 && rect.h > 0 {
-        let stroke_style = PrimitiveStyleBuilder::new()
-            .stroke_color(color)
-            .stroke_width(1)
-            .build();
+        // Draw rectangle border using direct pixel writes
+        let mut pixmap = display.pixmap_mut();
+        let pixmap_width = pixmap.width() as i32;
+        let pixmap_height = pixmap.height() as i32;
+        let color_premul: tiny_skia::PremultipliedColorU8 = color.into();
 
-        Rectangle::from(rect)
-            .into_styled(stroke_style)
-            .draw(display)?;
+        // Top and bottom borders
+        for x in rect.x..(rect.x + rect.w as i32) {
+            if x >= 0 && x < pixmap_width {
+                // Top border
+                if rect.y >= 0 && rect.y < pixmap_height {
+                    let idx = (rect.y * pixmap_width + x) as usize;
+                    if idx < pixmap.pixels().len() {
+                        pixmap.pixels_mut()[idx] = color_premul;
+                    }
+                }
+                // Bottom border
+                let bottom_y = rect.y + rect.h as i32 - 1;
+                if bottom_y >= 0 && bottom_y < pixmap_height {
+                    let idx = (bottom_y * pixmap_width + x) as usize;
+                    if idx < pixmap.pixels().len() {
+                        pixmap.pixels_mut()[idx] = color_premul;
+                    }
+                }
+            }
+        }
+
+        // Left and right borders
+        for y in rect.y..(rect.y + rect.h as i32) {
+            if y >= 0 && y < pixmap_height {
+                // Left border
+                if rect.x >= 0 && rect.x < pixmap_width {
+                    let idx = (y * pixmap_width + rect.x) as usize;
+                    if idx < pixmap.pixels().len() {
+                        pixmap.pixels_mut()[idx] = color_premul;
+                    }
+                }
+                // Right border
+                let right_x = rect.x + rect.w as i32 - 1;
+                if right_x >= 0 && right_x < pixmap_width {
+                    let idx = (y * pixmap_width + right_x) as usize;
+                    if idx < pixmap.pixels().len() {
+                        pixmap.pixels_mut()[idx] = color_premul;
+                    }
+                }
+            }
+        }
     }
 
     // Recursively draw children

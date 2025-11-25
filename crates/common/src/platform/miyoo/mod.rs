@@ -212,8 +212,8 @@ fn detect_firmware() -> String {
 
 fn parse_firmware(data: &str) -> &str {
     for line in data.lines() {
-        if line.starts_with("miyoo_version=") {
-            return &line[14..];
+        if let Some(version) = line.strip_prefix("miyoo_version=") {
+            return version;
         }
     }
     ""

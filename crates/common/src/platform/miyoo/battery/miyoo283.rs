@@ -10,8 +10,8 @@ use crate::battery::Battery;
 const SARADC_IOC_MAGIC: u8 = b'a';
 
 // Define ioctl request codes
-const SAR_INIT: u32 = nix::request_code_none!(SARADC_IOC_MAGIC, 0);
-const SAR_SET_CHANNEL_READ_VALUE: u32 = nix::request_code_none!(SARADC_IOC_MAGIC, 1);
+const SAR_INIT: usize = nix::request_code_none!(SARADC_IOC_MAGIC, 0) as usize;
+const SAR_SET_CHANNEL_READ_VALUE: usize = nix::request_code_none!(SARADC_IOC_MAGIC, 1) as usize;
 
 nix::ioctl_write_ptr_bad!(sar_init, SAR_INIT, ());
 nix::ioctl_write_ptr_bad!(
@@ -94,7 +94,7 @@ impl Battery for Miyoo283Battery {
 
 #[inline]
 fn read_adc_value(mut value: i32) -> i32 {
-    let mut adc_config = AdcConfig {
+    let adc_config = AdcConfig {
         _channel: 0,
         adc_value: 0,
     };
@@ -107,7 +107,7 @@ fn read_adc_value(mut value: i32) -> i32 {
         }
     };
 
-    if let Err(e) = unsafe { sar_set_channel_read_value(sar_fd.as_raw_fd(), &mut adc_config) } {
+    if let Err(e) = unsafe { sar_set_channel_read_value(sar_fd.as_raw_fd(), &adc_config) } {
         error!("Failed to read /dev/sar: {}", e);
         return value;
     }

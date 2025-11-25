@@ -2,9 +2,6 @@ use std::collections::VecDeque;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use embedded_graphics::Drawable;
-use embedded_graphics::prelude::Size;
-use embedded_graphics::primitives::{Primitive, PrimitiveStyle, Rectangle, RoundedRectangle};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
@@ -87,22 +84,19 @@ where
 
             let rect = selected.bounding_box(styles);
 
-            let fill_style = PrimitiveStyle::with_fill(styles.ui.highlight_color);
-            RoundedRectangle::with_equal_corners(
-                Rectangle::new(
-                    embedded_graphics::prelude::Point::new(
-                        rect.x - styles.ui.margin_x,
-                        rect.y - styles.ui.margin_y / 2,
-                    ),
-                    Size::new(
-                        rect.w + styles.ui.margin_x as u32 * 2,
-                        rect.h + styles.ui.margin_y as u32,
-                    ),
-                ),
-                Size::new_equal(rect.h),
-            )
-            .into_styled(fill_style)
-            .draw(display)?;
+            // Draw highlight rounded rectangle
+            let highlight_rect = Rect::new(
+                rect.x - styles.ui.margin_x,
+                rect.y - styles.ui.margin_y / 2,
+                rect.w + styles.ui.margin_x as u32 * 2,
+                rect.h + styles.ui.margin_y as u32,
+            );
+            crate::display::fill_rounded_rect(
+                &mut display.pixmap_mut(),
+                highlight_rect,
+                rect.h,
+                styles.ui.highlight_color,
+            );
 
             for child in &mut self.children.iter_mut() {
                 child.draw(display, styles)?;

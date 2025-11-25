@@ -114,11 +114,11 @@ impl Display for MockDisplay {
         SCREEN_HEIGHT
     }
 
-    fn pixmap(&self) -> PixmapRef {
+    fn pixmap(&self) -> PixmapRef<'_> {
         self.pixmap.as_ref()
     }
 
-    fn pixmap_mut(&mut self) -> PixmapMut {
+    fn pixmap_mut(&mut self) -> PixmapMut<'_> {
         self.pixmap.as_mut()
     }
 

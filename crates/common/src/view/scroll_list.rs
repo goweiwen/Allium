@@ -2,10 +2,6 @@ use std::collections::VecDeque;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use embedded_graphics::Drawable;
-use embedded_graphics::prelude::Size;
-use embedded_graphics::primitives::{Primitive, PrimitiveStyle, Rectangle, RoundedRectangle};
-
 use tokio::sync::mpsc::Sender;
 
 use crate::display::Display;
@@ -176,35 +172,29 @@ impl View for ScrollList {
         if self.should_draw() {
             display.load(self.bounding_box(styles))?;
 
+            let mut pixmap = display.pixmap_mut();
+
+            // Draw optional background
             if let Some(bg_color) = self.background_color {
-                let fill_style = PrimitiveStyle::with_fill(bg_color.to_color(styles));
-                Rectangle::new(
-                    embedded_graphics::prelude::Point::new(self.rect.x, self.rect.y),
-                    Size::new(self.rect.w, self.rect.h),
-                )
-                .into_styled(fill_style)
-                .draw(display)?;
+                crate::display::fill_rect(&mut pixmap, self.rect, bg_color.to_color(styles));
             }
 
+            // Draw highlight for selected item
             if let Some(selected) = self.children.get_mut(self.selected - self.top) {
                 let rect = selected.bounding_box(styles);
 
-                let fill_style = PrimitiveStyle::with_fill(styles.ui.highlight_color);
-                RoundedRectangle::with_equal_corners(
-                    Rectangle::new(
-                        embedded_graphics::prelude::Point::new(
-                            rect.x - styles.ui.padding_x,
-                            rect.y - styles.ui.padding_y,
-                        ),
-                        Size::new(
-                            rect.w + styles.ui.padding_x as u32 * 2,
-                            rect.h + styles.ui.padding_y as u32 * 2,
-                        ),
-                    ),
-                    Size::new_equal(rect.h + styles.ui.padding_y as u32 * 2),
-                )
-                .into_styled(fill_style)
-                .draw(display)?;
+                let highlight_rect = Rect::new(
+                    rect.x - styles.ui.padding_x,
+                    rect.y - styles.ui.padding_y,
+                    rect.w + styles.ui.padding_x as u32 * 2,
+                    rect.h + styles.ui.padding_y as u32 * 2,
+                );
+                crate::display::fill_rounded_rect(
+                    &mut pixmap,
+                    highlight_rect,
+                    rect.h + styles.ui.padding_y as u32 * 2,
+                    styles.ui.highlight_color,
+                );
             }
 
             for child in self.children.iter_mut() {

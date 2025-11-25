@@ -14,10 +14,6 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::{ButtonHint, ButtonHints, Keyboard, View};
-use embedded_graphics::Drawable;
-use embedded_graphics::prelude::{Dimensions, Size};
-use embedded_graphics::primitives::{Primitive, PrimitiveStyle, Rectangle, RoundedRectangle};
-use embedded_graphics::text::Text;
 use log::{error, trace};
 use tokio::sync::mpsc::Sender;
 
@@ -146,20 +142,17 @@ impl TextReader {
             return &self.text[cursor..];
         }
 
-        let mut text = Text::new(
-            &self.text[cursor..cursor + offset],
-            Point::zero().into(),
-            text_style,
-        );
+        // Measure text to find line break point
+        let mut text_slice = &self.text[cursor..cursor + offset];
+        let mut text_size = text_style.measure(text_slice);
 
-        while text.bounding_box().size.width > line_width
-            || text.bounding_box().size.height > styles.menu.guide_font.size
-        {
+        while text_size.w > line_width || text_size.h > styles.menu.guide_font.size {
             offset -= 1;
             while !self.text.is_char_boundary(cursor + offset) {
                 offset -= 1;
             }
-            text.text = &self.text[cursor..cursor + offset];
+            text_slice = &self.text[cursor..cursor + offset];
+            text_size = text_style.measure(text_slice);
         }
 
         let offset_without_word_wrap = offset;
@@ -240,7 +233,7 @@ impl TextReader {
         // Skip the current line
         cursor += self.text[cursor..].find('\n').unwrap_or_default();
 
-        if let Some(location) = self.lowercase_text[cursor..].find(&needle) {
+        if let Some(location) = self.lowercase_text[cursor..].find(needle) {
             cursor += location;
 
             // Go back to the start of the line
@@ -406,17 +399,19 @@ impl View for TextReader {
                 content_height,
             ))?;
 
-            RoundedRectangle::with_equal_corners(
-                <Rect as Into<Rectangle>>::into(Rect::new(
-                    self.rect.x + styles.ui.margin_x,
-                    content_top,
-                    self.rect.w - styles.ui.margin_x as u32 * 2,
-                    content_height,
-                )),
-                Size::new_equal(8),
-            )
-            .into_styled(PrimitiveStyle::with_fill(styles.ui.background_color))
-            .draw(display)?;
+            // Draw content background
+            let content_rect = Rect::new(
+                self.rect.x + styles.ui.margin_x,
+                content_top,
+                self.rect.w - styles.ui.margin_x as u32 * 2,
+                content_height,
+            );
+            common::display::fill_rounded_rect(
+                &mut display.pixmap_mut(),
+                content_rect,
+                8,
+                styles.ui.background_color,
+            );
 
             let text_style = FontTextStyleBuilder::new(styles.menu.guide_font.font())
                 .font_fallback(styles.cjk_font.font())
@@ -425,34 +420,28 @@ impl View for TextReader {
                 .text_color(styles.ui.text_color)
                 .build();
 
+            // Draw visible text lines
             let visible_lines: Vec<&str> = self.visible_text(styles, content_height);
             let mut y = content_top;
             for line in visible_lines {
-                let text = Text::new(
-                    line,
-                    Point::new(self.rect.x + styles.ui.margin_x + 12, y).into(),
-                    text_style.clone(),
-                );
-                text.draw(display)?;
+                let line_pos = Point::new(self.rect.x + styles.ui.margin_x + 12, y);
+                text_style.draw(&mut display.pixmap_mut(), line, line_pos);
                 y += styles.menu.guide_font.size as i32;
             }
 
-            Text::with_alignment(
-                &format!(
-                    "{:.0}%",
-                    self.cursor as f32 / self.text.len().max(1) as f32 * 100.0
-                ),
-                Point::new(
-                    self.rect.x + self.rect.w as i32 - 16,
-                    content_top + content_height as i32
-                        - styles.menu.guide_font.size as i32
-                        - styles.ui.margin_y / 2,
-                )
-                .into(),
-                text_style,
-                Alignment::Right.into(),
-            )
-            .draw(display)?;
+            // Draw percentage indicator
+            let percentage_text = format!(
+                "{:.0}%",
+                self.cursor as f32 / self.text.len().max(1) as f32 * 100.0
+            );
+            let percentage_size = text_style.measure(&percentage_text);
+            let percentage_pos = Point::new(
+                self.rect.x + self.rect.w as i32 - 16 - percentage_size.w as i32,
+                content_top + content_height as i32
+                    - styles.menu.guide_font.size as i32
+                    - styles.ui.margin_y / 2,
+            );
+            text_style.draw(&mut display.pixmap_mut(), &percentage_text, percentage_pos);
 
             self.dirty = false;
 

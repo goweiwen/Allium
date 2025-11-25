@@ -192,6 +192,13 @@ impl From<PremultipliedColorU8> for Color {
     }
 }
 
+impl From<Color> for tiny_skia::Color {
+    #[inline]
+    fn from(color: Color) -> Self {
+        tiny_skia::Color::from_rgba8(color.r(), color.g(), color.b(), color.a())
+    }
+}
+
 fn overlay(a: u8, b: u8) -> u8 {
     if a < 128 {
         (a as i32 * b as i32 / 255) as u8

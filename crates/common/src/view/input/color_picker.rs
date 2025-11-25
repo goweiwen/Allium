@@ -2,17 +2,14 @@ use std::collections::VecDeque;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use embedded_graphics::Drawable;
-use embedded_graphics::prelude::{Dimensions, Size};
-use embedded_graphics::primitives::{Primitive, PrimitiveStyleBuilder, Rectangle, StrokeAlignment};
-use embedded_graphics::text::Text;
 use log::trace;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
 use crate::command::Value;
+use crate::display::Display;
 use crate::display::color::Color;
-use crate::display::font::{FontTextStyle, FontTextStyleBuilder};
+use crate::display::font::FontTextStyleBuilder;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use crate::stylesheet::{Stylesheet, StylesheetColor};
@@ -75,24 +72,50 @@ impl View for ColorPicker {
             .unwrap_or(self.value);
         let edit_index = self.edit_state.as_ref().map(|s| s.selected);
 
-        let fill_style = PrimitiveStyleBuilder::new()
-            .fill_color(color)
-            .stroke_color(styles.ui.text_color)
-            .stroke_alignment(StrokeAlignment::Inside)
-            .stroke_width(1)
-            .build();
-
         let w = styles.ui.ui_font.size;
-        Rectangle::new(
-            Point::new(
-                self.point.x - (w as i32 * (1 - self.alignment.sign()) / 2),
-                self.point.y,
-            )
-            .into(),
-            Size::new_equal(w),
-        )
-        .into_styled(fill_style)
-        .draw(display)?;
+        let color_box_rect = Rect::new(
+            self.point.x - (w as i32 * (1 - self.alignment.sign()) / 2),
+            self.point.y,
+            w,
+            w,
+        );
+
+        // Draw color preview box with border
+        let mut pixmap = display.pixmap_mut();
+        crate::display::fill_rect(&mut pixmap, color_box_rect, color);
+
+        // Draw 1px border (simplified - not using stroke_path for performance)
+        let border_color = styles.ui.text_color;
+        for x in color_box_rect.x..(color_box_rect.x + color_box_rect.w as i32) {
+            if x >= 0 && x < pixmap.width() as i32 {
+                // Top border
+                if color_box_rect.y >= 0 && color_box_rect.y < pixmap.height() as i32 {
+                    let idx = (color_box_rect.y * pixmap.width() as i32 + x) as usize;
+                    pixmap.pixels_mut()[idx] = border_color.into();
+                }
+                // Bottom border
+                let bottom_y = color_box_rect.y + color_box_rect.h as i32 - 1;
+                if bottom_y >= 0 && bottom_y < pixmap.height() as i32 {
+                    let idx = (bottom_y * pixmap.width() as i32 + x) as usize;
+                    pixmap.pixels_mut()[idx] = border_color.into();
+                }
+            }
+        }
+        for y in color_box_rect.y..(color_box_rect.y + color_box_rect.h as i32) {
+            if y >= 0 && y < pixmap.height() as i32 {
+                // Left border
+                if color_box_rect.x >= 0 && color_box_rect.x < pixmap.width() as i32 {
+                    let idx = (y * pixmap.width() as i32 + color_box_rect.x) as usize;
+                    pixmap.pixels_mut()[idx] = border_color.into();
+                }
+                // Right border
+                let right_x = color_box_rect.x + color_box_rect.w as i32 - 1;
+                if right_x >= 0 && right_x < pixmap.width() as i32 {
+                    let idx = (y * pixmap.width() as i32 + right_x) as usize;
+                    pixmap.pixels_mut()[idx] = border_color.into();
+                }
+            }
+        }
 
         let text_color = self.text_color.to_color(styles);
         let stroke_color = if self.text_color == crate::stylesheet::StylesheetColor::HighlightText {
@@ -129,35 +152,35 @@ impl View for ColorPicker {
         match self.alignment {
             Alignment::Right => {
                 let mut x = self.point.x - w as i32 - styles.ui.margin_y;
+
+                // Draw each hex digit
                 for i in (0..8).rev() {
                     let c = color.char(i);
-                    let text = Text::with_alignment(
-                        &c,
-                        Point::new(x, self.point.y).into(),
-                        if edit_index == Some(i) {
-                            selected_style.clone()
-                        } else if self.edit_state.is_some() {
-                            focused_style.clone()
-                        } else {
-                            text_style.clone()
-                        },
-                        Alignment::Right.into(),
-                    );
-                    text.draw(display)?;
-                    x = text.bounding_box().top_left.x - 1;
+                    let char_style = if edit_index == Some(i) {
+                        &selected_style
+                    } else if self.edit_state.is_some() {
+                        &focused_style
+                    } else {
+                        &text_style
+                    };
+
+                    let char_size = char_style.measure(&c);
+                    let char_pos = Point::new(x - char_size.w as i32, self.point.y);
+                    char_style.draw(&mut display.pixmap_mut(), &c, char_pos);
+
+                    x = char_pos.x - 1;
                 }
 
-                Text::with_alignment(
-                    "#",
-                    Point::new(x, self.point.y).into(),
-                    if self.edit_state.is_some() {
-                        focused_style
-                    } else {
-                        text_style
-                    },
-                    Alignment::Right.into(),
-                )
-                .draw(display)?;
+                // Draw "#" prefix
+                let hash_style = if self.edit_state.is_some() {
+                    &focused_style
+                } else {
+                    &text_style
+                };
+                let hash_text = "#";
+                let hash_size = hash_style.measure(hash_text);
+                let hash_pos = Point::new(x - hash_size.w as i32, self.point.y);
+                hash_style.draw(&mut display.pixmap_mut(), hash_text, hash_pos);
             }
             Alignment::Center => unimplemented!("alignment should be left or right"),
             Alignment::Left => todo!(),
@@ -300,38 +323,25 @@ impl View for ColorPicker {
     }
 
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
-        let text_style: FontTextStyle<Color> = FontTextStyleBuilder::new(styles.ui.ui_font.font())
+        let text_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
             .font_fallback(styles.cjk_font.font())
             .font_size(styles.ui.ui_font.size)
             .draw_background()
             .build();
 
-        let mut x = self.point.x - 30 - styles.ui.margin_y;
+        // Measure the full color hex string to calculate bounding box
+        let mut full_text = String::with_capacity(9);
         for i in (0..8).rev() {
-            let c = self.value.char(i);
-            let text = Text::with_alignment(
-                &c,
-                Point::new(x, self.point.y).into(),
-                text_style.clone(),
-                Alignment::Right.into(),
-            );
-            x = text.bounding_box().top_left.x - 1;
+            full_text.push_str(&self.value.char(i));
         }
-
-        let rect: Rect = Text::with_alignment(
-            "#",
-            Point::new(x, self.point.y).into(),
-            text_style,
-            Alignment::Right.into(),
-        )
-        .bounding_box()
-        .into();
+        full_text.insert(0, '#');
+        let full_size = text_style.measure(&full_text);
 
         Rect::new(
-            rect.x,
+            self.point.x - full_size.w as i32 - 30 - styles.ui.margin_y,
             self.point.y,
-            (self.point.x - rect.x) as u32,
-            rect.h + 1,
+            full_size.w + 30 + styles.ui.margin_y as u32,
+            full_size.h + 1,
         )
     }
 

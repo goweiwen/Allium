@@ -2,9 +2,6 @@ use std::collections::VecDeque;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use embedded_graphics::Drawable;
-use embedded_graphics::prelude::Size;
-use embedded_graphics::primitives::{Primitive, PrimitiveStyle, Rectangle, RoundedRectangle};
 use tokio::sync::mpsc::Sender;
 
 use crate::display::Display;
@@ -169,7 +166,7 @@ impl View for SettingsList {
                 for i in 0..self.visible_count() {
                     let child = &mut self.right[self.top + i];
                     child.set_position(Point::new(
-                        self.rect.x + self.rect.w as i32 - styles.ui.padding_x - 1,
+                        self.rect.x + self.rect.w as i32 - styles.ui.padding_x,
                         self.rect.y
                             + styles.ui.padding_y
                             + i as i32 * (self.entry_height as i32 + styles.ui.list_margin),
@@ -191,42 +188,39 @@ impl View for SettingsList {
                 .map(|s| s.bounding_box(styles))
                 .unwrap_or_default();
 
-            // Highlight Background
+            let mut pixmap = display.pixmap_mut();
+
+            // Highlight Background (semi-transparent)
             if right.w != 0 && right.h != 0 {
-                let rect = left.union(&right);
-                RoundedRectangle::with_equal_corners(
-                    Rectangle::new(
-                        embedded_graphics::prelude::Point::new(
-                            self.rect.x,
-                            rect.y - styles.ui.padding_y,
-                        ),
-                        Size::new(self.rect.w, rect.h + styles.ui.padding_y as u32 * 2),
-                    ),
-                    Size::new_equal(rect.h + styles.ui.padding_y as u32 * 2),
-                )
-                .into_styled(PrimitiveStyle::with_fill(
+                let union_rect = left.union(&right);
+                let bg_rect = Rect::new(
+                    self.rect.x,
+                    union_rect.y - styles.ui.padding_y,
+                    self.rect.w,
+                    union_rect.h + styles.ui.padding_y as u32 * 2,
+                );
+                crate::display::fill_rounded_rect(
+                    &mut pixmap,
+                    bg_rect,
+                    union_rect.h + styles.ui.padding_y as u32 * 2,
                     styles.ui.highlight_color.with_a(0x40),
-                ))
-                .draw(display)?;
+                );
             }
 
-            // Highlight
+            // Highlight foreground
             let rect = if self.focused { right } else { left };
-            RoundedRectangle::with_equal_corners(
-                Rectangle::new(
-                    embedded_graphics::prelude::Point::new(
-                        rect.x - styles.ui.padding_x,
-                        rect.y - styles.ui.padding_y,
-                    ),
-                    Size::new(
-                        rect.w + styles.ui.padding_x as u32 * 2,
-                        rect.h + styles.ui.padding_y as u32 * 2,
-                    ),
-                ),
-                Size::new_equal(rect.h + styles.ui.padding_y as u32 * 2),
-            )
-            .into_styled(PrimitiveStyle::with_fill(styles.ui.highlight_color))
-            .draw(display)?;
+            let highlight_rect = Rect::new(
+                rect.x - styles.ui.padding_x,
+                rect.y - styles.ui.padding_y,
+                rect.w + styles.ui.padding_x as u32 * 2,
+                rect.h + styles.ui.padding_y as u32 * 2,
+            );
+            crate::display::fill_rounded_rect(
+                &mut pixmap,
+                highlight_rect,
+                rect.h + styles.ui.padding_y as u32 * 2,
+                styles.ui.highlight_color,
+            );
 
             for (i, left) in self.left.iter_mut().enumerate() {
                 left.set_should_draw();
@@ -258,47 +252,43 @@ impl View for SettingsList {
             let left_rect = left.bounding_box(styles);
             let right_rect = right.bounding_box(styles);
 
-            // Highlight Background
+            // Highlight Background (semi-transparent)
             if right_rect.w != 0 && right_rect.h != 0 {
-                let rect = left_rect.union(&right_rect);
+                let union_rect = left_rect.union(&right_rect);
                 display.load(Rect::new(
-                    rect.x - styles.ui.padding_x,
-                    rect.y - styles.ui.padding_y,
-                    rect.w + styles.ui.padding_x as u32 * 2,
-                    rect.h + styles.ui.padding_y as u32 * 2,
+                    union_rect.x - styles.ui.padding_x,
+                    union_rect.y - styles.ui.padding_y,
+                    union_rect.w + styles.ui.padding_x as u32 * 2,
+                    union_rect.h + styles.ui.padding_y as u32 * 2,
                 ))?;
-                RoundedRectangle::with_equal_corners(
-                    Rectangle::new(
-                        embedded_graphics::prelude::Point::new(
-                            self.rect.x,
-                            rect.y - styles.ui.padding_y,
-                        ),
-                        Size::new(self.rect.w, rect.h + styles.ui.padding_y as u32 * 2),
-                    ),
-                    Size::new_equal(rect.h),
-                )
-                .into_styled(PrimitiveStyle::with_fill(
+
+                let bg_rect = Rect::new(
+                    self.rect.x,
+                    union_rect.y - styles.ui.padding_y,
+                    self.rect.w,
+                    union_rect.h + styles.ui.padding_y as u32 * 2,
+                );
+                crate::display::fill_rounded_rect(
+                    &mut display.pixmap_mut(),
+                    bg_rect,
+                    union_rect.h,
                     styles.ui.highlight_color.with_a(0x40),
-                ))
-                .draw(display)?;
+                );
             }
 
-            // Highlight
-            RoundedRectangle::with_equal_corners(
-                Rectangle::new(
-                    embedded_graphics::prelude::Point::new(
-                        right_rect.x - styles.ui.padding_x,
-                        right_rect.y - styles.ui.padding_y,
-                    ),
-                    Size::new(
-                        right_rect.w + styles.ui.padding_x as u32 * 2,
-                        right_rect.h + styles.ui.padding_y as u32 * 2,
-                    ),
-                ),
-                Size::new_equal(right_rect.h),
-            )
-            .into_styled(PrimitiveStyle::with_fill(styles.ui.highlight_color))
-            .draw(display)?;
+            // Highlight foreground
+            let highlight_rect = Rect::new(
+                right_rect.x - styles.ui.padding_x,
+                right_rect.y - styles.ui.padding_y,
+                right_rect.w + styles.ui.padding_x as u32 * 2,
+                right_rect.h + styles.ui.padding_y as u32 * 2,
+            );
+            crate::display::fill_rounded_rect(
+                &mut display.pixmap_mut(),
+                highlight_rect,
+                right_rect.h,
+                styles.ui.highlight_color,
+            );
 
             left.draw(display, styles)?;
             right.draw(display, styles)?;

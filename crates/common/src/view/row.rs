@@ -127,15 +127,12 @@ where
     ) -> Result<bool> {
         self.layout(styles);
 
-        let mut drawn = false;
-
         display.load(self.bounding_box(styles))?;
         for entry in &mut self.children.iter_mut() {
             entry.draw(display, styles)?;
         }
-        drawn = true;
 
-        Ok(drawn)
+        Ok(true)
     }
 
     fn should_draw(&self) -> bool {

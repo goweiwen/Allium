@@ -13,7 +13,6 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::{ButtonHint, ButtonHints, Label, SearchView, View};
-use embedded_graphics::prelude::*;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
@@ -299,8 +298,8 @@ impl View for SearchResultsView {
         if self.button_hints.should_draw() {
             display.load(Rect::new(
                 0,
-                display.size().height as i32 - 48,
-                display.size().width,
+                display.size().h as i32 - 48,
+                display.size().w,
                 48,
             ))?;
             self.button_hints.set_should_draw();

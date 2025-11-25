@@ -72,7 +72,7 @@ impl GuideSelector {
 
         let button_hints_rect = button_hints.bounding_box(&styles);
         let list_rect = Rect::new(
-            rect.x + styles.ui.margin_x as i32,
+            rect.x + styles.ui.margin_x,
             rect.y,
             rect.w - (styles.ui.margin_x * 2) as u32,
             button_hints_rect.y as u32 - rect.y as u32,

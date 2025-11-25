@@ -1,7 +1,6 @@
 //! Font rendering (ttf and otf) with tiny-skia.
 
 use std::f32;
-use std::fmt;
 use std::vec::Vec;
 
 use rusttype::Font;
@@ -89,7 +88,7 @@ impl FontTextStyle {
         }
     }
 
-    fn draw_background(&self, width: u32, position: Point, pixmap: &mut PixmapMut) {
+    fn draw_background(&self, width: u32, position: Point, pixmap: &mut PixmapMut<'_>) {
         if width == 0 {
             return;
         }
@@ -105,7 +104,7 @@ impl FontTextStyle {
         }
     }
 
-    fn draw_strikethrough(&self, width: u32, position: Point, pixmap: &mut PixmapMut) {
+    fn draw_strikethrough(&self, width: u32, position: Point, pixmap: &mut PixmapMut<'_>) {
         if let Some(strikethrough_color) = self.resolve_decoration_color(self.strikethrough_color) {
             let rect = crate::geom::Rect {
                 x: position.x,
@@ -117,7 +116,7 @@ impl FontTextStyle {
         }
     }
 
-    fn draw_underline(&self, width: u32, position: Point, pixmap: &mut PixmapMut) {
+    fn draw_underline(&self, width: u32, position: Point, pixmap: &mut PixmapMut<'_>) {
         if let Some(underline_color) = self.resolve_decoration_color(self.underline_color) {
             let line_height = self.font_size / 12;
             let rect = crate::geom::Rect {
@@ -131,7 +130,7 @@ impl FontTextStyle {
     }
 
     /// Draw text to a pixmap
-    pub fn draw(&self, pixmap: &mut PixmapMut, text: &str, position: Point) -> Point {
+    pub fn draw(&self, pixmap: &mut PixmapMut<'_>, text: &str, position: Point) -> Point {
         let scale = rusttype::Scale::uniform(self.font_size as f32);
 
         let v_metrics = self.font.v_metrics(scale);
@@ -183,40 +182,40 @@ impl FontTextStyle {
 
         // Draw stroke first - render the glyph multiple times at different offsets
         // Skip if stroke color is transparent (alpha == 0)
-        if let Some(stroke_color) = self.stroke_color {
-            if self.stroke_width > 0 && stroke_color.a() > 0 {
-                // Draw the glyph at each offset position within stroke_width
-                for dx in -(self.stroke_width as i32)..=(self.stroke_width as i32) {
-                    for dy in -(self.stroke_width as i32)..=(self.stroke_width as i32) {
-                        // Skip the center (0,0) as that's where the actual text will be
-                        if dx == 0 && dy == 0 {
-                            continue;
-                        }
+        if let Some(stroke_color) = self.stroke_color
+            && self.stroke_width > 0
+            && stroke_color.a() > 0
+        {
+            // Draw the glyph at each offset position within stroke_width
+            for dx in -(self.stroke_width as i32)..=(self.stroke_width as i32) {
+                for dy in -(self.stroke_width as i32)..=(self.stroke_width as i32) {
+                    // Skip the center (0,0) as that's where the actual text will be
+                    if dx == 0 && dy == 0 {
+                        continue;
+                    }
 
-                        for g in glyphs.iter() {
-                            if let Some(bb) = g.pixel_bounding_box() {
-                                g.draw(|off_x, off_y, v| {
-                                    let off_x = off_x as i32 + bb.min.x + dx;
-                                    let off_y = off_y as i32 + bb.min.y + dy;
-                                    // There's still a possibility that the glyph clips the boundaries of the bitmap
-                                    if off_x >= 0 && off_x < width && off_y >= 0 && off_y < height {
-                                        let stroke_a = (v * stroke_color.a() as f32) as u8;
-                                        if stroke_a > 0 {
-                                            let idx =
-                                                off_y as usize * buffer_width + off_x as usize;
-                                            let existing = buffer[idx];
-                                            // Take max alpha since we're drawing the same color
-                                            let max_a = existing.a().max(stroke_a);
-                                            buffer[idx] = Color::rgba(
-                                                stroke_color.r(),
-                                                stroke_color.g(),
-                                                stroke_color.b(),
-                                                max_a,
-                                            );
-                                        }
+                    for g in glyphs.iter() {
+                        if let Some(bb) = g.pixel_bounding_box() {
+                            g.draw(|off_x, off_y, v| {
+                                let off_x = off_x as i32 + bb.min.x + dx;
+                                let off_y = off_y as i32 + bb.min.y + dy;
+                                // There's still a possibility that the glyph clips the boundaries of the bitmap
+                                if off_x >= 0 && off_x < width && off_y >= 0 && off_y < height {
+                                    let stroke_a = (v * stroke_color.a() as f32) as u8;
+                                    if stroke_a > 0 {
+                                        let idx = off_y as usize * buffer_width + off_x as usize;
+                                        let existing = buffer[idx];
+                                        // Take max alpha since we're drawing the same color
+                                        let max_a = existing.a().max(stroke_a);
+                                        buffer[idx] = Color::rgba(
+                                            stroke_color.r(),
+                                            stroke_color.g(),
+                                            stroke_color.b(),
+                                            max_a,
+                                        );
                                     }
-                                });
-                            }
+                                }
+                            });
                         }
                     }
                 }
@@ -297,10 +296,10 @@ impl FontTextStyle {
                         let pixmap_idx = (py * pixmap_width + px) as usize;
 
                         // Alpha blend with existing pixel
-                        let existing: Color = pixmap.pixels()[pixmap_idx].into();
+                        let pixels = pixmap.pixels_mut();
+                        let existing: Color = pixels[pixmap_idx].into();
                         let blended = blend_colors(color, existing);
-
-                        pixmap.pixels_mut()[pixmap_idx] = blended.into();
+                        pixels[pixmap_idx] = blended.into();
                     }
                 }
             }
@@ -313,7 +312,12 @@ impl FontTextStyle {
     }
 
     /// Draw whitespace (for decorations without text)
-    pub fn draw_whitespace(&self, pixmap: &mut PixmapMut, width: u32, position: Point) -> Point {
+    pub fn draw_whitespace(
+        &self,
+        pixmap: &mut PixmapMut<'_>,
+        width: u32,
+        position: Point,
+    ) -> Point {
         self.draw_background(width, position, pixmap);
         self.draw_strikethrough(width, position, pixmap);
         self.draw_underline(width, position, pixmap);

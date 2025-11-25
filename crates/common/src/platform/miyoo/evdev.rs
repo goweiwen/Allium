@@ -47,7 +47,7 @@ impl EvdevKeys {
             events: Device::open("/dev/input/event0")
                 .unwrap()
                 .into_event_stream()?,
-            lid_switch_poller: DefaultPlatform::has_lid().then(|| LidSwitchPoller::new()),
+            lid_switch_poller: DefaultPlatform::has_lid().then(LidSwitchPoller::new),
         })
     }
 
@@ -64,21 +64,18 @@ impl EvdevKeys {
                 continue;
             };
             let event = result.unwrap();
-            match event.event_type() {
-                EventType::KEY => {
-                    let key = event.code();
-                    let key: Key = key.into();
-                    if event.timestamp().elapsed().unwrap() > MAXIMUM_FRAME_TIME {
-                        continue;
-                    }
-                    return match event.value() {
-                        0 => KeyEvent::Released(key),
-                        1 => KeyEvent::Pressed(key),
-                        2 => KeyEvent::Autorepeat(key),
-                        _ => unreachable!(),
-                    };
+            if event.event_type() == EventType::KEY {
+                let key = event.code();
+                let key: Key = key.into();
+                if event.timestamp().elapsed().unwrap() > MAXIMUM_FRAME_TIME {
+                    continue;
                 }
-                _ => {}
+                return match event.value() {
+                    0 => KeyEvent::Released(key),
+                    1 => KeyEvent::Pressed(key),
+                    2 => KeyEvent::Autorepeat(key),
+                    _ => unreachable!(),
+                };
             }
         }
     }
@@ -114,5 +111,5 @@ fn read_is_lid_open() -> Result<bool> {
         .expect("Failed to open /sys/devices/soc0/soc/soc:hall-mh248/hallvalue");
     let mut buffer = [0u8; 2];
     file.read_exact(&mut buffer)?;
-    Ok(buffer[0] == '1' as u8)
+    Ok(buffer[0] == b'1')
 }

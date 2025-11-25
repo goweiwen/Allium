@@ -7,7 +7,6 @@ use common::geom;
 use common::locale::{Locale, LocaleSettings};
 use common::resources::Resources;
 use common::view::View;
-use embedded_graphics::prelude::*;
 use log::{trace, warn};
 
 use common::database::Database;
@@ -38,7 +37,7 @@ impl ActivityTracker<DefaultPlatform> {
         res.insert(Into::<geom::Size>::into(display.size()));
         let res = Resources::new(res);
 
-        let view = App::new(display.bounding_box().into(), res.clone(), battery)?;
+        let view = App::new(display.bounding_box(), res.clone(), battery)?;
 
         Ok(ActivityTracker {
             platform,
@@ -102,7 +101,7 @@ impl ActivityTracker<DefaultPlatform> {
             }
             Command::Redraw => {
                 trace!("redrawing");
-                self.display.load(self.display.bounding_box().into())?;
+                self.display.load(self.display.bounding_box())?;
                 self.view.set_should_draw();
             }
             command => {

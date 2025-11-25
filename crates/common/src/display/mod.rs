@@ -4,9 +4,7 @@ pub mod image;
 pub mod settings;
 
 use anyhow::Result;
-use tiny_skia::{
-    BlendMode, FillRule, Paint, Path, PathBuilder, Pixmap, PixmapMut, PixmapRef, Transform,
-};
+use tiny_skia::{BlendMode, FillRule, Paint, Path, PathBuilder, PixmapMut, PixmapRef, Transform};
 
 use crate::display::color::Color;
 use crate::geom::{Point, Rect, Size};
@@ -23,16 +21,28 @@ pub trait Display: Sized {
         Size::new(self.width(), self.height())
     }
 
+    /// Get the bounding box of the display (entire screen area)
+    fn bounding_box(&self) -> Rect {
+        Rect::new(0, 0, self.width(), self.height())
+    }
+
     /// Get a reference to the underlying pixmap
-    fn pixmap(&self) -> PixmapRef;
+    fn pixmap(&self) -> PixmapRef<'_>;
 
     /// Get a mutable reference to the underlying pixmap
-    fn pixmap_mut(&mut self) -> PixmapMut;
+    fn pixmap_mut(&mut self) -> PixmapMut<'_>;
 
     /// Apply a function to all pixels
     fn map_pixels<F>(&mut self, f: F) -> Result<()>
     where
         F: FnMut(Color) -> Color;
+
+    /// Clear the display with a solid color
+    fn clear(&mut self, color: Color) -> Result<()> {
+        let rect = self.bounding_box();
+        fill_rect(&mut self.pixmap_mut(), rect, color);
+        Ok(())
+    }
 
     /// Flush any pending changes to the display
     fn flush(&mut self) -> Result<()> {
@@ -57,7 +67,7 @@ pub trait Display: Sized {
 // Primitive drawing helpers
 
 /// Fill a rectangle on the pixmap
-pub fn fill_rect(pixmap: &mut PixmapMut, rect: Rect, color: Color) {
+pub fn fill_rect(pixmap: &mut PixmapMut<'_>, rect: Rect, color: Color) {
     let paint = Paint {
         shader: tiny_skia::Shader::SolidColor(color.into()),
         blend_mode: BlendMode::SourceOver,
@@ -65,12 +75,10 @@ pub fn fill_rect(pixmap: &mut PixmapMut, rect: Rect, color: Color) {
         ..Default::default()
     };
 
-    if let Some(path) = PathBuilder::from_rect(tiny_skia::Rect::from_xywh(
-        rect.x as f32,
-        rect.y as f32,
-        rect.w as f32,
-        rect.h as f32,
-    )) {
+    if let Some(ts_rect) =
+        tiny_skia::Rect::from_xywh(rect.x as f32, rect.y as f32, rect.w as f32, rect.h as f32)
+    {
+        let path = PathBuilder::from_rect(ts_rect);
         pixmap.fill_path(
             &path,
             &paint,
@@ -82,7 +90,7 @@ pub fn fill_rect(pixmap: &mut PixmapMut, rect: Rect, color: Color) {
 }
 
 /// Fill a rounded rectangle on the pixmap
-pub fn fill_rounded_rect(pixmap: &mut PixmapMut, rect: Rect, radius: u32, color: Color) {
+pub fn fill_rounded_rect(pixmap: &mut PixmapMut<'_>, rect: Rect, radius: u32, color: Color) {
     let paint = Paint {
         shader: tiny_skia::Shader::SolidColor(color.into()),
         blend_mode: BlendMode::SourceOver,
@@ -102,7 +110,7 @@ pub fn fill_rounded_rect(pixmap: &mut PixmapMut, rect: Rect, radius: u32, color:
 }
 
 /// Fill a circle on the pixmap
-pub fn fill_circle(pixmap: &mut PixmapMut, center: Point, radius: u32, color: Color) {
+pub fn fill_circle(pixmap: &mut PixmapMut<'_>, center: Point, radius: u32, color: Color) {
     let paint = Paint {
         shader: tiny_skia::Shader::SolidColor(color.into()),
         blend_mode: BlendMode::SourceOver,
@@ -122,12 +130,16 @@ pub fn fill_circle(pixmap: &mut PixmapMut, center: Point, radius: u32, color: Co
 }
 
 /// Build a path for a rounded rectangle
-fn build_rounded_rect_path(rect: Rect, radius: u32) -> Option<Path> {
+pub fn build_rounded_rect_path(rect: Rect, radius: u32) -> Option<Path> {
     let x = rect.x as f32;
     let y = rect.y as f32;
     let w = rect.w as f32;
     let h = rect.h as f32;
     let r = radius.min(rect.w / 2).min(rect.h / 2) as f32;
+
+    // Bezier control point offset for 90° arc: 4/3 * tan(π/8)
+    const K: f32 = 0.552_284_8;
+    let k = r * K;
 
     let mut pb = PathBuilder::new();
 
@@ -138,25 +150,25 @@ fn build_rounded_rect_path(rect: Rect, radius: u32) -> Option<Path> {
     pb.line_to(x + w - r, y);
 
     // Top-right corner
-    pb.quad_to(x + w, y, x + w, y + r);
+    pb.cubic_to(x + w - r + k, y, x + w, y + r - k, x + w, y + r);
 
     // Right edge
     pb.line_to(x + w, y + h - r);
 
     // Bottom-right corner
-    pb.quad_to(x + w, y + h, x + w - r, y + h);
+    pb.cubic_to(x + w, y + h - r + k, x + w - r + k, y + h, x + w - r, y + h);
 
     // Bottom edge
     pb.line_to(x + r, y + h);
 
     // Bottom-left corner
-    pb.quad_to(x, y + h, x, y + h - r);
+    pb.cubic_to(x + r - k, y + h, x, y + h - r + k, x, y + h - r);
 
     // Left edge
     pb.line_to(x, y + r);
 
     // Top-left corner
-    pb.quad_to(x, y, x + r, y);
+    pb.cubic_to(x, y + r - k, x + r - k, y, x + r, y);
 
     pb.close();
     pb.finish()

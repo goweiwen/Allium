@@ -3,17 +3,13 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use embedded_graphics::Drawable;
-use embedded_graphics::image::{Image, ImageRaw};
-use embedded_graphics::prelude::Size;
-use embedded_graphics::primitives::{
-    CornerRadii, Primitive, PrimitiveStyleBuilder, RoundedRectangle, Triangle,
-};
 use image::RgbaImage;
 use log::debug;
+use tiny_skia::{BlendMode, FillRule, Paint, PathBuilder, Transform};
 use tokio::sync::mpsc::Sender;
 
 use crate::constants::ALLIUM_THEMES_DIR;
+use crate::display::Display;
 use crate::display::color::Color;
 use crate::geom::{Point, Rect};
 use crate::platform::{DefaultPlatform, KeyEvent, Platform};
@@ -260,10 +256,59 @@ impl BatteryIcon {
                 let icon_width = image_to_draw.width() as i32;
                 let draw_point = Point::new(self.point.x - icon_width, self.point.y);
 
-                let raw_image: ImageRaw<'_, Color> =
-                    ImageRaw::new(image_to_draw, image_to_draw.width());
-                let image = Image::new(&raw_image, draw_point.into());
-                image.draw(display)?;
+                // Draw image pixels directly to pixmap
+                let mut pixmap = display.pixmap_mut();
+                let pixmap_width = pixmap.width() as i32;
+                let pixmap_height = pixmap.height() as i32;
+
+                for y in 0..image_to_draw.height() {
+                    for x in 0..image_to_draw.width() {
+                        let px = draw_point.x + x as i32;
+                        let py = draw_point.y + y as i32;
+
+                        if px >= 0 && px < pixmap_width && py >= 0 && py < pixmap_height {
+                            let pixel = image_to_draw.get_pixel(x, y);
+                            let src = Color::rgba(pixel[0], pixel[1], pixel[2], pixel[3]);
+
+                            if src.a() > 0 {
+                                let pixmap_idx = (py * pixmap_width + px) as usize;
+
+                                if src.a() == 255 {
+                                    pixmap.pixels_mut()[pixmap_idx] = src.into();
+                                } else {
+                                    let dst: Color = pixmap.pixels_mut()[pixmap_idx].into();
+
+                                    let src_a = src.a() as u16;
+                                    let dst_a = dst.a() as u16;
+                                    let inv_src_a = 255 - src_a;
+
+                                    let out_a = src_a + (dst_a * inv_src_a) / 255;
+
+                                    if out_a == 0 {
+                                        pixmap.pixels_mut()[pixmap_idx] =
+                                            Color::rgba(0, 0, 0, 0).into();
+                                    } else {
+                                        let out_r = ((src.r() as u16 * src_a
+                                            + dst.r() as u16 * dst_a * inv_src_a / 255)
+                                            / out_a)
+                                            as u8;
+                                        let out_g = ((src.g() as u16 * src_a
+                                            + dst.g() as u16 * dst_a * inv_src_a / 255)
+                                            / out_a)
+                                            as u8;
+                                        let out_b = ((src.b() as u16 * src_a
+                                            + dst.b() as u16 * dst_a * inv_src_a / 255)
+                                            / out_a)
+                                            as u8;
+
+                                        pixmap.pixels_mut()[pixmap_idx] =
+                                            Color::rgba(out_r, out_g, out_b, out_a as u8).into();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
             BatteryIconVariant::Vector => {
                 let layout = VectorBatteryLayout::calculate(
@@ -276,37 +321,42 @@ impl BatteryIcon {
                 let stroke_color = styles.status_bar.text_color;
                 let fill_color = styles.status_bar.text_color;
 
+                let mut pixmap = display.pixmap_mut();
+
                 // Draw battery body (outline only)
-                RoundedRectangle::new(
-                    layout.body.into(),
-                    CornerRadii::new(Size::new_equal(layout.body_radius)),
-                )
-                .into_styled(
-                    PrimitiveStyleBuilder::new()
-                        .stroke_color(stroke_color)
-                        .stroke_alignment(embedded_graphics::primitives::StrokeAlignment::Inside)
-                        .stroke_width(layout.stroke_width)
-                        .build(),
-                )
-                .draw(display)?;
+                if let Some(path) =
+                    crate::display::build_rounded_rect_path(layout.body, layout.body_radius)
+                {
+                    let paint = Paint {
+                        shader: tiny_skia::Shader::SolidColor(stroke_color.into()),
+                        blend_mode: BlendMode::SourceOver,
+                        anti_alias: true,
+                        ..Default::default()
+                    };
+                    let stroke = tiny_skia::Stroke {
+                        width: layout.stroke_width as f32,
+                        ..Default::default()
+                    };
+                    pixmap.stroke_path(&path, &paint, &stroke, Transform::identity(), None);
+                }
 
                 // Draw battery fill
                 if let Some(fill_rect) = layout.fill {
-                    RoundedRectangle::new(
-                        fill_rect.into(),
-                        CornerRadii::new(Size::new_equal(layout.inner_radius)),
-                    )
-                    .into_styled(PrimitiveStyleBuilder::new().fill_color(fill_color).build())
-                    .draw(display)?;
+                    crate::display::fill_rounded_rect(
+                        &mut pixmap,
+                        fill_rect,
+                        layout.inner_radius,
+                        fill_color,
+                    );
                 }
 
                 // Draw battery cap
-                RoundedRectangle::new(
-                    layout.cap.into(),
-                    CornerRadii::new(Size::new_equal(layout.inner_radius)),
-                )
-                .into_styled(PrimitiveStyleBuilder::new().fill_color(fill_color).build())
-                .draw(display)?;
+                crate::display::fill_rounded_rect(
+                    &mut pixmap,
+                    layout.cap,
+                    layout.inner_radius,
+                    fill_color,
+                );
 
                 // Draw charging indicator (lightning bolt)
                 if let Some(pos) = layout.charging_pos {
@@ -341,15 +391,46 @@ impl BatteryIcon {
         let p5 = Point::new(pos.x - (3.0 * scale) as i32, pos.y + (18.0 * scale) as i32);
         let p6 = Point::new(pos.x - (9.0 * scale) as i32, pos.y + (18.0 * scale) as i32);
 
-        let fill_style = PrimitiveStyleBuilder::new().fill_color(fill_color).build();
+        let mut pixmap = display.pixmap_mut();
 
-        Triangle::new(p1.into(), p2.into(), p3.into())
-            .into_styled(fill_style)
-            .draw(display)?;
+        let paint = Paint {
+            shader: tiny_skia::Shader::SolidColor(fill_color.into()),
+            blend_mode: BlendMode::SourceOver,
+            anti_alias: true,
+            ..Default::default()
+        };
 
-        Triangle::new(p4.into(), p5.into(), p6.into())
-            .into_styled(fill_style)
-            .draw(display)?;
+        // Draw upper triangle
+        let mut pb = PathBuilder::new();
+        pb.move_to(p1.x as f32, p1.y as f32);
+        pb.line_to(p2.x as f32, p2.y as f32);
+        pb.line_to(p3.x as f32, p3.y as f32);
+        pb.close();
+        if let Some(path) = pb.finish() {
+            pixmap.fill_path(
+                &path,
+                &paint,
+                FillRule::Winding,
+                Transform::identity(),
+                None,
+            );
+        }
+
+        // Draw lower triangle
+        let mut pb = PathBuilder::new();
+        pb.move_to(p4.x as f32, p4.y as f32);
+        pb.line_to(p5.x as f32, p5.y as f32);
+        pb.line_to(p6.x as f32, p6.y as f32);
+        pb.close();
+        if let Some(path) = pb.finish() {
+            pixmap.fill_path(
+                &path,
+                &paint,
+                FillRule::Winding,
+                Transform::identity(),
+                None,
+            );
+        }
 
         Ok(())
     }

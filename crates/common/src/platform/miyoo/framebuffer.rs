@@ -35,14 +35,6 @@ impl FramebufferDisplay {
         );
         let bytes_per_pixel = iface.var_screen_info.bits_per_pixel / 8;
         let location = (yoffset * width as usize + xoffset) * bytes_per_pixel as usize;
-        let buffer_size = (width * height) as usize * bytes_per_pixel as usize;
-
-        // Convert BGRA framebuffer to RGBA pixmap (and undo 180° rotation)
-        let mut display = FramebufferDisplay {
-            pixmap,
-            iface,
-            saved: Vec::new(),
-        };
 
         // Copy initial background (need to convert from BGRA and unrotate)
         for y in 0..height {
@@ -181,7 +173,7 @@ impl Display for FramebufferDisplay {
     }
 
     fn load(&mut self, mut rect: Rect) -> Result<()> {
-        let Some(ref saved) = self.saved.last() else {
+        let Some(saved) = self.saved.last() else {
             bail!("No saved image");
         };
 

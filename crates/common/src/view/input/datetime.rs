@@ -3,16 +3,13 @@ use std::collections::VecDeque;
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{Days, Duration, Months, NaiveDateTime};
-use embedded_graphics::Drawable;
-use embedded_graphics::prelude::Dimensions;
-use embedded_graphics::text::Text;
 use log::trace;
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
 use crate::command::Value;
-use crate::display::color::Color;
-use crate::display::font::{FontTextStyle, FontTextStyleBuilder};
+use crate::display::Display;
+use crate::display::font::FontTextStyleBuilder;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use crate::stylesheet::{Stylesheet, StylesheetColor};
@@ -121,20 +118,19 @@ impl View for DateTime {
         match self.alignment {
             Alignment::Right => {
                 for (i, field) in fields.iter().enumerate().rev() {
-                    let text = Text::with_alignment(
-                        field,
-                        Point::new(x, self.point.y).into(),
-                        if edit_index == Some(i) {
-                            selected_style.clone()
-                        } else if self.edit_state.is_some() {
-                            focused_style.clone()
-                        } else {
-                            text_style.clone()
-                        },
-                        Alignment::Right.into(),
-                    );
-                    text.draw(display)?;
-                    x = text.bounding_box().top_left.x - 1;
+                    let field_style = if edit_index == Some(i) {
+                        &selected_style
+                    } else if self.edit_state.is_some() {
+                        &focused_style
+                    } else {
+                        &text_style
+                    };
+
+                    let field_size = field_style.measure(field);
+                    let field_pos = Point::new(x - field_size.w as i32, self.point.y);
+                    field_style.draw(&mut display.pixmap_mut(), field, field_pos);
+
+                    x = field_pos.x - 1;
                 }
             }
             Alignment::Center => unimplemented!("alignment should be left or right"),
@@ -286,40 +282,21 @@ impl View for DateTime {
     }
 
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
-        let text_style: FontTextStyle<Color> = FontTextStyleBuilder::new(styles.ui.ui_font.font())
+        let text_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
             .font_fallback(styles.cjk_font.font())
             .font_size(styles.ui.ui_font.size)
             .draw_background()
             .build();
 
-        let mut x = self.point.x - 30 - styles.ui.margin_y;
+        // Measure the full datetime string to calculate bounding box
         let datetime_str = self.value.format("%Y-%m-%d %H:%M:%S").to_string();
-        let mut datetime_str = datetime_str.chars().map(|c| c.to_string()).rev();
-        for _ in 0..19 {
-            let c = datetime_str.next().unwrap();
-            let text = Text::with_alignment(
-                &c,
-                Point::new(x, self.point.y).into(),
-                text_style.clone(),
-                Alignment::Right.into(),
-            );
-            x = text.bounding_box().top_left.x - 1;
-        }
-
-        let rect: Rect = Text::with_alignment(
-            "#",
-            Point::new(x, self.point.y).into(),
-            text_style,
-            Alignment::Right.into(),
-        )
-        .bounding_box()
-        .into();
+        let full_size = text_style.measure(&datetime_str);
 
         Rect::new(
-            rect.x,
+            self.point.x - full_size.w as i32 - 30 - styles.ui.margin_y,
             self.point.y,
-            (self.point.x - rect.x) as u32,
-            rect.h + 1,
+            full_size.w + 30 + styles.ui.margin_y as u32,
+            full_size.h + 1,
         )
     }
 

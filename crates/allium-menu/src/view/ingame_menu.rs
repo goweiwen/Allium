@@ -473,21 +473,20 @@ where
             return Ok(true);
         }
 
-        if let Some(selector) = &mut self.guide_selector {
-            if selector
+        if let Some(selector) = &mut self.guide_selector
+            && selector
                 .handle_key_event(event, commands.clone(), bubble)
                 .await?
-            {
-                bubble.retain(|cmd| match cmd {
-                    Command::CloseView => {
-                        self.guide_selector = None;
-                        self.set_should_draw();
-                        false
-                    }
-                    _ => true,
-                });
-                return Ok(true);
-            }
+        {
+            bubble.retain(|cmd| match cmd {
+                Command::CloseView => {
+                    self.guide_selector = None;
+                    self.set_should_draw();
+                    false
+                }
+                _ => true,
+            });
+            return Ok(true);
         }
 
         let selected = self.menu.selected();

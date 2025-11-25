@@ -2,12 +2,6 @@ use std::collections::VecDeque;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use embedded_graphics::{
-    Drawable,
-    prelude::{Dimensions, OriginDimensions, Size},
-    primitives::{Primitive, PrimitiveStyleBuilder, Rectangle, RoundedRectangle},
-    text::Text,
-};
 use strum::{EnumCount, EnumIter, FromRepr, IntoEnumIterator};
 use tokio::sync::mpsc::Sender;
 
@@ -111,40 +105,30 @@ impl View for Keyboard {
                 .background_color(styles.ui.highlight_color)
                 .build();
 
-            let fill_style = PrimitiveStyleBuilder::new()
-                .fill_color(styles.ui.background_color)
-                .stroke_width(1)
-                .build();
-
-            let selected_btn_style = PrimitiveStyleBuilder::new()
-                .fill_color(styles.ui.highlight_color)
-                .stroke_width(1)
-                .build();
-
             let key_size = styles.ui.ui_font.size;
             let key_padding = 0;
 
+            let display_size = display.size();
+
             let w = key_size as i32 * KEYBOARD_COLUMNS + key_padding * 14;
             let h = key_size as i32 * KEYBOARD_ROWS + key_padding * 5;
-            let x0 = (display.size().width as i32 - w) / 2;
-            let y0 = display.size().height as i32
+            let x0 = (display_size.w as i32 - w) / 2;
+            let y0 = display_size.h as i32
                 - h
                 - ButtonIcon::diameter(styles) as i32
                 - styles.ui.margin_y
                 - styles.ui.margin_y;
 
-            RoundedRectangle::with_equal_corners(
-                Rectangle::new(
-                    Point::new(8, y0 - styles.ui.ui_font.size as i32 - styles.ui.margin_y).into(),
-                    Size::new(
-                        display.size().width - 16,
-                        h as u32 + styles.ui.ui_font.size + 8,
-                    ),
-                ),
-                Size::new_equal(8),
-            )
-            .into_styled(fill_style)
-            .draw(display)?;
+            let mut pixmap = display.pixmap_mut();
+
+            // Draw keyboard background
+            let bg_rect = Rect::new(
+                8,
+                y0 - styles.ui.ui_font.size as i32 - styles.ui.margin_y,
+                display_size.w - 16,
+                h as u32 + styles.ui.ui_font.size + 8,
+            );
+            crate::display::fill_rounded_rect(&mut pixmap, bg_rect, 8, styles.ui.background_color);
 
             for (i, key) in KeyboardKey::iter().enumerate().take(KeyboardKey::COUNT - 1) {
                 let i = i as i32;
@@ -153,73 +137,72 @@ impl View for Keyboard {
 
                 let selected =
                     self.cursor.x + self.cursor.y * KEYBOARD_COLUMNS as usize == i as usize;
+
+                // Draw selection highlight
                 if self.cursor.y < 4 && selected {
-                    RoundedRectangle::with_equal_corners(
-                        Rect::new(x0 + x, y0 + y, key_size, key_size).into(),
-                        Size::new(12, 12),
-                    )
-                    .into_styled(selected_btn_style)
-                    .draw(display)?;
+                    let key_rect = Rect::new(x0 + x, y0 + y, key_size, key_size);
+                    crate::display::fill_rounded_rect(
+                        &mut pixmap,
+                        key_rect,
+                        12,
+                        styles.ui.highlight_color,
+                    );
                 }
 
-                Text::with_alignment(
-                    key.key(self.mode),
-                    Point::new(
-                        x0 + x + key_size as i32 / 2,
-                        y0 + y + key_size as i32 / 2 - styles.ui.ui_font.size as i32 / 2,
-                    )
-                    .into(),
-                    if selected {
-                        selected_text_style.clone()
-                    } else {
-                        text_style.clone()
-                    },
-                    Alignment::Center.into(),
-                )
-                .draw(display)?;
+                // Draw key label
+                let key_text = key.key(self.mode);
+                let key_style = if selected {
+                    &selected_text_style
+                } else {
+                    &text_style
+                };
+                let text_size = key_style.measure(key_text);
+                let text_pos = Point::new(
+                    x0 + x + key_size as i32 / 2 - text_size.w as i32 / 2,
+                    y0 + y + key_size as i32 / 2 - styles.ui.ui_font.size as i32 / 2,
+                );
+                key_style.draw(&mut pixmap, key_text, text_pos);
             }
 
             // Spacebar
             {
                 let y = 4 * h / KEYBOARD_ROWS;
                 let selected = self.cursor.y == 4;
+
+                // Draw spacebar selection highlight
                 if selected {
-                    RoundedRectangle::with_equal_corners(
-                        Rect::new(x0, y0 + y, w as u32, key_size).into(),
-                        Size::new(12, 12),
-                    )
-                    .into_styled(selected_btn_style)
-                    .draw(display)?;
+                    let spacebar_rect = Rect::new(x0, y0 + y, w as u32, key_size);
+                    crate::display::fill_rounded_rect(
+                        &mut pixmap,
+                        spacebar_rect,
+                        12,
+                        styles.ui.highlight_color,
+                    );
                 }
 
-                Text::with_alignment(
-                    "space",
-                    Point::new(
-                        x0 + w / 2,
-                        y0 + y + key_size as i32 / 2 - styles.ui.ui_font.size as i32 / 2,
-                    )
-                    .into(),
-                    if selected {
-                        selected_text_style
-                    } else {
-                        text_style.clone()
-                    },
-                    Alignment::Center.into(),
-                )
-                .draw(display)?;
+                // Draw spacebar label
+                let spacebar_style = if selected {
+                    &selected_text_style
+                } else {
+                    &text_style
+                };
+                let spacebar_text = "space";
+                let spacebar_text_size = spacebar_style.measure(spacebar_text);
+                let spacebar_text_pos = Point::new(
+                    x0 + w / 2 - spacebar_text_size.w as i32 / 2,
+                    y0 + y + key_size as i32 / 2 - styles.ui.ui_font.size as i32 / 2,
+                );
+                spacebar_style.draw(&mut pixmap, spacebar_text, spacebar_text_pos);
             }
 
-            Text::with_alignment(
-                &masked_value(&self.value, self.is_password),
-                Point::new(
-                    display.size().width as i32 / 2,
-                    y0 - styles.ui.margin_y - styles.ui.ui_font.size as i32,
-                )
-                .into(),
-                text_style,
-                Alignment::Center.into(),
-            )
-            .draw(display)?;
+            // Draw input value
+            let value_text = masked_value(&self.value, self.is_password);
+            let value_text_size = text_style.measure(&value_text);
+            let value_text_pos = Point::new(
+                display_size.w as i32 / 2 - value_text_size.w as i32 / 2,
+                y0 - styles.ui.margin_y - styles.ui.ui_font.size as i32,
+            );
+            text_style.draw(&mut pixmap, &value_text, value_text_pos);
 
             self.dirty = false;
             drawn = true;

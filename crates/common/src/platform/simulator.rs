@@ -6,15 +6,16 @@ use std::time::Duration;
 
 use anyhow::{Result, bail};
 use async_trait::async_trait;
-use image::{ImageBuffer, Rgba};
 use log::{trace, warn};
 use softbuffer::Surface;
 use tiny_skia::{Pixmap, PixmapMut, PixmapRef};
+use tokio::sync::mpsc;
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
 use winit::event::{ElementState, KeyEvent as WinitKeyEvent, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
+use winit::platform::run_on_demand::EventLoopExtRunOnDemand;
 use winit::window::{Window as WinitWindow, WindowId};
 
 use crate::battery::Battery;
@@ -48,18 +49,21 @@ static SCREEN_SCALE: LazyLock<u32> = LazyLock::new(|| {
 pub struct SimulatorPlatform {
     event_loop: EventLoop<()>,
     window: Option<Rc<WinitWindow>>,
-    key_events: Rc<RefCell<Vec<KeyEvent>>>,
+    key_event_rx: mpsc::UnboundedReceiver<KeyEvent>,
+    key_event_tx: mpsc::UnboundedSender<KeyEvent>,
 }
 
 struct SimulatorApp {
     window: Option<Rc<WinitWindow>>,
     surface: Option<Surface<Rc<WinitWindow>, Rc<WinitWindow>>>,
-    key_events: Rc<RefCell<Vec<KeyEvent>>>,
+    key_event_tx: mpsc::UnboundedSender<KeyEvent>,
+    got_event: bool,
 }
 
 impl ApplicationHandler for SimulatorApp {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.window.is_none() {
+            trace!("Creating window in resumed()");
             let window_attrs = WinitWindow::default_attributes()
                 .with_title("Allium Simulator")
                 .with_inner_size(PhysicalSize::new(
@@ -80,6 +84,27 @@ impl ApplicationHandler for SimulatorApp {
 
             self.window = Some(window);
             self.surface = Some(surface);
+            event_loop.exit();
+        }
+    }
+
+    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        // Exit if we received an event
+        if self.got_event {
+            self.got_event = false;
+            event_loop.exit();
+        } else {
+            // Wait for up to 16ms for events, then exit to yield to tokio
+            event_loop.set_control_flow(ControlFlow::WaitUntil(
+                std::time::Instant::now() + Duration::from_millis(16),
+            ));
+        }
+    }
+
+    fn new_events(&mut self, event_loop: &ActiveEventLoop, cause: winit::event::StartCause) {
+        // Exit on timeout to yield to tokio for View::update
+        if matches!(cause, winit::event::StartCause::ResumeTimeReached { .. }) {
+            event_loop.exit();
         }
     }
 
@@ -103,8 +128,10 @@ impl ApplicationHandler for SimulatorApp {
                     },
                 ..
             } => {
+                trace!("KeyboardInput: {:?} {:?}", keycode, state);
                 if keycode == KeyCode::KeyQ && state == ElementState::Pressed {
                     event_loop.exit();
+                    return;
                 }
 
                 let key = Key::from(keycode);
@@ -114,12 +141,12 @@ impl ApplicationHandler for SimulatorApp {
                     (ElementState::Released, _) => KeyEvent::Released(key),
                 };
 
-                self.key_events.borrow_mut().push(key_event);
+                trace!("Sending key event: {:?}", key_event);
+                let _ = self.key_event_tx.send(key_event);
+                self.got_event = true;
             }
             WindowEvent::RedrawRequested => {
-                if let Some(window) = &self.window {
-                    window.request_redraw();
-                }
+                // We manage our own display updates, no action needed
             }
             _ => {}
         }
@@ -134,58 +161,67 @@ impl Platform for SimulatorPlatform {
 
     fn new() -> Result<SimulatorPlatform> {
         let event_loop = EventLoop::new()?;
-        event_loop.set_control_flow(ControlFlow::Poll);
+
+        let (tx, rx) = mpsc::unbounded_channel();
 
         Ok(SimulatorPlatform {
             event_loop,
             window: None,
-            key_events: Rc::new(RefCell::new(Vec::new())),
+            key_event_rx: rx,
+            key_event_tx: tx,
         })
     }
 
     async fn poll(&mut self) -> KeyEvent {
         loop {
-            // Check if we have any queued key events
-            if let Some(event) = self.key_events.borrow_mut().pop() {
+            // Try to receive from channel (non-blocking)
+            if let Ok(event) = self.key_event_rx.try_recv() {
+                trace!("Returning queued event: {:?}", event);
                 return event;
             }
 
-            // Process window events
-            let key_events = Rc::clone(&self.key_events);
+            // Process window events - will wait for keyboard event then return
             let window_ref = self.window.clone();
+            let tx = self.key_event_tx.clone();
 
-            self.event_loop
-                .run_app_on_demand(&mut SimulatorApp {
-                    window: window_ref.clone(),
-                    surface: None,
-                    key_events,
-                })
-                .ok();
+            let mut app = SimulatorApp {
+                window: window_ref,
+                surface: None,
+                key_event_tx: tx,
+                got_event: false,
+            };
 
-            if self.window.is_none() && window_ref.is_some() {
-                self.window = window_ref;
-            }
+            // run_app_on_demand waits for events; about_to_wait exits when we get one
+            self.event_loop.run_app_on_demand(&mut app).ok();
 
             // Check again after processing events
-            if let Some(event) = self.key_events.borrow_mut().pop() {
+            if let Ok(event) = self.key_event_rx.try_recv() {
+                trace!("Returning event after processing: {:?}", event);
                 return event;
             }
 
-            tokio::time::sleep(Duration::from_millis(10)).await;
+            // Yield to tokio briefly
+            tokio::task::yield_now().await;
         }
     }
 
     fn display(&mut self) -> Result<SimulatorWindow> {
+        trace!("display() called");
         // Initialize window if not already done
         if self.window.is_none() {
-            let key_events = Rc::clone(&self.key_events);
-            self.event_loop
-                .run_app_on_demand(&mut SimulatorApp {
-                    window: None,
-                    surface: None,
-                    key_events: key_events.clone(),
-                })
-                .ok();
+            trace!("Window is None, initializing...");
+            let tx = self.key_event_tx.clone();
+            let mut app = SimulatorApp {
+                window: None,
+                surface: None,
+                key_event_tx: tx,
+                got_event: false,
+            };
+            trace!("Running event loop to create window");
+            self.event_loop.run_app_on_demand(&mut app).ok();
+            // Capture the window created by the event loop
+            self.window = app.window.clone();
+            trace!("Window after event loop: {:?}", self.window.is_some());
         }
 
         // Load background image if available
@@ -196,9 +232,11 @@ impl Platform for SimulatorPlatform {
                 Pixmap::new(*SCREEN_WIDTH, *SCREEN_HEIGHT).expect("Failed to create pixmap");
 
             for (x, y, pixel) in img.enumerate_pixels() {
-                let idx = (y * *SCREEN_WIDTH + x) as usize;
-                let color = Color::rgba(pixel[0], pixel[1], pixel[2], pixel[3]);
-                pixmap.pixels_mut()[idx] = color.into();
+                if x < *SCREEN_WIDTH && y < *SCREEN_HEIGHT {
+                    let idx = (y * *SCREEN_WIDTH + x) as usize;
+                    let color = Color::rgba(pixel[0], pixel[1], pixel[2], pixel[3]);
+                    pixmap.pixels_mut()[idx] = color.into();
+                }
             }
             pixmap
         } else {
@@ -302,11 +340,11 @@ impl Display for SimulatorWindow {
         *SCREEN_HEIGHT
     }
 
-    fn pixmap(&self) -> PixmapRef {
+    fn pixmap(&self) -> PixmapRef<'_> {
         self.pixmap.as_ref()
     }
 
-    fn pixmap_mut(&mut self) -> PixmapMut {
+    fn pixmap_mut(&mut self) -> PixmapMut<'_> {
         self.pixmap.as_mut()
     }
 

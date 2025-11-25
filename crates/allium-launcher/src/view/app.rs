@@ -280,8 +280,10 @@ where
 
         #[cfg(feature = "debug-ui-redraw")]
         {
-            use embedded_graphics::prelude::DrawTarget;
-            display.clear(StylesheetColor::Background.to_color(styles).into());
+            let bg_color = StylesheetColor::Background.to_color(styles);
+            let full_rect =
+                common::geom::Rect::new(0, 0, display.size().width, display.size().height);
+            common::display::fill_rect(&mut display.pixmap_mut(), full_rect, bg_color);
         }
 
         let mut drawn = false;

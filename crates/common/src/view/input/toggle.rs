@@ -2,13 +2,11 @@ use std::collections::VecDeque;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use embedded_graphics::Drawable;
-use embedded_graphics::prelude::Size;
-use embedded_graphics::primitives::{Circle, Primitive, PrimitiveStyle, RoundedRectangle};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
 use crate::command::Value;
+use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use crate::stylesheet::Stylesheet;
@@ -53,39 +51,40 @@ impl View for Toggle {
         let w = h * 3 / 2;
         let margin = h as i32 / 6;
 
-        RoundedRectangle::with_equal_corners(
-            Rect::new(
-                self.point.x - (w as i32 * (1 - self.alignment.sign()) / 2),
-                self.point.y,
-                w,
-                h,
-            )
-            .into(),
-            Size::new_equal(h),
-        )
-        .into_styled(PrimitiveStyle::with_fill(match self.value {
+        let mut pixmap = display.pixmap_mut();
+
+        // Draw toggle background
+        let bg_color = match self.value {
             true => styles.ui.highlight_color,
             false => styles.ui.disabled_color,
-        }))
-        .draw(display)?;
+        };
+        let bg_rect = Rect::new(
+            self.point.x - (w as i32 * (1 - self.alignment.sign()) / 2),
+            self.point.y,
+            w,
+            h,
+        );
+        crate::display::fill_rounded_rect(&mut pixmap, bg_rect, h, bg_color);
 
-        Circle::new(
-            Point::new(
-                self.point.x - (w as i32 * (1 - self.alignment.sign()) / 2)
-                    + match self.value {
-                        true => w as i32 - h as i32 + margin,
-                        false => margin,
-                    },
-                self.point.y + margin,
-            )
-            .into(),
-            h - margin as u32 - margin as u32,
-        )
-        .into_styled(PrimitiveStyle::with_fill(match self.value {
-            true => styles.ui.highlight_text_color,
-            false => styles.ui.highlight_text_color,
-        }))
-        .draw(display)?;
+        // Draw toggle circle
+        let circle_x = self.point.x - (w as i32 * (1 - self.alignment.sign()) / 2)
+            + match self.value {
+                true => w as i32 - h as i32 + margin,
+                false => margin,
+            };
+        let circle_y = self.point.y + margin;
+        let circle_diameter = h - margin as u32 - margin as u32;
+        let circle_center = Point::new(
+            circle_x + circle_diameter as i32 / 2,
+            circle_y + circle_diameter as i32 / 2,
+        );
+
+        crate::display::fill_circle(
+            &mut pixmap,
+            circle_center,
+            circle_diameter / 2,
+            styles.ui.highlight_text_color,
+        );
 
         self.dirty = false;
 

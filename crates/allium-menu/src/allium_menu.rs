@@ -13,7 +13,6 @@ use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use common::resources::Resources;
 use common::stylesheet::Stylesheet;
 use common::view::View;
-use embedded_graphics::prelude::*;
 use log::{info, warn};
 use sha2::{Digest, Sha256};
 use type_map::TypeMap;
@@ -37,7 +36,7 @@ impl AlliumMenu<DefaultPlatform> {
     pub async fn new(mut platform: DefaultPlatform) -> Result<Self> {
         let display = platform.display()?;
         let battery = platform.battery()?;
-        let rect = display.bounding_box().into();
+        let rect = display.bounding_box();
 
         let mut res = TypeMap::new();
         res.insert(Database::new()?);
@@ -64,7 +63,7 @@ impl AlliumMenu<DefaultPlatform> {
         self.res.insert(GameInfo::load()?.unwrap_or_default());
 
         // Recreate the view with fresh info
-        let rect = self.display.bounding_box().into();
+        let rect = self.display.bounding_box();
         let battery = self.platform.battery()?;
         self.view = IngameMenu::load_or_new(rect, self.res.clone(), battery, info).await?;
 
@@ -133,18 +132,18 @@ impl AlliumMenu<DefaultPlatform> {
             Command::Exit => {
                 self.view.save()?;
                 self.display.pop();
-                self.display.load(self.display.bounding_box().into())?;
+                self.display.load(self.display.bounding_box())?;
                 self.display.flush()?;
                 self.display.pop();
                 return Ok(true);
             }
             Command::Redraw => {
-                self.display.load(self.display.bounding_box().into())?;
+                self.display.load(self.display.bounding_box())?;
                 self.view.set_should_draw();
             }
             Command::SaveStateScreenshot { path, core, slot } => {
                 if self.display.pop() {
-                    self.display.load(self.display.bounding_box().into())?;
+                    self.display.load(self.display.bounding_box())?;
                     self.display.flush()?;
 
                     let mut hasher = Sha256::new();

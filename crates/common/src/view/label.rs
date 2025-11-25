@@ -5,13 +5,10 @@ use crate::command::Command;
 use crate::geom::{Alignment, Point, Rect};
 use anyhow::Result;
 use async_trait::async_trait;
-use embedded_graphics::Drawable;
-use embedded_graphics::prelude::Dimensions;
-use embedded_graphics::text::Text;
 use log::trace;
 use tokio::sync::mpsc::Sender;
 
-use crate::display::color::Color;
+use crate::display::Display;
 use crate::display::font::FontTextStyleBuilder;
 use crate::platform::{DefaultPlatform, KeyEvent, Platform};
 use crate::stylesheet::{Stylesheet, StylesheetColor};
@@ -116,18 +113,18 @@ where
 
         self.dirty = true;
 
-        let text_style = FontTextStyleBuilder::<Color>::new(styles.ui.ui_font.font())
+        let text_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
             .font_fallback(styles.cjk_font.font())
             .font_size((styles.ui.ui_font.size as f32 * self.font_size) as u32)
             .build();
 
-        let mut text = Text::with_alignment(
-            self.text.as_ref(),
-            self.point.into(),
-            text_style.clone(),
-            self.alignment.into(),
-        );
-        let rect = text.bounding_box().into();
+        let size = text_style.measure(self.text.as_ref());
+        let rect = Rect {
+            x: self.point.x,
+            y: self.point.y,
+            w: size.w,
+            h: size.h,
+        };
         self.rect = Some(rect);
 
         if let Some(width) = self.width {
@@ -140,50 +137,61 @@ where
                     .chain(self.text.as_ref().chars().take(scrolling.offset))
                     .skip(scrolling.offset)
                     .collect::<String>();
-                text.text = &scroll_text;
 
-                while text.bounding_box().size.width > width {
-                    let mut n = text.text.len() - 1;
-                    while !text.text.is_char_boundary(n) {
+                let mut truncated = scroll_text.clone();
+                while text_style.measure(&truncated).w > width && !truncated.is_empty() {
+                    let mut n = truncated.len() - 1;
+                    while !truncated.is_char_boundary(n) {
                         n -= 1;
                     }
-                    text.text = &text.text[..n];
+                    truncated = truncated[..n].to_string();
                 }
-                self.truncated_text = Some(text.text.trim_end().to_string());
+                self.truncated_text = Some(truncated.trim_end().to_string());
             } else {
-                text.text = self.text.as_ref();
+                let ellipsis_width = text_style.measure("...").w;
 
-                let ellipsis_width = Text::with_alignment(
-                    "...",
-                    self.point.into(),
-                    text_style,
-                    self.alignment.into(),
-                )
-                .bounding_box()
-                .size
-                .width;
-
+                let text_width = text_style.measure(self.text.as_ref()).w;
                 let mut truncated = false;
-                if text.bounding_box().size.width > width {
-                    while text.bounding_box().size.width + ellipsis_width > width
-                        && !text.text.is_empty()
+                let text_str = self.text.as_ref();
+
+                if text_width > width {
+                    let mut current = text_str.to_string();
+                    while text_style.measure(&current).w + ellipsis_width > width
+                        && !current.is_empty()
                     {
-                        let mut n = text.text.len() - 1;
-                        while !text.text.is_char_boundary(n) {
+                        let mut n = current.len() - 1;
+                        while !current.is_char_boundary(n) {
                             n -= 1;
                         }
-                        text.text = &text.text[..n];
+                        current = current[..n].to_string();
                         truncated = true;
                     }
-                }
-                if truncated {
-                    self.truncated_text = Some(format!("{}...", text.text.trim_end()));
+                    if truncated {
+                        self.truncated_text = Some(format!("{}...", current.trim_end()));
+                    } else {
+                        self.truncated_text = Some(text_str.to_string());
+                    }
                 } else {
-                    self.truncated_text = Some(text.text.to_string());
+                    self.truncated_text = Some(text_str.to_string());
                 }
             }
         } else {
             self.truncated_text = Some(self.text.as_ref().to_owned());
+        }
+    }
+
+    /// Calculate the drawing position based on alignment
+    fn get_draw_position(&self, text_width: u32) -> Point {
+        match self.alignment {
+            Alignment::Left => self.point,
+            Alignment::Center => Point {
+                x: self.point.x - text_width as i32 / 2,
+                y: self.point.y,
+            },
+            Alignment::Right => Point {
+                x: self.point.x - text_width as i32,
+                y: self.point.y,
+            },
         }
     }
 }
@@ -250,14 +258,10 @@ where
 
         let truncated_text = self.truncated_text.as_ref().unwrap();
         if !truncated_text.is_empty() {
-            let text = Text::with_alignment(
-                truncated_text,
-                self.point.into(),
-                text_style,
-                self.alignment.into(),
-            );
+            let text_width = text_style.measure(truncated_text).w;
+            let draw_pos = self.get_draw_position(text_width);
 
-            text.draw(display)?;
+            text_style.draw(&mut display.pixmap_mut(), truncated_text, draw_pos);
         }
 
         self.dirty = false;
@@ -290,25 +294,31 @@ where
     }
 
     fn bounding_box(&mut self, styles: &Stylesheet) -> Rect {
-        let text_style = FontTextStyleBuilder::<Color>::new(styles.ui.ui_font.font())
+        let text_style = FontTextStyleBuilder::new(styles.ui.ui_font.font())
             .font_fallback(styles.cjk_font.font())
             .font_size((styles.ui.ui_font.size as f32 * self.font_size) as u32)
             .build();
 
-        let mut rect: Rect = Text::with_alignment(
-            self.text.as_ref(),
-            self.point.into(),
-            text_style,
-            self.alignment.into(),
-        )
-        .bounding_box()
-        .into();
+        let size = text_style.measure(self.text.as_ref());
+        let mut w = size.w;
 
         if let Some(width) = self.width {
-            rect.w = rect.w.min(width);
+            w = w.min(width);
         }
 
-        rect
+        // Adjust x position based on alignment (same as draw)
+        let x = match self.alignment {
+            Alignment::Left => self.point.x,
+            Alignment::Center => self.point.x - w as i32 / 2,
+            Alignment::Right => self.point.x - w as i32,
+        };
+
+        Rect {
+            x,
+            y: self.point.y,
+            w,
+            h: size.h,
+        }
     }
 
     fn set_position(&mut self, point: Point) {

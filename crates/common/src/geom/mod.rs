@@ -22,18 +22,6 @@ impl Default for Point {
     }
 }
 
-impl From<embedded_graphics::prelude::Point> for Point {
-    fn from(point: embedded_graphics::prelude::Point) -> Self {
-        Self::new(point.x, point.y)
-    }
-}
-
-impl From<Point> for embedded_graphics::prelude::Point {
-    fn from(val: Point) -> Self {
-        embedded_graphics::prelude::Point::new(val.x, val.y)
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Size {
     pub w: u32,
@@ -56,17 +44,6 @@ impl Default for Size {
     }
 }
 
-impl From<embedded_graphics::prelude::Size> for Size {
-    fn from(size: embedded_graphics::prelude::Size) -> Self {
-        Self::new(size.width, size.height)
-    }
-}
-
-impl From<Size> for embedded_graphics::prelude::Size {
-    fn from(val: Size) -> Self {
-        embedded_graphics::prelude::Size::new(val.w, val.h)
-    }
-}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Rect {
     pub x: i32,
@@ -135,26 +112,6 @@ impl Default for Rect {
     }
 }
 
-impl From<embedded_graphics::primitives::Rectangle> for Rect {
-    fn from(rect: embedded_graphics::primitives::Rectangle) -> Self {
-        Self::new(
-            rect.top_left.x,
-            rect.top_left.y,
-            rect.size.width,
-            rect.size.height,
-        )
-    }
-}
-
-impl From<Rect> for embedded_graphics::primitives::Rectangle {
-    fn from(val: Rect) -> Self {
-        embedded_graphics::primitives::Rectangle::new(
-            embedded_graphics::prelude::Point::new(val.x, val.y),
-            embedded_graphics::geometry::Size::new(val.w, val.h),
-        )
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Alignment {
     Left,
@@ -168,26 +125,6 @@ impl Alignment {
             Self::Left => 1,
             Self::Center => 0,
             Self::Right => -1,
-        }
-    }
-}
-
-impl From<embedded_graphics::text::Alignment> for Alignment {
-    fn from(alignment: embedded_graphics::text::Alignment) -> Self {
-        match alignment {
-            embedded_graphics::text::Alignment::Left => Self::Left,
-            embedded_graphics::text::Alignment::Center => Self::Center,
-            embedded_graphics::text::Alignment::Right => Self::Right,
-        }
-    }
-}
-
-impl From<Alignment> for embedded_graphics::text::Alignment {
-    fn from(val: Alignment) -> Self {
-        match val {
-            Alignment::Left => embedded_graphics::text::Alignment::Left,
-            Alignment::Center => embedded_graphics::text::Alignment::Center,
-            Alignment::Right => embedded_graphics::text::Alignment::Right,
         }
     }
 }

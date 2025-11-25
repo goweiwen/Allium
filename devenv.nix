@@ -3,7 +3,11 @@
   env = {
     NIX_STORE = "/nix/store";
     LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
-    LD_LIBRARY_PATH = lib.makeLibraryPath [ pkgs.libclang.lib ];
+    LD_LIBRARY_PATH = lib.makeLibraryPath [
+      pkgs.libclang.lib
+      pkgs.libxkbcommon
+      pkgs.wayland
+    ];
   };
 
   packages = with pkgs; [
