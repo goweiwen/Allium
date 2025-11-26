@@ -17,6 +17,9 @@ use simple_logger::SimpleLogger;
 async fn main() -> Result<()> {
     SimpleLogger::new().env().init().unwrap();
 
+    #[cfg(feature = "miyoo")]
+    common::platform::miyoo::try_fix_resolution().await?;
+
     let platform = DefaultPlatform::new()?;
     let mut app = AlliumLauncher::new(platform)?;
     app.run_event_loop().await?;

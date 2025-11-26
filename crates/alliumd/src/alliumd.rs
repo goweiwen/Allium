@@ -169,6 +169,9 @@ async fn spawn_main() -> Result<Child> {
 
 impl AlliumD<DefaultPlatform> {
     pub async fn new() -> Result<AlliumD<DefaultPlatform>> {
+        #[cfg(feature = "miyoo")]
+        common::platform::miyoo::try_fix_resolution().await?;
+
         let mut platform = DefaultPlatform::new()?;
         let state = AlliumDState::load()?;
 
@@ -180,9 +183,6 @@ impl AlliumD<DefaultPlatform> {
 
         info!("loading display settings");
         platform.set_display_settings(&mut DisplaySettings::load()?)?;
-
-        #[cfg(feature = "miyoo")]
-        common::platform::miyoo::try_fix_resolution().await?;
 
         let main = spawn_main().await?;
         let locale = Locale::new(&LocaleSettings::load()?.lang);
