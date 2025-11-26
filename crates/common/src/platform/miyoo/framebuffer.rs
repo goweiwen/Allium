@@ -193,18 +193,14 @@ impl Display for FramebufferDisplay {
             rect.h = rect.h.min(size.h - rect.y as u32);
         }
 
-        // Apply 180° rotation to the rect coordinates
-        let width = self.width() as i32;
-        let height = self.height() as i32;
-        let x = width - rect.x - rect.w as i32;
-        let y = height - rect.y - rect.h as i32;
-
-        // Copy the saved region
+        // Copy saved region to current pixmap
+        let width = self.width() as usize;
         for dy in 0..rect.h {
             for dx in 0..rect.w {
-                let src_idx = ((y + dy as i32) * width + (x + dx as i32)) as usize;
-                let dst_idx = src_idx;
-                self.pixmap.pixels_mut()[dst_idx] = saved.pixels()[src_idx];
+                let x = (rect.x + dx as i32) as usize;
+                let y = (rect.y + dy as i32) as usize;
+                let idx = y * width + x;
+                self.pixmap.pixels_mut()[idx] = saved.pixels()[idx];
             }
         }
 
