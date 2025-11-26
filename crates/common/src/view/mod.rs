@@ -121,8 +121,8 @@ pub fn draw_debug_bounds(
     styles: &Stylesheet,
     depth: usize,
 ) -> Result<()> {
-    use crate::display::Display;
     use crate::display::color::Color;
+    use crate::display::{Display, stroke_rect};
 
     // Generate a color based on depth for visual distinction
     let colors = [
@@ -137,53 +137,8 @@ pub fn draw_debug_bounds(
 
     let rect = view.bounding_box(styles);
     if rect.w > 0 && rect.h > 0 {
-        // Draw rectangle border using direct pixel writes
-        let mut pixmap = display.pixmap_mut();
-        let pixmap_width = pixmap.width() as i32;
-        let pixmap_height = pixmap.height() as i32;
-        let color_premul: tiny_skia::PremultipliedColorU8 = color.into();
-
-        // Top and bottom borders
-        for x in rect.x..(rect.x + rect.w as i32) {
-            if x >= 0 && x < pixmap_width {
-                // Top border
-                if rect.y >= 0 && rect.y < pixmap_height {
-                    let idx = (rect.y * pixmap_width + x) as usize;
-                    if idx < pixmap.pixels().len() {
-                        pixmap.pixels_mut()[idx] = color_premul;
-                    }
-                }
-                // Bottom border
-                let bottom_y = rect.y + rect.h as i32 - 1;
-                if bottom_y >= 0 && bottom_y < pixmap_height {
-                    let idx = (bottom_y * pixmap_width + x) as usize;
-                    if idx < pixmap.pixels().len() {
-                        pixmap.pixels_mut()[idx] = color_premul;
-                    }
-                }
-            }
-        }
-
-        // Left and right borders
-        for y in rect.y..(rect.y + rect.h as i32) {
-            if y >= 0 && y < pixmap_height {
-                // Left border
-                if rect.x >= 0 && rect.x < pixmap_width {
-                    let idx = (y * pixmap_width + rect.x) as usize;
-                    if idx < pixmap.pixels().len() {
-                        pixmap.pixels_mut()[idx] = color_premul;
-                    }
-                }
-                // Right border
-                let right_x = rect.x + rect.w as i32 - 1;
-                if right_x >= 0 && right_x < pixmap_width {
-                    let idx = (y * pixmap_width + right_x) as usize;
-                    if idx < pixmap.pixels().len() {
-                        pixmap.pixels_mut()[idx] = color_premul;
-                    }
-                }
-            }
-        }
+        // Draw rectangle border using path stroking
+        stroke_rect(&mut display.pixmap_mut(), rect, 1.0, color);
     }
 
     // Recursively draw children

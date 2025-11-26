@@ -4,7 +4,9 @@ pub mod image;
 pub mod settings;
 
 use anyhow::Result;
-use tiny_skia::{BlendMode, FillRule, Paint, Path, PathBuilder, PixmapMut, PixmapRef, Transform};
+use tiny_skia::{
+    BlendMode, FillRule, Paint, Path, PathBuilder, PixmapMut, PixmapRef, Stroke, Transform,
+};
 
 use crate::display::color::Color;
 use crate::geom::{Point, Rect, Size};
@@ -126,6 +128,28 @@ pub fn fill_circle(pixmap: &mut PixmapMut<'_>, center: Point, radius: u32, color
             Transform::identity(),
             None,
         );
+    }
+}
+
+/// Stroke a rectangle on the pixmap
+pub fn stroke_rect(pixmap: &mut PixmapMut<'_>, rect: Rect, stroke_width: f32, color: Color) {
+    let paint = Paint {
+        shader: tiny_skia::Shader::SolidColor(color.into()),
+        blend_mode: BlendMode::SourceOver,
+        anti_alias: false,
+        ..Default::default()
+    };
+
+    let stroke = Stroke {
+        width: stroke_width,
+        ..Default::default()
+    };
+
+    if let Some(ts_rect) =
+        tiny_skia::Rect::from_xywh(rect.x as f32, rect.y as f32, rect.w as f32, rect.h as f32)
+    {
+        let path = PathBuilder::from_rect(ts_rect);
+        pixmap.stroke_path(&path, &paint, &stroke, Transform::identity(), None);
     }
 }
 
