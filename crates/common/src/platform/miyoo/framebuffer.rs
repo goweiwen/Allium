@@ -149,18 +149,18 @@ impl Display for FramebufferDisplay {
         for y in 0..height {
             for x in 0..width {
                 let idx = y * width + x;
-                let color: Color = self.pixmap.pixels()[idx].into();
+                let pixel = self.pixmap.pixels()[idx];
 
                 // Apply 180° rotation when writing to framebuffer
                 let fb_x = width - x - 1;
                 let fb_y = height - y - 1;
                 let fb_idx = location + (fb_y * width + fb_x) * bytes_per_pixel;
 
-                // Write as BGRA
-                self.iface.frame[fb_idx] = color.b();
-                self.iface.frame[fb_idx + 1] = color.g();
-                self.iface.frame[fb_idx + 2] = color.r();
-                self.iface.frame[fb_idx + 3] = color.a();
+                // Write as BGRA (use premultiplied values directly)
+                self.iface.frame[fb_idx] = pixel.blue();
+                self.iface.frame[fb_idx + 1] = pixel.green();
+                self.iface.frame[fb_idx + 2] = pixel.red();
+                self.iface.frame[fb_idx + 3] = pixel.alpha();
             }
         }
 
