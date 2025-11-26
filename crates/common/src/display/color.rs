@@ -15,47 +15,47 @@ impl Color {
 
     #[inline]
     pub fn rgba(r: u8, g: u8, b: u8, a: u8) -> Self {
-        Self(a as u32 | (b as u32) << 8 | (g as u32) << 16 | (r as u32) << 24)
+        Self(r as u32 | (g as u32) << 8 | (b as u32) << 16 | (a as u32) << 24)
     }
 
     #[inline]
     pub fn r(&self) -> u8 {
-        (self.0 >> 24) as u8
-    }
-
-    #[inline]
-    pub fn g(&self) -> u8 {
-        (self.0 >> 16) as u8
-    }
-
-    #[inline]
-    pub fn b(&self) -> u8 {
-        (self.0 >> 8) as u8
-    }
-
-    #[inline]
-    pub fn a(&self) -> u8 {
         self.0 as u8
     }
 
     #[inline]
+    pub fn g(&self) -> u8 {
+        (self.0 >> 8) as u8
+    }
+
+    #[inline]
+    pub fn b(&self) -> u8 {
+        (self.0 >> 16) as u8
+    }
+
+    #[inline]
+    pub fn a(&self) -> u8 {
+        (self.0 >> 24) as u8
+    }
+
+    #[inline]
     pub fn with_r(&self, r: u8) -> Self {
-        Self((r as u32) << 24 | self.0 & 0x00FFFFFF)
+        Self((r as u32) | self.0 & 0xFFFFFF00)
     }
 
     #[inline]
     pub fn with_g(&self, g: u8) -> Self {
-        Self((g as u32) << 16 | self.0 & 0xFF00FFFF)
+        Self((g as u32) << 8 | self.0 & 0xFFFF00FF)
     }
 
     #[inline]
     pub fn with_b(&self, b: u8) -> Self {
-        Self((b as u32) << 8 | self.0 & 0xFFFF00FF)
+        Self((b as u32) << 16 | self.0 & 0xFF00FFFF)
     }
 
     #[inline]
     pub fn with_a(&self, a: u8) -> Self {
-        Self((a as u32) | self.0 & 0xFFFFFF00)
+        Self((a as u32) << 24 | self.0 & 0x00FFFFFF)
     }
 
     pub fn char(&self, i: usize) -> String {
@@ -148,10 +148,10 @@ impl fmt::UpperHex for Color {
 impl From<Color> for Rgba<u8> {
     fn from(color: Color) -> Self {
         Rgba([
-            (color.0 >> 24) as u8,
-            (color.0 >> 16) as u8,
-            (color.0 >> 8) as u8,
             color.0 as u8,
+            (color.0 >> 8) as u8,
+            (color.0 >> 16) as u8,
+            (color.0 >> 24) as u8,
         ])
     }
 }
