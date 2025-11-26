@@ -499,7 +499,8 @@ impl SimulatorBattery {
     pub fn new() -> SimulatorBattery {
         SimulatorBattery {
             percentage: 100,
-            charging: true,
+            charging: std::env::var("SIMULATOR_CHARGING").unwrap_or_else(|_| "0".to_string())
+                == "1",
         }
     }
 }
@@ -516,7 +517,6 @@ impl Battery for SimulatorBattery {
         if self.percentage > 0 {
             self.percentage -= 5
         }
-        self.charging = !self.charging;
         Ok(())
     }
 
