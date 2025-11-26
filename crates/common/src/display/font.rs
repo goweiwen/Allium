@@ -131,6 +131,26 @@ impl FontTextStyle {
 
     /// Draw text to a pixmap
     pub fn draw(&self, pixmap: &mut PixmapMut<'_>, text: &str, position: Point) -> Point {
+        // Handle multiline text
+        let lines: Vec<&str> = text.lines().collect();
+        if lines.is_empty() {
+            return position;
+        }
+
+        let mut current_y = position.y;
+        for line in lines {
+            self.draw_line(pixmap, line, Point::new(position.x, current_y));
+            current_y += self.font_size as i32;
+        }
+
+        Point {
+            x: position.x,
+            y: current_y,
+        }
+    }
+
+    /// Draw a single line of text to a pixmap
+    fn draw_line(&self, pixmap: &mut PixmapMut<'_>, text: &str, position: Point) -> Point {
         let scale = rusttype::Scale::uniform(self.font_size as f32);
 
         let v_metrics = self.font.v_metrics(scale);
@@ -330,45 +350,61 @@ impl FontTextStyle {
 
     /// Measure the size of rendered text
     pub fn measure(&self, text: &str) -> Size {
+        // Handle multiline text
+        let lines: Vec<&str> = text.lines().collect();
+        if lines.is_empty() {
+            return Size {
+                w: 0,
+                h: self.font_size,
+            };
+        }
+
         let scale = rusttype::Scale::uniform(self.font_size as f32);
         let v_metrics = self.font.v_metrics(scale);
         let start = rusttype::point(0.0, v_metrics.ascent);
 
-        let glyphs: Vec<rusttype::PositionedGlyph<'_>> = text
-            .chars()
-            .map(|c| {
-                let mut g = self.font.glyph(c);
-                if g.id() == GlyphId(0)
-                    && let Some(font_fallback) = self.font_fallback.as_ref()
-                {
-                    g = font_fallback.glyph(c);
-                }
-                g
-            })
-            .scan((None, 0.0), |(last, x), g| {
-                let g = g.scaled(scale);
-                if let Some(last) = last {
-                    *x += self.font.pair_kerning(scale, *last, g.id());
-                }
-                let w = g.h_metrics().advance_width;
-                let next = g.positioned(start + vector(*x, 0.0));
-                *last = Some(next.id());
-                *x += w;
-                Some(next)
-            })
-            .collect();
-
-        let width = glyphs
+        // Measure each line and find the widest
+        let max_width = lines
             .iter()
-            .rev()
-            .map(|g| g.position().x + g.unpositioned().h_metrics().advance_width)
-            .next()
-            .unwrap_or(0.0)
-            .ceil() as u32;
+            .map(|line| {
+                let glyphs: Vec<rusttype::PositionedGlyph<'_>> = line
+                    .chars()
+                    .map(|c| {
+                        let mut g = self.font.glyph(c);
+                        if g.id() == GlyphId(0)
+                            && let Some(font_fallback) = self.font_fallback.as_ref()
+                        {
+                            g = font_fallback.glyph(c);
+                        }
+                        g
+                    })
+                    .scan((None, 0.0), |(last, x), g| {
+                        let g = g.scaled(scale);
+                        if let Some(last) = last {
+                            *x += self.font.pair_kerning(scale, *last, g.id());
+                        }
+                        let w = g.h_metrics().advance_width;
+                        let next = g.positioned(start + vector(*x, 0.0));
+                        *last = Some(next.id());
+                        *x += w;
+                        Some(next)
+                    })
+                    .collect();
+
+                glyphs
+                    .iter()
+                    .rev()
+                    .map(|g| g.position().x + g.unpositioned().h_metrics().advance_width)
+                    .next()
+                    .unwrap_or(0.0)
+                    .ceil() as u32
+            })
+            .max()
+            .unwrap_or(0);
 
         Size {
-            w: width,
-            h: self.font_size,
+            w: max_width,
+            h: self.font_size * lines.len() as u32,
         }
     }
 
