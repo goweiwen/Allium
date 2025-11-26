@@ -101,6 +101,7 @@ allow = [
     "ISC",
     "BSD-3-Clause",
     "CDLA-Permissive-2.0",
+    "BSD-2-Clause",
 ]
 # The confidence threshold for detecting a license from license text.
 # The higher the value, the more closely the license text must be to the
@@ -207,21 +208,8 @@ deny = [
 
 # Certain crates/versions that will be skipped when doing duplicate detection.
 skip = [
-    { crate = "thiserror@1.0.69", reason = "fluent-templates depends on both thiserror 1.0 and 2.0" },
-    { crate = "thiserror-impl@1.0.69", reason = "fluent-templates depends on both thiserror 1.0 and 2.0" },
     { crate = "nix@0.23.2", reason = "sysfs_gpio depends on older nix" },
     { crate = "bitflags@1.3.2", reason = "sysfs_gpio depends on older bitflags" },
-    { crate = "base64@0.21.7", reason = "console-subscriber" },
-    { crate = "tower@0.4.13", reason = "tonic" },
-    { crate = "socket2@0.5.10", reason = "tonic" },
-    { crate = "rand_core@0.6.4", reason = "tonic" },
-    { crate = "rand_chacha@0.3.1", reason = "tonic" },
-    { crate = "rand@0.8.5", reason = "tonic" },
-    { crate = "indexmap@1.9.3", reason = "tonic" },
-    { crate = "itertools@0.13.0", reason = "tonic requires v0.14.0, but we use v0.13.0" },
-    { crate = "heck@0.4.1", reason = "embedded-graphics-simulator" },
-    { crate = "hashbrown@0.12.3", reason = "tonic" },
-    { crate = "hashbrown@0.15.5", reason = "rusqlite" },
     { crate = "getrandom@0.2.16", reason = "tonic" },
 ]
 # Similarly to `skip` allows you to skip certain crates during duplicate

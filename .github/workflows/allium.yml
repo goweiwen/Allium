@@ -74,6 +74,7 @@ jobs:
     - uses: EmbarkStudios/cargo-deny-action@v2
       with:
         command: check ${{ matrix.checks }}
+        arguments: --features miyoo
 
   create-release:
     name: deploy
