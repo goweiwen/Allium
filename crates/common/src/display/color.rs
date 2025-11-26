@@ -1,10 +1,12 @@
 use std::fmt;
 
+use bytemuck::{Pod, Zeroable};
 use image::Rgba;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use tiny_skia::PremultipliedColorU8;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Pod, Zeroable)]
 pub struct Color(u32);
 
 impl Color {
@@ -163,7 +165,8 @@ impl From<Color> for PremultipliedColorU8 {
         if a == 0 {
             PremultipliedColorU8::from_rgba(0, 0, 0, 0).unwrap()
         } else if a == 255 {
-            PremultipliedColorU8::from_rgba(color.r(), color.g(), color.b(), 255).unwrap()
+            // Zero-cost conversion: Color and PremultipliedColorU8 have identical RGBA layout
+            bytemuck::cast(color)
         } else {
             // Premultiply RGB by alpha
             let r = ((color.r() as u16 * a as u16) / 255) as u8;
@@ -181,7 +184,8 @@ impl From<PremultipliedColorU8> for Color {
         if a == 0 {
             Self::rgba(0, 0, 0, 0)
         } else if a == 255 {
-            Self::rgba(color.red(), color.green(), color.blue(), 255)
+            // Zero-cost conversion: Color and PremultipliedColorU8 have identical RGBA layout
+            bytemuck::cast(color)
         } else {
             // Un-premultiply RGB by alpha
             let r = ((color.red() as u16 * 255) / a as u16) as u8;

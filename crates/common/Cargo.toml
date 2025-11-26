@@ -18,6 +18,7 @@ debug-ui = []
 [dependencies]
 anyhow.workspace = true
 async-trait.workspace = true
+bytemuck = { workspace = true, features = ["derive"] }
 chrono = { workspace = true, features = ["serde"] }
 tiny-skia.workspace = true
 enum-map.workspace = true

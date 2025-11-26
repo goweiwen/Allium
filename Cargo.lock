@@ -620,6 +620,7 @@ version = "0.29.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "bytemuck",
  "chrono",
  "enum-map",
  "evdev",
