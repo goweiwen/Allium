@@ -382,8 +382,11 @@ impl Display for SimulatorWindow {
                 let src_y = y / scale;
                 let src_idx = src_y * width + src_x;
 
-                let color: Color = self.pixmap.pixels()[src_idx].into();
-                let rgb = (color.r() as u32) << 16 | (color.g() as u32) << 8 | (color.b() as u32);
+                let pixel = self.pixmap.pixels()[src_idx];
+                // Use premultiplied values directly for RGB (tiny-skia uses premultiplied alpha)
+                let rgb = (pixel.red() as u32) << 16
+                    | (pixel.green() as u32) << 8
+                    | (pixel.blue() as u32);
 
                 let dst_idx = y * width * scale + x;
                 buffer[dst_idx] = rgb;
