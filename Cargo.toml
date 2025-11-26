@@ -59,7 +59,6 @@ tokio = "1.48.0"
 toml = "0.9.8"
 type-map = "0.5.1"
 wait-timeout = "0.2.1"
-parking_lot = "0.12"
 
 # Following: https://github.com/johnthagen/min-sized-rust
 [profile.release]
