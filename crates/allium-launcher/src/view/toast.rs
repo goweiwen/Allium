@@ -6,7 +6,6 @@ use async_trait::async_trait;
 
 use common::command::Command;
 use common::display::Display;
-use common::display::color::Color;
 use common::display::font::FontTextStyleBuilder;
 use common::geom::{Point, Rect};
 use common::platform::{DefaultPlatform, KeyEvent, Platform};
@@ -114,58 +113,11 @@ impl View for Toast {
         if let Some(ref image) = self.image
             && let Some(image_rect) = image_rect
         {
-            let mut pixmap = display.pixmap_mut();
-            let pixmap_width = pixmap.width() as i32;
-            let pixmap_height = pixmap.height() as i32;
-
-            for y in 0..image.height() {
-                for x in 0..image.width() {
-                    let px = image_rect.x + x as i32;
-                    let py = image_rect.y + y as i32;
-
-                    if px >= 0 && px < pixmap_width && py >= 0 && py < pixmap_height {
-                        let pixel = image.get_pixel(x, y);
-                        let src = Color::rgba(pixel[0], pixel[1], pixel[2], pixel[3]);
-
-                        if src.a() > 0 {
-                            let pixmap_idx = (py * pixmap_width + px) as usize;
-                            let pixels = pixmap.pixels_mut();
-
-                            if src.a() == 255 {
-                                pixels[pixmap_idx] = src.into();
-                            } else {
-                                let dst: Color = pixels[pixmap_idx].into();
-
-                                let src_a = src.a() as u16;
-                                let dst_a = dst.a() as u16;
-                                let inv_src_a = 255 - src_a;
-
-                                let out_a = src_a + (dst_a * inv_src_a) / 255;
-
-                                if out_a == 0 {
-                                    pixels[pixmap_idx] = Color::rgba(0, 0, 0, 0).into();
-                                } else {
-                                    let out_r = ((src.r() as u16 * src_a
-                                        + dst.r() as u16 * dst_a * inv_src_a / 255)
-                                        / out_a)
-                                        as u8;
-                                    let out_g = ((src.g() as u16 * src_a
-                                        + dst.g() as u16 * dst_a * inv_src_a / 255)
-                                        / out_a)
-                                        as u8;
-                                    let out_b = ((src.b() as u16 * src_a
-                                        + dst.b() as u16 * dst_a * inv_src_a / 255)
-                                        / out_a)
-                                        as u8;
-
-                                    pixels[pixmap_idx] =
-                                        Color::rgba(out_r, out_g, out_b, out_a as u8).into();
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            common::display::image::draw_image(
+                &mut display.pixmap_mut(),
+                image,
+                Point::new(image_rect.x, image_rect.y),
+            );
         }
 
         // Draw text

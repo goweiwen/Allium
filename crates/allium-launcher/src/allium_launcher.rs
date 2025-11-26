@@ -358,56 +358,11 @@ fn set_wallpaper(display: &mut impl Display, path: &Path) -> Result<()> {
     let image = image.resize_to_fill(rect.w, rect.h, image::imageops::FilterType::Lanczos3);
     let image = image.into_rgba8();
 
-    // Direct pixel copy with alpha blending
-    let mut pixmap = display.pixmap_mut();
-    let pixmap_width = pixmap.width() as i32;
-    let pixmap_height = pixmap.height() as i32;
-
-    for y in 0..image.height() {
-        for x in 0..image.width() {
-            let px = x as i32;
-            let py = y as i32;
-            if px >= 0 && px < pixmap_width && py >= 0 && py < pixmap_height {
-                let pixel = image.get_pixel(x, y);
-                let src = Color::rgba(pixel[0], pixel[1], pixel[2], pixel[3]);
-                if src.a() > 0 {
-                    let pixmap_idx = (py * pixmap_width + px) as usize;
-                    let pixels = pixmap.pixels_mut();
-                    if src.a() == 255 {
-                        pixels[pixmap_idx] = src.into();
-                    } else {
-                        // Alpha blending
-                        let dst: Color = pixels[pixmap_idx].into();
-                        let src_a = src.a() as u16;
-                        let dst_a = dst.a() as u16;
-                        let inv_src_a = 255 - src_a;
-                        let out_a = src_a + (dst_a * inv_src_a) / 255;
-
-                        let out_r = if out_a > 0 {
-                            ((src.r() as u16 * src_a + dst.r() as u16 * dst_a * inv_src_a / 255)
-                                / out_a) as u8
-                        } else {
-                            0
-                        };
-                        let out_g = if out_a > 0 {
-                            ((src.g() as u16 * src_a + dst.g() as u16 * dst_a * inv_src_a / 255)
-                                / out_a) as u8
-                        } else {
-                            0
-                        };
-                        let out_b = if out_a > 0 {
-                            ((src.b() as u16 * src_a + dst.b() as u16 * dst_a * inv_src_a / 255)
-                                / out_a) as u8
-                        } else {
-                            0
-                        };
-
-                        pixels[pixmap_idx] = Color::rgba(out_r, out_g, out_b, out_a as u8).into();
-                    }
-                }
-            }
-        }
-    }
+    common::display::image::draw_image(
+        &mut display.pixmap_mut(),
+        &image,
+        common::geom::Point::new(0, 0),
+    );
 
     Ok(())
 }

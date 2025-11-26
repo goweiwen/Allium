@@ -12,7 +12,6 @@ use tokio::sync::mpsc::Sender;
 
 use crate::command::Command;
 use crate::display::Display;
-use crate::display::color::Color;
 use crate::display::image::round;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, KeyEvent, Platform};
@@ -184,61 +183,11 @@ impl View for Image {
         display.load(self.rect)?;
         if let Some(Some(image)) = self.image.get() {
             trace!("drawing image: {:?}", self.rect);
-            let mut pixmap = display.pixmap_mut();
-            let pixmap_width = pixmap.width() as i32;
-            let pixmap_height = pixmap.height() as i32;
-
-            // Copy image pixels to pixmap with alpha blending
-            for y in 0..image.height() {
-                for x in 0..image.width() {
-                    let px = self.rect.x + x as i32;
-                    let py = self.rect.y + y as i32;
-
-                    if px >= 0 && px < pixmap_width && py >= 0 && py < pixmap_height {
-                        let pixel = image.get_pixel(x, y);
-                        let src = Color::rgba(pixel[0], pixel[1], pixel[2], pixel[3]);
-
-                        if src.a() > 0 {
-                            let pixmap_idx = (py * pixmap_width + px) as usize;
-                            let pixels = pixmap.pixels_mut();
-
-                            if src.a() == 255 {
-                                // Opaque, just write directly
-                                pixels[pixmap_idx] = src.into();
-                            } else {
-                                // Alpha blend with existing pixel
-                                let dst: Color = pixels[pixmap_idx].into();
-
-                                let src_a = src.a() as u32;
-                                let dst_a = dst.a() as u32;
-                                let inv_src_a = 255 - src_a;
-
-                                let out_a = src_a + (dst_a * inv_src_a) / 255;
-
-                                if out_a == 0 {
-                                    pixels[pixmap_idx] = Color::rgba(0, 0, 0, 0).into();
-                                } else {
-                                    let out_r = ((src.r() as u32 * src_a
-                                        + dst.r() as u32 * dst_a * inv_src_a / 255)
-                                        / out_a)
-                                        as u8;
-                                    let out_g = ((src.g() as u32 * src_a
-                                        + dst.g() as u32 * dst_a * inv_src_a / 255)
-                                        / out_a)
-                                        as u8;
-                                    let out_b = ((src.b() as u32 * src_a
-                                        + dst.b() as u32 * dst_a * inv_src_a / 255)
-                                        / out_a)
-                                        as u8;
-
-                                    pixels[pixmap_idx] =
-                                        Color::rgba(out_r, out_g, out_b, out_a as u8).into();
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            crate::display::image::draw_image(
+                &mut display.pixmap_mut(),
+                image,
+                Point::new(self.rect.x, self.rect.y),
+            );
         }
 
         self.dirty = !image_loaded && self.path.is_some();
