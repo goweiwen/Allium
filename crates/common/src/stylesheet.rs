@@ -533,6 +533,8 @@ impl Stylesheet {
     }
 
     fn set_retroarch_theme(&self) -> Result<()> {
+        let retroarch_wallpaper_path =
+            PathBuf::from("/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.png");
         if let Some(wallpaper) = &self.wallpaper {
             let path = Self::resolve_wallpaper(wallpaper);
 
@@ -563,9 +565,9 @@ impl Stylesheet {
                 }
             }
 
-            let retroarch_wallpaper_path =
-                PathBuf::from("/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.png");
             image.save(&retroarch_wallpaper_path)?;
+        } else {
+            let _ = fs::remove_file(retroarch_wallpaper_path);
         }
 
         let mut file = File::create("/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.cfg")?;
