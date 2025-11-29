@@ -1,0 +1,24 @@
+[package]
+name = "screenshot-viewer"
+version = "0.29.0"
+edition = "2024"
+
+[[bin]]
+name = "screenshot-viewer"
+path = "src/main.rs"
+
+[features]
+simulator = ["common/simulator"]
+miyoo = ["common/miyoo"]
+
+[dependencies]
+anyhow.workspace = true
+tokio = { workspace = true, features = ["full"] }
+async-trait.workspace = true
+type-map.workspace = true
+simple_logger = { workspace = true, default-features = false }
+log = { workspace = true, features = ["release_max_level_info"] }
+chrono = { workspace = true }
+
+[dependencies.common]
+path = "../common"

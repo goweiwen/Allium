@@ -1,0 +1,5 @@
+{
+  "label": "Screenshot Viewer",
+  "launch": "screenshot-viewer",
+  "description": "View and browse screenshots taken with MENU+POWER."
+}

@@ -2897,6 +2897,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "screenshot-viewer"
+version = "0.29.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "common",
+ "log",
+ "simple_logger",
+ "tokio",
+ "type-map",
+]
+
+[[package]]
 name = "sctk-adwaita"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

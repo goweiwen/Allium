@@ -47,7 +47,7 @@ third-party/my283:
 
 .PHONY: build
 build: third-party/my283
-	cargo zigbuild --release --target=$(TARGET_TRIPLE).$(GLIBC_VERSION) --features=miyoo --bin=alliumd --bin=allium-launcher --bin=activity-tracker --bin=screenshot --bin=say --bin=show --bin=myctl
+	cargo zigbuild --release --target=$(TARGET_TRIPLE).$(GLIBC_VERSION) --features=miyoo --bin=alliumd --bin=allium-launcher --bin=activity-tracker --bin=screenshot-viewer --bin=screenshot --bin=say --bin=show --bin=myctl
 	patchelf \
 		--replace-needed third-party/my283/usr/lib/libcam_os_wrapper.so libcam_os_wrapper.so \
 		--replace-needed third-party/my283/usr/lib/libmi_sys.so libmi_sys.so \
@@ -55,7 +55,7 @@ build: third-party/my283
 
 .PHONY: debug
 debug: third-party/my283
-	cargo zigbuild --target=$(TARGET_TRIPLE).$(GLIBC_VERSION) --features=miyoo --bin=alliumd --bin=allium-launcher --bin=activity-tracker --bin=screenshot --bin=say --bin=show --bin=myctl
+	cargo zigbuild --target=$(TARGET_TRIPLE).$(GLIBC_VERSION) --features=miyoo --bin=alliumd --bin=allium-launcher --bin=activity-tracker --bin=screenshot-viewer --bin=screenshot --bin=say --bin=show --bin=myctl
 
 .PHONY: strip-all
 strip-all:
@@ -76,6 +76,7 @@ package-build:
 	rsync -a $(BUILD_DIR)/say $(DIST_DIR)/.tmp_update/bin/
 	rsync -a $(BUILD_DIR)/show $(DIST_DIR)/.tmp_update/bin/
 	rsync -a $(BUILD_DIR)/activity-tracker "$(DIST_DIR)/Apps/Activity Tracker.pak/"
+	rsync -a $(BUILD_DIR)/screenshot-viewer "$(DIST_DIR)/Apps/Screenshot Viewer.pak/"
 	rsync -a $(BUILD_DIR)/myctl $(DIST_DIR)/.tmp_update/bin/
 	@# Write version.txt: use git tag if available, otherwise nightly-<hash>
 	@TAG=$$(git describe --exact-match --tags HEAD 2>/dev/null | grep -v '^nightly$$'); \
@@ -141,12 +142,14 @@ bump-version: lint
 	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" crates/allium-menu/Cargo.toml
 	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" crates/alliumd/Cargo.toml
 	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" crates/activity-tracker/Cargo.toml
+	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" crates/screenshot-viewer/Cargo.toml
 	sed -i'' -e "s/^version = \".*\"/version = \"$(version)\"/" crates/common/Cargo.toml
 	cargo check
 	git add crates/allium-launcher/Cargo.toml
 	git add crates/allium-menu/Cargo.toml
 	git add crates/alliumd/Cargo.toml
 	git add crates/activity-tracker/Cargo.toml
+	git add crates/screenshot-viewer/Cargo.toml
 	git add crates/common/Cargo.toml
 	git add Cargo.lock
 	git commit -m "chore: bump version to v$(version)"

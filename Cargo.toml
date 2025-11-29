@@ -9,6 +9,7 @@ members = [
     "crates/myctl",
     "crates/say",
     "crates/screenshot",
+    "crates/screenshot-viewer",
     "crates/show",
 ]
 exclude = [
