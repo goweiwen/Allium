@@ -5,7 +5,6 @@ use async_trait::async_trait;
 
 use tokio::sync::mpsc::Sender;
 
-use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
 use crate::resources::Resources;
@@ -22,7 +21,6 @@ where
     label: Label<S>,
     alignment: Alignment,
     has_layout: bool,
-    dirty: bool,
 }
 
 impl<S> ButtonHint<S>
@@ -43,14 +41,12 @@ where
             label,
             alignment,
             has_layout: false,
-            dirty: true,
         }
     }
 
     pub fn set_text(&mut self, text: S) {
         self.label.set_text(text);
         self.has_layout = false;
-        self.dirty = true;
     }
 
     fn layout(&mut self, styles: &Stylesheet) {
@@ -110,23 +106,17 @@ where
 
         let mut drawn = false;
 
-        if self.dirty {
-            display.load(self.bounding_box(styles))?;
-            drawn = true;
-            self.dirty = false;
-        }
-
         drawn |= self.label.should_draw() && self.button.draw(display, styles)?;
         drawn |= self.label.should_draw() && self.label.draw(display, styles)?;
+
         Ok(drawn)
     }
 
     fn should_draw(&self) -> bool {
-        self.dirty || self.button.should_draw() || self.label.should_draw()
+        self.button.should_draw() || self.label.should_draw()
     }
 
     fn set_should_draw(&mut self) {
-        self.dirty = true;
         self.button.set_should_draw();
         self.label.set_should_draw();
     }

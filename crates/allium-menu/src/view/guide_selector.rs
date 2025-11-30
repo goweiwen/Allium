@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 use async_trait::async_trait;
 use common::command::Command;
+use common::display::Display;
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
@@ -156,8 +157,10 @@ impl View for GuideSelector {
         } else {
             let mut drawn = false;
             drawn |= self.list.should_draw() && self.list.draw(display, styles)?;
-            drawn |= self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
-            self.button_hints.draw(display, styles)?;
+            if self.button_hints.should_draw() {
+                display.load(self.button_hints.bounding_box(styles))?;
+                drawn |= self.button_hints.draw(display, styles)?;
+            }
             Ok(drawn)
         }
     }

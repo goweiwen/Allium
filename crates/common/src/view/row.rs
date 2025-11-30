@@ -7,7 +7,6 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::Sender;
 
 use crate::command::Command;
-use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, KeyEvent, Platform};
 use crate::stylesheet::Stylesheet;
@@ -131,7 +130,6 @@ where
     ) -> Result<bool> {
         self.layout(styles);
 
-        display.load(self.bounding_box(styles))?;
         for entry in &mut self.children.iter_mut() {
             entry.draw(display, styles)?;
         }

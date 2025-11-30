@@ -10,6 +10,7 @@ use base32::encode;
 use common::battery::Battery;
 use common::command::Command;
 use common::constants::{ALLIUM_MENU_STATE, ALLIUM_SCREENSHOTS_DIR, SAVE_STATE_IMAGE_WIDTH};
+use common::display::Display;
 use common::game_info::GameInfo;
 use common::geom::{Alignment, Point, Rect};
 use common::locale::Locale;
@@ -427,7 +428,10 @@ where
         } else {
             drawn |= self.menu.should_draw() && self.menu.draw(display, styles)?;
             drawn |= self.image.should_draw() && self.image.draw(display, styles)?;
-            drawn |= self.button_hints.should_draw() && self.button_hints.draw(display, styles)?;
+            if self.button_hints.should_draw() {
+                display.load(self.button_hints.bounding_box(styles))?;
+                drawn |= self.button_hints.draw(display, styles)?;
+            }
         }
 
         #[cfg(feature = "debug-ui")]

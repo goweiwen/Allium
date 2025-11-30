@@ -15,7 +15,6 @@ use crate::wifi;
 
 #[derive(Debug, Clone)]
 pub struct WifiIndicator {
-    res: Resources,
     point: Point,
     connected: bool,
     enabled: bool,
@@ -24,14 +23,13 @@ pub struct WifiIndicator {
 }
 
 impl WifiIndicator {
-    pub fn new(res: Resources, point: Point) -> Self {
+    pub fn new(_res: Resources, point: Point) -> Self {
         let enabled = wifi::WiFiSettings::load().map(|s| s.wifi).unwrap_or(false);
         let connected = enabled && wifi::ip_address().is_some();
         let mut icon = WifiIcon::new(point);
         icon.set_connected(connected);
 
         Self {
-            res,
             point,
             connected,
             enabled,

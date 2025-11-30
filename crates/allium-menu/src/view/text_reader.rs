@@ -389,6 +389,7 @@ impl View for TextReader {
 
         if self.dirty {
             let button_hints_rect = self.button_hints.bounding_box(styles);
+            display.load(button_hints_rect)?;
             let content_top = self.rect.y;
             let content_height = (button_hints_rect.y - content_top) as u32;
 
