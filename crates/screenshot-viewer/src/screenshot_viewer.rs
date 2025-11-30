@@ -79,7 +79,9 @@ impl ScreenshotViewer<DefaultPlatform> {
 
     async fn handle_command(&mut self, command: Command, _sender: &Sender<Command>) -> Result<()> {
         trace!("command: {:?}", command);
-        if let Command::Exit = command { std::process::exit(0) }
+        if let Command::Exit = command {
+            std::process::exit(0)
+        }
         Ok(())
     }
 }
