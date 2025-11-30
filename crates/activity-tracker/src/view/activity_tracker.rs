@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{BTreeMap, HashMap, VecDeque};
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -176,17 +176,30 @@ impl ActivityTracker {
         let styles = self.res.get::<Stylesheet>();
         let mut names = Vec::new();
         let mut durations = Vec::new();
-        let mut last_date: Option<String> = None;
+
+        // Group sessions by date, then by game name
+        // Structure: date -> (game_name -> (total_duration, earliest_start_time))
+        let mut sessions_by_date: BTreeMap<String, BTreeMap<String, (i64, i64)>> = BTreeMap::new();
+        let mut date_times: HashMap<String, DateTime<Local>> = HashMap::new();
 
         for session in &self.sessions {
-            // Convert Unix timestamp to DateTime
             let datetime = Utc.timestamp_opt(session.start_time, 0).unwrap();
             let local_time: DateTime<Local> = datetime.into();
             let date = local_time.format("%Y-%m-%d").to_string();
 
-            // Add date header if it's a new day
-            if last_date.as_ref() != Some(&date) {
-                let date_label = self.format_date_header(&local_time);
+            date_times.entry(date.clone()).or_insert(local_time);
+
+            let games = sessions_by_date.entry(date).or_insert_with(BTreeMap::new);
+            let entry = games.entry(session.game_name.clone()).or_insert((0, session.start_time));
+            entry.0 += session.duration; // Add to total duration
+            entry.1 = entry.1.min(session.start_time); // Track earliest start time
+        }
+
+        // Display sessions grouped by date
+        for (date, games) in sessions_by_date.iter() {
+            // Add date header
+            if let Some(local_time) = date_times.get(date) {
+                let date_label = self.format_date_header(local_time);
                 names.push(format!("─── {} ───", date_label));
                 durations.push(Box::new(Label::new(
                     Point::zero(),
@@ -194,27 +207,32 @@ impl ActivityTracker {
                     Alignment::Right,
                     Some(self.rect.w / 2 - styles.ui.margin_y as u32),
                 )) as Box<dyn View>);
-                last_date = Some(date);
             }
 
-            // Add session entry
-            names.push(format!("  {}", session.game_name));
+            // Sort games by earliest start time (first played)
+            let mut games_vec: Vec<_> = games.iter().collect();
+            games_vec.sort_by_key(|(_, (_, earliest_start))| *earliest_start);
 
-            // Format duration
-            let hours = session.duration / 3600;
-            let minutes = (session.duration % 3600) / 60;
-            let duration_str = if hours > 0 {
-                format!("{}h {}m", hours, minutes)
-            } else {
-                format!("{}m", minutes)
-            };
+            for (game_name, (total_duration, _)) in games_vec {
+                // Add game entry
+                names.push(format!("  {}", game_name));
 
-            durations.push(Box::new(Label::new(
-                Point::zero(),
-                duration_str,
-                Alignment::Right,
-                Some(self.rect.w / 2 - styles.ui.margin_y as u32),
-            )) as Box<dyn View>);
+                // Format duration
+                let hours = total_duration / 3600;
+                let minutes = (total_duration % 3600) / 60;
+                let duration_str = if hours > 0 {
+                    format!("{}h {}m", hours, minutes)
+                } else {
+                    format!("{}m", minutes)
+                };
+
+                durations.push(Box::new(Label::new(
+                    Point::zero(),
+                    duration_str,
+                    Alignment::Right,
+                    Some(self.rect.w / 2 - styles.ui.margin_y as u32),
+                )) as Box<dyn View>);
+            }
         }
 
         (names, durations)
