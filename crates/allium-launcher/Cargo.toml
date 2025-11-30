@@ -41,3 +41,7 @@ type-map.workspace = true
 
 [dependencies.common]
 path = "../common"
+
+[[example]]
+name = "test_entry_card"
+path = "examples/test_entry_card.rs"
