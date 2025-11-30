@@ -153,6 +153,31 @@ pub fn stroke_rect(pixmap: &mut PixmapMut<'_>, rect: Rect, stroke_width: f32, co
     }
 }
 
+/// Stroke a rounded rectangle on the pixmap
+pub fn stroke_rounded_rect(
+    pixmap: &mut PixmapMut<'_>,
+    rect: Rect,
+    radius: f32,
+    stroke_width: f32,
+    color: Color,
+) {
+    let paint = Paint {
+        shader: tiny_skia::Shader::SolidColor(color.into()),
+        blend_mode: BlendMode::SourceOver,
+        anti_alias: true, // Enable AA for rounded corners
+        ..Default::default()
+    };
+
+    let stroke = Stroke {
+        width: stroke_width,
+        ..Default::default()
+    };
+
+    if let Some(path) = build_rounded_rect_path(rect, radius as u32) {
+        pixmap.stroke_path(&path, &paint, &stroke, Transform::identity(), None);
+    }
+}
+
 /// Build a path for a rounded rectangle
 pub fn build_rounded_rect_path(rect: Rect, radius: u32) -> Option<Path> {
     let x = rect.x as f32;
