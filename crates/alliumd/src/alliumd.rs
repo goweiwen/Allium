@@ -574,14 +574,26 @@ impl AlliumD<DefaultPlatform> {
         let file = File::open(ALLIUM_GAME_INFO.as_path())?;
         let mut game_info: GameInfo = serde_json::from_reader(file)?;
 
+        let duration = game_info.play_time();
+
         // As a sanity check, don't add play time if the game was played for more than 24 hours
-        if game_info.play_time() > Duration::hours(24) {
+        if duration > Duration::hours(24) {
             warn!("play time is too long, not adding to database");
             return Ok(());
         }
 
         let database = Database::new()?;
-        database.add_play_time(game_info.path.as_path(), game_info.play_time());
+        database.add_play_time(game_info.path.as_path(), duration)?;
+
+        // Record game session
+        let start_time = game_info.start_time.timestamp();
+        let end_time = Utc::now().timestamp();
+        database.insert_game_session(
+            game_info.path.as_path(),
+            start_time,
+            end_time,
+            duration.num_seconds(),
+        )?;
 
         Ok(())
     }

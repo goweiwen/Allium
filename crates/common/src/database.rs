@@ -48,6 +48,16 @@ pub struct NewGame {
     pub favorite: bool,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct GameSession {
+    pub id: i64,
+    pub game_name: String,
+    pub game_path: PathBuf,
+    pub start_time: i64,
+    pub end_time: i64,
+    pub duration: i64,
+}
+
 impl Database {
     pub fn new() -> Result<Self> {
         if !ALLIUM_DATABASE.exists() {
@@ -154,6 +164,17 @@ ALTER TABLE games ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0;
 "),
         M::up("
 ALTER TABLE games ADD COLUMN screenshot_path TEXT;
+"),
+        M::up("
+CREATE TABLE IF NOT EXISTS game_sessions (
+    id INTEGER PRIMARY KEY,
+    game_path TEXT NOT NULL,
+    start_time INTEGER NOT NULL,
+    end_time INTEGER NOT NULL,
+    duration INTEGER NOT NULL,
+    FOREIGN KEY (game_path) REFERENCES games(path)
+);
+CREATE INDEX IF NOT EXISTS idx_game_sessions_start_time ON game_sessions(start_time DESC);
 "),
                 ])
     }
@@ -591,6 +612,40 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
         )?;
 
         Ok(())
+    }
+
+    /// Inserts a new game session record.
+    pub fn insert_game_session(&self, path: &Path, start_time: i64, end_time: i64, duration: i64) -> Result<()> {
+        self.conn.as_ref().unwrap().execute(
+            "INSERT INTO game_sessions (game_path, start_time, end_time, duration) VALUES (?, ?, ?, ?)",
+            params![path.display().to_string(), start_time, end_time, duration],
+        )?;
+        Ok(())
+    }
+
+    /// Selects game sessions ordered by start time (most recent first), with limit and offset for pagination.
+    pub fn select_sessions_by_day(&self, limit: i64, offset: i64) -> Result<Vec<GameSession>> {
+        let mut stmt = self
+            .conn
+            .as_ref()
+            .unwrap()
+            .prepare("SELECT game_sessions.id, games.name, game_sessions.game_path, game_sessions.start_time, game_sessions.end_time, game_sessions.duration FROM game_sessions JOIN games ON game_sessions.game_path = games.path ORDER BY game_sessions.start_time DESC LIMIT ? OFFSET ?")?;
+
+        let results = stmt
+            .query_map(params![limit, offset], |row| {
+                Ok(GameSession {
+                    id: row.get(0)?,
+                    game_name: row.get(1)?,
+                    game_path: PathBuf::from(row.get::<_, String>(2)?),
+                    start_time: row.get(3)?,
+                    end_time: row.get(4)?,
+                    duration: row.get(5)?,
+                })
+            })?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        Ok(results)
     }
 }
 
