@@ -123,8 +123,9 @@ impl Directory {
             let image = game.image.or(game.thumbnail);
             let image = match image {
                 Some(image) => {
-                    let path = self.path.join(image).canonicalize().ok()?;
-                    if path.exists() {
+                    if let Ok(path) = self.path.join(image).canonicalize()
+                        && path.exists()
+                    {
                         LazyImage::Found(path)
                     } else {
                         LazyImage::Unknown(self.path.clone())
@@ -230,6 +231,7 @@ impl Directory {
             }
             match self.parse_game_list(&gamelist) {
                 Ok(res) => {
+                    debug!("game_list: {:#?}", res);
                     database.update_games(
                         &res.iter()
                             .filter_map(|e| match e {
