@@ -117,8 +117,7 @@ where
             + styles.ui.margin_y
             + styles.ui.ui_font.size.max(status_bar_rect.h) as i32
             + styles.ui.margin_y / 2;
-        let content_height =
-            (button_hints_rect.y - content_top) as u32 + styles.ui.margin_y as u32 / 2;
+        let content_height = (button_hints_rect.y - content_top) as u32;
 
         let entries = MenuEntry::entries(retroarch_info.as_ref(), !game_info.guides.is_empty());
         let mut menu = SettingsList::new(
@@ -307,7 +306,8 @@ where
                     let button_hints_rect = self.button_hints.bounding_box(&styles);
                     let content_top = self.rect.y
                         + styles.ui.margin_y
-                        + styles.ui.ui_font.size.max(status_bar_rect.h) as i32;
+                        + styles.ui.ui_font.size.max(status_bar_rect.h) as i32
+                        + styles.ui.margin_y / 2;
                     let selector_rect = Rect::new(
                         self.rect.x,
                         content_top,
