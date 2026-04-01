@@ -158,6 +158,7 @@ impl RecentsCarousel {
     fn update_current_game(&mut self) -> Result<()> {
         if self.games.is_empty() {
             self.screenshot.set_path(None);
+            self.game_name.scroll(false);
             self.game_name.set_text(String::new());
             return Ok(());
         }
@@ -171,6 +172,7 @@ impl RecentsCarousel {
         );
         self.screenshot.set_should_draw();
         self.game_name.set_text(game.name.clone());
+        self.game_name.scroll(true);
         self.button_hints.set_should_draw();
 
         self.dirty = true;
@@ -243,6 +245,7 @@ impl View for RecentsCarousel {
             );
             drawn |= empty_label.draw(display, styles)?;
         } else if self.game_name.should_draw() {
+            display.load(self.game_name.bounding_box(styles))?;
             drawn |= self.game_name.draw(display, styles)?;
         }
 
