@@ -563,12 +563,14 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
         Ok(())
     }
 
-    /// Deletes a game from the database.
+    /// Deletes a game and its sessions from the database.
     pub fn delete_game(&self, path: &Path) -> Result<()> {
-        self.conn.as_ref().unwrap().execute(
-            "DELETE FROM games WHERE path = ?",
-            [path.display().to_string()],
-        )?;
+        let conn = self.conn.as_ref().unwrap();
+        let path = path.display().to_string();
+        let tx = conn.unchecked_transaction()?;
+        tx.execute("DELETE FROM game_sessions WHERE game_path = ?", [&path])?;
+        tx.execute("DELETE FROM games WHERE path = ?", [&path])?;
+        tx.commit()?;
 
         Ok(())
     }
