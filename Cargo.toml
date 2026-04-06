@@ -13,7 +13,8 @@ members = [
     "crates/show",
 ]
 exclude = [
-    "third-party/dufs"
+    "third-party/dufs",
+    "third-party/collie",
 ]
 resolver = "2"
 

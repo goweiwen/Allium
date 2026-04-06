@@ -13,7 +13,7 @@ FEATURES ?=
 -include local.mk
 
 .PHONY: all
-all: dist build package-build $(DIST_DIR)/RetroArch/retroarch $(DIST_DIR)/.allium/bin/dufs $(DIST_DIR)/.allium/bin/syncthing $(DIST_DIR)/.allium/cores/drastic/drastic $(DIST_DIR)/Themes migrations strip-all
+all: dist build package-build $(DIST_DIR)/RetroArch/retroarch $(DIST_DIR)/.allium/bin/dufs $(DIST_DIR)/.allium/bin/collie $(DIST_DIR)/.allium/bin/syncthing $(DIST_DIR)/.allium/cores/drastic/drastic $(DIST_DIR)/Themes migrations strip-all
 
 .PHONY: clean
 clean:
@@ -106,6 +106,10 @@ $(RETROARCH)/bin/retroarch_miyoo354:
 $(DIST_DIR)/.allium/bin/dufs:
 	cd third-party/dufs && LZMA_API_STATIC=1 cargo zigbuild --release --target=$(TARGET_TRIPLE).$(GLIBC_VERSION)
 	cp "third-party/dufs/target/$(TARGET_TRIPLE)/release/dufs" "$(DIST_DIR)/.allium/bin/"
+
+$(DIST_DIR)/.allium/bin/collie:
+	cd third-party/collie && cargo zigbuild --release --target=$(TARGET_TRIPLE).$(GLIBC_VERSION)
+	cp "third-party/collie/target/$(TARGET_TRIPLE)/release/collie" "$(DIST_DIR)/.allium/bin/"
 
 SYNCTHING_VERSION := "v2.0.10"
 SYNCTHING_URL := "https://github.com/syncthing/syncthing/releases/download/$(SYNCTHING_VERSION)/syncthing-linux-arm-$(SYNCTHING_VERSION).tar.gz"
