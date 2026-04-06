@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use crate::constants::ALLIUM_WIFI_SETTINGS;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct WiFiSettings {
     pub wifi: bool,
     pub ssid: String,
@@ -19,6 +20,7 @@ pub struct WiFiSettings {
     pub telnet: bool,
     pub ftp: bool,
     pub syncthing: bool,
+    pub scraper: bool,
 }
 
 impl WiFiSettings {
@@ -32,6 +34,7 @@ impl WiFiSettings {
             telnet: false,
             ftp: false,
             syncthing: false,
+            scraper: false,
         }
     }
 
@@ -72,6 +75,10 @@ impl WiFiSettings {
             if self.syncthing {
                 info!("Starting Syncthing...");
                 syncthing_on()?;
+            }
+            if self.scraper {
+                info!("Starting Box Art Scraper...");
+                scraper_on()?;
             }
         }
         Ok(())
@@ -210,6 +217,16 @@ network={{
             ftp_on()?;
         } else {
             ftp_off()?;
+        }
+        Ok(())
+    }
+
+    pub fn toggle_scraper(&mut self, enabled: bool) -> Result<()> {
+        self.scraper = enabled;
+        if self.scraper {
+            scraper_on()?;
+        } else {
+            scraper_off()?;
         }
         Ok(())
     }
@@ -424,6 +441,46 @@ pub fn web_file_browser_off() -> Result<()> {
             .await
             .map_err(|e| {
                 log::error!("dufs-off.sh failed: {}", e);
+                e
+            })
+    });
+    Ok(())
+}
+
+pub fn scraper_on() -> Result<()> {
+    #[cfg(feature = "miyoo")]
+    tokio::spawn(async {
+        Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("collie-on.sh"))
+            .spawn()
+            .map_err(|e| {
+                log::error!("failed to spawn collie-on.sh: {}", e);
+                e
+            })
+            .unwrap()
+            .wait()
+            .await
+            .map_err(|e| {
+                log::error!("collie-on.sh failed: {}", e);
+                e
+            })
+    });
+    Ok(())
+}
+
+pub fn scraper_off() -> Result<()> {
+    #[cfg(feature = "miyoo")]
+    tokio::spawn(async {
+        Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("collie-off.sh"))
+            .spawn()
+            .map_err(|e| {
+                log::error!("failed to spawn collie-off.sh: {}", e);
+                e
+            })
+            .unwrap()
+            .wait()
+            .await
+            .map_err(|e| {
+                log::error!("collie-off.sh failed: {}", e);
                 e
             })
     });
