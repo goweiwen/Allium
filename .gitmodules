@@ -4,3 +4,6 @@
 [submodule "third-party/RetroArch-patch"]
 	path = third-party/RetroArch-patch
 	url = https://github.com/goweiwen/RetroArch-patch.git
+[submodule "third-party/collie"]
+	path = third-party/collie
+	url = https://github.com/goweiwen/collie.git
