@@ -88,6 +88,7 @@ impl Wifi {
                 locale.t("settings-wifi-web-file-explorer"),
                 locale.t("settings-wifi-telnet-enabled"),
                 locale.t("settings-wifi-ftp-enabled"),
+                locale.t("settings-wifi-scraper"),
                 locale.t("settings-wifi-syncthing"),
             ],
             vec![
@@ -124,6 +125,11 @@ impl Wifi {
                     Alignment::Right,
                 )),
                 Box::new(Toggle::new(Point::zero(), settings.ftp, Alignment::Right)),
+                Box::new(Toggle::new(
+                    Point::zero(),
+                    settings.scraper,
+                    Alignment::Right,
+                )),
                 Box::new(Toggle::new(
                     Point::zero(),
                     settings.syncthing,
@@ -307,6 +313,37 @@ impl View for Wifi {
                         6 => self.settings.toggle_telnet(val.as_bool().unwrap())?,
                         7 => self.settings.toggle_ftp(val.as_bool().unwrap())?,
                         8 => {
+                            let enabled = val.as_bool().unwrap();
+                            self.settings.toggle_scraper(enabled)?;
+                            if enabled {
+                                let fg_color = self.res.get::<Stylesheet>().ui.text_color;
+                                let commands = commands.clone();
+                                tokio::spawn(async move {
+                                    if wifi::wait_for_wifi().await.is_ok()
+                                        && let Some(ip_address) = wifi::ip_address()
+                                    {
+                                        let url = format!("http://{ip_address}:2435/");
+                                        let Ok(code) = QrCode::new(url.as_bytes()) else {
+                                            warn!("Failed to generate QR code for box art scraper");
+                                            return;
+                                        };
+                                        let image = code
+                                            .render::<image::Rgba<u8>>()
+                                            .dark_color(fg_color.into())
+                                            .light_color(Color::rgba(0, 0, 0, 0).into())
+                                            .min_dimensions(300, 300)
+                                            .build();
+                                        commands
+                                            .send(Command::ImageToast(image, url, None))
+                                            .await
+                                            .ok();
+                                    }
+                                });
+                            } else {
+                                commands.send(Command::DismissToast).await.ok();
+                            }
+                        }
+                        9 => {
                             let enabled = val.as_bool().unwrap();
                             self.settings.toggle_syncthing(enabled)?;
                             if enabled {
