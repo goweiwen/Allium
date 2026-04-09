@@ -1,7 +1,7 @@
 #!/bin/sh
 
 set_snd_level() {
-    sleep 3
+    sleep 0.5
     local start_time
     local elapsed_time
 
