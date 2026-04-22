@@ -1,0 +1,7 @@
+#compdef run-help
+local d expl
+local HELPDIR=${HELPDIR:-/mnt/SDCARD/App/zsh/share/zsh/5.9/help}
+[[ -d $HELPDIR ]] && {
+	d=($HELPDIR/*(:t))
+	(($#d)) && d+=('.' ':') && _wanted commands expl 'command' compadd -a d
+} || _man

@@ -1,0 +1,6 @@
+{
+	"label":	"Better WiFi",
+	"icon":	"icon/icon.png",
+	"launch":	"script/launch.sh",
+	"description":	"Wifi management"
+}
