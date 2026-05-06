@@ -15,6 +15,9 @@ use winit::dpi::PhysicalSize;
 use winit::event::{ElementState, KeyEvent as WinitKeyEvent, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
+#[cfg(target_os = "macos")]
+use winit::platform::pump_events::{EventLoopExtPumpEvents, PumpStatus};
+#[cfg(not(target_os = "macos"))]
 use winit::platform::run_on_demand::EventLoopExtRunOnDemand;
 use winit::window::{Window as WinitWindow, WindowId};
 
@@ -84,17 +87,23 @@ impl ApplicationHandler for SimulatorApp {
 
             self.window = Some(window);
             self.surface = Some(surface);
+            // On macOS we use pump_app_events which manages its own lifecycle;
+            // calling exit() here would return PumpStatus::Exit and kill the process.
+            #[cfg(not(target_os = "macos"))]
             event_loop.exit();
         }
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        // Exit if we received an event
         if self.got_event {
             self.got_event = false;
+            #[cfg(not(target_os = "macos"))]
             event_loop.exit();
+            // On macOS: Poll tells pump_app_events to return immediately
+            #[cfg(target_os = "macos")]
+            event_loop.set_control_flow(ControlFlow::Poll);
         } else {
-            // Wait for up to 16ms for events, then exit to yield to tokio
+            // Wait for up to 16ms for events, then return to yield to tokio
             event_loop.set_control_flow(ControlFlow::WaitUntil(
                 std::time::Instant::now() + Duration::from_millis(16),
             ));
@@ -102,10 +111,14 @@ impl ApplicationHandler for SimulatorApp {
     }
 
     fn new_events(&mut self, event_loop: &ActiveEventLoop, cause: winit::event::StartCause) {
-        // Exit on timeout to yield to tokio for View::update
+        // On macOS pump_app_events handles the timeout externally; calling exit() here
+        // would return PumpStatus::Exit and be misread as a user-initiated quit.
+        #[cfg(not(target_os = "macos"))]
         if matches!(cause, winit::event::StartCause::ResumeTimeReached { .. }) {
             event_loop.exit();
         }
+        #[cfg(target_os = "macos")]
+        let _ = (event_loop, cause);
     }
 
     fn window_event(
@@ -184,12 +197,6 @@ impl Platform for SimulatorPlatform {
             let window_ref = self.window.clone();
             let tx = self.key_event_tx.clone();
 
-            // On macOS, ensure window stays visible before each poll
-            #[cfg(target_os = "macos")]
-            if let Some(window) = &window_ref {
-                window.set_visible(true);
-            }
-
             let mut app = SimulatorApp {
                 window: window_ref,
                 surface: None,
@@ -197,8 +204,24 @@ impl Platform for SimulatorPlatform {
                 got_event: false,
             };
 
-            // run_app_on_demand waits for events; about_to_wait exits when we get one
+            #[cfg(not(target_os = "macos"))]
             self.event_loop.run_app_on_demand(&mut app).ok();
+            #[cfg(target_os = "macos")]
+            {
+                // Ensure window stays visible — pump_app_events doesn't re-run
+                // applicationDidFinishLaunching, so we set visibility explicitly.
+                if let Some(window) = &app.window {
+                    window.set_visible(true);
+                }
+                // pump_app_events processes the event queue without starting/stopping
+                // NSApplication, avoiding the activation cycles that cause flickering.
+                let status = self
+                    .event_loop
+                    .pump_app_events(Some(Duration::from_millis(16)), &mut app);
+                if matches!(status, PumpStatus::Exit(_)) {
+                    process::exit(0);
+                }
+            }
 
             // Check again after processing events
             if let Ok(event) = self.key_event_rx.try_recv() {
@@ -224,7 +247,17 @@ impl Platform for SimulatorPlatform {
                 got_event: false,
             };
             trace!("Running event loop to create window");
+            #[cfg(not(target_os = "macos"))]
             self.event_loop.run_app_on_demand(&mut app).ok();
+            #[cfg(target_os = "macos")]
+            {
+                let status = self
+                    .event_loop
+                    .pump_app_events(Some(Duration::ZERO), &mut app);
+                if matches!(status, PumpStatus::Exit(_)) {
+                    process::exit(0);
+                }
+            }
             // Capture the window created by the event loop
             self.window = app.window.clone();
             trace!("Window after event loop: {:?}", self.window.is_some());
