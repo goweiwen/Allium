@@ -106,7 +106,7 @@ $(RETROARCH)/bin/retroarch_miyoo354:
 	docker run --rm -v /$(ROOT_DIR)/$(RETROARCH):/root/workspace $(TOOLCHAIN) bash -c "source /root/.bashrc; make all"
 
 $(DIST_DIR)/.allium/bin/dufs:
-	cd third-party/dufs && cargo zigbuild --release --target=$(TARGET_TRIPLE).$(GLIBC_VERSION)
+	cd third-party/dufs && LZMA_API_STATIC=1 cargo zigbuild --release --target=$(TARGET_TRIPLE).$(GLIBC_VERSION)
 	cp "third-party/dufs/target/$(TARGET_TRIPLE)/release/dufs" "$(DIST_DIR)/.allium/bin/"
 
 SYNCTHING_VERSION := "v2.0.10"
