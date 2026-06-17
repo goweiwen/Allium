@@ -2,4 +2,4 @@
 rustflags = ["--cfg", "tokio_unstable"]
 
 [target.armv7-unknown-linux-gnueabihf]
-rustflags = ["-C", "target-cpu=cortex-a7"]
+rustflags = ["-C", "target-cpu=cortex-a7", "-C", "target-feature=+neon,+vfp4"]
