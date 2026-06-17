@@ -18,8 +18,7 @@ all: dist build package-build $(DIST_DIR)/RetroArch/retroarch $(DIST_DIR)/.alliu
 .PHONY: clean
 clean:
 	rm -r $(DIST_DIR) || true
-	# Needs sudo because RetroArch build runs in docker as root
-	cd $(RETROARCH) && sudo make clean || true
+	cd $(RETROARCH) && make clean || true
 
 simulator-env: simulator/Themes
 	mkdir -p simulator
@@ -103,7 +102,7 @@ $(DIST_DIR)/RetroArch/retroarch: $(RETROARCH)/bin/retroarch_miyoo354
 	cp "$(RETROARCH)/bin/retroarch_miyoo354" "$(DIST_DIR)/RetroArch/retroarch"
 
 $(RETROARCH)/bin/retroarch_miyoo354:
-	docker run --rm -v /$(ROOT_DIR)/$(RETROARCH):/root/workspace $(TOOLCHAIN) bash -c "source /root/.bashrc; make all"
+	docker run --rm -v /$(ROOT_DIR)/$(RETROARCH):/root/workspace $(TOOLCHAIN) bash -c "source /root/.bashrc; make all; chown -R \$$(stat -c '%u:%g' /root/workspace) /root/workspace"
 
 $(DIST_DIR)/.allium/bin/dufs:
 	cd third-party/dufs && LZMA_API_STATIC=1 cargo zigbuild --release --target=$(TARGET_TRIPLE).$(GLIBC_VERSION)
