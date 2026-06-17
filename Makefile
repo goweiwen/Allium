@@ -59,9 +59,8 @@ debug: third-party/my283
 .PHONY: strip-all
 strip-all:
 	docker run --rm -i -v $(ROOT_DIR):/root/workspace $(TOOLCHAIN) \
-		find dist static migrations \
+		find dist \
 			-type f \
-			-not -path "static/.tmp_update/8188fu.ko" \
 			-not -path "dist/.tmp_update/8188fu.ko" \
 			-exec sh -c 'file "{}" | grep "not stripped"' \; \
 			-exec /opt/miyoomini-toolchain/usr/bin/arm-linux-gnueabihf-strip -s {} \;
