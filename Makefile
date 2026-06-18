@@ -13,7 +13,7 @@ FEATURES ?=
 -include local.mk
 
 .PHONY: all
-all: dist build package-build $(DIST_DIR)/RetroArch/retroarch $(DIST_DIR)/.allium/bin/dufs $(DIST_DIR)/.allium/bin/collie $(DIST_DIR)/.allium/bin/syncthing $(DIST_DIR)/.allium/cores/drastic/drastic $(DIST_DIR)/Themes migrations strip-all
+all: dist build package-build $(DIST_DIR)/RetroArch/retroarch $(DIST_DIR)/.allium/bin/dufs $(DIST_DIR)/.allium/bin/collie $(DIST_DIR)/.allium/bin/dropbear $(DIST_DIR)/.allium/bin/syncthing $(DIST_DIR)/.allium/cores/drastic/drastic $(DIST_DIR)/Themes migrations strip-all
 
 .PHONY: clean
 clean:
@@ -119,6 +119,13 @@ $(DIST_DIR)/.allium/bin/syncthing:
 		wget "$(SYNCTHING_URL)" -O "$$TEMP_DIR/syncthing.tar.gz" && \
 		tar xf "$$TEMP_DIR/syncthing.tar.gz" --directory="$$TEMP_DIR" && \
 		mv "$$TEMP_DIR/syncthing-linux-arm-$(SYNCTHING_VERSION)/syncthing" "$(DIST_DIR)/.allium/bin/syncthing"
+
+DROPBEAR := third-party/dropbear
+$(DIST_DIR)/.allium/bin/dropbear:
+	docker run --rm -v $(ROOT_DIR)/$(DROPBEAR):/db:z $(TOOLCHAIN) bash -c \
+		'export PATH=/opt/miyoomini-toolchain/bin:$$PATH && cd /db && make clean && make'
+	mkdir -p $(DIST_DIR)/.allium/bin
+	cp $(DROPBEAR)/bin/dropbear $(DIST_DIR)/.allium/bin/dropbear
 
 DRASTIC_URL := https://github.com/steward-fu/nds/releases/download/v1.8/drastic-v1.8_miyoo.zip
 $(DIST_DIR)/.allium/cores/drastic/drastic:

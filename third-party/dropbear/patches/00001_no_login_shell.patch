@@ -1,0 +1,12 @@
+--- a/src/dbutil.c
++++ b/src/dbutil.c
+@@ -374,7 +374,8 @@ void run_shell_command(const char* cmd, unsigned int maxfd, char* usershell) {
+
+ 	baseshell = basename(usershell);
+
+-	if (cmd != NULL) {
++	/* Allium: skip login shell */
++	if (IS_DROPBEAR_SERVER || cmd != NULL) {
+ 		argv[0] = baseshell;
+ 	} else {
+ 		/* a login shell should be "-bash" for "/bin/bash" etc */
