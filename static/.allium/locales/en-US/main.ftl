@@ -43,6 +43,7 @@ settings-wifi-wifi-password = Wi-Fi Password
 settings-wifi-ntp-enabled = NTP Enabled
 settings-wifi-web-file-explorer = Web File Explorer
 settings-wifi-telnet-enabled = Telnet Enabled
+settings-wifi-ssh-enabled = SSH Enabled
 settings-wifi-ftp-enabled = FTP Enabled
 settings-wifi-scraper = Scraper
 settings-wifi-syncthing = Syncthing Enabled
