@@ -151,7 +151,7 @@ bump-version: lint
 	git add crates/common/Cargo.toml
 	git add Cargo.lock
 	git commit -m "chore: bump version to v$(version)"
-	git tag "v$(version)" -a
+	git tag "v$(version)" -a -m "v$(version)"
 
 .PHONY: deploy
 deploy:
