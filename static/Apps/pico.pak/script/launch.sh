@@ -55,7 +55,7 @@ fixconfig() {
 }
 
 # when wifi is restarted, udhcpc and wpa_supplicant may be started with libpadsp.so preloaded, this is bad as they can hold mi_ao open even after audioserver has been killed.
-libpadspblocker() { 
+libpadspblocker() {
     wpa_pid=$(ps -e | grep "[w]pa_supplicant" | awk 'NR==1{print $1}')
     udhcpc_pid=$(ps -e | grep "[u]dhcpc" | awk 'NR==1{print $1}')
     if [ -n "$wpa_pid" ] && [ -n "$udhcpc_pid" ]; then
@@ -63,8 +63,8 @@ libpadspblocker() {
             echo "Network Checker: $wpa_pid(WPA) and $udhcpc_pid(UDHCPC) found preloaded with libpadsp.so"
             unset LD_PRELOAD
             killall -9 wpa_supplicant
-            killall -9 udhcpc 
-            $miyoodir/app/wpa_supplicant -B -D nl80211 -iwlan0 -c /appconfigs/wpa_supplicant.conf & 
+            killall -9 udhcpc
+            $miyoodir/app/wpa_supplicant -B -D nl80211 -iwlan0 -c /appconfigs/wpa_supplicant.conf &
             udhcpc -i wlan0 -s /etc/init.d/udhcpc.script &
             echo "Network Checker: Removing libpadsp.so preload on wpa_supp/udhcpc"
         fi
@@ -76,7 +76,7 @@ start_pico() {
     export SDL_VIDEODRIVER=mmiyoo
     export SDL_AUDIODRIVER=mmiyoo
     export EGL_VIDEODRIVER=mmiyoo
-    
+
     fixconfig
     /mnt/SDCARD/.tmp_update/script/stop_audioserver.sh
     libpadspblocker
@@ -87,16 +87,15 @@ start_pico() {
 main() {
     echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
     /mnt/SDCARD/.allium/scripts/swap-on.sh
-    mount --bind /mnt/SDCARD/Roms/PICO /mnt/SDCARD/App/pico/.lexaloffle/pico-8/carts
+    mount --bind /mnt/SDCARD/Roms/PICO /mnt/SDCARD/Apps/pico.pak/.lexaloffle/pico-8/carts
     fbset -g 640 480 640 960 32
     start_pico
     cat /dev/zero > /dev/fb0 2>/dev/null
     /mnt/SDCARD/.tmp_update/script/start_audioserver.sh
     /mnt/SDCARD/.tmp_update/script/set_sound_level.sh
-    umount /mnt/SDCARD/App/pico/.lexaloffle/pico-8/carts
+    umount /mnt/SDCARD/Apps/pico.pak/.lexaloffle/pico-8/carts
     /mnt/SDCARD/.allium/scripts/swap-off.sh
     echo ondemand > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 }
 
 main
-
