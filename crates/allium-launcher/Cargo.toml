@@ -38,6 +38,7 @@ sysinfo.workspace = true
 tokio = { workspace = true, features = ["full"] }
 toml.workspace = true
 type-map.workspace = true
+const-hex.workspace = true
 
 [dependencies.common]
 path = "../common"

@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use common::constants::{ALLIUM_SD_ROOT, ALLIUM_UPDATE_SETTINGS};
+use const_hex::ToHexExt;
 use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -352,7 +353,7 @@ pub async fn download_update_with_progress(
 
     // Verify SHA256 checksum
     info!("Verifying SHA256 checksum...");
-    let calculated_hash = format!("{:x}", hasher.finalize());
+    let calculated_hash = hasher.finalize().encode_hex();
 
     if calculated_hash != expected_hash {
         // Delete the file if verification fails
