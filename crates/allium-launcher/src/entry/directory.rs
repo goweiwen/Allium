@@ -186,7 +186,7 @@ impl Directory {
                     debug!("Failed to get gamelist metadata, don't parse.");
                     return Ok(false);
                 };
-                let file_size = metadata.len();
+                let file_size = metadata.len() as i64;
                 if file_size == fingerprint {
                     debug!("Same gamelist size, not parsing.");
                     return Ok(false);
@@ -200,7 +200,7 @@ impl Directory {
                     debug!("Failed to get gamelist metadata, don't parse.");
                     return Ok(false);
                 };
-                let file_size = metadata.len();
+                let file_size = metadata.len() as i64;
                 database.set_gamelist_fingerprint(&self.path, file_size)?;
                 Ok(true)
             }

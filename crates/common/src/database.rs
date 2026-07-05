@@ -538,7 +538,7 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
         Ok(())
     }
 
-    pub fn get_guide_cursor(&self, path: &Path) -> Result<u64> {
+    pub fn get_guide_cursor(&self, path: &Path) -> Result<i64> {
         let cursor = self
             .conn
             .as_ref()
@@ -553,7 +553,7 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
         Ok(cursor.unwrap_or(0))
     }
 
-    pub fn update_guide_cursor(&self, path: &Path, cursor: u64) -> Result<()> {
+    pub fn update_guide_cursor(&self, path: &Path, cursor: i64) -> Result<()> {
         self
             .conn
             .as_ref()
@@ -620,7 +620,7 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
         Ok(matches!(value.as_deref(), Some("1")))
     }
 
-    pub fn set_gamelist_fingerprint(&self, path: &Path, fingerprint: u64) -> Result<()> {
+    pub fn set_gamelist_fingerprint(&self, path: &Path, fingerprint: i64) -> Result<()> {
         trace!("set_gamelist_fingerprint({:?}, {})", path, fingerprint);
         self.conn.as_ref().unwrap().execute(
             "INSERT INTO directories (path, gamelist_fingerprint) VALUES (?, ?) ON CONFLICT(path) DO UPDATE SET gamelist_fingerprint = ?",
@@ -630,7 +630,7 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
         Ok(())
     }
 
-    pub fn get_gamelist_fingerprint(&self, path: &Path) -> Result<Option<u64>> {
+    pub fn get_gamelist_fingerprint(&self, path: &Path) -> Result<Option<i64>> {
         trace!("get_gamelist_fingerprint({:?})", path);
         let fingerprint = self
             .conn
@@ -639,7 +639,7 @@ ON CONFLICT(path) DO UPDATE SET play_count = play_count + 1;",
             .query_row(
                 "SELECT gamelist_fingerprint FROM directories WHERE path = ?",
                 [path.display().to_string()],
-                |row| row.get::<_, Option<u64>>(0),
+                |row| row.get::<_, Option<i64>>(0),
             )
             .optional()?
             .flatten();

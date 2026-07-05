@@ -97,7 +97,7 @@ impl TextReader {
     pub fn save_cursor(&self) {
         self.res
             .get::<Database>()
-            .update_guide_cursor(&self.path, self.cursor as u64)
+            .update_guide_cursor(&self.path, self.cursor as i64)
             .map_err(|e| error!("failed to update guide cursor to database: {}", e))
             .ok();
     }
