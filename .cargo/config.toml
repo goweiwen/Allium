@@ -2,4 +2,6 @@
 rustflags = ["--cfg", "tokio_unstable"]
 
 [target.armv7-unknown-linux-gnueabihf]
-rustflags = ["-C", "target-cpu=cortex-a7", "-C", "target-feature=+neon,+vfp4"]
+# simd-adler32 uses 32-bit ARM NEON intrinsics that nightly re-gated behind an
+# unstable feature (rust-lang/rust#111800); inject it crate-wide to keep NEON on.
+rustflags = ["-C", "target-cpu=cortex-a7", "-C", "target-feature=+neon,+vfp4", "-Z", "crate-attr=feature(stdarch_arm_neon_intrinsics)"]
