@@ -108,6 +108,7 @@ $(DIST_DIR)/.allium/bin/dufs:
 	cp "third-party/dufs/target/$(TARGET_TRIPLE)/release/dufs" "$(DIST_DIR)/.allium/bin/"
 
 $(DIST_DIR)/.allium/bin/collie:
+	cd third-party/collie/frontend && pnpm install --frozen-lockfile && pnpm run build
 	cd third-party/collie && cargo zigbuild --release --target=$(TARGET_TRIPLE).$(GLIBC_VERSION)
 	cp "third-party/collie/target/$(TARGET_TRIPLE)/release/collie" "$(DIST_DIR)/.allium/bin/"
 
