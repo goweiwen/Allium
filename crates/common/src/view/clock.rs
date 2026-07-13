@@ -50,7 +50,6 @@ impl View for Clock {
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        display.load(self.bounding_box(styles))?;
         self.label.draw(display, styles)
     }
 

@@ -99,16 +99,24 @@ where
             res.get::<Stylesheet>().ui.ui_font.size + styles.ui.padding_y as u32,
         );
 
+        let (image_y, image_h) = if styles.games.boxart_underlay {
+            (0, (y + rect.h as i32) as u32)
+        } else {
+            (y, list_height)
+        };
+
         let mut image = Image::empty(
             Rect::new(
                 x + w as i32 - styles.games.boxart_width as i32 - styles.ui.margin_x,
-                y,
+                image_y,
                 styles.games.boxart_width,
-                list_height,
+                image_h,
             ),
             ImageMode::Contain,
         );
-        image.set_border_radius(styles.ui.margin_x as u32);
+        image.set_border_radius(
+            (styles.ui.margin_x as f32 * styles.games.boxart_border_radius) as u32,
+        );
         image.set_alignment(Alignment::Right);
 
         drop(styles);
@@ -332,7 +340,16 @@ where
 
         drawn |= self.list.should_draw() && self.list.draw(display, styles)?;
 
+        let hints_will_draw = self.button_hints.should_draw();
+        if hints_will_draw {
+            self.image.set_should_draw();
+        }
+
+        let mut image_will_draw = false;
         if styles.games.boxart_width > 0 {
+            self.image.set_border_radius(
+                (styles.ui.margin_x as f32 * styles.games.boxart_border_radius) as u32,
+            );
             if let Some(entry) = self.entries.get_mut(self.list.selected()) {
                 if let Some(path) = entry.image() {
                     trace!("Loading image from {:?}", path);
@@ -341,16 +358,24 @@ where
                     trace!("No image for entry {:?}", entry);
                     self.image.set_path(None);
                 }
-                if self.image.should_draw() && self.image.draw(display, styles)? {
-                    drawn = true;
-                }
+                image_will_draw = self.image.should_draw();
             } else {
                 self.image.set_path(None);
             }
         }
 
-        if self.button_hints.should_draw() {
+        if hints_will_draw || image_will_draw {
             display.load(self.button_hints.bounding_box(styles))?;
+        }
+
+        if image_will_draw && self.image.draw(display, styles)? {
+            drawn = true;
+        }
+
+        if hints_will_draw || drawn {
+            if drawn {
+                self.button_hints.set_should_draw();
+            }
             drawn |= self.button_hints.draw(display, styles)?;
         }
         Ok(drawn)

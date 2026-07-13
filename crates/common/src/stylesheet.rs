@@ -235,6 +235,8 @@ pub struct StylesheetStatusBar {
     pub text_color: Color,
     #[serde(default = "Stylesheet::default_status_bar_stroke_color")]
     pub text_stroke_color: Color,
+    #[serde(default = "Stylesheet::default_status_backdrop_color")]
+    pub status_backdrop_color: Color,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -271,6 +273,10 @@ pub struct StylesheetRecents {
 pub struct StylesheetGames {
     #[serde(default = "Stylesheet::default_boxart_width")]
     pub boxart_width: u32,
+    #[serde(default)]
+    pub boxart_underlay: bool,
+    #[serde(default = "Stylesheet::default_boxart_border_radius")]
+    pub boxart_border_radius: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -716,6 +722,10 @@ rgui_wallpaper = "/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.png"
         250
     }
 
+    fn default_boxart_border_radius() -> f32 {
+        1.0
+    }
+
     #[inline]
     fn default_text_color() -> Color {
         Color::new(255, 255, 255)
@@ -822,6 +832,11 @@ rgui_wallpaper = "/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.png"
     }
 
     #[inline]
+    fn default_status_backdrop_color() -> Color {
+        Color::rgba(0, 0, 0, 0)
+    }
+
+    #[inline]
     fn default_stroke_width() -> u32 {
         0
     }
@@ -867,6 +882,7 @@ impl Default for StylesheetStatusBar {
             font_size: Stylesheet::default_status_bar_font_size(),
             text_color: Stylesheet::default_status_bar_color(),
             text_stroke_color: Stylesheet::default_status_bar_stroke_color(),
+            status_backdrop_color: Stylesheet::default_status_backdrop_color(),
         }
     }
 }
@@ -892,6 +908,8 @@ impl Default for StylesheetGames {
     fn default() -> Self {
         Self {
             boxart_width: Stylesheet::default_boxart_width(),
+            boxart_underlay: false,
+            boxart_border_radius: Stylesheet::default_boxart_border_radius(),
         }
     }
 }

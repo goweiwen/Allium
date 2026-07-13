@@ -209,6 +209,34 @@ impl Theme {
                 }),
             ),
             (
+                locale.t("settings-theme-boxart-underlay"),
+                Box::new(Toggle::new(
+                    Point::zero(),
+                    stylesheet.games.boxart_underlay,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _ctx, _val, _commands| {
+                    stylesheet.games.boxart_underlay = !stylesheet.games.boxart_underlay;
+                    Ok(true)
+                }),
+            ),
+            (
+                locale.t("settings-theme-boxart-border-radius"),
+                Box::new(Number::new(
+                    Point::zero(),
+                    (stylesheet.games.boxart_border_radius * 100.0) as i32,
+                    0,
+                    400,
+                    5,
+                    |v| format!("{}%", v),
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _ctx, val, _commands| {
+                    stylesheet.games.boxart_border_radius = val.as_int().unwrap() as f32 / 100.0;
+                    Ok(true)
+                }),
+            ),
+            (
                 locale.t("settings-theme-ui-font"),
                 Box::new(Select::new(
                     Point::zero(),
@@ -485,6 +513,18 @@ impl Theme {
                 )),
                 Box::new(|stylesheet, _ctx, val, _commands| {
                     stylesheet.status_bar.text_color = val.as_color().unwrap();
+                    Ok(false)
+                }),
+            ),
+            (
+                locale.t("settings-theme-status-backdrop-color"),
+                Box::new(ColorPicker::new(
+                    Point::zero(),
+                    stylesheet.status_bar.status_backdrop_color,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _ctx, val, _commands| {
+                    stylesheet.status_bar.status_backdrop_color = val.as_color().unwrap();
                     Ok(false)
                 }),
             ),
