@@ -81,7 +81,7 @@ where
         styles: &Stylesheet,
     ) -> Result<bool> {
         let mut drawn = false;
-        
+
         if self.should_draw() && styles.status_bar.status_backdrop {
             let mut bbox = self.row.bounding_box(styles);
             if bbox.w > 0 && bbox.h > 0 {
