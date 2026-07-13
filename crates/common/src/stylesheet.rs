@@ -235,8 +235,6 @@ pub struct StylesheetStatusBar {
     pub text_color: Color,
     #[serde(default = "Stylesheet::default_status_bar_stroke_color")]
     pub text_stroke_color: Color,
-    #[serde(default)]
-    pub status_backdrop: bool,
     #[serde(default = "Stylesheet::default_status_backdrop_color")]
     pub status_backdrop_color: Color,
 }
@@ -835,7 +833,7 @@ rgui_wallpaper = "/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.png"
 
     #[inline]
     fn default_status_backdrop_color() -> Color {
-        Color::new(0, 0, 0)
+        Color::rgba(0, 0, 0, 0)
     }
 
     #[inline]
@@ -884,7 +882,6 @@ impl Default for StylesheetStatusBar {
             font_size: Stylesheet::default_status_bar_font_size(),
             text_color: Stylesheet::default_status_bar_color(),
             text_stroke_color: Stylesheet::default_status_bar_stroke_color(),
-            status_backdrop: false,
             status_backdrop_color: Stylesheet::default_status_backdrop_color(),
         }
     }

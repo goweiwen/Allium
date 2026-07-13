@@ -69,7 +69,6 @@ settings-theme-guide-font = Fuente para las Guías
 settings-theme-guide-font-size = Tamaño de Fuente para Guías
 settings-theme-tab-font-size = Tamaño de Fuente Pestaña
 settings-theme-status-bar-font-size = Tamaño de Fuente Barra
-settings-theme-status-backdrop = Status Backdrop
 settings-theme-status-backdrop-color = Status Backdrop Color
 settings-theme-button-hint-font-size = Tamaño de Fuente Sugerencia
 settings-theme-button-size = Tamaño de Botón

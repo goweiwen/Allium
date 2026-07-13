@@ -226,7 +226,7 @@ impl Theme {
                     Point::zero(),
                     (stylesheet.games.boxart_border_radius * 100.0) as i32,
                     0,
-                    100,
+                    400,
                     5,
                     |v| format!("{}%", v),
                     Alignment::Right,
@@ -514,18 +514,6 @@ impl Theme {
                 Box::new(|stylesheet, _ctx, val, _commands| {
                     stylesheet.status_bar.text_color = val.as_color().unwrap();
                     Ok(false)
-                }),
-            ),
-            (
-                locale.t("settings-theme-status-backdrop"),
-                Box::new(Toggle::new(
-                    Point::zero(),
-                    stylesheet.status_bar.status_backdrop,
-                    Alignment::Right,
-                )),
-                Box::new(|stylesheet, _ctx, _val, _commands| {
-                    stylesheet.status_bar.status_backdrop = !stylesheet.status_bar.status_backdrop;
-                    Ok(true)
                 }),
             ),
             (

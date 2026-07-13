@@ -68,7 +68,6 @@ settings-theme-guide-font = Guide: Police
 settings-theme-guide-font-size = Guide: Taille de police
 settings-theme-tab-font-size = Tab: Taille de police
 settings-theme-status-bar-font-size = Barre état: Taille de police
-settings-theme-status-backdrop = Status Backdrop
 settings-theme-status-backdrop-color = Status Backdrop Color
 settings-theme-button-hint-font-size = Aide bouton: Taille de police
 settings-theme-button-size = Taille du bouton

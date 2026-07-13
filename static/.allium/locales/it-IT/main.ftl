@@ -68,7 +68,6 @@ settings-theme-guide-font = Font Guida
 settings-theme-guide-font-size = Dimensioni Font Guida
 settings-theme-tab-font-size = Dimensioni Font Tab
 settings-theme-status-bar-font-size = Dimensioni Font Barra
-settings-theme-status-backdrop = Status Backdrop
 settings-theme-status-backdrop-color = Status Backdrop Color
 settings-theme-button-hint-font-size = Dimensioni Font Hint
 settings-theme-button-size = Dimensioni Pulsante

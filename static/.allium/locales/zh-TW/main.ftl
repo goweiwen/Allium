@@ -68,7 +68,6 @@ settings-theme-guide-font = 指南字體
 settings-theme-guide-font-size = 指南字體大小
 settings-theme-tab-font-size = 標籤字體大小
 settings-theme-status-bar-font-size = 狀態欄字體大小
-settings-theme-status-backdrop = Status Backdrop
 settings-theme-status-backdrop-color = Status Backdrop Color
 settings-theme-button-hint-font-size = 按鈕提示字體大小
 settings-theme-button-size = 按鈕大小

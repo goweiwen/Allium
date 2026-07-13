@@ -68,7 +68,6 @@ settings-theme-guide-font = ガイドフォント
 settings-theme-guide-font-size = ガイドフォントサイズ
 settings-theme-tab-font-size = タブフォントサイズ
 settings-theme-status-bar-font-size = ステータスバーフォントサイズ
-settings-theme-status-backdrop = Status Backdrop
 settings-theme-status-backdrop-color = Status Backdrop Color
 settings-theme-button-hint-font-size = ボタンヒントフォントサイズ
 settings-theme-button-size = ボタンサイズ

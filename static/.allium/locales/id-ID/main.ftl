@@ -68,7 +68,6 @@ settings-theme-guide-font = Huruf di Panduan
 settings-theme-guide-font-size = Ukuran huruf di Panduan
 settings-theme-tab-font-size = Ukuran huruf tab
 settings-theme-status-bar-font-size = Ukuran huruf baris status
-settings-theme-status-backdrop = Status Backdrop
 settings-theme-status-backdrop-color = Status Backdrop Color
 settings-theme-button-hint-font-size = Ukuran huruf petunjuk tombol
 settings-theme-button-size = Ukuran tombol
