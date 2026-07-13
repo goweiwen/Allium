@@ -61,6 +61,7 @@ settings-theme-show-wifi = Wi-Fi Icon
 settings-theme-use-recents-carousel = 最近轮播
 settings-theme-boxart-width = 封面宽度
 settings-theme-boxart-underlay = 封面底衬
+settings-theme-boxart-border-radius = Boxart Border Radius
 settings-theme-ui-font = UI字体
 settings-theme-ui-font-size = UI字体大小
 settings-theme-guide-font = 指南字体

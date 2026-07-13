@@ -61,6 +61,7 @@ settings-theme-show-wifi = Wi-Fi Icon
 settings-theme-use-recents-carousel = Carrousel des récents
 settings-theme-boxart-width = Largeur de la pochette
 settings-theme-boxart-underlay = Pochette en fond
+settings-theme-boxart-border-radius = Boxart Border Radius
 settings-theme-ui-font = UI: Police
 settings-theme-ui-font-size = UI: Taille de police
 settings-theme-guide-font = Guide: Police

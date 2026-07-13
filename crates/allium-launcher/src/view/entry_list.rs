@@ -114,7 +114,9 @@ where
             ),
             ImageMode::Contain,
         );
-        image.set_border_radius(styles.ui.margin_x as u32);
+        image.set_border_radius(
+            (styles.ui.margin_x as f32 * styles.games.boxart_border_radius) as u32,
+        );
         image.set_alignment(Alignment::Right);
 
         drop(styles);
@@ -345,6 +347,9 @@ where
 
         let mut image_will_draw = false;
         if styles.games.boxart_width > 0 {
+            self.image.set_border_radius(
+                (styles.ui.margin_x as f32 * styles.games.boxart_border_radius) as u32,
+            );
             if let Some(entry) = self.entries.get_mut(self.list.selected()) {
                 if let Some(path) = entry.image() {
                     trace!("Loading image from {:?}", path);

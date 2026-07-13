@@ -273,6 +273,8 @@ pub struct StylesheetGames {
     pub boxart_width: u32,
     #[serde(default)]
     pub boxart_underlay: bool,
+    #[serde(default = "Stylesheet::default_boxart_border_radius")]
+    pub boxart_border_radius: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -718,6 +720,10 @@ rgui_wallpaper = "/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.png"
         250
     }
 
+    fn default_boxart_border_radius() -> f32 {
+        1.0
+    }
+
     #[inline]
     fn default_text_color() -> Color {
         Color::new(255, 255, 255)
@@ -895,6 +901,7 @@ impl Default for StylesheetGames {
         Self {
             boxart_width: Stylesheet::default_boxart_width(),
             boxart_underlay: false,
+            boxart_border_radius: Stylesheet::default_boxart_border_radius(),
         }
     }
 }

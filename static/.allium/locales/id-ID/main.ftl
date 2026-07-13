@@ -61,6 +61,7 @@ settings-theme-show-wifi = Wi-Fi Icon
 settings-theme-use-recents-carousel = Korsel terakhir
 settings-theme-boxart-width = Lebar boxart
 settings-theme-boxart-underlay = Boxart berlapis
+settings-theme-boxart-border-radius = Boxart Border Radius
 settings-theme-ui-font = Huruf sistem
 settings-theme-ui-font-size = Ukuran huruf
 settings-theme-guide-font = Huruf di Panduan

@@ -61,6 +61,7 @@ settings-theme-show-wifi = Wi-Fi Icon
 settings-theme-use-recents-carousel = Carosello recenti
 settings-theme-boxart-width = Larghezza boxart
 settings-theme-boxart-underlay = Boxart in sottofondo
+settings-theme-boxart-border-radius = Boxart Border Radius
 settings-theme-ui-font = Font UI
 settings-theme-ui-font-size = Dimensioni Font UI
 settings-theme-guide-font = Font Guida

@@ -62,6 +62,7 @@ settings-theme-show-wifi = Icono Wi-Fi
 settings-theme-use-recents-carousel = Carrusel de Recientes
 settings-theme-boxart-width = Ancho de Boxart
 settings-theme-boxart-underlay = Boxart de fondo
+settings-theme-boxart-border-radius = Boxart Border Radius
 settings-theme-ui-font = Fuente UI
 settings-theme-ui-font-size = Tamaño de Fuente UI
 settings-theme-guide-font = Fuente de Guía

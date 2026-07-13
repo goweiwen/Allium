@@ -221,6 +221,22 @@ impl Theme {
                 }),
             ),
             (
+                locale.t("settings-theme-boxart-border-radius"),
+                Box::new(Number::new(
+                    Point::zero(),
+                    (stylesheet.games.boxart_border_radius * 100.0) as i32,
+                    0,
+                    100,
+                    5,
+                    |v| format!("{}%", v),
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _ctx, val, _commands| {
+                    stylesheet.games.boxart_border_radius = val.as_int().unwrap() as f32 / 100.0;
+                    Ok(true)
+                }),
+            ),
+            (
                 locale.t("settings-theme-ui-font"),
                 Box::new(Select::new(
                     Point::zero(),

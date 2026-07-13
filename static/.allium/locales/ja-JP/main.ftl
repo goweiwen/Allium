@@ -61,6 +61,7 @@ settings-theme-show-wifi = Wi-Fi Icon
 settings-theme-use-recents-carousel = 最近のカルーセル
 settings-theme-boxart-width = ボックスアート幅
 settings-theme-boxart-underlay = ボックスアート背面表示
+settings-theme-boxart-border-radius = Boxart Border Radius
 settings-theme-ui-font = UIフォント
 settings-theme-ui-font-size = UIフォントサイズ
 settings-theme-guide-font = ガイドフォント
