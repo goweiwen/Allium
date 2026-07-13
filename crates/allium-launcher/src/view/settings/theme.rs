@@ -517,6 +517,30 @@ impl Theme {
                 }),
             ),
             (
+                locale.t("settings-theme-status-backdrop"),
+                Box::new(Toggle::new(
+                    Point::zero(),
+                    stylesheet.status_bar.status_backdrop,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _ctx, _val, _commands| {
+                    stylesheet.status_bar.status_backdrop = !stylesheet.status_bar.status_backdrop;
+                    Ok(true)
+                }),
+            ),
+            (
+                locale.t("settings-theme-status-backdrop-color"),
+                Box::new(ColorPicker::new(
+                    Point::zero(),
+                    stylesheet.status_bar.status_backdrop_color,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _ctx, val, _commands| {
+                    stylesheet.status_bar.status_backdrop_color = val.as_color().unwrap();
+                    Ok(false)
+                }),
+            ),
+            (
                 locale.t("settings-theme-button-hint-font-size"),
                 Box::new(Percentage::new(
                     Point::zero(),

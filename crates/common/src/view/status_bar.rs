@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use tokio::sync::mpsc::Sender;
 
 use crate::battery::Battery;
+use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, KeyEvent, Platform};
 use crate::resources::Resources;
@@ -79,7 +80,38 @@ where
         display: &mut <DefaultPlatform as Platform>::Display,
         styles: &Stylesheet,
     ) -> Result<bool> {
-        self.row.draw(display, styles)
+        let mut drawn = false;
+        
+        if self.should_draw() && styles.status_bar.status_backdrop {
+            let mut bbox = self.row.bounding_box(styles);
+            if bbox.w > 0 && bbox.h > 0 {
+                let padding_x = styles.ui.padding_x as i32;
+                let padding_y = styles.ui.padding_y as i32;
+                bbox.x -= padding_x;
+                bbox.y -= padding_y;
+                bbox.w += (padding_x * 2) as u32;
+                bbox.h += (padding_y * 2) as u32;
+
+                // Make sure it doesn't go off the top of the screen
+                if bbox.y < 0 {
+                    bbox.h = (bbox.h as i32 + bbox.y) as u32;
+                    bbox.y = 0;
+                }
+
+                crate::display::fill_rounded_rect(
+                    &mut display.pixmap_mut(),
+                    bbox,
+                    styles.ui.margin_x as u32,
+                    styles.status_bar.status_backdrop_color,
+                );
+            }
+        }
+
+        if self.row.draw(display, styles)? {
+            drawn = true;
+        }
+
+        Ok(drawn)
     }
 
     fn should_draw(&self) -> bool {
