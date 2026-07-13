@@ -1,0 +1,27 @@
+name: Setup build toolchain
+description: Install Rust (armv7 target), cargo-zigbuild, pnpm and node for building the device artifact
+
+runs:
+  using: composite
+  steps:
+    - name: Install rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        profile: minimal
+        override: true
+        target: armv7-unknown-linux-gnueabihf
+
+    - name: Install cargo-zigbuild
+      shell: bash
+      run: pip install cargo-zigbuild
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Install node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22

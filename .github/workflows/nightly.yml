@@ -67,26 +67,8 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          profile: minimal
-          override: true
-          target: ${{ matrix.target }}
-
-      - name: Install cargo-zigbuild
-        run: pip install cargo-zigbuild
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Install node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
+      - name: Setup build toolchain
+        uses: ./.github/actions/setup-build
 
       - name: Build target
         run: cargo zigbuild --release --bins --target ${{ matrix.target }}

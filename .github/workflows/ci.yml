@@ -50,6 +50,40 @@ jobs:
           command: test
           args: --package common --package alliumd --package allium-launcher --package allium-menu
 
+  build:
+    name: Build Artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+
+      - name: Setup build toolchain
+        uses: ./.github/actions/setup-build
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: armv7-unknown-linux-gnueabihf
+
+      - name: Build target
+        run: cargo zigbuild --release --bins --target armv7-unknown-linux-gnueabihf
+
+      - name: Package
+        shell: bash
+        run: |
+          make all
+          cd dist
+          zip -r ../allium-armv7-unknown-linux-gnueabihf.zip .allium .tmp_update RetroArch Apps BIOS Roms Saves Themes
+          cd -
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: allium-armv7-unknown-linux-gnueabihf
+          path: allium-armv7-unknown-linux-gnueabihf.zip
+
   deny:
     runs-on: ubuntu-latest
     strategy:
