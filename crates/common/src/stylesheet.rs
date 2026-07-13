@@ -271,6 +271,8 @@ pub struct StylesheetRecents {
 pub struct StylesheetGames {
     #[serde(default = "Stylesheet::default_boxart_width")]
     pub boxart_width: u32,
+    #[serde(default)]
+    pub boxart_underlay: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -892,6 +894,7 @@ impl Default for StylesheetGames {
     fn default() -> Self {
         Self {
             boxart_width: Stylesheet::default_boxart_width(),
+            boxart_underlay: false,
         }
     }
 }

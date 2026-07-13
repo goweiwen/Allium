@@ -61,6 +61,7 @@ settings-theme-show-clock = Reloj
 settings-theme-show-wifi = Icono Wi-Fi
 settings-theme-use-recents-carousel = Carrusel de Recientes
 settings-theme-boxart-width = Ancho de Boxart
+settings-theme-boxart-underlay = Boxart de fondo
 settings-theme-ui-font = Fuente del Menú
 settings-theme-ui-font-size = Tamaño de Fuente del Menú
 settings-theme-guide-font = Fuente para las Guías

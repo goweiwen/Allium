@@ -209,6 +209,18 @@ impl Theme {
                 }),
             ),
             (
+                locale.t("settings-theme-boxart-underlay"),
+                Box::new(Toggle::new(
+                    Point::zero(),
+                    stylesheet.games.boxart_underlay,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _ctx, _val, _commands| {
+                    stylesheet.games.boxart_underlay = !stylesheet.games.boxart_underlay;
+                    Ok(true)
+                }),
+            ),
+            (
                 locale.t("settings-theme-ui-font"),
                 Box::new(Select::new(
                     Point::zero(),

@@ -60,6 +60,7 @@ settings-theme-show-clock = 時鐘
 settings-theme-show-wifi = Wi-Fi Icon
 settings-theme-use-recents-carousel = 最近輪播
 settings-theme-boxart-width = 封面寬度
+settings-theme-boxart-underlay = 封面底襯
 settings-theme-ui-font = UI字體
 settings-theme-ui-font-size = UI字體大小
 settings-theme-guide-font = 指南字體

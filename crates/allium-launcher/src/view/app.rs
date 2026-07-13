@@ -289,18 +289,34 @@ where
         let mut drawn = false;
 
         if self.search_results.is_none() {
-            if self.tabs.should_draw() || self.status_bar.should_draw() {
+            let top_needs_draw = self.tabs.should_draw() || self.status_bar.should_draw();
+            let mut view_will_draw = !self.search_view.is_active() && self.view().should_draw();
+
+            if top_needs_draw && !self.search_view.is_active() {
+                self.view_mut().set_should_draw();
+                view_will_draw = true;
+            }
+
+            if top_needs_draw || view_will_draw {
                 display.load(
                     self.tabs
                         .bounding_box(styles)
                         .union(&self.status_bar.bounding_box(styles)),
                 )?;
-                drawn |= self.tabs.draw(display, styles)?;
-                drawn |= self.status_bar.draw(display, styles)?;
             }
 
-            if !self.search_view.is_active() {
-                drawn |= self.view().should_draw() && self.view_mut().draw(display, styles)?;
+            if view_will_draw {
+                drawn |= self.view_mut().draw(display, styles)?;
+            }
+
+            if self.tabs.should_draw() || self.status_bar.should_draw() || drawn {
+                if drawn {
+                    self.tabs.set_should_draw();
+                    self.status_bar.set_should_draw();
+                }
+
+                drawn |= self.tabs.draw(display, styles)?;
+                drawn |= self.status_bar.draw(display, styles)?;
             }
         }
 

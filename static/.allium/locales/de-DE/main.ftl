@@ -60,6 +60,7 @@ settings-theme-show-clock = Uhr
 settings-theme-show-wifi = Wi-Fi Icon
 settings-theme-use-recents-carousel = Verlauf-Karussell
 settings-theme-boxart-width = Boxart Breite
+settings-theme-boxart-underlay = Boxart Hinterlegung
 settings-theme-ui-font = UI Schriftart
 settings-theme-ui-font-size = UI Schriftgröße
 settings-theme-guide-font = Schriftart Anleitung
