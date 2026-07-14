@@ -69,6 +69,7 @@ settings-theme-guide-font-size = 指南字体大小
 settings-theme-tab-font-size = 标签字体大小
 settings-theme-status-bar-font-size = 状态栏字体大小
 settings-theme-status-backdrop-color = Status Backdrop Color
+settings-theme-no-status-in-launcher = No Status In Launcher
 settings-theme-button-hint-font-size = 按钮提示字体大小
 settings-theme-button-size = 按钮大小
 settings-theme-button-text-font-size = 按钮文本字体大小

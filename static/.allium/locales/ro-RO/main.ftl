@@ -69,6 +69,7 @@ settings-theme-guide-font-size = Dimensiune Font Ghid
 settings-theme-tab-font-size = Dimensiune Font Filei
 settings-theme-status-bar-font-size = Dimensiune Font Bară de Stare
 settings-theme-status-backdrop-color = Status Backdrop Color
+settings-theme-no-status-in-launcher = No Status In Launcher
 settings-theme-button-hint-font-size = Dimensiune Font Indiciu Buton
 settings-theme-button-size = Dimensiune Buton
 settings-theme-button-text-font-size = Dimensiune Font Text Buton

@@ -289,7 +289,9 @@ where
         let mut drawn = false;
 
         if self.search_results.is_none() {
-            let top_needs_draw = self.tabs.should_draw() || self.status_bar.should_draw();
+            let hide_status = styles.status_bar.no_status_in_launcher;
+            let top_needs_draw =
+                self.tabs.should_draw() || (!hide_status && self.status_bar.should_draw());
             let mut view_will_draw = !self.search_view.is_active() && self.view().should_draw();
 
             if top_needs_draw && !self.search_view.is_active() {
@@ -309,14 +311,18 @@ where
                 drawn |= self.view_mut().draw(display, styles)?;
             }
 
-            if self.tabs.should_draw() || self.status_bar.should_draw() || drawn {
+            if self.tabs.should_draw() || (!hide_status && self.status_bar.should_draw()) || drawn {
                 if drawn {
                     self.tabs.set_should_draw();
-                    self.status_bar.set_should_draw();
+                    if !hide_status {
+                        self.status_bar.set_should_draw();
+                    }
                 }
 
                 drawn |= self.tabs.draw(display, styles)?;
-                drawn |= self.status_bar.draw(display, styles)?;
+                if !hide_status {
+                    drawn |= self.status_bar.draw(display, styles)?;
+                }
             }
         }
 

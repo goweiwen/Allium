@@ -70,6 +70,7 @@ settings-theme-guide-font-size = Tamaño Fuente de Guía
 settings-theme-tab-font-size = Tamaño Fuente Pestaña
 settings-theme-status-bar-font-size = Tamaño Fuente Barra
 settings-theme-status-backdrop-color = Status Backdrop Color
+settings-theme-no-status-in-launcher = No Status In Launcher
 settings-theme-button-hint-font-size = Tamaño Fuente Sugerencia
 settings-theme-button-size = Tamaño de Botón
 settings-theme-button-text-font-size = Tamaño Fuente Texto Botón

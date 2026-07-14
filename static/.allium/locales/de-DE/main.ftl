@@ -69,6 +69,7 @@ settings-theme-guide-font-size = Schriftgröße Anleitung
 settings-theme-tab-font-size = Tab Schriftgröße
 settings-theme-status-bar-font-size = Statusleiste Schriftgröße
 settings-theme-status-backdrop-color = Status Backdrop Color
+settings-theme-no-status-in-launcher = No Status In Launcher
 settings-theme-button-hint-font-size = Button-Hinweis Schriftgröße
 settings-theme-button-size = Button-Größe
 settings-theme-button-text-font-size = Button-Text Schriftgröße
