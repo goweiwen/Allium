@@ -491,6 +491,30 @@ impl Theme {
                 }),
             ),
             (
+                locale.t("settings-theme-tabs-backdrop-color"),
+                Box::new(ColorPicker::new(
+                    Point::zero(),
+                    stylesheet.ui.tabs_backdrop_color,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _ctx, val, _commands| {
+                    stylesheet.ui.tabs_backdrop_color = val.as_color().unwrap();
+                    Ok(false)
+                }),
+            ),
+            (
+                locale.t("settings-theme-mirror-tabs-and-status"),
+                Box::new(Toggle::new(
+                    Point::zero(),
+                    stylesheet.ui.mirror_tabs_and_status,
+                    Alignment::Right,
+                )),
+                Box::new(|stylesheet, _ctx, _val, _commands| {
+                    stylesheet.ui.mirror_tabs_and_status = !stylesheet.ui.mirror_tabs_and_status;
+                    Ok(true)
+                }),
+            ),
+            (
                 locale.t("settings-theme-status-bar-font-size"),
                 Box::new(Percentage::new(
                     Point::zero(),

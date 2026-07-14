@@ -67,14 +67,12 @@ where
         let styles = res.get::<Stylesheet>();
         let locale = res.get::<Locale>();
 
-        let status_bar = StatusBar::new(
-            res.clone(),
-            Point::new(w as i32 - styles.ui.margin_x, y + styles.ui.margin_y),
-            battery,
-        );
+        let mirror = styles.ui.mirror_tabs_and_status;
+
+        let mut status_bar = StatusBar::new(res.clone(), Point::zero(), battery);
 
         let mut tabs = Row::new(
-            Point::new(x + styles.ui.margin_x, y + styles.ui.margin_y),
+            Point::zero(),
             {
                 let mut tabs = vec![
                     Label::new(
@@ -106,6 +104,26 @@ where
             .unwrap()
             .color(StylesheetColor::TabSelected)
             .stroke_color(StylesheetColor::TabSelectedStroke);
+
+        if mirror {
+            let tabs_w = tabs.bounding_box(&styles).w as i32;
+            tabs.set_position(Point::new(
+                w as i32 - styles.ui.margin_x - tabs_w,
+                y + styles.ui.margin_y,
+            ));
+
+            let status_w = status_bar.bounding_box(&styles).w as i32;
+            status_bar.set_position(Point::new(
+                x + styles.ui.margin_x + status_w,
+                y + styles.ui.margin_y,
+            ));
+        } else {
+            tabs.set_position(Point::new(x + styles.ui.margin_x, y + styles.ui.margin_y));
+            status_bar.set_position(Point::new(
+                w as i32 - styles.ui.margin_x,
+                y + styles.ui.margin_y,
+            ));
+        }
 
         // let mut title = Label::new(
         //     Point::new(x + 24, y + styles.ui.margin_y),
@@ -319,6 +337,29 @@ where
                     }
                 }
 
+                if self.tabs.should_draw() && styles.ui.tabs_backdrop_color.a() > 0 {
+                    let mut bbox = self.tabs.bounding_box(styles);
+                    if bbox.w > 0 && bbox.h > 0 {
+                        let padding_x = styles.ui.padding_x as i32;
+                        let padding_y = styles.ui.padding_y as i32;
+                        bbox.x -= padding_x;
+                        bbox.y -= padding_y;
+                        bbox.w += (padding_x * 2) as u32;
+                        bbox.h += (padding_y * 2) as u32;
+
+                        if bbox.y < 0 {
+                            bbox.h = (bbox.h as i32 + bbox.y) as u32;
+                            bbox.y = 0;
+                        }
+
+                        common::display::fill_rounded_rect(
+                            &mut display.pixmap_mut(),
+                            bbox,
+                            styles.ui.margin_x as u32,
+                            styles.ui.tabs_backdrop_color,
+                        );
+                    }
+                }
                 drawn |= self.tabs.draw(display, styles)?;
                 if !hide_status {
                     drawn |= self.status_bar.draw(display, styles)?;
