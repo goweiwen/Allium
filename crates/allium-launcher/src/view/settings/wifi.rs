@@ -87,6 +87,7 @@ impl Wifi {
                 locale.t("settings-wifi-ntp-enabled"),
                 locale.t("settings-wifi-web-file-explorer"),
                 locale.t("settings-wifi-telnet-enabled"),
+                locale.t("settings-wifi-ssh-enabled"),
                 locale.t("settings-wifi-ftp-enabled"),
                 locale.t("settings-wifi-scraper"),
                 locale.t("settings-wifi-syncthing"),
@@ -124,6 +125,7 @@ impl Wifi {
                     settings.telnet,
                     Alignment::Right,
                 )),
+                Box::new(Toggle::new(Point::zero(), settings.ssh, Alignment::Right)),
                 Box::new(Toggle::new(Point::zero(), settings.ftp, Alignment::Right)),
                 Box::new(Toggle::new(
                     Point::zero(),
@@ -311,8 +313,9 @@ impl View for Wifi {
                             }
                         }
                         6 => self.settings.toggle_telnet(val.as_bool().unwrap())?,
-                        7 => self.settings.toggle_ftp(val.as_bool().unwrap())?,
-                        8 => {
+                        7 => self.settings.toggle_ssh(val.as_bool().unwrap())?,
+                        8 => self.settings.toggle_ftp(val.as_bool().unwrap())?,
+                        9 => {
                             let enabled = val.as_bool().unwrap();
                             self.settings.toggle_scraper(enabled)?;
                             if enabled {
@@ -343,7 +346,7 @@ impl View for Wifi {
                                 commands.send(Command::DismissToast).await.ok();
                             }
                         }
-                        9 => {
+                        10 => {
                             let enabled = val.as_bool().unwrap();
                             self.settings.toggle_syncthing(enabled)?;
                             if enabled {

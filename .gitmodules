@@ -7,3 +7,6 @@
 [submodule "third-party/collie"]
 	path = third-party/collie
 	url = https://github.com/goweiwen/collie.git
+[submodule "third-party/dropbear/submodules/dropbear"]
+	path = third-party/dropbear/submodules/dropbear
+	url = https://github.com/mkj/dropbear.git

@@ -18,6 +18,8 @@ pub struct WiFiSettings {
     pub ntp: bool,
     pub web_file_browser: bool,
     pub telnet: bool,
+    #[serde(default)]
+    pub ssh: bool,
     pub ftp: bool,
     pub syncthing: bool,
     pub scraper: bool,
@@ -32,6 +34,7 @@ impl WiFiSettings {
             ntp: false,
             web_file_browser: false,
             telnet: false,
+            ssh: false,
             ftp: false,
             syncthing: false,
             scraper: false,
@@ -56,6 +59,7 @@ impl WiFiSettings {
         if self.wifi {
             wifi_on()?;
             telnet_off()?;
+            ssh_off()?;
             if self.ntp {
                 info!("Starting NTP...");
                 ntp_sync()?;
@@ -63,6 +67,10 @@ impl WiFiSettings {
             if self.telnet {
                 info!("Starting Telnet...");
                 telnet_on()?;
+            }
+            if self.ssh {
+                info!("Starting SSH...");
+                ssh_on()?;
             }
             if self.ftp {
                 info!("Starting FTP...");
@@ -144,11 +152,15 @@ network={{
         if self.wifi {
             wifi_on()?;
             let telnet = self.telnet;
+            let ssh = self.ssh;
             let ftp = self.ftp;
             tokio::spawn(async move {
                 if wait_for_wifi().await.is_ok() {
                     if telnet {
                         telnet_on().ok();
+                    }
+                    if ssh {
+                        ssh_on().ok();
                     }
                     if ftp {
                         ftp_on().ok();
@@ -159,6 +171,9 @@ network={{
             wifi_off()?;
             if self.telnet {
                 telnet_off().ok();
+            }
+            if self.ssh {
+                ssh_off().ok();
             }
             if self.ftp {
                 ftp_off().ok();
@@ -207,6 +222,16 @@ network={{
             telnet_on()?;
         } else {
             telnet_off()?;
+        }
+        Ok(())
+    }
+
+    pub fn toggle_ssh(&mut self, enabled: bool) -> Result<()> {
+        self.ssh = enabled;
+        if self.ssh {
+            ssh_on()?;
+        } else {
+            ssh_off()?;
         }
         Ok(())
     }
@@ -322,6 +347,46 @@ pub fn telnet_off() -> Result<()> {
             .await
             .map_err(|e| {
                 log::error!("telnet-off.sh failed: {}", e);
+                e
+            })
+    });
+    Ok(())
+}
+
+pub fn ssh_on() -> Result<()> {
+    #[cfg(feature = "miyoo")]
+    tokio::spawn(async {
+        Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("ssh-on.sh"))
+            .spawn()
+            .map_err(|e| {
+                log::error!("failed to spawn ssh-on.sh: {}", e);
+                e
+            })
+            .unwrap()
+            .wait()
+            .await
+            .map_err(|e| {
+                log::error!("ssh-on.sh failed: {}", e);
+                e
+            })
+    });
+    Ok(())
+}
+
+pub fn ssh_off() -> Result<()> {
+    #[cfg(feature = "miyoo")]
+    tokio::spawn(async {
+        Command::new(crate::constants::ALLIUM_SCRIPTS_DIR.join("ssh-off.sh"))
+            .spawn()
+            .map_err(|e| {
+                log::error!("failed to spawn ssh-off.sh: {}", e);
+                e
+            })
+            .unwrap()
+            .wait()
+            .await
+            .map_err(|e| {
+                log::error!("ssh-off.sh failed: {}", e);
                 e
             })
     });
