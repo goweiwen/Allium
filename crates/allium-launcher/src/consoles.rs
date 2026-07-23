@@ -378,6 +378,19 @@ mod tests {
         // NXEngine
         assert!(eq("Cave Story/Doukutsu.exe", "Cave Story", "nxengine"));
         assert!(eq("Cave Story (NXENGINE).m3u", "Cave Story", "nxengine"));
+
+        // EmulationStation DE folder names
+        assert!(eq("nes/rom.zip", "NES", "fceumm"));
+        assert!(eq("famicom/rom.zip", "NES", "fceumm"));
+        assert!(eq("snes/rom.zip", "SNES", "mednafen_supafaust"));
+        assert!(eq("megadrive/rom.zip", "Genesis", "picodrive"));
+        assert!(eq("genesis/rom.zip", "Genesis", "picodrive"));
+        assert!(eq("mastersystem/rom.zip", "Master System", "picodrive"));
+        assert!(eq("atari2600/rom.zip", "Atari 2600", "stella2014"));
+        assert!(eq("pcengine/rom.zip", "TurboGrafx-16", "mednafen_pce_fast"));
+        assert!(eq("tg-cd/rom.zip", "TurboGrafx CD", "mednafen_pce_fast"));
+        assert!(eq("gameandwatch/rom.zip", "Game & Watch", "gw"));
+        assert!(eq("amstradcpc/rom.zip", "Amstrad CPC", "crocods"));
     }
 
     #[test]

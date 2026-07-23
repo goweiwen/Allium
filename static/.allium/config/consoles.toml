@@ -7,7 +7,7 @@ extensions = ["gtr"]
 [[consoles]]
 name = "Amstrad CPC"
 cores = ["crocods"]
-patterns = ["CPC"]
+patterns = ["CPC", "amstradcpc"]
 extensions = ["sna", "kcr"]
 
 [[consoles]]
@@ -25,42 +25,42 @@ cores = [
     "mame2000",
     "mba_mini",
 ]
-patterns = ["ARCADE"]
+patterns = ["ARCADE", "arcade", "mame", "fbneo", "fba"]
 
 [[consoles]]
 name = "Atari - 800"
 cores = ["atari800"]
-patterns = ["EIGHTHUNDRED"]
+patterns = ["EIGHTHUNDRED", "atari800", "atarixe"]
 extensions = ["xex"]
 
 [[consoles]]
 name = "Atari 2600"
 cores = ["stella2014"]
-patterns = ["ATARI"]
+patterns = ["ATARI", "atari2600"]
 extensions = ["a26"]
 
 [[consoles]]
 name = "Atari 5200"
 cores = ["a5200"]
-patterns = ["FIFTYTWOHUNDRED"]
+patterns = ["FIFTYTWOHUNDRED", "atari5200"]
 extensions = ["a52"]
 
 [[consoles]]
 name = "Atari 7800"
 cores = ["prosystem"]
-patterns = ["SEVENTYEIGHTHUNDRED"]
+patterns = ["SEVENTYEIGHTHUNDRED", "atari7800"]
 extensions = ["a78"]
 
 [[consoles]]
 name = "Atari Jaguar"
 cores = ["virtualjaguar"]
-patterns = ["JAGUAR"]
+patterns = ["JAGUAR", "atarijaguar", "atarijaguarcd"]
 extensions = ["j64", "jag"]
 
 [[consoles]]
 name = "Atari Lynx"
 cores = ["handy", "mednafen_lynx"]
-patterns = ["LYNX"]
+patterns = ["LYNX", "atarilynx"]
 extensions = ["lnx"]
 
 [[consoles]]
@@ -76,7 +76,7 @@ patterns = ["SUFAMI"]
 [[consoles]]
 name = "WonderSwanColor"
 cores = ["mednafen_wswan"]
-patterns = ["WS"]
+patterns = ["WS", "wonderswan", "wonderswancolor"]
 extensions = ["ws", "pc2"]
 
 [[consoles]]
@@ -130,13 +130,13 @@ patterns = ["CPS3"]
 [[consoles]]
 name = "ColecoVision"
 cores = ["bluemsx"]
-patterns = ["COLECO"]
+patterns = ["COLECO", "colecovision"]
 extensions = ["ri", "col", "sc"]
 
 [[consoles]]
 name = "Amiga"
 cores = ["puae2021", "puae", "uae4arm"]
-patterns = ["AMIGA"]
+patterns = ["AMIGA", "amiga", "amiga600", "amiga1200", "amigacd32", "cdtv"]
 extensions = [
     "adf",
     "adz",
@@ -157,7 +157,7 @@ extensions = [
 [[consoles]]
 name = "Commodore 64"
 cores = ["vice_x64"]
-patterns = ["COMMODORE"]
+patterns = ["COMMODORE", "c64"]
 
 [[consoles]]
 name = "VIC-20"
@@ -167,7 +167,7 @@ patterns = ["VIC20"]
 [[consoles]]
 name = "Fairchild ChannelF"
 cores = ["freechaf"]
-patterns = ["FAIRCHILD"]
+patterns = ["FAIRCHILD", "channelf"]
 extensions = ["chf"]
 
 [[consoles]]
@@ -179,7 +179,7 @@ extensions = ["vec"]
 [[consoles]]
 name = "Odyssey 2"
 cores = ["o2em"]
-patterns = ["ODYSSEY"]
+patterns = ["ODYSSEY", "odyssey2"]
 
 [[consoles]]
 name = "Intellivision"
@@ -213,24 +213,24 @@ extensions = [
 [[consoles]]
 name = "MSX"
 cores = ["bluemsx", "fmsx"]
-patterns = ["MSX"]
+patterns = ["MSX", "msx1", "msx2", "msxturbor"]
 extensions = ["mx1", "mx2"]
 
 [[consoles]]
 name = "SuperGrafx"
 cores = ["mednafen_supergrafx"]
-patterns = ["SGFX"]
+patterns = ["SGFX", "supergrafx"]
 extensions = ["sgx"]
 
 [[consoles]]
 name = "TurboGrafx CD"
 cores = ["mednafen_pce_fast"]
-patterns = ["PCECD"]
+patterns = ["PCECD", "tg-cd", "pcenginecd"]
 
 [[consoles]]
 name = "TurboGrafx-16"
 cores = ["mednafen_pce_fast"]
-patterns = ["PCE"]
+patterns = ["PCE", "tg16", "pcengine"]
 extensions = ["pce"]
 
 [[consoles]]
@@ -242,7 +242,7 @@ extensions = ["fds"]
 [[consoles]]
 name = "Game & Watch"
 cores = ["gw"]
-patterns = ["GW"]
+patterns = ["GW", "gameandwatch"]
 extensions = ["mgw"]
 
 [[consoles]]
@@ -271,13 +271,13 @@ patterns = ["SGB"]
 [[consoles]]
 name = "NES"
 cores = ["fceumm", "nestopia"]
-patterns = ["FC", "NES"]
+patterns = ["FC", "NES", "famicom"]
 extensions = ["nes", "unif", "unf"]
 
 [[consoles]]
 name = "Pokémon Mini"
 cores = ["pokemini"]
-patterns = ["POKE", "PKM"]
+patterns = ["POKE", "PKM", "pokemini"]
 extensions = ["min"]
 
 [[consoles]]
@@ -297,13 +297,13 @@ cores = [
     "snes9x2002",
     "chimerasnes",
 ]
-patterns = ["SFC", "SNES"]
+patterns = ["SFC", "SNES", "snesna"]
 extensions = ["sfc", "smc", "swc", "fig"]
 
 [[consoles]]
 name = "Virtual Boy"
 cores = ["mednafen_vb"]
-patterns = ["VB"]
+patterns = ["VB", "virtualboy"]
 extensions = ["vb", "vboy"]
 
 [[consoles]]
@@ -314,7 +314,7 @@ patterns = ["VIDEOPAC"]
 [[consoles]]
 name = "PICO-8"
 cores = ["fake08", "retro8"]
-patterns = ["PICO"]
+patterns = ["PICO", "pico8"]
 extensions = ["p8", "png"]
 
 [[consoles]]
@@ -332,36 +332,36 @@ extensions = ["scummvm", "target"]
 [[consoles]]
 name = "Genesis 32X"
 cores = ["picodrive"]
-patterns = ["THIRTYTWOX"]
+patterns = ["THIRTYTWOX", "sega32x", "sega32xna", "sega32xjp"]
 extensions = ["32x"]
 
 [[consoles]]
 name = "Sega CD"
 cores = ["picodrive", "genesis_plus_gx"]
-patterns = ["SEGACD"]
+patterns = ["SEGACD", "megacd", "megacdjp"]
 
 [[consoles]]
 name = "Game Gear"
 cores = ["picodrive", "genesis_plus_gx"]
-patterns = ["GG"]
+patterns = ["GG", "gamegear"]
 extensions = ["gg"]
 
 [[consoles]]
 name = "Genesis"
 cores = ["picodrive", "genesis_plus_gx"]
-patterns = ["MD"]
+patterns = ["MD", "genesis", "megadrive", "megadrivejp"]
 extensions = ["gen", "smd", "md"]
 
 [[consoles]]
 name = "Master System"
 cores = ["picodrive", "genesis_plus_gx"]
-patterns = ["MS"]
+patterns = ["MS", "mastersystem", "mark3"]
 extensions = ["sms"]
 
 [[consoles]]
 name = "SG-1000"
 cores = ["gearsystem"]
-patterns = ["SEGASGONE"]
+patterns = ["SEGASGONE", "sg-1000"]
 extensions = ["sg"]
 
 [[consoles]]
@@ -372,7 +372,7 @@ patterns = ["VMU"]
 [[consoles]]
 name = "ZX Spectrum"
 cores = ["fuse"]
-patterns = ["ZXS"]
+patterns = ["ZXS", "zxspectrum"]
 extensions = ["tzx", "z80", "rzx", "scl", "trd"]
 
 [[consoles]]
@@ -383,12 +383,12 @@ patterns = ["NEOGEO"]
 [[consoles]]
 name = "Neo Geo CD"
 cores = ["neocd"]
-patterns = ["NEOCD"]
+patterns = ["NEOCD", "neogeocd", "neogeocdjp"]
 
 [[consoles]]
 name = "Neo Geo Pocket Color"
 cores = ["mednafen_ngp"]
-patterns = ["NGP", "NGC"]
+patterns = ["NGP", "NGC", "ngpc"]
 extensions = ["ngp", "ngc"]
 
 [[consoles]]
@@ -400,7 +400,7 @@ extensions = ["mdf", "pbp", "toc", "cbn"]
 [[consoles]]
 name = "TIC-80"
 cores = ["tic80"]
-patterns = ["TIC"]
+patterns = ["TIC", "tic80"]
 extensions = ["tic", "fd", "sap", "k7", "m7"]
 
 [[consoles]]
@@ -412,7 +412,7 @@ extensions = ["sv"]
 [[consoles]]
 name = "PC-8000"
 cores = ["quasi88"]
-patterns = ["PC8000"]
+patterns = ["PC8000", "pc88"]
 
 [[consoles]]
 name = "PC-98"
@@ -469,13 +469,13 @@ patterns = ["GME"]
 [[consoles]]
 name = "LÖVE"
 cores = ["lutro"]
-patterns = ["LOVE"]
+patterns = ["LOVE", "lutro"]
 extensions = ["love"]
 
 [[consoles]]
 name = "Palm OS"
 cores = ["mu"]
-patterns = ["PALMOS"]
+patterns = ["PALMOS", "palm"]
 extensions = ["prc", "pqa"]
 
 [[consoles]]
@@ -497,7 +497,7 @@ extensions = ["wad", "iwad", "pwad"]
 [[consoles]]
 name = "Sharp X1"
 cores = ["x1"]
-patterns = ["SHARPX1"]
+patterns = ["SHARPX1", "x1"]
 
 [[consoles]]
 name = "Sharp X68000"
@@ -512,7 +512,7 @@ patterns = ["FLASHBACK"]
 [[consoles]]
 name = "Thomson"
 cores = ["theodore"]
-patterns = ["THOMSON"]
+patterns = ["THOMSON", "moto", "to8"]
 
 [[consoles]]
 name = "Quake"
