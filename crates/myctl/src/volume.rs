@@ -1,5 +1,5 @@
-use std::fs;
 use anyhow::Result;
+use std::fs;
 
 const MIN_RAW_VALUE: i32 = -60;
 const MAX_RAW_VALUE: i32 = 0;
