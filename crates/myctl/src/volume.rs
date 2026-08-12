@@ -1,3 +1,4 @@
+use std::fs;
 use anyhow::Result;
 
 const MIN_RAW_VALUE: i32 = -60;
@@ -12,9 +13,9 @@ pub fn set(volume: i32) -> Result<()> {
     unsafe { ffi::MI_AO_SetVolume(0, volume) };
 
     if prev_volume <= MIN_RAW_VALUE && volume > MIN_RAW_VALUE {
-        unsafe { ffi::MI_AO_SetMute(0, false as u8) };
+        fs::write("/proc/mi_modules/mi_ao/mi_ao0", "set_ao_mute 0")?;
     } else if prev_volume > MIN_RAW_VALUE && volume <= MIN_RAW_VALUE {
-        unsafe { ffi::MI_AO_SetMute(0, true as u8) };
+        fs::write("/proc/mi_modules/mi_ao/mi_ao0", "set_ao_mute 1")?;
     }
 
     Ok(())
