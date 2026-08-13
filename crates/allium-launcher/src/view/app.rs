@@ -307,7 +307,7 @@ where
         let mut drawn = false;
 
         if self.search_results.is_none() {
-            let hide_status = styles.status_bar.no_status_in_launcher;
+            let hide_status = styles.status_bar.hide_status_in_launcher;
             let top_needs_draw =
                 self.tabs.should_draw() || (!hide_status && self.status_bar.should_draw());
             let mut view_will_draw = !self.search_view.is_active() && self.view().should_draw();

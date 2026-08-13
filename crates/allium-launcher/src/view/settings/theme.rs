@@ -553,15 +553,15 @@ impl Theme {
                 }),
             ),
             (
-                locale.t("settings-theme-no-status-in-launcher"),
+                locale.t("settings-theme-hide-status-in-launcher"),
                 Box::new(Toggle::new(
                     Point::zero(),
-                    stylesheet.status_bar.no_status_in_launcher,
+                    stylesheet.status_bar.hide_status_in_launcher,
                     Alignment::Right,
                 )),
                 Box::new(|stylesheet, _ctx, _val, _commands| {
-                    stylesheet.status_bar.no_status_in_launcher =
-                        !stylesheet.status_bar.no_status_in_launcher;
+                    stylesheet.status_bar.hide_status_in_launcher =
+                        !stylesheet.status_bar.hide_status_in_launcher;
                     Ok(true)
                 }),
             ),

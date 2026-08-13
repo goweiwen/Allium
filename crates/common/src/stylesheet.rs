@@ -242,7 +242,7 @@ pub struct StylesheetStatusBar {
     #[serde(default = "Stylesheet::default_status_backdrop_color")]
     pub status_backdrop_color: Color,
     #[serde(default)]
-    pub no_status_in_launcher: bool,
+    pub hide_status_in_launcher: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -896,7 +896,7 @@ impl Default for StylesheetStatusBar {
             text_color: Stylesheet::default_status_bar_color(),
             text_stroke_color: Stylesheet::default_status_bar_stroke_color(),
             status_backdrop_color: Stylesheet::default_status_backdrop_color(),
-            no_status_in_launcher: false,
+            hide_status_in_launcher: false,
         }
     }
 }
