@@ -105,9 +105,15 @@ where
             (y, list_height)
         };
 
+        let image_margin = if styles.games.boxart_underlay {
+            0
+        } else {
+            styles.ui.margin_x
+        };
+
         let mut image = Image::empty(
             Rect::new(
-                x + w as i32 - styles.games.boxart_width as i32 - styles.ui.margin_x,
+                x + w as i32 - styles.games.boxart_width as i32 - image_margin,
                 image_y,
                 styles.games.boxart_width,
                 image_h,

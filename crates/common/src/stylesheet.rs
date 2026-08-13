@@ -219,6 +219,10 @@ pub struct StylesheetUi {
     pub tab_selected_stroke_color: Color,
     #[serde(default = "Stylesheet::default_stroke_width")]
     pub stroke_width: u32,
+    #[serde(default)]
+    pub mirror_tabs_and_status: bool,
+    #[serde(default = "Stylesheet::default_tabs_backdrop_color")]
+    pub tabs_backdrop_color: Color,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -237,6 +241,8 @@ pub struct StylesheetStatusBar {
     pub text_stroke_color: Color,
     #[serde(default = "Stylesheet::default_status_backdrop_color")]
     pub status_backdrop_color: Color,
+    #[serde(default)]
+    pub hide_status_in_launcher: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -832,6 +838,11 @@ rgui_wallpaper = "/mnt/SDCARD/RetroArch/.retroarch/assets/rgui/Allium.png"
     }
 
     #[inline]
+    fn default_tabs_backdrop_color() -> Color {
+        Color::rgba(0, 0, 0, 0)
+    }
+
+    #[inline]
     fn default_status_backdrop_color() -> Color {
         Color::rgba(0, 0, 0, 0)
     }
@@ -869,6 +880,8 @@ impl Default for StylesheetUi {
             tab_selected_color: Stylesheet::default_tab_selected_color(),
             tab_selected_stroke_color: Stylesheet::default_tab_selected_stroke_color(),
             stroke_width: Stylesheet::default_stroke_width(),
+            mirror_tabs_and_status: false,
+            tabs_backdrop_color: Stylesheet::default_tabs_backdrop_color(),
         }
     }
 }
@@ -883,6 +896,7 @@ impl Default for StylesheetStatusBar {
             text_color: Stylesheet::default_status_bar_color(),
             text_stroke_color: Stylesheet::default_status_bar_stroke_color(),
             status_backdrop_color: Stylesheet::default_status_backdrop_color(),
+            hide_status_in_launcher: false,
         }
     }
 }
