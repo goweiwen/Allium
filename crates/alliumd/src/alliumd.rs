@@ -173,7 +173,7 @@ impl AlliumD<DefaultPlatform> {
         common::platform::miyoo::try_fix_resolution().await?;
 
         let mut platform = DefaultPlatform::new()?;
-        let state = AlliumDState::load()?;
+        let mut state = AlliumDState::load()?;
 
         let mut keys = EnumMap::default();
 
@@ -200,8 +200,8 @@ impl AlliumD<DefaultPlatform> {
         }
 
         if keys[Key::VolDown] {
-            info!("volume down key held at startup, setting volume to 0");
-            platform.set_volume(0)?;
+            info!("volume down key held at startup, muting");
+            state.volume = 0;
         }
 
         info!("setting volume: {}", state.volume);
