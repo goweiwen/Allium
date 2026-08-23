@@ -98,6 +98,9 @@ settings-power-lid-close-action = 合盖操作
 settings-power-auto-sleep-when-charging = 充电时自动休眠
 settings-power-auto-sleep-duration-minutes = 自动休眠时长（分钟）
 settings-power-auto-sleep-duration-disabled = 已禁用
+settings-power-volume-on-startup = 启动时音量
+settings-power-volume-on-startup-restore = 恢复
+settings-power-volume-on-startup-muted = 静音
 
 settings-files = 文件
 

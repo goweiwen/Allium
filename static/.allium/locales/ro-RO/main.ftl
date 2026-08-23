@@ -98,6 +98,9 @@ settings-power-lid-close-action = Acțiune închidere capac
 settings-power-auto-sleep-when-charging = Somn automat la încărcare
 settings-power-auto-sleep-duration-minutes = Durată somn automat (min)
 settings-power-auto-sleep-duration-disabled = Dezactivat
+settings-power-volume-on-startup = Volum la pornire
+settings-power-volume-on-startup-restore = Restaurare
+settings-power-volume-on-startup-muted = Fără sonor
 
 settings-files = Fișiere
 

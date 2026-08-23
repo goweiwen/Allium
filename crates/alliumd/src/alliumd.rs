@@ -15,7 +15,7 @@ use common::constants::{
 };
 use common::display::settings::DisplaySettings;
 use common::locale::{Locale, LocaleSettings};
-use common::power::{PowerButtonAction, PowerSettings};
+use common::power::{PowerButtonAction, PowerSettings, VolumeOnStartup};
 use common::retroarch::RetroArchCommand;
 use common::wifi::WiFiSettings;
 use enum_map::EnumMap;
@@ -199,10 +199,20 @@ impl AlliumD<DefaultPlatform> {
             GameInfo::delete()?;
         }
 
-        if keys[Key::VolDown] {
+        let power_settings = PowerSettings::load()?;
+
+        state.volume = if keys[Key::VolDown] {
             info!("volume down key held at startup, muting");
-            state.volume = 0;
-        }
+            0
+        } else {
+            match power_settings.volume_on_startup {
+                VolumeOnStartup::Muted => {
+                    info!("volume on startup is muted");
+                    0
+                }
+                VolumeOnStartup::Restore => state.volume,
+            }
+        };
 
         info!("setting volume: {}", state.volume);
         platform.set_volume(state.volume)?;
@@ -215,7 +225,6 @@ impl AlliumD<DefaultPlatform> {
 
         let main = spawn_main().await?;
         let locale = Locale::new(&LocaleSettings::load()?.lang);
-        let power_settings = PowerSettings::load()?;
 
         // Spawn the persistent menu thread at startup
         let menu = MenuHandle::new();

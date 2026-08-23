@@ -98,6 +98,9 @@ settings-power-lid-close-action = 蓋を閉じる動作
 settings-power-auto-sleep-when-charging = 充電中の自動スリープ
 settings-power-auto-sleep-duration-minutes = 自動スリープ時間（分）
 settings-power-auto-sleep-duration-disabled = 無効
+settings-power-volume-on-startup = 起動時の音量
+settings-power-volume-on-startup-restore = 復元
+settings-power-volume-on-startup-muted = ミュート
 
 settings-files = ファイル
 

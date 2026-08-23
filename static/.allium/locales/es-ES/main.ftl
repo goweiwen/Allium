@@ -99,6 +99,9 @@ settings-power-lid-close-action = Acción de la Tapa
 settings-power-auto-sleep-when-charging = Auto Suspensión al Cargar
 settings-power-auto-sleep-duration-minutes = Duración Auto Suspensión (Minutos)
 settings-power-auto-sleep-duration-disabled = Deshabilitado
+settings-power-volume-on-startup = Volumen al Iniciar
+settings-power-volume-on-startup-restore = Restaurar
+settings-power-volume-on-startup-muted = Silenciado
 
 settings-files = Archivos
 
