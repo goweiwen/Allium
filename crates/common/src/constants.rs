@@ -84,6 +84,11 @@ lazy_static! {
 pub const IMAGE_WIDTH: u32 = 250;
 pub const SAVE_STATE_IMAGE_WIDTH: u32 = 333;
 
+/// Volume scale is 0..=MAX_VOLUME, mapped to the hardware dB curve at the platform layer.
+pub const MAX_VOLUME: i32 = 20;
+/// Brightness scale is 0..=MAX_BRIGHTNESS percent.
+pub const MAX_BRIGHTNESS: u8 = 100;
+
 /// After the battery level drops below this threshold, the charging LED will blink at 0.5Hz.
 pub const BATTERY_WARNING_THRESHOLD: i32 = 15;
 /// After the battery level drops below this threshold, the device will shut down.
@@ -97,6 +102,9 @@ pub const WIFI_UPDATE_INTERVAL: Duration = Duration::from_secs(10);
 
 /// The interval at which the clock is updated.
 pub const CLOCK_UPDATE_INTERVAL: Duration = Duration::from_secs(60);
+
+/// The UI frame period; a launcher redraw flushes the whole screen.
+pub const UI_FRAME_INTERVAL: Duration = Duration::from_micros(166_667);
 
 /// How long to wait until the device is considered idle.
 pub const IDLE_TIMEOUT: Duration = Duration::from_secs(5 * 60);

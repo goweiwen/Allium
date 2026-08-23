@@ -1,11 +1,18 @@
+use std::sync::atomic::Ordering;
+use std::time::Duration;
+
 use anyhow::{Result, anyhow, bail};
 use framebuffer::Framebuffer;
-use log::{trace, warn};
+use log::{debug, trace, warn};
 use tiny_skia::{Pixmap, PixmapMut, PixmapRef};
 
-use crate::display::Display;
 use crate::display::color::Color;
+use crate::display::{Display, RectHold};
 use crate::geom::Rect;
+
+/// Pause between stamping passes, matching Onion; probing or yielding instead costs whole
+/// frames on this dual-core SoC
+const STAMP_PAUSE: Duration = Duration::from_micros(100);
 
 pub struct FramebufferDisplay {
     pixmap: Pixmap,
@@ -60,6 +67,144 @@ impl FramebufferDisplay {
             iface,
             saved: Vec::new(),
         })
+    }
+
+    /// Packs `area` into fb-ordered rows, so the stamping thread only does memcpy
+    fn stamp(&self, area: Rect, corner_radius: u32) -> Option<Stamp> {
+        let width = self.width() as usize;
+        let height = self.height() as usize;
+        let bytes_per_pixel = (self.iface.var_screen_info.bits_per_pixel / 8) as usize;
+
+        let x0 = area.x.max(0) as usize;
+        let y0 = area.y.max(0) as usize;
+        let x1 = (area.right().max(0) as usize).min(width);
+        let y1 = (area.bottom().max(0) as usize).min(height);
+        if x0 >= x1 || y0 >= y1 {
+            return None;
+        }
+
+        // Trim to the rounding so the corners keep the app's pixels, not a frozen frame
+        let radius = (corner_radius as usize)
+            .min((x1 - x0) / 2)
+            .min((y1 - y0) / 2) as f32;
+        let row_h = (y1 - y0) as f32;
+        let mut rows = Vec::with_capacity(y1 - y0);
+        let mut bytes = Vec::with_capacity((y1 - y0) * (x1 - x0) * bytes_per_pixel);
+        for y in y0..y1 {
+            let dy = (y - y0) as f32 + 0.5;
+            let dist = (radius - dy).max(dy - (row_h - radius)).max(0.0);
+            let inset = (radius - (radius * radius - dist * dist).sqrt()).ceil() as usize;
+            let (rx0, rx1) = (x0 + inset, x1 - inset);
+            if rx0 >= rx1 {
+                continue;
+            }
+            let start = bytes.len();
+            // Reversed x, and fb_y below, are the two halves of the 180 degree rotation
+            for x in (rx0..rx1).rev() {
+                let pixel = self.pixmap.pixels()[y * width + x];
+                bytes.extend_from_slice(&[pixel.blue(), pixel.green(), pixel.red(), pixel.alpha()]);
+            }
+            let fb_y = height - 1 - y;
+            let fb_x0 = width - rx1;
+            rows.push(StampRow {
+                offset: (fb_y * width + fb_x0) * bytes_per_pixel,
+                start,
+                len: bytes.len() - start,
+            });
+        }
+        if rows.is_empty() {
+            return None;
+        }
+
+        let pages = (self.iface.var_screen_info.yres_virtual as usize / height.max(1)).clamp(1, 3);
+        debug!(
+            "holding {}x{} rect over fb {}x{} (virtual {}, stride {}, {} bpp, {} pages)",
+            x1 - x0,
+            y1 - y0,
+            width,
+            height,
+            self.iface.var_screen_info.yres_virtual,
+            self.iface.fix_screen_info.line_length,
+            bytes_per_pixel * 8,
+            pages,
+        );
+        Some(Stamp {
+            bytes: bytes.into_boxed_slice(),
+            rows: rows.into_boxed_slice(),
+            pages,
+            page_stride: width * height * bytes_per_pixel,
+        })
+    }
+
+    fn write_rect(&mut self, rect: Rect) {
+        let yoffset = self.iface.var_screen_info.yoffset as usize;
+        self.write_rect_at(rect, yoffset);
+    }
+
+    fn write_rect_at(&mut self, rect: Rect, yoffset: usize) {
+        let xoffset = self.iface.var_screen_info.xoffset as usize;
+        let width = self.width() as usize;
+        let height = self.height() as usize;
+        let bytes_per_pixel = (self.iface.var_screen_info.bits_per_pixel / 8) as usize;
+        let location = (yoffset * width + xoffset) * bytes_per_pixel;
+
+        if location + height * width * bytes_per_pixel > self.iface.frame.len() {
+            return;
+        }
+
+        let x0 = rect.x.max(0) as usize;
+        let y0 = rect.y.max(0) as usize;
+        let x1 = (rect.right().max(0) as usize).min(width);
+        let y1 = (rect.bottom().max(0) as usize).min(height);
+
+        // Write pixmap to framebuffer with 180° rotation and BGRA format
+        for y in y0..y1 {
+            for x in x0..x1 {
+                let idx = y * width + x;
+                let pixel = self.pixmap.pixels()[idx];
+
+                // Apply 180° rotation when writing to framebuffer
+                let fb_x = width - x - 1;
+                let fb_y = height - y - 1;
+                let fb_idx = location + (fb_y * width + fb_x) * bytes_per_pixel;
+
+                // Write as BGRA (use premultiplied values directly)
+                self.iface.frame[fb_idx] = pixel.blue();
+                self.iface.frame[fb_idx + 1] = pixel.green();
+                self.iface.frame[fb_idx + 2] = pixel.red();
+                self.iface.frame[fb_idx + 3] = pixel.alpha();
+            }
+        }
+    }
+}
+
+/// One row of the stamp: where it goes within a page, and its slice of `Stamp::bytes`
+struct StampRow {
+    offset: usize,
+    start: usize,
+    len: usize,
+}
+
+/// Rows of a rect in fb byte order, to be repeated across every page the app may flip to
+struct Stamp {
+    /// Every row back to back, so a pass reads the source linearly
+    bytes: Box<[u8]>,
+    rows: Box<[StampRow]>,
+    pages: usize,
+    page_stride: usize,
+}
+
+impl Stamp {
+    fn blit(&self, frame: &mut [u8]) {
+        for page in 0..self.pages {
+            let base = page * self.page_stride;
+            for row in &self.rows {
+                let at = base + row.offset;
+                if let Some(dst) = frame.get_mut(at..at + row.len) {
+                    dst.copy_from_slice(&self.bytes[row.start..row.start + row.len]);
+                }
+            }
+        }
     }
 }
 
@@ -136,35 +281,33 @@ impl Display for FramebufferDisplay {
     }
 
     fn flush(&mut self) -> Result<()> {
-        let (xoffset, yoffset) = (
-            self.iface.var_screen_info.xoffset as usize,
-            self.iface.var_screen_info.yoffset as usize,
-        );
-        let width = self.width() as usize;
-        let height = self.height() as usize;
-        let bytes_per_pixel = (self.iface.var_screen_info.bits_per_pixel / 8) as usize;
-        let location = (yoffset * width + xoffset) * bytes_per_pixel;
-
-        // Write pixmap to framebuffer with 180° rotation and BGRA format
-        for y in 0..height {
-            for x in 0..width {
-                let idx = y * width + x;
-                let pixel = self.pixmap.pixels()[idx];
-
-                // Apply 180° rotation when writing to framebuffer
-                let fb_x = width - x - 1;
-                let fb_y = height - y - 1;
-                let fb_idx = location + (fb_y * width + fb_x) * bytes_per_pixel;
-
-                // Write as BGRA (use premultiplied values directly)
-                self.iface.frame[fb_idx] = pixel.blue();
-                self.iface.frame[fb_idx + 1] = pixel.green();
-                self.iface.frame[fb_idx + 2] = pixel.red();
-                self.iface.frame[fb_idx + 3] = pixel.alpha();
-            }
-        }
-
+        self.write_rect(self.bounding_box());
         Ok(())
+    }
+
+    fn flush_rect(&mut self, area: Rect) -> Result<()> {
+        // Re-read offsets: the foreground app may have moved yoffset since creation
+        self.iface.var_screen_info = Framebuffer::get_var_screeninfo(&self.iface.device)
+            .map_err(|e| anyhow!("failed to get var_screen_info: {}", e))?;
+        self.write_rect(area);
+        Ok(())
+    }
+
+    fn hold_rect(&mut self, area: Rect, corner_radius: u32) -> Result<Option<RectHold>> {
+        self.flush_rect(area)?;
+        let Some(stamp) = self.stamp(area, corner_radius) else {
+            return Ok(None);
+        };
+
+        Ok(Some(RectHold::spawn(move |stop| {
+            let Ok(mut iface) = Framebuffer::new("/dev/fb0") else {
+                return;
+            };
+            while !stop.load(Ordering::Relaxed) {
+                stamp.blit(&mut iface.frame);
+                std::thread::sleep(STAMP_PAUSE);
+            }
+        })))
     }
 
     fn save(&mut self) -> Result<()> {
