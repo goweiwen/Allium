@@ -65,16 +65,20 @@ impl EvdevKeys {
             };
             let event = result.unwrap();
             if event.event_type() == EventType::KEY {
-                let key = event.code();
-                let key: Key = key.into();
-                if event.timestamp().elapsed().unwrap() > MAXIMUM_FRAME_TIME {
+                let key: Key = event.code().into();
+                let value = event.value();
+                // Skip stale presses after a stall, but a stale release must still
+                // pass through or the key stays latched in the caller's key state
+                if value != 0
+                    && event.timestamp().elapsed().unwrap_or_default() > MAXIMUM_FRAME_TIME
+                {
                     continue;
                 }
-                return match event.value() {
+                return match value {
                     0 => KeyEvent::Released(key),
                     1 => KeyEvent::Pressed(key),
                     2 => KeyEvent::Autorepeat(key),
-                    _ => unreachable!(),
+                    _ => unreachable!("evdev KEY events carry value 0, 1 or 2"),
                 };
             }
         }
