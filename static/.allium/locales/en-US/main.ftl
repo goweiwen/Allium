@@ -128,6 +128,9 @@ settings-power-lid-close-action = Lid Close Action
 settings-power-auto-sleep-when-charging = Auto Sleep When Charging
 settings-power-auto-sleep-duration-minutes = Auto Sleep Duration (Minutes)
 settings-power-auto-sleep-duration-disabled = Disabled
+settings-power-volume-on-startup = Volume on Startup
+settings-power-volume-on-startup-restore = Restore
+settings-power-volume-on-startup-muted = Muted
 
 settings-files = Files
 

@@ -98,6 +98,9 @@ settings-power-lid-close-action = Azione chiusura lid
 settings-power-auto-sleep-when-charging = Auto sospensione in ricarica
 settings-power-auto-sleep-duration-minutes = Durata auto sospensione (min)
 settings-power-auto-sleep-duration-disabled = Disabilitato
+settings-power-volume-on-startup = Volume all'avvio
+settings-power-volume-on-startup-restore = Ripristina
+settings-power-volume-on-startup-muted = Muto
 
 settings-files = File
 

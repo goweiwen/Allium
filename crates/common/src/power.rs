@@ -13,6 +13,8 @@ pub struct PowerSettings {
     pub lid_close_action: PowerButtonAction,
     pub auto_sleep_when_charging: bool,
     pub auto_sleep_duration_minutes: i32,
+    #[serde(default)]
+    pub volume_on_startup: VolumeOnStartup,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, FromRepr, Default)]
@@ -21,6 +23,15 @@ pub enum PowerButtonAction {
     Suspend,
     Shutdown,
     Nothing,
+}
+
+/// What the volume is set to when the device powers on.
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, FromRepr, Default)]
+pub enum VolumeOnStartup {
+    /// Restore the volume the device was turned off at.
+    #[default]
+    Restore,
+    Muted,
 }
 
 impl PowerButtonAction {
@@ -42,6 +53,7 @@ impl Default for PowerSettings {
             power_button_action: PowerButtonAction::Suspend,
             auto_sleep_when_charging: true,
             auto_sleep_duration_minutes: 5,
+            volume_on_startup: VolumeOnStartup::Restore,
         }
     }
 }

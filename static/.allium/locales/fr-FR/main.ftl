@@ -98,6 +98,9 @@ settings-power-lid-close-action = Action couvercle
 settings-power-auto-sleep-when-charging = Veille auto lors de la charge
 settings-power-auto-sleep-duration-minutes = Durée veille auto (min)
 settings-power-auto-sleep-duration-disabled = Désactivé
+settings-power-volume-on-startup = Volume au démarrage
+settings-power-volume-on-startup-restore = Restaurer
+settings-power-volume-on-startup-muted = Muet
 
 settings-files = Fichiers
 

@@ -98,6 +98,9 @@ settings-power-lid-close-action = Aksi tutup
 settings-power-auto-sleep-when-charging = Tidur otomatis saat isi daya
 settings-power-auto-sleep-duration-minutes = Durasi tidur otomatis (min)
 settings-power-auto-sleep-duration-disabled = Dinonaktifkan
+settings-power-volume-on-startup = Volume saat mulai
+settings-power-volume-on-startup-restore = Pulihkan
+settings-power-volume-on-startup-muted = Bisu
 
 settings-files = Berkas
 

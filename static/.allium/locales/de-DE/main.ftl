@@ -98,6 +98,9 @@ settings-power-lid-close-action = Aktion bei Deckel
 settings-power-auto-sleep-when-charging = Auto-Schlaf beim Laden
 settings-power-auto-sleep-duration-minutes = Auto-Schlaf Dauer (Min)
 settings-power-auto-sleep-duration-disabled = Deaktiviert
+settings-power-volume-on-startup = Lautstärke beim Start
+settings-power-volume-on-startup-restore = Wiederherstellen
+settings-power-volume-on-startup-muted = Stumm
 
 settings-files = Dateien
 
