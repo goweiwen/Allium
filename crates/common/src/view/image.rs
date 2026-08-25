@@ -54,8 +54,10 @@ impl Image {
     }
 
     pub fn set_border_radius(&mut self, radius: u32) -> &mut Self {
-        self.border_radius = radius;
-        self.dirty = true;
+        if radius != self.border_radius {
+            self.border_radius = radius;
+            self.dirty = true;
+        }
         self
     }
 
@@ -171,14 +173,10 @@ impl View for Image {
         display: &mut <DefaultPlatform as Platform>::Display,
         _styles: &Stylesheet,
     ) -> Result<bool> {
-        let image_loaded = if let Some(ref path) = self.path {
-            let image_opt = self
-                .image
+        if let Some(ref path) = self.path {
+            self.image
                 .get_or_init(|| self.image(path, self.rect, self.mode, self.border_radius));
-            image_opt.is_some()
-        } else {
-            false
-        };
+        }
 
         display.load(self.rect)?;
         if let Some(Some(image)) = self.image.get() {
@@ -190,7 +188,8 @@ impl View for Image {
             );
         }
 
-        self.dirty = !image_loaded && self.path.is_some();
+        // A failed load is cached, so asking to be drawn again can only spin
+        self.dirty = false;
         Ok(true)
     }
 
