@@ -87,10 +87,11 @@ struct Surface<P: Platform> {
 
 impl<P: Platform> Surface<P> {
     fn new(platform: &mut P, styles: &Stylesheet) -> Result<Self> {
-        // The constructor reads the current frame, so save() keeps the pre-OSD background
-        let mut display = platform.display()?;
-        display.save()?;
+        let mut display = platform.display_partial()?;
         let plate = Plate::new(&display, styles);
+        // Nothing outside the plate is ever drawn or restored, so read no more of the frame
+        display.read_rect(plate.rect)?;
+        display.save()?;
         Ok(Self { display, plate })
     }
 

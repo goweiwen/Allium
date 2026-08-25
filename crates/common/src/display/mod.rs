@@ -82,6 +82,11 @@ pub trait Display: Sized {
         self.flush()
     }
 
+    /// Read `area` of the visible frame into the pixmap; a no-op where it already holds it
+    fn read_rect(&mut self, _area: Rect) -> Result<()> {
+        Ok(())
+    }
+
     /// Keep `area`, already drawn by the caller, restamped over an app that repaints the
     /// screen, until the returned hold is dropped. `None` when the platform cannot stamp
     fn hold_rect(&mut self, _area: Rect, _corner_radius: u32) -> Result<Option<RectHold>> {

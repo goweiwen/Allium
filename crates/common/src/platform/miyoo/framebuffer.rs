@@ -22,6 +22,14 @@ pub struct FramebufferDisplay {
 
 impl FramebufferDisplay {
     pub fn new() -> Result<FramebufferDisplay> {
+        let mut display = Self::blank()?;
+        let frame = display.bounding_box();
+        display.read_frame_rect(frame);
+        Ok(display)
+    }
+
+    /// A display whose pixmap starts empty; the caller reads what it needs with `read_rect`
+    pub fn blank() -> Result<FramebufferDisplay> {
         let iface = Framebuffer::new("/dev/fb0")?;
         trace!(
             "init fb: var_screen_info: {:?}, fix_screen_info: {:?}",
@@ -30,43 +38,47 @@ impl FramebufferDisplay {
 
         let width = iface.var_screen_info.xres;
         let height = iface.var_screen_info.yres;
-
-        let mut pixmap = Pixmap::new(width, height)
+        let pixmap = Pixmap::new(width, height)
             .ok_or_else(|| anyhow!("Failed to create pixmap {}x{}", width, height))?;
-
-        // Read initial framebuffer content
-        let background = iface.read_frame();
-        let (xoffset, yoffset) = (
-            iface.var_screen_info.xoffset as usize,
-            iface.var_screen_info.yoffset as usize,
-        );
-        let bytes_per_pixel = iface.var_screen_info.bits_per_pixel / 8;
-        let location = (yoffset * width as usize + xoffset) * bytes_per_pixel as usize;
-
-        // Copy initial background (need to convert from BGRA and unrotate)
-        for y in 0..height {
-            for x in 0..width {
-                // Framebuffer is rotated 180°, so read from reversed position
-                let fb_x = width - x - 1;
-                let fb_y = height - y - 1;
-                let fb_idx = location + ((fb_y * width + fb_x) as usize * bytes_per_pixel as usize);
-
-                let b = background[fb_idx];
-                let g = background[fb_idx + 1];
-                let r = background[fb_idx + 2];
-                let a = background[fb_idx + 3];
-
-                let color = Color::rgba(r, g, b, a);
-                let idx = (y * width + x) as usize;
-                pixmap.pixels_mut()[idx] = color.into();
-            }
-        }
 
         Ok(FramebufferDisplay {
             pixmap,
             iface,
             saved: Vec::new(),
         })
+    }
+
+    /// Copies `rect` of the visible frame into the pixmap, unrotating it and BGRA to RGBA
+    fn read_frame_rect(&mut self, rect: Rect) {
+        let width = self.pixmap.width() as usize;
+        let height = self.pixmap.height() as usize;
+        let bytes_per_pixel = (self.iface.var_screen_info.bits_per_pixel / 8) as usize;
+        let xoffset = self.iface.var_screen_info.xoffset as usize;
+        let yoffset = self.iface.var_screen_info.yoffset as usize;
+        let location = (yoffset * width + xoffset) * bytes_per_pixel;
+
+        let x0 = rect.x.max(0) as usize;
+        let y0 = rect.y.max(0) as usize;
+        let x1 = (rect.right().max(0) as usize).min(width);
+        let y1 = (rect.bottom().max(0) as usize).min(height);
+
+        let frame = self.iface.read_frame();
+        let pixels = self.pixmap.pixels_mut();
+        for y in y0..y1 {
+            // The framebuffer is rotated 180 degrees, so both axes run backwards
+            let fb_y = height - 1 - y;
+            for x in x0..x1 {
+                let fb_x = width - 1 - x;
+                let fb_idx = location + (fb_y * width + fb_x) * bytes_per_pixel;
+                let color = Color::rgba(
+                    frame[fb_idx + 2],
+                    frame[fb_idx + 1],
+                    frame[fb_idx],
+                    frame[fb_idx + 3],
+                );
+                pixels[y * width + x] = color.into();
+            }
+        }
     }
 
     /// Packs `area` into fb-ordered rows, so the stamping thread only does memcpy
@@ -236,25 +248,8 @@ impl Display for FramebufferDisplay {
         let bytes_per_pixel = (self.iface.var_screen_info.bits_per_pixel / 8) as usize;
         let location = (yoffset * width + xoffset) * bytes_per_pixel;
 
-        let background = self.iface.read_frame();
-
-        // Re-read framebuffer content (convert from BGRA and unrotate)
-        for y in 0..height {
-            for x in 0..width {
-                let fb_x = width - x - 1;
-                let fb_y = height - y - 1;
-                let fb_idx = location + (fb_y * width + fb_x) * bytes_per_pixel;
-
-                let b = background[fb_idx];
-                let g = background[fb_idx + 1];
-                let r = background[fb_idx + 2];
-                let a = background[fb_idx + 3];
-
-                let color = Color::rgba(r, g, b, a);
-                let idx = y * width + x;
-                self.pixmap.pixels_mut()[idx] = color.into();
-            }
-        }
+        let frame = self.bounding_box();
+        self.read_frame_rect(frame);
 
         if yoffset != 0 {
             let frame_size = width * height * bytes_per_pixel;
@@ -290,6 +285,14 @@ impl Display for FramebufferDisplay {
         self.iface.var_screen_info = Framebuffer::get_var_screeninfo(&self.iface.device)
             .map_err(|e| anyhow!("failed to get var_screen_info: {}", e))?;
         self.write_rect(area);
+        Ok(())
+    }
+
+    fn read_rect(&mut self, area: Rect) -> Result<()> {
+        // Re-read offsets: the foreground app may have moved yoffset since creation
+        self.iface.var_screen_info = Framebuffer::get_var_screeninfo(&self.iface.device)
+            .map_err(|e| anyhow!("failed to get var_screen_info: {}", e))?;
+        self.read_frame_rect(area);
         Ok(())
     }
 
