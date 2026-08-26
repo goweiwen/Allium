@@ -399,6 +399,13 @@ impl Stylesheet {
     }
 
     pub fn load_from_theme(theme: &Theme) -> Result<Self> {
+        let mut styles = Self::parse_theme(theme)?;
+        styles.load_fonts()?;
+        Ok(styles)
+    }
+
+    /// Reads the theme's stylesheet and its override file, omitting fonts
+    fn parse_theme(theme: &Theme) -> Result<Self> {
         let stylesheet_path = ALLIUM_THEMES_DIR.join(&theme.0).join("stylesheet.json");
         if !stylesheet_path.exists() {
             return Err(anyhow::anyhow!(
@@ -436,7 +443,6 @@ impl Stylesheet {
             }
         }
 
-        styles.load_fonts()?;
         Ok(styles)
     }
 
@@ -451,6 +457,17 @@ impl Stylesheet {
         self.recents = other.recents;
         self.games = other.games;
         self.menu = other.menu;
+    }
+
+    /// Separate from `load` because reading the fonts costs most of the time.
+    pub fn load_background_color() -> Color {
+        Self::parse_theme(&Theme::load())
+            .unwrap_or_else(|_| {
+                debug!("using built-in default stylesheet");
+                Self::default()
+            })
+            .ui
+            .background_color
     }
 
     pub fn load() -> Result<Self> {
