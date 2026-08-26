@@ -1,10 +1,13 @@
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::{LazyLock, Mutex};
 
 use anyhow::Result;
 use itertools::Itertools;
 use log::{debug, error, warn};
+use memmap2::Mmap;
 use rusttype::Font;
 use serde::{Deserialize, Serialize};
 
@@ -72,6 +75,29 @@ impl StylesheetColor {
     }
 }
 
+/// Memory-maps a font instead of reading the whole file upfront. The CJK fallback alone is 17 MB,
+/// while mmap loads pages on demand as glyphs are rasterized.
+///
+/// Mappings are cached by path and kept alive for the lifetime of the process, since
+/// `Font<'static>` can outlive the scope where the font was loaded.
+fn map_font(path: &Path) -> Result<&'static [u8]> {
+    static MAPPED: LazyLock<Mutex<HashMap<PathBuf, &'static [u8]>>> =
+        LazyLock::new(|| Mutex::new(HashMap::new()));
+
+    let mut mapped = MAPPED.lock().expect("no panics under this lock");
+    if let Some(bytes) = mapped.get(path) {
+        return Ok(bytes);
+    }
+
+    let file = File::open(path)?;
+    // SAFETY: theme fonts are not written while Allium runs; a concurrent truncation would be
+    // undefined behaviour, the standard caveat for any mapped file.
+    let mmap = unsafe { Mmap::map(&file)? };
+    let bytes: &'static [u8] = &Box::leak(Box::new(mmap))[..];
+    mapped.insert(path.to_path_buf(), bytes);
+    Ok(bytes)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StylesheetFont {
     pub path: PathBuf,
@@ -96,8 +122,7 @@ impl StylesheetFont {
 
     /// Loads the font from disk if it has not already been loaded.
     pub fn load(&mut self) -> Result<()> {
-        let bytes = fs::read(&self.path)?;
-        self.font = Font::try_from_vec(bytes);
+        self.font = Font::try_from_bytes(map_font(&self.path)?);
         if self.font.is_none() {
             error!("failed to load font from {:?}", self.path);
         }

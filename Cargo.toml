@@ -37,6 +37,7 @@ futures = "0.3.31"
 image = { version = "0.25.10", default-features = false }
 itertools = "=0.13.0"
 lazy_static = "1.5.0"
+memmap2 = "0.9.11"
 log = "0.4.28"
 nix = "=0.29.0"
 qrcode = "0.14.1"
