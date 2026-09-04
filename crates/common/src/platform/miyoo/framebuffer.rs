@@ -180,24 +180,34 @@ impl FramebufferDisplay {
         let y0 = rect.y.max(0) as usize;
         let x1 = (rect.right().max(0) as usize).min(width);
         let y1 = (rect.bottom().max(0) as usize).min(height);
+        if x0 >= x1 || y0 >= y1 {
+            return;
+        }
 
-        // Write pixmap to framebuffer with 180° rotation and BGRA format
+        // Rows go out as native-endian words, so a different depth would garble the frame
+        if bytes_per_pixel != std::mem::size_of::<u32>() {
+            warn!("cannot write {} bpp framebuffer", bytes_per_pixel * 8);
+            return;
+        }
+
+        let row_len = width * bytes_per_pixel;
+        // Rotation maps x0..x1 to fb columns width-x1..width-x0, so the row is contiguous
+        let row_start = (width - x1) * bytes_per_pixel;
+        let seg_len = (x1 - x0) * bytes_per_pixel;
+
+        // Word stores into a scratch row, then one copy_from_slice
+        let pixels = self.pixmap.pixels();
+        let mut row = vec![0u32; x1 - x0];
         for y in y0..y1 {
-            for x in x0..x1 {
-                let idx = y * width + x;
-                let pixel = self.pixmap.pixels()[idx];
-
-                // Apply 180° rotation when writing to framebuffer
-                let fb_x = width - x - 1;
-                let fb_y = height - y - 1;
-                let fb_idx = location + (fb_y * width + fb_x) * bytes_per_pixel;
-
-                // Write as BGRA (use premultiplied values directly)
-                self.iface.frame[fb_idx] = pixel.blue();
-                self.iface.frame[fb_idx + 1] = pixel.green();
-                self.iface.frame[fb_idx + 2] = pixel.red();
-                self.iface.frame[fb_idx + 3] = pixel.alpha();
+            let src = &pixels[y * width + x0..y * width + x1];
+            for (pixel, out) in src.iter().zip(row.iter_mut().rev()) {
+                *out =
+                    u32::from_ne_bytes([pixel.blue(), pixel.green(), pixel.red(), pixel.alpha()]);
             }
+
+            let fb_y = height - 1 - y;
+            let start = location + fb_y * row_len + row_start;
+            self.iface.frame[start..start + seg_len].copy_from_slice(bytemuck::cast_slice(&row));
         }
     }
 }
