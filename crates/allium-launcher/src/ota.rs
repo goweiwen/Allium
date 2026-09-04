@@ -7,15 +7,43 @@ use sha2::{Digest, Sha256};
 use std::fs::{self, File};
 use std::io::{BufWriter, Write};
 use std::path::PathBuf;
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock};
 use std::time::Instant;
 use tokio::sync::mpsc;
 
 const GITHUB_REPOSITORY: &str = "goweiwen/Allium";
 const RELEASE_FILE: &str = "allium-armv7-unknown-linux-gnueabihf.zip";
+const USER_AGENT: &str = "Allium-OTA-Updater";
 
 static UPDATE_FILE_PATH: LazyLock<PathBuf> =
     LazyLock::new(|| ALLIUM_SD_ROOT.join("allium-ota.zip"));
+
+/// The device has no system certificate store, so the Mozilla root set is compiled in instead of
+/// going through reqwest's platform verifier.
+static TLS_CONFIG: LazyLock<rustls::ClientConfig> = LazyLock::new(|| {
+    let mut roots = rustls::RootCertStore::empty();
+    roots.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+
+    let mut config = rustls::ClientConfig::builder_with_provider(Arc::new(
+        rustls::crypto::ring::default_provider(),
+    ))
+    .with_safe_default_protocol_versions()
+    .expect("ring supports the default protocol versions")
+    .with_root_certificates(roots)
+    .with_no_client_auth();
+
+    // A preconfigured config bypasses reqwest's own ALPN setup, and http2 is not compiled in.
+    config.alpn_protocols = vec![b"http/1.1".to_vec()];
+    config
+});
+
+fn client() -> Result<reqwest::Client> {
+    reqwest::Client::builder()
+        .user_agent(USER_AGENT)
+        .tls_backend_preconfigured(TLS_CONFIG.clone())
+        .build()
+        .context("Failed to build HTTP client")
+}
 
 /// Update channel selection
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -137,9 +165,7 @@ async fn get_latest_stable_release() -> Result<GitHubRelease> {
         GITHUB_REPOSITORY
     );
 
-    let client = reqwest::Client::builder()
-        .user_agent("Allium-OTA-Updater")
-        .build()?;
+    let client = client()?;
 
     let release: GitHubRelease = client
         .get(&url)
@@ -160,9 +186,7 @@ async fn get_latest_nightly_release() -> Result<GitHubRelease> {
         GITHUB_REPOSITORY
     );
 
-    let client = reqwest::Client::builder()
-        .user_agent("Allium-OTA-Updater")
-        .build()?;
+    let client = client()?;
 
     let releases: Vec<GitHubRelease> = client
         .get(&url)
@@ -183,9 +207,7 @@ async fn get_latest_nightly_release() -> Result<GitHubRelease> {
 
 /// Fetch the commit SHA for a given tag
 async fn get_tag_commit_sha(tag_name: &str) -> Result<String> {
-    let client = reqwest::Client::builder()
-        .user_agent("Allium-OTA-Updater")
-        .build()?;
+    let client = client()?;
 
     let url = format!(
         "https://api.github.com/repos/{}/git/ref/tags/{}",
@@ -294,7 +316,9 @@ pub async fn download_update_with_progress(
         .context("SHA256 digest not found for release asset")?;
 
     info!("Downloading from: {}", asset.browser_download_url);
-    let mut response = reqwest::get(&asset.browser_download_url)
+    let mut response = client()?
+        .get(&asset.browser_download_url)
+        .send()
         .await
         .context("Failed to download update")?;
 

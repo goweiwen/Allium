@@ -28,6 +28,8 @@ quick-xml = { workspace = true, features = ["serde", "serialize"] }
 rand.workspace = true
 regex.workspace = true
 reqwest.workspace = true
+rustls.workspace = true
+webpki-roots.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 serial_test.workspace = true

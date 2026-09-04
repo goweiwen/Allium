@@ -44,9 +44,10 @@ qrcode = "0.14.1"
 quick-xml = "0.41.0"
 rand = "0.10.2"
 regex = "1.12.2"
-reqwest = { version = "0.13.4", default-features = false, features = ["json", "query"] }
+reqwest = { version = "0.13.4", default-features = false, features = ["json", "query", "rustls-no-provider"] }
 rusqlite = "0.40.1"
 rusqlite_migration = "2.3.0"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 rusttype = "0.9.3"
 sdl2 = "0.38.0"
 serde = "1.0.228"
@@ -63,6 +64,7 @@ tokio = "1.48.0"
 toml = "1.1.2"
 type-map = "0.5.1"
 wait-timeout = "0.2.1"
+webpki-roots = "1.0"
 winit = "0.30"
 
 # Following: https://github.com/johnthagen/min-sized-rust
