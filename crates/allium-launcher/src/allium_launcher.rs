@@ -36,7 +36,8 @@ pub struct AlliumLauncher<P: Platform> {
 
 impl AlliumLauncher<DefaultPlatform> {
     pub fn new(mut platform: DefaultPlatform) -> Result<Self> {
-        let display = platform.display()?;
+        // run_event_loop paints over the whole frame before drawing
+        let display = platform.display_partial()?;
         let battery = platform.battery()?;
 
         let mut console_mapper = ConsoleMapper::new();
