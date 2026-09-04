@@ -3,6 +3,9 @@ pub mod font;
 pub mod image;
 pub mod settings;
 
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use anyhow::Result;
 use tiny_skia::{
     BlendMode, FillRule, Paint, Path, PathBuilder, PixmapMut, PixmapRef, Stroke, Transform,
@@ -10,6 +13,29 @@ use tiny_skia::{
 
 use crate::display::color::Color;
 use crate::geom::{Point, Rect, Size};
+
+/// A thread stamping a region over a repainting foreground app; it runs until this is dropped
+pub struct RectHold {
+    stop: Arc<AtomicBool>,
+}
+
+impl RectHold {
+    /// Runs `stamp` on a thread until the returned hold is dropped; it polls the flag it is handed
+    pub fn spawn(stamp: impl FnOnce(&AtomicBool) + Send + 'static) -> Self {
+        let stop = Arc::new(AtomicBool::new(false));
+        std::thread::spawn({
+            let stop = Arc::clone(&stop);
+            move || stamp(&stop)
+        });
+        Self { stop }
+    }
+}
+
+impl Drop for RectHold {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Relaxed);
+    }
+}
 
 pub trait Display: Sized {
     /// Get the width of the display in pixels
@@ -49,6 +75,22 @@ pub trait Display: Sized {
     /// Flush any pending changes to the display
     fn flush(&mut self) -> Result<()> {
         Ok(())
+    }
+
+    /// Flush a region of the display; defaults to a full flush
+    fn flush_rect(&mut self, _area: Rect) -> Result<()> {
+        self.flush()
+    }
+
+    /// Read `area` of the visible frame into the pixmap; a no-op where it already holds it
+    fn read_rect(&mut self, _area: Rect) -> Result<()> {
+        Ok(())
+    }
+
+    /// Keep `area`, already drawn by the caller, restamped over an app that repaints the
+    /// screen, until the returned hold is dropped. `None` when the platform cannot stamp
+    fn hold_rect(&mut self, _area: Rect, _corner_radius: u32) -> Result<Option<RectHold>> {
+        Ok(None)
     }
 
     /// Sync with the display hardware
@@ -150,6 +192,100 @@ pub fn stroke_rect(pixmap: &mut PixmapMut<'_>, rect: Rect, stroke_width: f32, co
     {
         let path = PathBuilder::from_rect(ts_rect);
         pixmap.stroke_path(&path, &paint, &stroke, Transform::identity(), None);
+    }
+}
+
+/// Draw a speaker-with-waves volume icon inside `rect`
+pub fn draw_speaker_icon(pixmap: &mut PixmapMut<'_>, rect: Rect, color: Color) {
+    let s = rect.w.min(rect.h) as f32;
+    let (x, y) = (rect.x as f32, rect.y as f32);
+    let paint = icon_paint(color);
+
+    // Speaker body and cone as one polygon
+    let mut pb = PathBuilder::new();
+    pb.move_to(x + 0.08 * s, y + 0.36 * s);
+    pb.line_to(x + 0.26 * s, y + 0.36 * s);
+    pb.line_to(x + 0.48 * s, y + 0.16 * s);
+    pb.line_to(x + 0.48 * s, y + 0.84 * s);
+    pb.line_to(x + 0.26 * s, y + 0.64 * s);
+    pb.line_to(x + 0.08 * s, y + 0.64 * s);
+    pb.close();
+    if let Some(path) = pb.finish() {
+        pixmap.fill_path(
+            &path,
+            &paint,
+            FillRule::Winding,
+            Transform::identity(),
+            None,
+        );
+    }
+
+    // Two sound waves to the right of the cone
+    let stroke = icon_stroke(s);
+    let (cx, cy) = (x + 0.52 * s, y + 0.5 * s);
+    let sweep = std::f32::consts::PI * 0.6;
+    const SEGMENTS: u32 = 12;
+    for radius in [0.22 * s, 0.36 * s] {
+        let mut pb = PathBuilder::new();
+        for i in 0..=SEGMENTS {
+            let angle = -sweep / 2.0 + sweep * i as f32 / SEGMENTS as f32;
+            let px = cx + radius * angle.cos();
+            let py = cy + radius * angle.sin();
+            if i == 0 {
+                pb.move_to(px, py);
+            } else {
+                pb.line_to(px, py);
+            }
+        }
+        if let Some(path) = pb.finish() {
+            pixmap.stroke_path(&path, &paint, &stroke, Transform::identity(), None);
+        }
+    }
+}
+
+/// Draw a sun brightness icon inside `rect`
+pub fn draw_sun_icon(pixmap: &mut PixmapMut<'_>, rect: Rect, color: Color) {
+    let s = rect.w.min(rect.h) as f32;
+    let (cx, cy) = (rect.x as f32 + 0.5 * s, rect.y as f32 + 0.5 * s);
+    let paint = icon_paint(color);
+
+    if let Some(path) = PathBuilder::from_circle(cx, cy, 0.18 * s) {
+        pixmap.fill_path(
+            &path,
+            &paint,
+            FillRule::Winding,
+            Transform::identity(),
+            None,
+        );
+    }
+
+    // Eight rays around the core
+    let stroke = icon_stroke(s);
+    let mut pb = PathBuilder::new();
+    for i in 0..8 {
+        let (sin, cos) = (std::f32::consts::FRAC_PI_4 * i as f32).sin_cos();
+        pb.move_to(cx + 0.30 * s * cos, cy + 0.30 * s * sin);
+        pb.line_to(cx + 0.44 * s * cos, cy + 0.44 * s * sin);
+    }
+    if let Some(path) = pb.finish() {
+        pixmap.stroke_path(&path, &paint, &stroke, Transform::identity(), None);
+    }
+}
+
+fn icon_paint(color: Color) -> Paint<'static> {
+    Paint {
+        shader: tiny_skia::Shader::SolidColor(color.into()),
+        blend_mode: BlendMode::SourceOver,
+        anti_alias: true,
+        ..Default::default()
+    }
+}
+
+fn icon_stroke(icon_side: f32) -> Stroke {
+    Stroke {
+        width: (icon_side / 12.0).max(1.0),
+        line_cap: tiny_skia::LineCap::Round,
+        ..Default::default()
     }
 }
 

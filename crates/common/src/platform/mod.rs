@@ -38,6 +38,12 @@ pub trait Platform {
 
     fn display(&mut self) -> Result<Self::Display>;
 
+    /// A display whose pixmap may start empty, for callers that fill only the part of the
+    /// frame they need with `Display::read_rect`
+    fn display_partial(&mut self) -> Result<Self::Display> {
+        self.display()
+    }
+
     fn battery(&self) -> Result<Self::Battery>;
 
     async fn poll(&mut self) -> KeyEvent;

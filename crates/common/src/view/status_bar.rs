@@ -85,8 +85,8 @@ where
         if self.should_draw() && styles.status_bar.status_backdrop_color.a() > 0 {
             let mut bbox = self.row.bounding_box(styles);
             if bbox.w > 0 && bbox.h > 0 {
-                let padding_x = styles.ui.padding_x as i32;
-                let padding_y = styles.ui.padding_y as i32;
+                let padding_x = styles.ui.padding_x;
+                let padding_y = styles.ui.padding_y;
                 bbox.x -= padding_x;
                 bbox.y -= padding_y;
                 bbox.w += (padding_x * 2) as u32;

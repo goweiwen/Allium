@@ -73,6 +73,10 @@ impl Platform for MiyooPlatform {
         FramebufferDisplay::new()
     }
 
+    fn display_partial(&mut self) -> Result<FramebufferDisplay> {
+        FramebufferDisplay::blank()
+    }
+
     fn battery(&self) -> Result<Box<dyn Battery>> {
         Ok(match self.model {
             MiyooDeviceModel::Miyoo283 => Box::new(Miyoo283Battery::new()),

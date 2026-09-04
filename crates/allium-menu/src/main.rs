@@ -9,6 +9,7 @@ use allium_menu::{AlliumMenu, RetroArchInfo};
 use common::{
     platform::{DefaultPlatform, Platform},
     retroarch::RetroArchCommand,
+    stylesheet::Stylesheet,
 };
 use simple_logger::SimpleLogger;
 
@@ -44,7 +45,7 @@ async fn main() -> Result<()> {
     }
 
     let platform = DefaultPlatform::new()?;
-    let mut app = AlliumMenu::new(platform).await?;
+    let mut app = AlliumMenu::new(platform, Stylesheet::load()?).await?;
     app.prepare(info).await?;
     app.run_event_loop().await?;
     app.save()?;

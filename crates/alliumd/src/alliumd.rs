@@ -10,13 +10,15 @@ use anyhow::Result;
 use chrono::{DateTime, Duration, Utc};
 use common::battery::Battery;
 use common::constants::{
-    ALLIUM_GAME_INFO, ALLIUM_SD_ROOT, ALLIUM_VERSION, ALLIUMD_STATE, BATTERY_SHUTDOWN_THRESHOLD,
-    BATTERY_UPDATE_INTERVAL, BATTERY_WARNING_THRESHOLD, IDLE_TIMEOUT,
+    ALLIUM_GAME_INFO, ALLIUM_LAUNCHER, ALLIUM_SD_ROOT, ALLIUM_VERSION, ALLIUMD_STATE,
+    BATTERY_SHUTDOWN_THRESHOLD, BATTERY_UPDATE_INTERVAL, BATTERY_WARNING_THRESHOLD, IDLE_TIMEOUT,
+    MAX_BRIGHTNESS, MAX_VOLUME,
 };
 use common::display::settings::DisplaySettings;
 use common::locale::{Locale, LocaleSettings};
 use common::power::{PowerButtonAction, PowerSettings, VolumeOnStartup};
 use common::retroarch::RetroArchCommand;
+use common::stylesheet::Stylesheet;
 use common::wifi::WiFiSettings;
 use enum_map::EnumMap;
 use log::{debug, error, info, trace, warn};
@@ -26,6 +28,8 @@ use tokio::process::{Child, Command};
 use common::database::Database;
 use common::game_info::GameInfo;
 use common::platform::{DefaultPlatform, Key, KeyEvent, Platform};
+
+use crate::osd::{Osd, OsdKind};
 
 #[cfg(unix)]
 use {
@@ -49,7 +53,7 @@ struct MenuHandle {
 }
 
 impl MenuHandle {
-    fn new() -> Self {
+    fn new(styles: Stylesheet) -> Self {
         let (tx, rx) = mpsc::channel::<Option<RetroArchInfo>>();
         let (done_tx, done_rx) = tokio::sync::mpsc::unbounded_channel();
         let rt = tokio::runtime::Handle::current();
@@ -57,7 +61,7 @@ impl MenuHandle {
         let handle = std::thread::spawn(move || -> Result<()> {
             rt.block_on(async {
                 let platform = common::platform::DefaultPlatform::new()?;
-                let mut app = AlliumMenu::new(platform).await?;
+                let mut app = AlliumMenu::new(platform, styles).await?;
 
                 while let Ok(info) = rx.recv() {
                     if let Err(e) = app.prepare(info).await {
@@ -93,6 +97,7 @@ pub struct AlliumD<P: Platform> {
     state: AlliumDState,
     locale: Locale,
     power_settings: PowerSettings,
+    osd: Osd<P>,
 }
 
 impl AlliumDState {
@@ -140,6 +145,14 @@ impl AlliumDState {
         let json = serde_json::to_string(self).unwrap();
         File::create(ALLIUMD_STATE.as_path())?.write_all(json.as_bytes())?;
         Ok(())
+    }
+}
+
+/// Sleeps until `deadline`, or forever when there is none — the select! arm needs no precondition
+async fn sleep_until_wake(deadline: Option<tokio::time::Instant>) {
+    match deadline {
+        Some(deadline) => tokio::time::sleep_until(deadline).await,
+        None => std::future::pending().await,
     }
 }
 
@@ -226,8 +239,11 @@ impl AlliumD<DefaultPlatform> {
         let main = spawn_main().await?;
         let locale = Locale::new(&LocaleSettings::load()?.lang);
 
+        // One load per process: font data is Arc'd, so clones share it
+        let styles = Stylesheet::load()?;
+
         // Spawn the persistent menu thread at startup
-        let menu = MenuHandle::new();
+        let menu = MenuHandle::new(styles.clone());
 
         platform.daemon();
 
@@ -242,6 +258,7 @@ impl AlliumD<DefaultPlatform> {
             state,
             locale,
             power_settings,
+            osd: Osd::new(styles),
         })
     }
 
@@ -315,6 +332,11 @@ impl AlliumD<DefaultPlatform> {
                     key_event = self.platform.poll() => {
                         self.handle_key_event(key_event).await?;
                     }
+                    _ = sleep_until_wake(self.osd.next_wake()) => {
+                        if let Err(e) = self.osd.tick() {
+                            error!("failed to update OSD: {}", e);
+                        }
+                    }
                     _ = self.menu.done_rx.recv() => {
                         info!("menu finished, resuming game");
                         self.menu_open = false;
@@ -350,6 +372,11 @@ impl AlliumD<DefaultPlatform> {
             tokio::select! {
                 key_event = self.platform.poll() => {
                     self.handle_key_event(key_event).await?;
+                }
+                _ = sleep_until_wake(self.osd.next_wake()) => {
+                    if let Err(e) = self.osd.tick() {
+                        error!("failed to update OSD: {}", e);
+                    }
                 }
             }
         }
@@ -478,6 +505,9 @@ impl AlliumD<DefaultPlatform> {
                             tokio::time::sleep(std::time::Duration::from_millis(50)).await;
                         }
 
+                        // The plate would keep re-flushing over the menu until its timeout
+                        self.hide_osd();
+
                         self.menu_open = true;
                         if self.menu.tx.send(info).is_err() {
                             error!("failed to send to menu thread");
@@ -496,6 +526,8 @@ impl AlliumD<DefaultPlatform> {
     #[cfg(unix)]
     async fn handle_charging(&mut self) -> Result<()> {
         info!("charging...");
+
+        self.hide_osd();
 
         signal(&self.main, Signal::SIGSTOP)?;
 
@@ -537,6 +569,7 @@ impl AlliumD<DefaultPlatform> {
     #[cfg(unix)]
     async fn handle_suspend(&mut self) -> Result<()> {
         info!("suspending...");
+        self.hide_osd();
         #[allow(clippy::let_unit_value)]
         let ctx = self.platform.suspend()?;
         signal(&self.main, Signal::SIGSTOP)?;
@@ -573,6 +606,7 @@ impl AlliumD<DefaultPlatform> {
 
         debug!("terminating, saving state");
 
+        self.hide_osd();
         self.state.time = Utc::now();
         self.state.save()?;
 
@@ -635,18 +669,61 @@ impl AlliumD<DefaultPlatform> {
         Path::new(&*ALLIUM_GAME_INFO).exists()
     }
 
+    /// Whether the foreground repaints the frame itself; apps exec over the launcher
+    /// without writing game info, so `is_ingame` alone misses them
+    fn foreground_repaints(&self) -> bool {
+        let exe = self
+            .main
+            .id()
+            .and_then(|pid| fs::canonicalize(format!("/proc/{pid}/exe")).ok());
+        let launcher = fs::canonicalize(ALLIUM_LAUNCHER.as_path()).ok();
+        match (exe, launcher) {
+            (Some(exe), Some(launcher)) => exe != launcher,
+            _ => self.is_ingame(),
+        }
+    }
+
     fn add_volume(&mut self, add: i32) -> Result<()> {
         info!("adding volume: {}", add);
-        self.state.volume = (self.state.volume + add).clamp(0, 20);
+        self.state.volume = (self.state.volume + add).clamp(0, MAX_VOLUME);
+        // Draw first: set_volume spawns myctl, which costs tens of ms on this SoC
+        self.show_osd(
+            OsdKind::Volume,
+            self.state.volume as f32 / MAX_VOLUME as f32,
+        );
         self.platform.set_volume(self.state.volume)?;
         Ok(())
     }
 
     fn add_brightness(&mut self, add: i8) -> Result<()> {
         info!("adding brightness: {}", add);
-        self.state.brightness = (self.state.brightness as i8 + add).clamp(0, 100) as u8;
+        self.state.brightness =
+            (self.state.brightness as i8 + add).clamp(0, MAX_BRIGHTNESS as i8) as u8;
+        // Draw first, matching add_volume, so the two paths behave the same
+        self.show_osd(
+            OsdKind::Brightness,
+            self.state.brightness as f32 / MAX_BRIGHTNESS as f32,
+        );
         self.platform.set_brightness(self.state.brightness)?;
         Ok(())
+    }
+
+    fn show_osd(&mut self, kind: OsdKind, fraction: f32) {
+        let repainting = self.foreground_repaints() && !self.menu_open;
+        // Cosmetic only: a failed overlay must not take down the daemon
+        if let Err(e) = self
+            .osd
+            .show(&mut self.platform, kind, fraction, repainting)
+        {
+            error!("failed to show OSD: {}", e);
+        }
+    }
+
+    fn hide_osd(&mut self) {
+        // Cosmetic only: must not block suspend or shutdown
+        if let Err(e) = self.osd.hide() {
+            error!("failed to hide OSD: {}", e);
+        }
     }
 }
 

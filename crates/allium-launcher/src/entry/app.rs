@@ -46,7 +46,8 @@ impl App {
         };
 
         let name = config.label;
-        let image = config.icon;
+        // config.json states the icon relative to the pak, as the launch script
+        let image = config.icon.map(|icon| directory.join(icon));
         let command = directory.join(config.launch);
 
         Ok(Self {

@@ -33,7 +33,7 @@ where
 }
 
 impl AlliumMenu<DefaultPlatform> {
-    pub async fn new(mut platform: DefaultPlatform) -> Result<Self> {
+    pub async fn new(mut platform: DefaultPlatform, styles: Stylesheet) -> Result<Self> {
         let display = platform.display()?;
         let battery = platform.battery()?;
         let rect = display.bounding_box();
@@ -41,7 +41,7 @@ impl AlliumMenu<DefaultPlatform> {
         let mut res = TypeMap::new();
         res.insert(Database::new()?);
         res.insert(GameInfo::load()?.unwrap_or_default());
-        res.insert(Stylesheet::load()?);
+        res.insert(styles);
         res.insert(Locale::new(&LocaleSettings::load()?.lang));
         res.insert(Into::<geom::Size>::into(display.size()));
         let res = Resources::new(res);

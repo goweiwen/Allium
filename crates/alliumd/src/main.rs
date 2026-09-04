@@ -2,6 +2,7 @@
 #![warn(rust_2018_idioms)]
 
 mod alliumd;
+mod osd;
 
 use anyhow::Result;
 use simple_logger::SimpleLogger;

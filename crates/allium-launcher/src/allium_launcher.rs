@@ -86,7 +86,7 @@ impl AlliumLauncher<DefaultPlatform> {
         let mut keys: EnumMap<Key, bool> = EnumMap::default();
 
         #[cfg(not(feature = "debug-ui"))]
-        let mut frame_interval = tokio::time::interval(tokio::time::Duration::from_micros(166_667));
+        let mut frame_interval = tokio::time::interval(common::constants::UI_FRAME_INTERVAL);
         #[cfg(feature = "debug-ui")]
         let mut frame_interval = tokio::time::interval(tokio::time::Duration::from_secs(86400));
 

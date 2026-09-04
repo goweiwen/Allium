@@ -40,10 +40,11 @@ impl Theme {
     pub fn new(rect: Rect, res: Resources, state: Option<ChildState>) -> Self {
         let Rect { x, y, w, .. } = rect;
 
-        let stylesheet = Stylesheet::load().unwrap();
-
         let locale = res.get::<Locale>();
         let styles = res.get::<Stylesheet>();
+
+        // The res copy mirrors disk (resynced on ReloadStylesheet), so skip a second load
+        let stylesheet = (*styles).clone();
 
         let context = ThemeContext {
             fonts: StylesheetFont::available_fonts().unwrap_or_default(),

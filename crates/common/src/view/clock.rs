@@ -8,7 +8,6 @@ use chrono::Local;
 use tokio::sync::mpsc::Sender;
 
 use crate::constants::CLOCK_UPDATE_INTERVAL;
-use crate::display::Display;
 use crate::geom::{Alignment, Point, Rect};
 use crate::platform::{DefaultPlatform, KeyEvent, Platform};
 use crate::resources::Resources;

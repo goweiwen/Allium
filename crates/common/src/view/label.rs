@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 use std::time::Duration;
 
 use crate::command::Command;
+use crate::constants::UI_FRAME_INTERVAL;
 use crate::geom::{Alignment, Point, Rect};
 use anyhow::Result;
 use async_trait::async_trait;
@@ -39,7 +40,7 @@ where
 }
 
 const SCROLL_DELAY: Duration = Duration::from_millis(1000);
-const SCROLL_INTERVAL: Duration = Duration::from_micros(166_667);
+const SCROLL_INTERVAL: Duration = UI_FRAME_INTERVAL;
 
 impl<S> Label<S>
 where
