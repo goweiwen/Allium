@@ -28,6 +28,7 @@ futures.workspace = true
 image = { workspace = true, features = ["gif", "jpeg", "png"] }
 itertools.workspace = true
 lazy_static.workspace = true
+memmap2.workspace = true
 log = { workspace = true, features = ["release_max_level_info"] }
 nix = { workspace = true, features = ["ioctl"] }
 rusqlite = { workspace = true, features = ["bundled", "chrono"] }
