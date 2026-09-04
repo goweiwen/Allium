@@ -48,7 +48,9 @@ impl FramebufferDisplay {
         })
     }
 
-    /// Copies `rect` of the visible frame into the pixmap, unrotating it and BGRA to RGBA
+    /// Copies `rect` of the visible frame into the pixmap, unrotating it and BGRA to RGBA.
+    ///
+    /// One `copy_from_slice` per row: byte-wise reads of the mapping are uncached.
     fn read_frame_rect(&mut self, rect: Rect) {
         let width = self.pixmap.width() as usize;
         let height = self.pixmap.height() as usize;
@@ -61,22 +63,32 @@ impl FramebufferDisplay {
         let y0 = rect.y.max(0) as usize;
         let x1 = (rect.right().max(0) as usize).min(width);
         let y1 = (rect.bottom().max(0) as usize).min(height);
+        if x0 >= x1 || y0 >= y1 {
+            return;
+        }
+
+        // Rows are taken apart as BGRA words, so a different depth would misread the frame
+        if bytes_per_pixel != std::mem::size_of::<u32>() {
+            warn!("cannot read {} bpp framebuffer", bytes_per_pixel * 8);
+            return;
+        }
+
+        let row_len = width * bytes_per_pixel;
+        // Rotation maps x0..x1 to fb columns width-x1..width-x0, so the row is contiguous
+        let row_start = (width - x1) * bytes_per_pixel;
+        let seg_len = (x1 - x0) * bytes_per_pixel;
 
         let frame = self.iface.read_frame();
         let pixels = self.pixmap.pixels_mut();
+        let mut row = vec![0u8; seg_len];
         for y in y0..y1 {
-            // The framebuffer is rotated 180 degrees, so both axes run backwards
             let fb_y = height - 1 - y;
-            for x in x0..x1 {
-                let fb_x = width - 1 - x;
-                let fb_idx = location + (fb_y * width + fb_x) * bytes_per_pixel;
-                let color = Color::rgba(
-                    frame[fb_idx + 2],
-                    frame[fb_idx + 1],
-                    frame[fb_idx],
-                    frame[fb_idx + 3],
-                );
-                pixels[y * width + x] = color.into();
+            let start = location + fb_y * row_len + row_start;
+            row.copy_from_slice(&frame[start..start + seg_len]);
+
+            let dst = &mut pixels[y * width + x0..y * width + x1];
+            for (px, out) in row.chunks_exact(bytes_per_pixel).zip(dst.iter_mut().rev()) {
+                *out = Color::rgba(px[2], px[1], px[0], px[3]).into();
             }
         }
     }
