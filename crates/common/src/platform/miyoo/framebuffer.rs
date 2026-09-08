@@ -48,24 +48,33 @@ impl FramebufferDisplay {
         })
     }
 
+    /// The on-screen part of `rect` as `(x0, y0, x1, y1)`, or `None` if none of it is on screen
+    fn clamp_rect(&self, rect: Rect) -> Option<(usize, usize, usize, usize)> {
+        let width = self.pixmap.width() as usize;
+        let height = self.pixmap.height() as usize;
+
+        let x0 = rect.x.max(0) as usize;
+        let y0 = rect.y.max(0) as usize;
+        let x1 = (rect.right().max(0) as usize).min(width);
+        let y1 = (rect.bottom().max(0) as usize).min(height);
+
+        (x0 < x1 && y0 < y1).then_some((x0, y0, x1, y1))
+    }
+
     /// Copies `rect` of the visible frame into the pixmap, unrotating it and BGRA to RGBA.
     ///
     /// One `copy_from_slice` per row: byte-wise reads of the mapping are uncached.
     fn read_frame_rect(&mut self, rect: Rect) {
+        let Some((x0, y0, x1, y1)) = self.clamp_rect(rect) else {
+            return;
+        };
+
         let width = self.pixmap.width() as usize;
         let height = self.pixmap.height() as usize;
         let bytes_per_pixel = (self.iface.var_screen_info.bits_per_pixel / 8) as usize;
         let xoffset = self.iface.var_screen_info.xoffset as usize;
         let yoffset = self.iface.var_screen_info.yoffset as usize;
         let location = (yoffset * width + xoffset) * bytes_per_pixel;
-
-        let x0 = rect.x.max(0) as usize;
-        let y0 = rect.y.max(0) as usize;
-        let x1 = (rect.right().max(0) as usize).min(width);
-        let y1 = (rect.bottom().max(0) as usize).min(height);
-        if x0 >= x1 || y0 >= y1 {
-            return;
-        }
 
         // Rows are taken apart as BGRA words, so a different depth would misread the frame
         if bytes_per_pixel != std::mem::size_of::<u32>() {
@@ -95,17 +104,11 @@ impl FramebufferDisplay {
 
     /// Packs `area` into fb-ordered rows, so the stamping thread only does memcpy
     fn stamp(&self, area: Rect, corner_radius: u32) -> Option<Stamp> {
+        let (x0, y0, x1, y1) = self.clamp_rect(area)?;
+
         let width = self.width() as usize;
         let height = self.height() as usize;
         let bytes_per_pixel = (self.iface.var_screen_info.bits_per_pixel / 8) as usize;
-
-        let x0 = area.x.max(0) as usize;
-        let y0 = area.y.max(0) as usize;
-        let x1 = (area.right().max(0) as usize).min(width);
-        let y1 = (area.bottom().max(0) as usize).min(height);
-        if x0 >= x1 || y0 >= y1 {
-            return None;
-        }
 
         // Trim to the rounding so the corners keep the app's pixels, not a frozen frame
         let radius = (corner_radius as usize)
@@ -166,6 +169,10 @@ impl FramebufferDisplay {
     }
 
     fn write_rect_at(&mut self, rect: Rect, yoffset: usize) {
+        let Some((x0, y0, x1, y1)) = self.clamp_rect(rect) else {
+            return;
+        };
+
         let xoffset = self.iface.var_screen_info.xoffset as usize;
         let width = self.width() as usize;
         let height = self.height() as usize;
@@ -173,14 +180,6 @@ impl FramebufferDisplay {
         let location = (yoffset * width + xoffset) * bytes_per_pixel;
 
         if location + height * width * bytes_per_pixel > self.iface.frame.len() {
-            return;
-        }
-
-        let x0 = rect.x.max(0) as usize;
-        let y0 = rect.y.max(0) as usize;
-        let x1 = (rect.right().max(0) as usize).min(width);
-        let y1 = (rect.bottom().max(0) as usize).min(height);
-        if x0 >= x1 || y0 >= y1 {
             return;
         }
 
