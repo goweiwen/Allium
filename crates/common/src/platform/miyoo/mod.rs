@@ -8,7 +8,6 @@ mod volume;
 use std::fmt;
 use std::fs::File;
 use std::io::Write;
-use std::os::unix::process::CommandExt;
 use std::process::Command;
 
 use anyhow::Result;
@@ -88,17 +87,9 @@ impl Platform for MiyooPlatform {
 
     fn shutdown(&self) -> Result<()> {
         #[cfg(unix)]
-        {
-            std::process::Command::new("sync").spawn()?.wait()?;
-            match self.model {
-                MiyooDeviceModel::Miyoo283 => {
-                    let _ = std::process::Command::new("reboot").exec();
-                }
-                MiyooDeviceModel::Miyoo285 | MiyooDeviceModel::Miyoo354 => {
-                    let _ = std::process::Command::new("poweroff").exec();
-                }
-            }
-        }
+        std::process::exit(64);
+
+        #[cfg(not(unix))]
         Ok(())
     }
 

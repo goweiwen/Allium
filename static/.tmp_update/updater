@@ -78,8 +78,19 @@ for script in "$ROOT"/.allium/migrations/*; do
 done
 show -c
 
+# Copy the final shutdown stage to RAM before starting Allium.
+shutdown_helper=/tmp/allium-clean-shutdown
+cp "$ROOT"/.tmp_update/script/clean-shutdown.sh "$shutdown_helper"
+chmod 700 "$shutdown_helper"
+
 # run Allium
 RUST_LOG=info "$ROOT"/.allium/bin/alliumd >"$ROOT"/allium.log 2>&1
+allium_status=$?
+
+# Exit code 64 means Allium completed its state-saving shutdown path.
+if [ "$allium_status" -eq 64 ]; then
+    exec /bin/sh "$shutdown_helper" "$MODEL"
+fi
 
 if [ -f "$ROOT"/.debug ]; then
     "$ROOT"/.allium/scripts/wifi-on.sh
