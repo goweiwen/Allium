@@ -188,24 +188,7 @@ impl AlliumD<DefaultPlatform> {
         let mut platform = DefaultPlatform::new()?;
         let mut state = AlliumDState::load()?;
 
-        let mut keys = EnumMap::default();
-
-        // Poll all key events for 100ms to sync initial key state
-        let deadline = tokio::time::Instant::now() + tokio::time::Duration::from_millis(100);
-        loop {
-            tokio::select! {
-                key_event = platform.poll() => {
-                    match key_event {
-                        KeyEvent::Pressed(key) => keys[key] = true,
-                        KeyEvent::Released(key) => keys[key] = false,
-                        KeyEvent::Autorepeat(key) => keys[key] = true,
-                    }
-                }
-                _ = tokio::time::sleep_until(deadline) => {
-                    break;
-                }
-            }
-        }
+        let keys = platform.held_keys();
 
         if keys[Key::Menu] || keys[Key::B] {
             info!("menu or B key held at startup, bypass game resume");
