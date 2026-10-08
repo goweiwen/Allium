@@ -1,18 +1,24 @@
 use std::collections::VecDeque;
-use std::path::Path;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::process;
-use std::time::Instant;
+use std::time::{Instant, SystemTime};
 
 use anyhow::Result;
 use common::command::Command;
-use common::constants::{ALLIUM_GAMES_DIR, ALLIUM_SD_ROOT, ALLIUM_THEMES_DIR};
+use common::constants::{
+    ALLIUM_GAMES_DIR, ALLIUM_SD_ROOT, ALLIUM_THEMES_DIR, ALLIUM_WALLPAPER_CACHE,
+    ALLIUM_WALLPAPER_CACHE_KEY,
+};
 use common::display::color::Color;
 use common::geom;
 use common::locale::{Locale, LocaleSettings};
 use common::resources::Resources;
 use common::view::View;
 use enum_map::EnumMap;
+use image::RgbaImage;
 use log::{debug, error, info, trace, warn};
+use serde::{Deserialize, Serialize};
 
 use common::database::Database;
 use common::display::Display;
@@ -335,7 +341,7 @@ impl AlliumLauncher<DefaultPlatform> {
     }
 }
 
-fn resolve_wallpaper_path(wallpaper: &Path) -> std::path::PathBuf {
+fn resolve_wallpaper_path(wallpaper: &Path) -> PathBuf {
     // If wallpaper path is absolute, use it as-is
     if wallpaper.is_absolute() {
         return wallpaper.to_path_buf();
@@ -352,16 +358,75 @@ fn resolve_wallpaper_path(wallpaper: &Path) -> std::path::PathBuf {
     ALLIUM_SD_ROOT.join(wallpaper)
 }
 
+/// The source file and panel size a cached wallpaper was resized for
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct WallpaperCacheKey {
+    source: PathBuf,
+    len: u64,
+    modified: SystemTime,
+    width: u32,
+    height: u32,
+}
+
+impl WallpaperCacheKey {
+    fn new(source: &Path, size: geom::Size) -> Result<Self> {
+        let meta = fs::metadata(source)?;
+        Ok(Self {
+            source: source.to_path_buf(),
+            len: meta.len(),
+            modified: meta.modified()?,
+            width: size.w,
+            height: size.h,
+        })
+    }
+}
+
+fn load_cached_wallpaper(key: &WallpaperCacheKey) -> Option<RgbaImage> {
+    let json = fs::read_to_string(ALLIUM_WALLPAPER_CACHE_KEY.as_path()).ok()?;
+    if serde_json::from_str::<WallpaperCacheKey>(&json).ok()? != *key {
+        return None;
+    }
+    let image = ::image::open(ALLIUM_WALLPAPER_CACHE.as_path())
+        .ok()?
+        .into_rgba8();
+    (image.dimensions() == (key.width, key.height)).then_some(image)
+}
+
+fn store_cached_wallpaper(key: &WallpaperCacheKey, image: &RgbaImage) -> Result<()> {
+    // The key goes first and comes back last, so it only ever matches a frame written in full
+    if let Err(e) = fs::remove_file(ALLIUM_WALLPAPER_CACHE_KEY.as_path())
+        && e.kind() != std::io::ErrorKind::NotFound
+    {
+        return Err(e.into());
+    }
+    image.save(ALLIUM_WALLPAPER_CACHE.as_path())?;
+    fs::write(
+        ALLIUM_WALLPAPER_CACHE_KEY.as_path(),
+        serde_json::to_string(key)?,
+    )?;
+    Ok(())
+}
+
 fn set_wallpaper(display: &mut impl Display, path: &Path) -> Result<()> {
     if !path.exists() {
         return Ok(());
     }
 
-    let rect = display.size();
+    let size = display.size();
+    let key = WallpaperCacheKey::new(path, size)?;
 
-    let image = ::image::open(path)?;
-    let image = image.resize_to_fill(rect.w, rect.h, image::imageops::FilterType::Lanczos3);
-    let image = image.into_rgba8();
+    let image = match load_cached_wallpaper(&key) {
+        Some(image) => image,
+        None => {
+            let image = ::image::open(path)?
+                .resize_to_fill(size.w, size.h, image::imageops::FilterType::Lanczos3)
+                .into_rgba8();
+            if let Err(e) = store_cached_wallpaper(&key, &image) {
+                warn!("Failed to cache wallpaper: {}", e);
+            }
+            image
+        }
+    };
 
     common::display::image::draw_image(
         &mut display.pixmap_mut(),
