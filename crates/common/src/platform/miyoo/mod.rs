@@ -13,10 +13,12 @@ use std::process::Command;
 
 use anyhow::Result;
 use async_trait::async_trait;
+use enum_map::EnumMap;
 use log::warn;
 
 use crate::battery::Battery;
 use crate::display::settings::DisplaySettings;
+use crate::platform::Key;
 use crate::platform::KeyEvent;
 use crate::platform::Platform;
 use crate::platform::miyoo::evdev::EvdevKeys;
@@ -67,6 +69,10 @@ impl Platform for MiyooPlatform {
 
     async fn poll(&mut self) -> KeyEvent {
         self.keys.poll().await
+    }
+
+    fn held_keys(&self) -> EnumMap<Key, bool> {
+        self.keys.held_keys()
     }
 
     fn display(&mut self) -> Result<FramebufferDisplay> {
