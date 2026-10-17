@@ -6,22 +6,18 @@ This is a wrapper as the target binaries are paid binaries. We don't want to pro
 These files need dropping in the pico/bin directory before you try to run the wrapper.
 
 Keybinds:
-Select + Menu - quit
-Select + Up/Down Dpad = CPU clock modifier
+Menu - pause menu, quit from there
 Select + Left/Right Dpad = bezel/Bezel/Overlay modifier
 L2 button - Lock into mouse mode, (other input will be disabled while in mouse mode)
       - A/B - click in mouse mode
-Select + L1 - reload cart
+Select + L1 - change screen effect
 Select + R1 - change screen scaling
 
 Pico-8 Keybinds are very simple, with A+B being actions and Dpad being movement ofc
 
 Bezel location:
-res/bezel/standard
-res/bezel/integer_scaled
-
-Overclock digit location:
-res/digits
+res/bezel/640x480
+res/bezel/752x560
 
 Credits:
 
