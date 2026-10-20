@@ -2,6 +2,6 @@ lib/libSDL2-2.0.so.0 is an altered build of SDL2 (zlib, LICENSE.SDL2.txt) carryi
 Steward Fu's Miyoo Mini drivers (LGPL-2.1, LICENSE.LGPL-2.1.txt) and stb_image
 (MIT or public domain, LICENSE.stb_image.txt). Its source:
 
-  https://github.com/mxmgorin/sdl2   branch: miyoomini-pico8   commit: 3ee0cc64
+  https://github.com/mxmgorin/sdl2   branch: miyoomini-pico8   commit: 7c3de83c
 
 built with upstream's Docker recipe against mini_toolchain-v1.0: `make cfg && make sdl2`.
