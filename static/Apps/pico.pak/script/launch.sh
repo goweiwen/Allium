@@ -117,7 +117,8 @@ start_pico() {
     /mnt/SDCARD/.tmp_update/script/stop_audioserver.sh
     libpadspblocker
     /mnt/SDCARD/.tmp_update/script/set_sound_level.sh &
-    pico8_dyn -splore -width "$panel_w" -height "$panel_h" -draw_rect "$rect"
+    # The cart leaves PICO-8 at 128x128; the SDL2 resamples it to the panel, so a pre-scale would only cost.
+    pico8_dyn -splore -width "$panel_w" -height "$panel_h" -draw_rect "$rect" -preblit_scale 1
 }
 
 main() {
