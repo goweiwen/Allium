@@ -8,7 +8,7 @@ pub mod simulator;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use enum_map::Enum;
+use enum_map::{Enum, EnumMap};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -47,6 +47,11 @@ pub trait Platform {
     fn battery(&self) -> Result<Self::Battery>;
 
     async fn poll(&mut self) -> KeyEvent;
+
+    /// Reads the keys held right now; empty on platforms that cannot tell
+    fn held_keys(&self) -> EnumMap<Key, bool> {
+        EnumMap::default()
+    }
 
     fn shutdown(&self) -> Result<()>;
 

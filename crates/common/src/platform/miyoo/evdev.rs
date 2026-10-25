@@ -3,8 +3,9 @@ use std::io::Read;
 use std::time::Duration;
 
 use anyhow::Result;
+use enum_map::EnumMap;
 use evdev::{Device, EventStream, EventType};
-use log::info;
+use log::{info, warn};
 
 use crate::constants::MAXIMUM_FRAME_TIME;
 use crate::platform::{DefaultPlatform, Key, KeyEvent, Platform};
@@ -49,6 +50,19 @@ impl EvdevKeys {
                 .into_event_stream()?,
             lid_switch_poller: DefaultPlatform::has_lid().then(LidSwitchPoller::new),
         })
+    }
+
+    pub fn held_keys(&self) -> EnumMap<Key, bool> {
+        let mut keys = EnumMap::default();
+        match self.events.device().get_key_state() {
+            Ok(state) => {
+                for code in state.iter() {
+                    keys[Key::from(code.0)] = true;
+                }
+            }
+            Err(e) => warn!("failed to read key state: {}", e),
+        }
+        keys
     }
 
     pub async fn poll(&mut self) -> KeyEvent {
