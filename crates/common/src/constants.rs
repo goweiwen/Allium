@@ -68,6 +68,9 @@ lazy_static! {
     pub static ref ALLIUM_UPDATE_SETTINGS: PathBuf = ALLIUM_BASE_DIR.join("state/update.json");
     pub static ref ALLIUM_TIMEZONE: PathBuf = ALLIUM_BASE_DIR.join("state/timezone");
     pub static ref ALLIUM_THEME_STATE: PathBuf = ALLIUM_BASE_DIR.join("state/theme");
+    pub static ref ALLIUM_WALLPAPER_CACHE: PathBuf = ALLIUM_BASE_DIR.join("state/wallpaper.png");
+    pub static ref ALLIUM_WALLPAPER_CACHE_KEY: PathBuf =
+        ALLIUM_BASE_DIR.join("state/wallpaper.json");
 
     // Database
     pub static ref ALLIUM_DATABASE: PathBuf = env::var("ALLIUM_DATABASE")
