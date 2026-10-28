@@ -100,6 +100,10 @@ start_pico() {
     export SDL_MINI_VOLUME_FILE=/tmp/volume
     # X and Y report B's and A's keys: with button_keys set, PICO-8 ignores its defaults.
     export SDL_MINI_KEYMAP="Left Shift=Left Ctrl,Left Alt=Space"
+    # MENU quits through PICO-8's own Ctrl+Q, which works on every one of its screens.
+    export SDL_MINI_MENU_CHORD="Left Ctrl,Q"
+    # SELECT+START stands in for ESC, as MENU quits instead of reporting it.
+    export SDL_MINI_SELECT_START_CHORD="Escape"
     # L2 toggles a pointer on the d-pad, kept on the cart where PICO-8 can place it.
     export SDL_MINI_MOUSE=toggle
     export SDL_MINI_MOUSE_RECT="$rect"

@@ -6,7 +6,9 @@ This is a wrapper as the target binaries are paid binaries. We don't want to pro
 These files need dropping in the pico/bin directory before you try to run the wrapper.
 
 Keybinds:
-Menu - pause menu, quit from there
+Menu - quit
+Start - pause menu
+Select + Start - Esc
 Select + Left/Right Dpad = bezel/Bezel/Overlay modifier
 L2 button - Lock into mouse mode, (other input will be disabled while in mouse mode)
       - A/B - click in mouse mode
