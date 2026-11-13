@@ -20,7 +20,7 @@ checksum = "366ffbaa4442f4684d91e2cd7c5ea7c4ed8add41959a31447066e279e432b618"
 
 [[package]]
 name = "activity-tracker"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -68,7 +68,7 @@ dependencies = [
 
 [[package]]
 name = "allium-launcher"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -102,7 +102,7 @@ dependencies = [
 
 [[package]]
 name = "allium-menu"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -122,7 +122,7 @@ dependencies = [
 
 [[package]]
 name = "alliumd"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "allium-menu",
  "anyhow",
@@ -596,7 +596,7 @@ dependencies = [
 
 [[package]]
 name = "common"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3132,7 +3132,7 @@ dependencies = [
 
 [[package]]
 name = "screenshot-viewer"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "anyhow",
  "async-trait",
